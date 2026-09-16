@@ -1,0 +1,144 @@
+{
+  "note": "Baseline de la etapa 0 del issue #38. 'bff' = fetch/useApiResource con literal /api/<dominio>; 'bffUnknown' = useApiResource con URL variable o fetch sin literal; 'sdk' informativo. Regenerar con --update solo al bajar el camino bff.",
+  "domains": {
+    "trips": 4,
+    "expenses": 4,
+    "tasks": 3,
+    "notes": 0,
+    "budget": 2,
+    "planning": 0,
+    "dashboard": 0
+  },
+  "files": {
+    "src/app/api/budget/[id]/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 2
+    },
+    "src/app/api/budget/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 4
+    },
+    "src/app/api/dashboard/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/app/api/expenses/[id]/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/app/api/expenses/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/app/api/planning/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 5
+    },
+    "src/app/api/tasks/[id]/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/app/api/tasks/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 2
+    },
+    "src/app/api/trips/route.ts": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 2
+    },
+    "src/app/dashboard/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 1,
+      "sdk": 0
+    },
+    "src/app/expenses/[id]/edit/page.tsx": {
+      "bff": 4,
+      "bffUnknown": 0,
+      "sdk": 0
+    },
+    "src/app/expenses/new/page.tsx": {
+      "bff": 2,
+      "bffUnknown": 0,
+      "sdk": 0
+    },
+    "src/app/expenses/page.tsx": {
+      "bff": 1,
+      "bffUnknown": 3,
+      "sdk": 0
+    },
+    "src/app/notes/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 7
+    },
+    "src/app/planning/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 1,
+      "sdk": 7
+    },
+    "src/app/tasks/page.tsx": {
+      "bff": 3,
+      "bffUnknown": 1,
+      "sdk": 0
+    },
+    "src/app/trips/[id]/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/app/trips/new/page.tsx": {
+      "bff": 2,
+      "bffUnknown": 0,
+      "sdk": 0
+    },
+    "src/app/trips/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 1,
+      "sdk": 0
+    },
+    "src/components/notifications/NotificationSystem.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 14
+    },
+    "src/components/planning/NewBookingForm.tsx": {
+      "bff": 1,
+      "bffUnknown": 1,
+      "sdk": 0
+    },
+    "src/components/trips/EditTripModal.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 2
+    },
+    "src/components/trips/JournalPhotos.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/components/trips/TripJournal.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
+    "src/components/trips/TripSummary.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    }
+  },
+  "totals": {
+    "bff": 13,
+    "bffUnknown": 8,
+    "sdk": 69
+  }
+}

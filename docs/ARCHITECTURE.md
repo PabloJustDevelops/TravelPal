@@ -85,6 +85,15 @@ Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities
 `worker-build` (`npx opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
 mensajes de commit.
 
+El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): congela el
+recuento de los dos caminos de datos — llamadas al BFF por `/api` (`fetch` y `useApiResource`) y
+puntos de uso del SDK de InsForge (`.database.from`) — y falla si aparece un `fetch` nuevo a un
+endpoint de datos de usuario. El baseline por fichero y por dominio vive en
+`scripts/data-paths-baseline.json` y se regenera con `--update` al borrar un endpoint.
+
+[#38]: https://github.com/PabloJustDevelops/TravelPal/issues/38
+
+
 ## Decisiones
 
 Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS). El

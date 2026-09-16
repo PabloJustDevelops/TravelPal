@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NoteCard from "@/components/notes/NoteCard";
 import NoteEditor from "@/components/notes/NoteEditor";
@@ -25,7 +25,6 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import PageSkeleton from "@/components/ui/PageSkeleton";
-import { useApiResource } from "@/hooks/use-api-resource";
 
 export default function NotesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -38,16 +37,72 @@ export default function NotesPage() {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editorLoading, setEditorLoading] = useState(false);
 
-  const url = !authLoading && user?.id ? "/api/notes" : null;
-  const {
-    data,
-    loading,
-    error: loadError,
-    refetch,
-  } = useApiResource<{
+  const [data, setData] = useState<{
     notes: (Note & { trip?: Trip })[];
     trips: Trip[];
-  }>(url);
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user?.id) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setLoading(true);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        const insforge = createInsforgeClient();
+        const [notesRes, tripsRes] = await Promise.all([
+          insforge
+            .database.from("notes")
+            .select(`*, trip:trips(*)`)
+            .eq("user_id", userId)
+            .order("updated_at", { ascending: false }),
+          insforge
+            .database.from("trips")
+            .select(
+              "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
+            )
+            .eq("user_id", userId)
+            .order("departure_date", { ascending: false }),
+        ]);
+
+        if (notesRes.error) throw notesRes.error;
+        if (tripsRes.error) throw tripsRes.error;
+
+        if (!active) return;
+        setData({
+          notes: (notesRes.data as (Note & { trip?: Trip })[]) ?? [],
+          trips: (tripsRes.data as Trip[]) ?? [],
+        });
+      } catch (err) {
+        if (!active) return;
+        logger.error("NotesPage: Error loading notes", {
+          error: getErrorMessage(err, "Error al cargar las notas"),
+        });
+        setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, reloadToken]);
 
   const { notes, trips, filteredNotes } = useMemo(() => {
     const notesData = data?.notes ?? [];
@@ -83,9 +138,11 @@ export default function NotesPage() {
     : null;
 
   const showSkeleton =
-    authLoading || loading || (url !== null && data === null && !loadError);
+    authLoading || loading || (!!user?.id && data === null && !loadError);
 
   const handleSaveNote = async (noteData: Partial<Note>) => {
+    if (!user) return;
+
     setEditorLoading(true);
 
     try {
@@ -106,22 +163,24 @@ export default function NotesPage() {
 
         if (error) throw error;
       } else {
-        // Create new note using API
-        const res = await fetch('/api/notes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: noteData.title,
-                content: noteData.content,
-                category: noteData.category,
-                trip_id: noteData.trip_id || null
-            })
-        });
+        // Create new note using the InsForge SDK
+        const insforge = createInsforgeClient();
+        const { error } = await insforge
+          .database.from("notes")
+          .insert([
+            {
+              user_id: user.id,
+              title: noteData.title,
+              content: noteData.content,
+              category: noteData.category || "general",
+              trip_id: noteData.trip_id || null,
+              is_favorite: false,
+            },
+          ])
+          .select()
+          .single();
 
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Error al guardar la nota');
-        }
+        if (error) throw error;
       }
 
       refetch();
