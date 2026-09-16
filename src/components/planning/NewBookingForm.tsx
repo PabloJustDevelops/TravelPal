@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Input from "../ui/Input";
 import { selectClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
-import { Booking } from "@/lib/insforge";
+import { Booking, createInsforgeClient } from "@/lib/insforge";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 
@@ -27,25 +27,39 @@ export default function NewBookingForm({
 
   useEffect(() => {
       // Cargar viajes para el selector si es una nueva reserva
-      if (!initialData) {
-          const fetchTrips = async () => {
-              try {
-                  const res = await fetch('/api/trips');
-                  if (res.ok) {
-                      const data = await res.json();
-                      setTrips(data);
-                      // Preseleccionar el primer viaje si existe
-                      if (data.length > 0) {
-                          setFormData(prev => ({ ...prev, trip_id: data[0].id }));
-                      }
-                  }
-              } catch (e) {
-                  logger.error("Error fetching trips for selector", e);
+      if (initialData || !user?.id) return;
+
+      let active = true;
+      const userId = user.id;
+
+      const fetchTrips = async () => {
+          try {
+              const insforge = createInsforgeClient();
+              const { data, error } = await insforge
+                  .database.from("trips")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .order("departure_date", { ascending: false });
+
+              if (error) throw error;
+              if (!active) return;
+
+              const tripsData = (data as { id: string; title: string }[]) ?? [];
+              setTrips(tripsData);
+              // Preseleccionar el primer viaje si existe
+              if (tripsData.length > 0) {
+                  setFormData(prev => ({ ...prev, trip_id: tripsData[0].id }));
               }
-          };
-          fetchTrips();
-      }
-  }, [initialData]);
+          } catch (e) {
+              logger.error("Error fetching trips for selector", e);
+          }
+      };
+      fetchTrips();
+
+      return () => {
+          active = false;
+      };
+  }, [initialData, user?.id]);
 
   const [formData, setFormData] = useState({
     title: "",

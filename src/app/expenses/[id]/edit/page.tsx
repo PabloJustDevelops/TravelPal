@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
-import { Trip, Expense } from '@/lib/insforge'
+import { createInsforgeClient, Trip, Expense } from '@/lib/insforge'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -44,10 +44,21 @@ export default function EditExpensePage() {
       setLoadError('')
       
       // Cargar viajes para el selector
-      const tripsRes = await fetch('/api/trips')
-      if (tripsRes.ok) {
-        const tripsData = await tripsRes.json()
-        setTrips(tripsData || [])
+      if (user?.id) {
+        try {
+          const insforge = createInsforgeClient()
+          const { data: tripsData, error: tripsError } = await insforge
+            .database.from('trips')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('departure_date', { ascending: false })
+
+          if (tripsError) throw tripsError
+          setTrips((tripsData as Trip[]) || [])
+        } catch (tripsError) {
+          // No bloqueamos la UI si fallan los viajes, solo no aparecen en el selector.
+          logger.error('Error loading trips:', tripsError)
+        }
       }
 
       // Cargar datos del gasto
@@ -78,7 +89,7 @@ export default function EditExpensePage() {
     } finally {
       setLoadingData(false)
     }
-  }, [id])
+  }, [id, user?.id])
 
   useEffect(() => {
     if (user && id) {

@@ -1,12 +1,13 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import NewBookingForm from "../NewBookingForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { createInsforgeClient } from "@/lib/insforge";
+import { logger } from "@/lib/logger";
 
 // Mock dependencies
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
 }))
-jest.mock('@/lib/insforge')
 jest.mock('@/lib/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -15,9 +16,32 @@ jest.mock('@/lib/logger', () => ({
   }
 }));
 
+type QueryResult = { data?: unknown; error?: unknown };
+
+interface DbChain {
+  select: jest.Mock;
+  eq: jest.Mock;
+  order: jest.Mock;
+  then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
+}
+
+// Cadena encadenable y "awaitable": el terminal (order) resuelve la lectura de
+// viajes que alimenta el selector.
+function makeChain(result: QueryResult): DbChain {
+  const chain = {} as DbChain;
+  chain.select = jest.fn(() => chain);
+  chain.eq = jest.fn(() => chain);
+  chain.order = jest.fn(() => chain);
+  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  return chain;
+}
+
+const mockedClient = createInsforgeClient as jest.Mock;
+
 describe("NewBookingForm", () => {
   const mockOnSuccess = jest.fn();
   const mockOnCancel = jest.fn();
+  let tripsChain: DbChain;
   let fetchMock: jest.Mock;
 
   const jsonResponse = (data: unknown) => ({
@@ -26,22 +50,71 @@ describe("NewBookingForm", () => {
     json: async () => data,
   });
 
+  const mount = (
+    result: QueryResult = {
+      data: [{ id: 'trip-1', title: 'Trip to Paris' }],
+      error: null,
+    },
+  ) => {
+    tripsChain = makeChain(result);
+    const from = jest.fn(() => tripsChain);
+    mockedClient.mockReturnValue({ database: { from } });
+    return { from };
+  };
+
   beforeEach(() => {
     jest.clearAllMocks()
     ;(useAuth as jest.Mock).mockReturnValue({
       user: { id: 'test-user-id' },
     })
 
-    // GET /api/trips alimenta el selector; POST /api/planning guarda la reserva
-    fetchMock = jest.fn((url: string) =>
-      Promise.resolve(
-        url === '/api/trips'
-          ? jsonResponse([{ id: 'trip-1', title: 'Trip to Paris' }])
-          : jsonResponse({ id: 'booking-1' }),
-      ),
-    )
+    mount()
+    // El POST /api/planning guarda la reserva; sigue en el BFF (otro dominio).
+    fetchMock = jest.fn(() => Promise.resolve(jsonResponse({ id: 'booking-1' })))
     global.fetch = fetchMock as unknown as typeof fetch
-  });
+  })
+
+  it("lee los viajes del selector por el SDK, sin tocar /api/trips", async () => {
+    const { from } = mount()
+
+    render(
+      <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
+    )
+
+    expect(
+      await screen.findByRole('option', { name: 'Trip to Paris' }),
+    ).toBeInTheDocument()
+
+    // El selector sale del SDK, con el mismo select, filtro y order del handler.
+    expect(from).toHaveBeenCalledWith('trips')
+    expect(tripsChain.select).toHaveBeenCalledWith('*')
+    expect(tripsChain.eq).toHaveBeenCalledWith('user_id', 'test-user-id')
+    expect(tripsChain.order).toHaveBeenCalledWith('departure_date', {
+      ascending: false,
+    })
+    // Nada de fetch al cargar: el camino migrado no pasa por el BFF.
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("deja el selector sin opciones si el SDK falla, sin romper el formulario", async () => {
+    mount({ data: null, error: { message: 'boom' } })
+
+    render(
+      <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
+    )
+
+    // El error de los viajes no bloquea la reserva (mismo contrato que antes):
+    // el formulario se pinta y el selector queda solo con el placeholder.
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error fetching trips for selector',
+        expect.anything(),
+      )
+    })
+    expect(screen.getByLabelText(/Título/i)).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Trip to Paris' })).toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 
   it("renders correctly", async () => {
     render(
