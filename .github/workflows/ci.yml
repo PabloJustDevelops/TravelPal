@@ -27,6 +27,8 @@ jobs:
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test:ci
+      - name: Congelar los caminos de datos (issue 38, etapa 0)
+        run: node scripts/check-data-paths.mjs
       - run: npm run build
 
   worker:
