@@ -3,7 +3,7 @@
   "domains": {
     "trips": 4,
     "expenses": 4,
-    "tasks": 3,
+    "tasks": 0,
     "notes": 0,
     "budget": 2,
     "planning": 0,
@@ -39,16 +39,6 @@
       "bff": 0,
       "bffUnknown": 0,
       "sdk": 5
-    },
-    "src/app/api/tasks/[id]/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 3
-    },
-    "src/app/api/tasks/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 2
     },
     "src/app/api/trips/route.ts": {
       "bff": 0,
@@ -86,9 +76,9 @@
       "sdk": 7
     },
     "src/app/tasks/page.tsx": {
-      "bff": 3,
-      "bffUnknown": 1,
-      "sdk": 0
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 9
     },
     "src/app/trips/[id]/page.tsx": {
       "bff": 0,
@@ -137,8 +127,8 @@
     }
   },
   "totals": {
-    "bff": 13,
-    "bffUnknown": 8,
-    "sdk": 69
+    "bff": 10,
+    "bffUnknown": 7,
+    "sdk": 73
   }
 }
