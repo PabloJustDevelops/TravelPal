@@ -4,7 +4,7 @@
     "trips": 4,
     "expenses": 4,
     "tasks": 3,
-    "notes": 1,
+    "notes": 0,
     "budget": 2,
     "planning": 0,
     "dashboard": 0
@@ -27,10 +27,6 @@
       "sdk": 3
     },
     "src/app/api/expenses/route.ts": {
-      "bff": 0,
-      "sdk": 3
-    },
-    "src/app/api/notes/route.ts": {
       "bff": 0,
       "sdk": 3
     },
@@ -63,8 +59,8 @@
       "sdk": 0
     },
     "src/app/notes/page.tsx": {
-      "bff": 1,
-      "sdk": 2
+      "bff": 0,
+      "sdk": 7
     },
     "src/app/planning/page.tsx": {
       "bff": 0,
@@ -108,7 +104,7 @@
     }
   },
   "totals": {
-    "bff": 14,
-    "sdk": 67
+    "bff": 13,
+    "sdk": 69
   }
 }
