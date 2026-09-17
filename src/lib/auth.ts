@@ -2,6 +2,7 @@ import { createInsforgeClient } from './insforge'
 import { logger } from '@/lib/logger'
 import { getErrorMessage } from '@/lib/utils'
 import {
+  getCurrentUserAction,
   resetPasswordAction,
   resendVerificationEmailAction,
   sendResetPasswordEmailAction,
@@ -110,71 +111,66 @@ export class AuthService {
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {
-    try {
-      logger.debug('AuthService: Getting current user...')
+    logger.debug('AuthService: Getting current user...')
 
-      const { data, error } = await this.insforge.auth.getCurrentUser()
+    // La identidad la resuelve el servidor a partir de la cookie de sesión: es la
+    // única fuente que no depende de estado en memoria del SDK. Si la
+    // comprobación en sí falla, el error sube (el consumidor distingue "no hay
+    // sesión" de "no se pudo comprobar" para no redirigir en falso).
+    const sessionUser = await getCurrentUserAction()
 
-      if (error || !data?.user) {
-        if (error) logger.debug('AuthService: Error obteniendo usuario:', error.message)
-        return null
-      }
-
-      const user = data.user
-
-      // Datos adicionales del perfil en nuestra tabla `profiles`.
-      // Timeout específico solo para la base de datos, no para toda la auth.
-      const dbTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error('DB profile fetch timed out')),
-          PROFILE_FETCH_TIMEOUT_MS,
-        ),
-      )
-
-      let profile: Record<string, unknown> | null = null
-      try {
-        const { data: profileData, error: dbError } = (await Promise.race([
-          this.insforge.database
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle(),
-          dbTimeoutPromise,
-        ])) as {
-          data: Record<string, unknown> | null
-          error: { message: string } | null
-        }
-
-        if (dbError) {
-          logger.warn('AuthService: Error obteniendo datos extra del usuario:', dbError.message)
-        } else {
-          profile = profileData
-        }
-      } catch (dbErr) {
-        logger.warn(
-          'AuthService: Timeout o error al obtener perfil, continuando con usuario básico:',
-          dbErr,
-        )
-      }
-
-      logger.debug('AuthService: User retrieved successfully', { id: user.id })
-      return {
-        id: user.id,
-        email: user.email,
-        full_name:
-          (profile?.full_name as string | undefined) ?? user.profile?.name ?? undefined,
-        avatar_url:
-          (profile?.avatar_url as string | undefined) ??
-          user.profile?.avatar_url ??
-          undefined,
-        bio: profile?.bio as string | undefined,
-        phone: profile?.phone as string | undefined,
-        location: profile?.location as string | undefined,
-        website: profile?.website as string | undefined,
-      }
-    } catch (err) {
-      logger.error('AuthService: Excepción inesperada en getCurrentUser:', err)
+    if (!sessionUser?.id) {
       return null
+    }
+
+    // Datos adicionales del perfil en nuestra tabla `profiles`, a mejor esfuerzo:
+    // si la lectura falla seguimos con lo que ya dio la sesión.
+    // Timeout específico solo para la base de datos, no para toda la auth.
+    const dbTimeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error('DB profile fetch timed out')),
+        PROFILE_FETCH_TIMEOUT_MS,
+      ),
+    )
+
+    let profile: Record<string, unknown> | null = null
+    try {
+      const { data: profileData, error: dbError } = (await Promise.race([
+        this.insforge.database
+          .from('profiles')
+          .select('*')
+          .eq('id', sessionUser.id)
+          .maybeSingle(),
+        dbTimeoutPromise,
+      ])) as {
+        data: Record<string, unknown> | null
+        error: { message: string } | null
+      }
+
+      if (dbError) {
+        logger.warn('AuthService: Error obteniendo datos extra del usuario:', dbError.message)
+      } else {
+        profile = profileData
+      }
+    } catch (dbErr) {
+      logger.warn(
+        'AuthService: Timeout o error al obtener perfil, continuando con usuario básico:',
+        dbErr,
+      )
+    }
+
+    logger.debug('AuthService: User retrieved successfully', { id: sessionUser.id })
+    return {
+      id: sessionUser.id,
+      email: sessionUser.email,
+      full_name:
+        (profile?.full_name as string | undefined) ?? sessionUser.full_name,
+      avatar_url:
+        (profile?.avatar_url as string | undefined) ?? sessionUser.avatar_url,
+      bio: profile?.bio as string | undefined,
+      phone: profile?.phone as string | undefined,
+      location: profile?.location as string | undefined,
+      website: profile?.website as string | undefined,
     }
   }
 

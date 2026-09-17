@@ -1,12 +1,13 @@
 import { authService } from '../auth';
 import { createInsforgeClient } from '../insforge';
-import { updateProfileAction } from '../insforge/auth-actions';
+import { getCurrentUserAction, updateProfileAction } from '../insforge/auth-actions';
 
 jest.mock('../insforge', () => ({
   createInsforgeClient: jest.fn(),
 }));
 
 jest.mock('../insforge/auth-actions', () => ({
+  getCurrentUserAction: jest.fn(),
   signInAction: jest.fn(),
   signUpAction: jest.fn(),
   signOutAction: jest.fn(),
@@ -48,11 +49,9 @@ describe('AuthService Profile Update', () => {
   });
 
   test('should update profile successfully', async () => {
-    mockClient.auth.getCurrentUser.mockResolvedValue({
-      data: {
-        user: { id: 'user-123', email: 'test@example.com', profile: null },
-      },
-      error: null,
+    (getCurrentUserAction as jest.Mock).mockResolvedValue({
+      id: 'user-123',
+      email: 'test@example.com',
     });
 
     const builder = {
@@ -77,11 +76,9 @@ describe('AuthService Profile Update', () => {
   });
 
   test('should handle timeout gracefully', async () => {
-    mockClient.auth.getCurrentUser.mockResolvedValue({
-      data: {
-        user: { id: 'user-123', email: 'test@example.com', profile: null },
-      },
-      error: null,
+    (getCurrentUserAction as jest.Mock).mockResolvedValue({
+      id: 'user-123',
+      email: 'test@example.com',
     });
 
     const builder = {
@@ -101,10 +98,7 @@ describe('AuthService Profile Update', () => {
   }, 25000);
 
   test('should fail if no user logged in', async () => {
-    mockClient.auth.getCurrentUser.mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+    (getCurrentUserAction as jest.Mock).mockResolvedValue(null);
 
     await expect(authService.updateProfile({})).rejects.toThrow('No user logged in');
   });

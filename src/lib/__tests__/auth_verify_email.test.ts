@@ -10,6 +10,7 @@ jest.mock('../insforge', () => ({
 }));
 
 jest.mock('../insforge/auth-actions', () => ({
+  getCurrentUserAction: jest.fn(),
   signInAction: jest.fn(),
   signUpAction: jest.fn(),
   signOutAction: jest.fn(),
