@@ -17,8 +17,10 @@ import {
   type Task,
 } from "../../lib/insforge";
 import { deriveAlerts, type AlertBudget } from "../../lib/alerts";
+import { assertRowsAffected } from "../../lib/insforge-query";
 import { formatDate, getErrorMessage } from "../../lib/utils";
 import { logger } from "@/lib/logger";
+import { showToast } from "@/lib/toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Notification {
@@ -265,15 +267,19 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     try {
       const insforge = createInsforgeClient();
       const alertId = notificationId.replace("alert_", "");
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
-        .eq("id", alertId);
+        .eq("id", alertId)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo marcar la alerta como leída");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking alert as read", { error: message });
+      showToast({ type: "error", title: "Error al marcar como leída", message });
+      return;
     }
 
     setNotifications((prev) =>
@@ -286,15 +292,19 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     try {
       const insforge = createInsforgeClient();
       const alertId = notificationId.replace("alert_", "");
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
-        .eq("id", alertId);
+        .eq("id", alertId)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo descartar la alerta");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error dismissing alert", { error: message });
+      showToast({ type: "error", title: "Error al descartar", message });
+      return;
     }
 
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
@@ -304,16 +314,20 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   const markAllAsRead = async () => {
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
         .eq("user_id", user!.id)
-        .eq("is_read", false);
+        .eq("is_read", false)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudieron marcar como leídas");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking all alerts as read", { error: message });
+      showToast({ type: "error", title: "Error al marcar todas", message });
+      return;
     }
 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

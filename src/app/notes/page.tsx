@@ -13,6 +13,7 @@ import { selectClassName } from "@/components/ui/fieldStyles";
 import ErrorState from "@/components/ui/ErrorState";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Note, Trip } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import { getErrorMessage } from "@/lib/utils";
 import { showToast } from "@/lib/toast";
@@ -150,7 +151,7 @@ export default function NotesPage() {
         // Update existing note
         // TODO: Implement PUT API
         const insforge = createInsforgeClient();
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from("notes")
           .update({
             title: noteData.title,
@@ -159,9 +160,11 @@ export default function NotesPage() {
             trip_id: noteData.trip_id || null,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", editingNote.id);
+          .eq("id", editingNote.id)
+          .select();
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo actualizar la nota");
       } else {
         // Create new note using the InsForge SDK
         const insforge = createInsforgeClient();

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import { createInsforgeClient, Trip, Expense } from '@/lib/insforge'
+import { assertRowsAffected } from '@/lib/insforge-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -134,7 +135,7 @@ export default function EditExpensePage() {
       // de `description`, la columna `description` sale de `notes` y `updated_at`
       // lo fija el propio handler.
       const insforge = createInsforgeClient()
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from('expenses')
         .update({
           title: formData.description,
@@ -149,9 +150,9 @@ export default function EditExpensePage() {
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
-        .single()
 
       if (error) throw error
+      assertRowsAffected(updatedRows, 'No se pudo actualizar el gasto')
 
       router.push('/expenses')
       router.refresh()
@@ -182,13 +183,15 @@ export default function EditExpensePage() {
     setLoading(true)
     try {
       const insforge = createInsforgeClient()
-      const { error } = await insforge
+      const { data: deletedRows, error } = await insforge
         .database.from('expenses')
         .delete()
         .eq('id', id)
         .eq('user_id', user.id)
+        .select()
 
       if (error) throw error
+      assertRowsAffected(deletedRows, 'No se pudo eliminar el gasto')
 
       router.push('/expenses')
       router.refresh()

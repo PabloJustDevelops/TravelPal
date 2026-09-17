@@ -5,6 +5,7 @@ import Input from "../ui/Input";
 import { selectClassName, textareaClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 
 interface EditTripModalProps {
@@ -107,12 +108,14 @@ export default function EditTripModal({
         status: formData.status,
       };
 
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("trips")
         .update(tripData)
-        .eq("id", trip.id);
+        .eq("id", trip.id)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo actualizar el viaje");
 
       logger.info("Viaje actualizado exitosamente:", trip.id);
       onSuccess();

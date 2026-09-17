@@ -33,6 +33,7 @@ import Modal from "../../components/ui/Modal";
 import NewBookingForm from "../../components/planning/NewBookingForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { createInsforgeClient, Booking } from "../../lib/insforge";
+import { assertRowsAffected } from "../../lib/insforge-query";
 import { formatDate, cn, getErrorMessage } from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import PageSkeleton from "@/components/ui/PageSkeleton";
@@ -351,26 +352,32 @@ export default function PlanningPage() {
     void (async () => {
       try {
         if (event.type === "booking" && event.bookingId) {
-          const { error } = await insforge
+          const { data: deletedRows, error } = await insforge
             .database.from("bookings")
             .delete()
-            .eq("id", event.bookingId);
+            .eq("id", event.bookingId)
+            .select();
 
           if (error) throw error;
+          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "activity" && event.activityId) {
-          const { error } = await insforge
+          const { data: deletedRows, error } = await insforge
             .database.from("itinerary_activities")
             .delete()
-            .eq("id", event.activityId);
+            .eq("id", event.activityId)
+            .select();
 
           if (error) throw error;
+          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "trip" && event.tripId) {
-          const { error } = await insforge
+          const { data: deletedRows, error } = await insforge
             .database.from("trips")
             .delete()
-            .eq("id", event.tripId);
+            .eq("id", event.tripId)
+            .select();
 
           if (error) throw error;
+          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         }
 
         refetch();
@@ -419,24 +426,30 @@ export default function PlanningPage() {
 
       // Update in DB based on event type
       if (event.type === 'booking' && event.bookingId) {
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from('bookings')
           .update({ start_date: formattedDate })
-          .eq('id', event.bookingId);
+          .eq('id', event.bookingId)
+          .select();
         if (error) throw error;
+        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       } else if (event.type === 'activity' && event.activityId) {
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from('itinerary_activities')
           .update({ date: formattedDate })
-          .eq('id', event.activityId);
+          .eq('id', event.activityId)
+          .select();
         if (error) throw error;
+        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       } else if (event.type === 'trip' && event.tripId) {
         // For trips, we might need to handle end date logic, but for simple move:
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from('trips')
           .update({ departure_date: formattedDate })
-          .eq('id', event.tripId);
+          .eq('id', event.tripId)
+          .select();
         if (error) throw error;
+        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       }
 
       // Reload data to ensure consistency, but silently (without loading spinner)

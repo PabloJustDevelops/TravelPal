@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/utils";
@@ -124,12 +125,14 @@ export default function TripDetailsPage({
 
     try {
       const insforge = createInsforgeClient();
-      const { error: updateError } = await insforge.database
+      const { data: updatedRows, error: updateError } = await insforge.database
         .from("trips")
         .update({ status: "completed" })
-        .eq("id", trip.id);
+        .eq("id", trip.id)
+        .select();
 
       if (updateError) throw updateError;
+      assertRowsAffected(updatedRows, "No se pudo marcar el viaje como completado");
       await loadTrip();
     } catch (err) {
       const message = getErrorMessage(

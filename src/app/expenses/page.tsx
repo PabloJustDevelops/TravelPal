@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Expense, Trip } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
 import BudgetCard from "@/components/budget/BudgetCard";
@@ -492,7 +493,7 @@ export default function ExpensesPage() {
       const insforge = createInsforgeClient();
 
       if (editingBudget) {
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from("budgets")
           .update({
             ...budgetData,
@@ -500,10 +501,10 @@ export default function ExpensesPage() {
           })
           .eq("id", editingBudget.id)
           .eq("user_id", user.id)
-          .select()
-          .single();
+          .select();
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo guardar el presupuesto");
       } else {
         const { error } = await insforge
           .database.from("budgets")
@@ -532,13 +533,15 @@ export default function ExpensesPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
+      const { data: deletedRows, error } = await insforge
         .database.from("budgets")
         .delete()
         .eq("id", budgetId)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(deletedRows, "No se pudo eliminar el presupuesto");
 
       refetchExpenses();
     } catch (err) {

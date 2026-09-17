@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { JournalEntry } from "@/lib/insforge";
 import { createInsforgeClient } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
@@ -112,12 +113,14 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       };
 
       if (editingEntry) {
-        const { error: saveError } = await insforge.database
+        const { data: updatedRows, error: saveError } = await insforge.database
           .from("journal_entries")
           .update(payload)
-          .eq("id", editingEntry.id);
+          .eq("id", editingEntry.id)
+          .select();
 
         if (saveError) throw saveError;
+        assertRowsAffected(updatedRows, "No se pudo guardar la entrada");
       } else {
         if (!user?.id) throw new Error("Sesion no disponible");
 
@@ -149,12 +152,14 @@ export default function TripJournal({ tripId }: TripJournalProps) {
 
     try {
       const insforge = createInsforgeClient();
-      const { error: deleteError } = await insforge.database
+      const { data: deletedRows, error: deleteError } = await insforge.database
         .from("journal_entries")
         .delete()
-        .eq("id", entry.id);
+        .eq("id", entry.id)
+        .select();
 
       if (deleteError) throw deleteError;
+      assertRowsAffected(deletedRows, "No se pudo borrar la entrada");
 
       setEntries((current) => current.filter((item) => item.id !== entry.id));
       showToast({ type: "success", message: "Entrada borrada" });

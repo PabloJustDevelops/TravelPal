@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
 import ErrorState from "@/components/ui/ErrorState";
 import { createInsforgeClient, Task } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { TaskModal } from "@/components/tasks/TaskModal";
@@ -97,13 +98,15 @@ export default function TasksPage() {
       const insforge = createInsforgeClient();
 
       if (editingTask) {
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from("tasks")
           .update(data)
           .eq("id", editingTask.id)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .select();
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo actualizar la tarea");
       } else {
         const { error } = await insforge
           .database.from("tasks")
@@ -145,13 +148,15 @@ export default function TasksPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
+      const { data: deletedRows, error } = await insforge
         .database.from("tasks")
         .delete()
         .eq("id", task.id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(deletedRows, "No se pudo eliminar la tarea");
 
       showToast({ type: "success", message: "Tarea eliminada" });
       setTasks(tasks.filter((t) => t.id !== task.id));
@@ -177,13 +182,15 @@ export default function TasksPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("tasks")
         .update({ status: newStatus })
         .eq("id", taskId)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo actualizar el estado");
 
       // No need to fetch if successful, state is already updated
     } catch (err) {

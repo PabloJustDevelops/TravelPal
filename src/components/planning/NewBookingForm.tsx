@@ -3,6 +3,7 @@ import Input from "../ui/Input";
 import { selectClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
 import { Booking, createInsforgeClient } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { getErrorMessage } from "@/lib/utils";
@@ -158,7 +159,7 @@ export default function NewBookingForm({
       const insforge = createInsforgeClient();
 
       if (initialData) {
-        const { error } = await insforge
+        const { data: updatedRows, error } = await insforge
           .database.from("bookings")
           .update({
             type: formData.type,
@@ -182,10 +183,10 @@ export default function NewBookingForm({
           })
           .eq("id", initialData.id)
           .eq("user_id", user.id)
-          .select()
-          .single();
+          .select();
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo guardar la reserva");
       } else {
         const { error } = await insforge
           .database.from("bookings")

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JournalPhoto } from "@/lib/insforge";
 import { createInsforgeClient, JOURNAL_PHOTOS_BUCKET } from "@/lib/insforge";
+import { assertRowsAffected } from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
@@ -128,11 +129,13 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
         .remove(photo.key);
       if (storageError) throw storageError;
 
-      const { error: deleteError } = await insforge.database
+      const { data: deletedRows, error: deleteError } = await insforge.database
         .from("journal_photos")
         .delete()
-        .eq("id", photo.id);
+        .eq("id", photo.id)
+        .select();
       if (deleteError) throw deleteError;
+      assertRowsAffected(deletedRows, "No se pudo borrar la foto");
 
       setPhotos((current) => current.filter((item) => item.id !== photo.id));
       showToast({ type: "success", message: "Foto borrada" });
