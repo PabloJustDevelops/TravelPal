@@ -108,9 +108,20 @@ export interface JournalPhoto {
   updated_at: string;
 }
 
-// Bucket de Storage para las fotos del diario. La url sirve para pintar la
-// foto y la key es lo que hace falta para borrar el objeto.
+// Fila del diario ya resuelta para pintar. El bucket es privado, asi que la
+// columna `url` no autoriza la lectura: la imagen se pide firmada a partir de
+// `key` y queda a `null` la foto cuya firma fallo.
+export interface JournalPhotoRow extends JournalPhoto {
+  signedUrl: string | null;
+}
+
+// Bucket de Storage para las fotos del diario. Es privado: lo que autoriza la
+// lectura de un objeto no es la `url` que devuelve el upload, sino su `key`,
+// que se firma al vuelo para pintar la foto y se usa tal cual para borrarla.
 export const JOURNAL_PHOTOS_BUCKET = "journal-photos";
+
+// Vida de las URLs firmadas de las fotos del diario, en segundos.
+export const JOURNAL_PHOTOS_SIGNED_URL_TTL = 3600;
 
 export interface Booking {
   id: string;
