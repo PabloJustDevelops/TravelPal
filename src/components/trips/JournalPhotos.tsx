@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { JournalPhoto } from "@/lib/insforge";
-import { createInsforgeClient, JOURNAL_PHOTOS_BUCKET } from "@/lib/insforge";
+import type { JournalPhoto, JournalPhotoRow } from "@/lib/insforge";
+import {
+  createInsforgeClient,
+  JOURNAL_PHOTOS_BUCKET,
+  JOURNAL_PHOTOS_SIGNED_URL_TTL,
+} from "@/lib/insforge";
 import {
   assertRowsAffected,
   queryErrorKind,
@@ -34,7 +38,7 @@ function objectKey(userId: string, tripId: string, fileName: string): string {
 
 export default function JournalPhotos({ tripId }: { tripId: string }) {
   const { user } = useAuth();
-  const [photos, setPhotos] = useState<JournalPhoto[]>([]);
+  const [photos, setPhotos] = useState<JournalPhotoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{
     kind: QueryErrorKind;
@@ -60,7 +64,36 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
 
       if (photoError) throw photoError;
 
-      setPhotos((data ?? []) as JournalPhoto[]);
+      const rows = (data ?? []) as JournalPhoto[];
+
+      // El bucket es privado: la `url` de la fila no autoriza la lectura, hay
+      // que pedir una firmada por cada `key`. La firma va en lote y cada entrada
+      // falla por su cuenta, asi que una foto sin firma no tumba a las demas.
+      const signedUrls = new Map<string, string>();
+      if (rows.length > 0) {
+        const { data: signed, error: signError } = await withQueryTimeout(
+          insforge.storage
+            .from(JOURNAL_PHOTOS_BUCKET)
+            .createSignedUrls(
+              rows.map((row) => row.key),
+              JOURNAL_PHOTOS_SIGNED_URL_TTL,
+            ),
+          { label: "storage:create-signed-urls" },
+        );
+
+        if (signError) throw signError;
+
+        for (const entry of signed ?? []) {
+          if (entry.signedUrl) signedUrls.set(entry.path, entry.signedUrl);
+        }
+      }
+
+      setPhotos(
+        rows.map((row) => ({
+          ...row,
+          signedUrl: signedUrls.get(row.key) ?? null,
+        })),
+      );
     } catch (err) {
       logger.error("JournalPhotos: load failed", err);
       setLoadError({ kind: queryErrorKind(err) });
@@ -140,7 +173,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
     }
   };
 
-  const handleDelete = async (photo: JournalPhoto) => {
+  const handleDelete = async (photo: JournalPhotoRow) => {
     if (
       typeof window !== "undefined" &&
       !window.confirm("Quieres borrar esta foto?")
@@ -234,11 +267,21 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
               key={photo.id}
               className="relative overflow-hidden rounded-xs border border-line"
             >
-              <img
-                src={photo.url}
-                alt="Foto del diario"
-                className="h-40 w-full object-cover"
-              />
+              {photo.signedUrl ? (
+                <img
+                  src={photo.signedUrl}
+                  alt="Foto del diario"
+                  className="h-40 w-full object-cover"
+                />
+              ) : (
+                <div
+                  role="img"
+                  aria-label="Foto del diario no disponible"
+                  className="flex h-40 w-full items-center justify-center px-3 text-center text-sm text-muted"
+                >
+                  No se pudo cargar la foto
+                </div>
+              )}
               <div className="absolute right-2 top-2">
                 <Button
                   variant="ghost"
