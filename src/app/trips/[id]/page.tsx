@@ -21,6 +21,7 @@ import {
 } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EditTripModal from "@/components/trips/EditTripModal";
+import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import TripJournal from "@/components/trips/TripJournal";
 import TripSummary from "@/components/trips/TripSummary";
 import {
@@ -207,6 +208,11 @@ export default function TripDetailsPage({
             >
               Editar
             </Button>
+            <DeleteTripButton
+              trip={trip}
+              size="md"
+              onDeleted={() => router.push("/trips")}
+            />
           </div>
         </div>
 

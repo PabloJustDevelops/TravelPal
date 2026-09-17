@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TripsPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Trip } from "@/lib/insforge";
@@ -33,16 +33,20 @@ interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
   order: jest.Mock;
+  delete: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
 // Cadena encadenable y "awaitable": el terminal (order) resuelve el resultado de
-// la lectura, que es lo que espera el `await` del componente.
+// la lectura, que es lo que espera el `await` del componente. El borrado reusa
+// la misma cadena, asi que resuelve el mismo resultado (una fila) y
+// `assertRowsAffected` lo da por bueno.
 function makeChain(result: QueryResult): DbChain {
   const chain = {} as DbChain;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
+  chain.delete = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
@@ -165,5 +169,39 @@ describe("TripsPage con el SDK en el navegador", () => {
     expect(
       screen.queryByText("Inicia sesión para ver tus viajes"),
     ).not.toBeInTheDocument();
+  });
+
+  it("borra el viaje por el SDK tras confirmar y lo quita de la lista", async () => {
+    mount();
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<TripsPage />);
+    await screen.findByText("Escapada a Roma");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Eliminar el viaje Escapada a Roma" }),
+    );
+
+    await waitFor(() => expect(tripsChain.delete).toHaveBeenCalledTimes(1));
+    expect(tripsChain.eq).toHaveBeenCalledWith("id", "trip-1");
+    await waitFor(() =>
+      expect(screen.queryByText("Escapada a Roma")).not.toBeInTheDocument(),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no borra el viaje si se cancela la confirmacion", async () => {
+    mount();
+    jest.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(<TripsPage />);
+    await screen.findByText("Escapada a Roma");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Eliminar el viaje Escapada a Roma" }),
+    );
+
+    expect(tripsChain.delete).not.toHaveBeenCalled();
+    expect(screen.getByText("Escapada a Roma")).toBeInTheDocument();
   });
 });

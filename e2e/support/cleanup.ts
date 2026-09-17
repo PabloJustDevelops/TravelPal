@@ -1,11 +1,9 @@
 import { email, password } from './flows'
 
-// La app no ofrece ninguna via para borrar un viaje que funcione: /trips solo
-// edita y el menu contextual del calendario de /planning no llega a pintar los
-// eventos de tipo `trip` (compara `event.date`, un timestamptz, contra
-// 'yyyy-MM-dd'), asi que el borrado por UI no es posible hoy. Para no dejar
-// basura en produccion, la limpieza va por el SDK con la sesion del propio
-// usuario dedicado: RLS sigue mandando y solo se toca lo que creo el test.
+// La app ya ofrece borrar un viaje por la UI (en la lista y en el detalle),
+// pero la limpieza no depende de que el flujo llegue hasta ahi: si un test falla
+// antes, el viaje se quedaria en produccion. Se va por el SDK con la sesion del
+// propio usuario dedicado: RLS sigue mandando y solo se toca lo que creo el test.
 async function signedInClient() {
   const { createClient } = await import('@insforge/sdk')
   const client = createClient({
