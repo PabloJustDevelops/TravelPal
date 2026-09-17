@@ -2,7 +2,7 @@
   "note": "Baseline de la etapa 0 del issue #38. 'bff' = fetch/useApiResource con literal /api/<dominio>; 'bffUnknown' = useApiResource con URL variable o fetch sin literal; 'sdk' informativo. Regenerar con --update solo al bajar el camino bff.",
   "domains": {
     "trips": 0,
-    "expenses": 4,
+    "expenses": 0,
     "tasks": 0,
     "notes": 0,
     "budget": 2,
@@ -25,16 +25,6 @@
       "bffUnknown": 0,
       "sdk": 3
     },
-    "src/app/api/expenses/[id]/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 3
-    },
-    "src/app/api/expenses/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 3
-    },
     "src/app/api/planning/route.ts": {
       "bff": 0,
       "bffUnknown": 0,
@@ -46,19 +36,19 @@
       "sdk": 0
     },
     "src/app/expenses/[id]/edit/page.tsx": {
-      "bff": 3,
+      "bff": 0,
       "bffUnknown": 0,
-      "sdk": 2
+      "sdk": 8
     },
     "src/app/expenses/new/page.tsx": {
-      "bff": 1,
+      "bff": 0,
       "bffUnknown": 0,
-      "sdk": 2
+      "sdk": 4
     },
     "src/app/expenses/page.tsx": {
       "bff": 1,
-      "bffUnknown": 3,
-      "sdk": 0
+      "bffUnknown": 2,
+      "sdk": 3
     },
     "src/app/notes/page.tsx": {
       "bff": 0,
@@ -122,8 +112,8 @@
     }
   },
   "totals": {
-    "bff": 6,
-    "bffUnknown": 6,
-    "sdk": 81
+    "bff": 2,
+    "bffUnknown": 5,
+    "sdk": 86
   }
 }

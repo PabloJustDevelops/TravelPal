@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import { createInsforgeClient, Trip } from '@/lib/insforge'
+import { logger } from '@/lib/logger'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -64,6 +65,12 @@ export default function NewExpensePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!user) {
+      setError('Debes iniciar sesión para registrar un gasto')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -78,32 +85,46 @@ export default function NewExpensePage() {
         throw new Error('El monto debe ser un número válido mayor a 0')
       }
 
-      const expenseData = {
-        description: formData.description,
+      // Mismo objeto de insercion que el POST borrado: el formulario manda
+      // `description` y la columna `title` es NOT NULL, asi que se mapea; lo que
+      // el formulario llama `notes` va a la columna `description`.
+      const newExpense = {
+        user_id: user.id,
+        title: formData.description,
         amount: amount,
-        currency: formData.currency,
-        category: formData.category,
+        currency: formData.currency || 'EUR',
+        category: formData.category || 'other',
         date: formData.date,
         trip_id: formData.trip_id || null,
-        notes: formData.notes,
+        description: formData.notes || null,
       }
 
-      console.log('Enviando datos de gasto:', expenseData);
+      logger.debug('Enviando datos de gasto al SDK:', newExpense)
 
-      const res = await fetch('/api/expenses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(expenseData)
-      });
+      const insforge = createInsforgeClient()
+      const { error } = await insforge
+        .database.from('expenses')
+        .insert([newExpense])
+        .select()
+        .single()
 
-      if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Error al registrar el gasto');
-      }
+      if (error) throw error
 
       router.push('/expenses')
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al registrar el gasto'
+      logger.error('NewExpensePage: Error al registrar el gasto', error)
+
+      let errorMessage = 'Error al registrar el gasto'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error
+      ) {
+        errorMessage = (error as { message: string }).message
+      }
+
       setError(errorMessage)
     } finally {
       setLoading(false)

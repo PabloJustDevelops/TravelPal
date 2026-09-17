@@ -1,18 +1,14 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EditExpensePage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import { createInsforgeClient, type Trip } from "@/lib/insforge";
 
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    refresh: jest.fn(),
-    prefetch: jest.fn(),
-  }),
+  useRouter: jest.fn(),
   useParams: () => ({ id: "e1" }),
   usePathname: () => "/expenses/e1/edit",
 }));
@@ -43,6 +39,9 @@ interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
   order: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  single: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
@@ -51,6 +50,9 @@ function makeChain(result: QueryResult): DbChain {
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
+  chain.update = jest.fn(() => chain);
+  chain.delete = jest.fn(() => chain);
+  chain.single = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
@@ -68,12 +70,14 @@ const trip: Trip = {
   updated_at: "2026-01-01T00:00:00.000Z",
 };
 
+// `title` y `description` con valores distintos: asi el volcado al formulario
+// delata si alguien invierte el mapeo.
 const expense = {
   id: "e1",
   user_id: "user-123",
   trip_id: "trip-1",
   title: "Cena en Trastevere",
-  description: "Cena en Trastevere",
+  description: "Mesa junto a la ventana",
   amount: 42.5,
   currency: "EUR",
   category: "food",
@@ -84,29 +88,56 @@ const expense = {
 
 const mockedClient = createInsforgeClient as jest.Mock;
 
-let tripsChain: DbChain;
-let fetchMock: jest.Mock;
+describe("EditExpensePage con el SDK en el navegador", () => {
+  const mockPush = jest.fn();
+  const mockRefresh = jest.fn();
+  let tripsChain: DbChain;
+  let loadChain: DbChain;
+  let writeChain: DbChain;
+  let fetchMock: jest.Mock;
 
-function mount(result: QueryResult = { data: [trip], error: null }) {
-  tripsChain = makeChain(result);
-  const from = jest.fn(() => tripsChain);
-  mockedClient.mockReturnValue({ database: { from } });
-  return { from };
-}
+  // La lectura del gasto es la primera consulta a `expenses`; la escritura
+  // (update o delete) es la siguiente, y necesita su propio resultado.
+  function mount({
+    tripsResult = { data: [trip], error: null },
+    loadResult = { data: expense, error: null },
+    writeResult = { data: expense, error: null },
+  }: {
+    tripsResult?: QueryResult;
+    loadResult?: QueryResult;
+    writeResult?: QueryResult;
+  } = {}) {
+    tripsChain = makeChain(tripsResult);
+    loadChain = makeChain(loadResult);
+    writeChain = makeChain(writeResult);
 
-describe("EditExpensePage: selector de viajes por el SDK", () => {
+    let expensesReads = 0;
+    const from = jest.fn((table: string) => {
+      if (table !== "expenses") return tripsChain;
+      expensesReads += 1;
+      return expensesReads === 1 ? loadChain : writeChain;
+    });
+
+    mockedClient.mockReturnValue({ database: { from } });
+    return { from };
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
-    (useAuth as jest.Mock).mockReturnValue({ user: { id: "user-123" } });
-    fetchMock = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => expense,
+    (useRouter as jest.Mock).mockReturnValue({
+      push: mockPush,
+      refresh: mockRefresh,
     });
+    (useAuth as jest.Mock).mockReturnValue({ user: { id: "user-123" } });
+    fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
-  it("carga el viaje del selector por el SDK y el gasto por su endpoint", async () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("lee el gasto del SDK con el select y los filtros del GET borrado, sin tocar /api/expenses", async () => {
     const { from } = mount();
 
     render(<EditExpensePage />);
@@ -117,26 +148,168 @@ describe("EditExpensePage: selector de viajes por el SDK", () => {
       );
     });
 
-    // El selector sale del SDK, con el select, filtro y order del handler.
+    expect(from).toHaveBeenCalledWith("expenses");
+    expect(loadChain.select).toHaveBeenCalledWith("*");
+    expect(loadChain.eq).toHaveBeenCalledWith("id", "e1");
+    expect(loadChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(loadChain.single).toHaveBeenCalled();
+
+    // El selector de viajes sigue leyendose del SDK, con su select y su order.
     expect(from).toHaveBeenCalledWith("trips");
     expect(tripsChain.select).toHaveBeenCalledWith("*");
     expect(tripsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
     expect(tripsChain.order).toHaveBeenCalledWith("departure_date", {
       ascending: false,
     });
-    expect(
-      screen.getByRole("option", { name: "Escapada a Roma" }),
-    ).toBeInTheDocument();
 
-    // El gasto sigue leyendose por su endpoint, que no se migra aqui.
-    expect(fetchMock).toHaveBeenCalledWith("/api/expenses/e1");
+    // Ningun punto de la pantalla pasa ya por el BFF.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("vuelca la fila invirtiendo el mapeo: title a la descripcion y description a las notas", async () => {
+    mount();
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
     expect(
-      fetchMock.mock.calls.some(([url]) => url === "/api/trips"),
-    ).toBe(false);
+      screen.getByPlaceholderText(/Añade detalles adicionales sobre este gasto/i),
+    ).toHaveValue("Mesa junto a la ventana");
+  });
+
+  it("actualiza por el SDK con el mapeo y el updated_at del PUT borrado", async () => {
+    mount();
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Guardar Cambios"));
+
+    await waitFor(() => {
+      expect(writeChain.update).toHaveBeenCalled();
+    });
+
+    expect(writeChain.update).toHaveBeenCalledWith({
+      title: "Cena en Trastevere",
+      amount: 42.5,
+      currency: "EUR",
+      category: "food",
+      date: "2026-05-02T20:00",
+      trip_id: "trip-1",
+      description: "Mesa junto a la ventana",
+      updated_at: expect.any(String),
+    });
+    expect(writeChain.eq).toHaveBeenCalledWith("id", "e1");
+    expect(writeChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(writeChain.select).toHaveBeenCalledWith();
+    expect(writeChain.single).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/expenses");
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fija el mapeo tambien al enviar: la descripcion del formulario va a title", async () => {
+    mount();
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.change(screen.getByLabelText(/Descripción/i), {
+      target: { value: "Cena en el Trastevere" },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(/Añade detalles adicionales sobre este gasto/i),
+      { target: { value: "Con reserva" } },
+    );
+
+    fireEvent.click(screen.getByText("Guardar Cambios"));
+
+    await waitFor(() => {
+      expect(writeChain.update).toHaveBeenCalled();
+    });
+
+    const [payload] = writeChain.update.mock.calls[0];
+    expect(payload.title).toBe("Cena en el Trastevere");
+    expect(payload.description).toBe("Con reserva");
+    expect(payload.title).not.toBe(payload.description);
+  });
+
+  it("borra el gasto por el SDK, con el id y el user_id del DELETE borrado", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    mount();
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Eliminar"));
+
+    await waitFor(() => {
+      expect(writeChain.delete).toHaveBeenCalled();
+    });
+
+    expect(writeChain.eq).toHaveBeenCalledWith("id", "e1");
+    expect(writeChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/expenses");
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no se traga el error del SDK al cargar y ofrece reintentar", async () => {
+    mount({ loadResult: { data: null, error: { message: "boom" } } });
+
+    render(<EditExpensePage />);
+
+    expect(
+      await screen.findByText("Error al cargar los datos del gasto"),
+    ).toBeInTheDocument();
+  });
+
+  it("no se traga el error del SDK al actualizar y lo muestra", async () => {
+    mount({ writeResult: { data: null, error: { message: "Database error" } } });
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Guardar Cambios"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Database error")).toBeInTheDocument();
+    });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it("no bloquea el gasto si la lectura de viajes falla", async () => {
-    mount({ data: null, error: { message: "boom" } });
+    mount({ tripsResult: { data: null, error: { message: "boom" } } });
 
     render(<EditExpensePage />);
 
