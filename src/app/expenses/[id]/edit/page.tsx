@@ -39,39 +39,42 @@ export default function EditExpensePage() {
   })
 
   const loadData = useCallback(async () => {
+    const userId = user?.id
+    if (!userId) return
+
     try {
       setLoadingData(true)
       setLoadError('')
       
       // Cargar viajes para el selector
-      if (user?.id) {
-        try {
-          const insforge = createInsforgeClient()
-          const { data: tripsData, error: tripsError } = await insforge
-            .database.from('trips')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('departure_date', { ascending: false })
+      try {
+        const insforge = createInsforgeClient()
+        const { data: tripsData, error: tripsError } = await insforge
+          .database.from('trips')
+          .select('*')
+          .eq('user_id', userId)
+          .order('departure_date', { ascending: false })
 
-          if (tripsError) throw tripsError
-          setTrips((tripsData as Trip[]) || [])
-        } catch (tripsError) {
-          // No bloqueamos la UI si fallan los viajes, solo no aparecen en el selector.
-          logger.error('Error loading trips:', tripsError)
-        }
+        if (tripsError) throw tripsError
+        setTrips((tripsData as Trip[]) || [])
+      } catch (tripsError) {
+        // No bloqueamos la UI si fallan los viajes, solo no aparecen en el selector.
+        logger.error('Error loading trips:', tripsError)
       }
 
-      // Cargar datos del gasto
-      // Usaremos la API general filtrada o una específica si la creamos
-      // Por ahora vamos a asumir que necesitamos un endpoint GET /api/expenses/[id]
-      // Si no existe, tendremos que implementarlo
-      const expenseRes = await fetch(`/api/expenses/${id}`)
-      
-      if (!expenseRes.ok) {
-        throw new Error('No se pudo cargar el gasto')
-      }
+      // Cargar datos del gasto: misma lectura que el GET borrado (`select('*')`,
+      // por `id` y por `user_id`).
+      const insforge = createInsforgeClient()
+      const { data, error } = await insforge
+        .database.from('expenses')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single()
 
-      const expense: Expense = await expenseRes.json()
+      if (error) throw error
+
+      const expense = data as Expense
       
       setFormData({
         description: expense.title || expense.description || '',
@@ -107,6 +110,12 @@ export default function EditExpensePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!user) {
+      setError('Debes iniciar sesión para actualizar el gasto')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -121,33 +130,45 @@ export default function EditExpensePage() {
         throw new Error('El monto debe ser un número válido mayor a 0')
       }
 
-      const expenseData = {
-        description: formData.description,
-        amount: amount,
-        currency: formData.currency,
-        category: formData.category,
-        date: formData.date,
-        trip_id: formData.trip_id || null,
-        notes: formData.notes,
-      }
+      // Mismo objeto de actualizacion que el PUT borrado: `title` (NOT NULL) sale
+      // de `description`, la columna `description` sale de `notes` y `updated_at`
+      // lo fija el propio handler.
+      const insforge = createInsforgeClient()
+      const { error } = await insforge
+        .database.from('expenses')
+        .update({
+          title: formData.description,
+          amount: amount,
+          currency: formData.currency || 'EUR',
+          category: formData.category || 'other',
+          date: formData.date,
+          trip_id: formData.trip_id || null,
+          description: formData.notes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
 
-      console.log('Actualizando datos de gasto:', expenseData)
-
-      const res = await fetch(`/api/expenses/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(expenseData)
-      })
-
-      if (!res.ok) {
-          const errData = await res.json()
-          throw new Error(errData.error || 'Error al actualizar el gasto')
-      }
+      if (error) throw error
 
       router.push('/expenses')
       router.refresh()
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el gasto'
+      logger.error('EditExpensePage: Error al actualizar el gasto', error)
+
+      let errorMessage = 'Error al actualizar el gasto'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error
+      ) {
+        errorMessage = (error as { message: string }).message
+      }
+
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -156,21 +177,23 @@ export default function EditExpensePage() {
 
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que quieres eliminar este gasto?')) return
+    if (!user) return
     
     setLoading(true)
     try {
-      const res = await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE',
-      })
+      const insforge = createInsforgeClient()
+      const { error } = await insforge
+        .database.from('expenses')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
 
-      if (!res.ok) {
-        throw new Error('Error al eliminar el gasto')
-      }
+      if (error) throw error
 
       router.push('/expenses')
       router.refresh()
     } catch (error) {
-      console.error(error)
+      logger.error('EditExpensePage: Error al eliminar el gasto', error)
       setError('Error al eliminar el gasto')
       setLoading(false)
     }

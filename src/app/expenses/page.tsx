@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Expense, Trip } from "@/lib/insforge";
+import { createInsforgeClient, Expense, Trip } from "@/lib/insforge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
 import BudgetCard from "@/components/budget/BudgetCard";
@@ -121,22 +121,90 @@ export default function ExpensesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const expensesUrl = !authLoading && user ? "/api/expenses" : null;
+  // Los gastos y los viajes del filtro se leen del SDK, tabla a tabla: reproduce
+  // el GET del endpoint borrado (gastos con `*, trip:trips(*)`, `eq('user_id')` y
+  // `order('date', ...)`; viajes con el select de campos explicitos y
+  // `order('departure_date', ...)`).
+  const [expensesData, setExpensesData] = useState<{
+    expenses: (Expense & { trip?: Trip })[];
+    trips: Trip[];
+  } | null>(null);
+  const [expensesLoading, setExpensesLoading] = useState(true);
+  const [expensesLoadError, setExpensesLoadError] = useState(false);
+  const [expensesReloadToken, setExpensesReloadToken] = useState(0);
+
+  const refetchExpenses = useCallback(
+    () => setExpensesReloadToken((token) => token + 1),
+    [],
+  );
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user?.id) {
+      setExpensesData(null);
+      setExpensesLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setExpensesLoading(true);
+    setExpensesLoadError(false);
+
+    (async () => {
+      try {
+        const insforge = createInsforgeClient();
+        const [expensesRes, tripsRes] = await Promise.all([
+          insforge
+            .database.from("expenses")
+            .select(`*, trip:trips(*)`)
+            .eq("user_id", userId)
+            .order("date", { ascending: false }),
+          insforge
+            .database.from("trips")
+            .select(
+              "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
+            )
+            .eq("user_id", userId)
+            .order("departure_date", { ascending: false }),
+        ]);
+
+        if (expensesRes.error) throw expensesRes.error;
+        if (tripsRes.error) throw tripsRes.error;
+
+        if (!active) return;
+        setExpensesData({
+          expenses: (expensesRes.data as (Expense & { trip?: Trip })[]) ?? [],
+          trips: (tripsRes.data as Trip[]) ?? [],
+        });
+      } catch (err) {
+        if (!active) return;
+        logger.error("ExpensesPage: Error loading expenses", {
+          error: getErrorMessage(err, "Error al cargar los gastos"),
+        });
+        setExpensesLoadError(true);
+      } finally {
+        if (active) setExpensesLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, expensesReloadToken]);
+
   // Los presupuestos siguen viniendo de su endpoint: /api/budget conserva GET
   // (lectura) y POST/PATCH/DELETE (escritura) y asi no queda ninguna ruta huerfana.
   const budgetsUrl = !authLoading && user ? "/api/budget" : null;
-
-  const expensesResource = useApiResource<{
-    expenses: (Expense & { trip?: Trip })[];
-    trips: Trip[];
-  }>(expensesUrl);
 
   const budgetsResource = useApiResource<{ budgets: Budget[] }>(budgetsUrl);
 
   const { expenses, trips, filteredExpenses, budgets, filteredBudgets } =
     useMemo(() => {
-      const expensesData = expensesResource.data?.expenses ?? [];
-      const tripsData = expensesResource.data?.trips ?? [];
+      const expenseRows = expensesData?.expenses ?? [];
+      const tripsData = expensesData?.trips ?? [];
       const budgetsData = budgetsResource.data?.budgets ?? [];
 
       // "Previsto frente a real": el gastado de cada presupuesto se recalcula
@@ -148,7 +216,7 @@ export default function ExpensesPage() {
       }, {});
 
       const budgetsWithSpent: Budget[] = budgetsData.map((budget) => {
-        const budgetExpenses = expensesData.filter((expense) => {
+        const budgetExpenses = expenseRows.filter((expense) => {
           const expenseDate = new Date(expense.date);
           const budgetStart = new Date(budget.start_date);
           budgetStart.setHours(0, 0, 0, 0);
@@ -183,7 +251,7 @@ export default function ExpensesPage() {
         };
       });
 
-      let filtered = expensesData;
+      let filtered = expenseRows;
 
       // Filter by search term
       if (searchTerm) {
@@ -223,38 +291,45 @@ export default function ExpensesPage() {
       });
 
       return {
-        expenses: expensesData,
+        expenses: expenseRows,
         trips: tripsData,
         filteredExpenses: filtered,
         budgets: budgetsWithSpent,
         filteredBudgets: filteredBudgetsList,
       };
     }, [
-      expensesResource.data,
+      expensesData,
       budgetsResource.data,
       searchTerm,
       categoryFilter,
       tripFilter,
     ]);
 
-  const loadError = expensesResource.error ?? budgetsResource.error;
-
-  const error = getLoadErrorMessage(loadError, {
+  // El timeout de 15 s era del hook del BFF: con el SDK solo lo conserva la
+  // lectura de presupuestos, que sigue por /api/budget. El error de gastos llega
+  // como fallo del SDK y reutiliza el mensaje que el handler daba para su 500.
+  const budgetLoadError = getLoadErrorMessage(budgetsResource.error, {
     timeout:
       "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
     request: "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
   });
 
+  const error =
+    budgetLoadError ??
+    (expensesLoadError
+      ? "Error al cargar los gastos. Por favor, inténtalo de nuevo."
+      : null);
+
   const showSkeleton =
     authLoading ||
-    expensesResource.loading ||
+    expensesLoading ||
     budgetsResource.loading ||
-    ((expensesUrl !== null || budgetsUrl !== null) &&
-      (expensesResource.data === null || budgetsResource.data === null) &&
-      !loadError);
+    ((!authLoading && !!user) &&
+      (expensesData === null || budgetsResource.data === null) &&
+      !error);
 
   const refetchAll = () => {
-    expensesResource.refetch();
+    refetchExpenses();
     budgetsResource.refetch();
   };
 

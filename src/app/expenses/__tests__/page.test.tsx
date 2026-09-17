@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import ExpensesPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
+import { createInsforgeClient } from "@/lib/insforge";
 import { formatCurrency } from "@/lib/utils";
 
 jest.mock("@/contexts/AuthContext", () => ({
@@ -30,6 +31,30 @@ jest.mock("@/lib/logger", () => ({
     warn: jest.fn(),
   },
 }));
+
+type QueryResult = { data?: unknown; error?: unknown };
+
+interface DbChain {
+  select: jest.Mock;
+  eq: jest.Mock;
+  order: jest.Mock;
+  then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
+}
+
+// Cadena encadenable y "awaitable": el terminal (order) resuelve el resultado de
+// la lectura, que es lo que espera el `await` del componente.
+function makeChain(result: QueryResult): DbChain {
+  const chain = {} as DbChain;
+  chain.select = jest.fn(() => chain);
+  chain.eq = jest.fn(() => chain);
+  chain.order = jest.fn(() => chain);
+  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  return chain;
+}
+
+// Copiado literal del select de viajes del handler borrado.
+const TRIPS_SELECT =
+  "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at";
 
 const mockUser = { id: "user-123", full_name: "Test User", email: "test@test.test" };
 
@@ -141,7 +166,11 @@ const budgets = [
   },
 ];
 
+const mockedClient = createInsforgeClient as jest.Mock;
+
 describe("ExpensesPage con el presupuesto fusionado", () => {
+  let expensesChain: DbChain;
+  let tripsChain: DbChain;
   let fetchMock: jest.Mock;
 
   const jsonResponse = (data: unknown) => ({
@@ -158,6 +187,23 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     );
   }
 
+  // Los gastos y los viajes llegan del SDK; los presupuestos siguen por /api/budget.
+  function mount({
+    expensesResult = { data: expenses, error: null },
+    tripsResult = { data: trips, error: null },
+  }: {
+    expensesResult?: QueryResult;
+    tripsResult?: QueryResult;
+  } = {}) {
+    expensesChain = makeChain(expensesResult);
+    tripsChain = makeChain(tripsResult);
+    const from = jest.fn((table: string) =>
+      table === "expenses" ? expensesChain : tripsChain,
+    );
+    mockedClient.mockReturnValue({ database: { from } });
+    return { from };
+  }
+
   // Intl inserta un espacio duro entre cifra y simbolo; las consultas de texto lo
   // colapsan a un espacio normal, asi que comparamos ya normalizado.
   const flat = (value: string) => value.replace(/\s+/g, " ");
@@ -170,9 +216,6 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
       const url = typeof input === "string" ? input : input.toString();
       const method = init?.method ?? "GET";
 
-      if (url.startsWith("/api/expenses")) {
-        return Promise.resolve(jsonResponse({ expenses, trips }));
-      }
       if (url === "/api/budget" && method === "POST") {
         return Promise.resolve(jsonResponse({ id: "budget-new" }));
       }
@@ -192,7 +235,67 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     jest.restoreAllMocks();
   });
 
+  it("lee los gastos y los viajes del SDK y los pinta, sin tocar /api/expenses", async () => {
+    const { from } = mount();
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    // La lectura sale del SDK, tabla a tabla.
+    expect(from).toHaveBeenCalledWith("expenses");
+    expect(from).toHaveBeenCalledWith("trips");
+    expect(screen.getByText("Cena en Trastevere")).toBeInTheDocument();
+
+    // El unico fetch que queda es el de presupuestos, que no se migra aqui.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/budget");
+  });
+
+  it("pide el select con el viaje embebido y las columnas de viajes del handler", async () => {
+    mount();
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    expect(expensesChain.select).toHaveBeenCalledWith("*, trip:trips(*)");
+    expect(expensesChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(expensesChain.order).toHaveBeenCalledWith("date", {
+      ascending: false,
+    });
+
+    expect(tripsChain.select).toHaveBeenCalledWith(TRIPS_SELECT);
+    expect(tripsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(tripsChain.order).toHaveBeenCalledWith("departure_date", {
+      ascending: false,
+    });
+  });
+
+  it("no se traga el error del SDK y ofrece reintentar por el SDK", async () => {
+    mount({ expensesResult: { data: null, error: { message: "boom" } } });
+
+    render(<ExpensesPage />);
+
+    expect(
+      await screen.findByText(
+        "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Reintentar"));
+
+    // El reintento vuelve a leer los gastos del SDK, no del BFF: los unicos
+    // fetch son los de presupuestos, que sigue en su endpoint.
+    expect(expensesChain.select).toHaveBeenCalledTimes(2);
+    expect(
+      fetchMock.mock.calls.every(([url]) => String(url).startsWith("/api/budget")),
+    ).toBe(true);
+  });
+
   it("lee previsto frente a real y recalcula el gastado cruzando los gastos", async () => {
+    mount();
+
     render(<ExpensesPage />);
 
     await screen.findByText("Mis Gastos");
@@ -222,6 +325,8 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
   });
 
   it("usa el mismo bloque de filtros para gastos y presupuestos", async () => {
+    mount();
+
     render(<ExpensesPage />);
 
     await screen.findByText("Mis Gastos");
@@ -240,6 +345,8 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
   });
 
   it("crea un presupuesto desde el modal y hace POST a /api/budget", async () => {
+    mount();
+
     render(<ExpensesPage />);
 
     await screen.findByText("Mis Gastos");
@@ -284,6 +391,8 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
   it("borra un presupuesto desde su tarjeta y hace DELETE a /api/budget/:id", async () => {
     jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    mount();
 
     render(<ExpensesPage />);
 
