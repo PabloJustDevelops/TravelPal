@@ -36,8 +36,10 @@ Se implanta la dirección **A, Cuaderno de viaje**, y se implanta **en la capa d
 (tokens, componentes compartidos y armazón), no pantalla por pantalla. Lo que se decide:
 
 1. **Paleta en tres capas dentro de `globals.css`.** (1) Paleta cruda en `:root` y `.dark`: papel
-   `#FBF8F3`, superficie `#F3EDE3`, tinta `#1A1815`, secundario `#6B655C`, línea `#E4DCD0`, acento
-   `#B45309` y los tres estados (éxito `#2F6F5E`, aviso `#A16207`, error `#9F1239`). (2) Tokens
+   `#FBF8F3`, superficie `#F3EDE3`, tinta `#1A1815`, secundario `#6A645B`, línea `#E4DCD0`, acento
+   `#AC4F09` y los tres estados (éxito `#2E6D5C`, aviso `#8D5606`, error `#9F1239`). Secundario,
+   acento, éxito y aviso son un punto más oscuros que los valores originales del rumbo, el ajuste
+   mínimo para que sus pares de texto superen 4.5:1 (lo vigilan los e2e con axe). (2) Tokens
    semánticos en `@theme inline` (`background`, `surface`, `line`, `ink`, `muted`, `accent`,
    `accent-hover`, `accent-soft`, `on-accent`, `success`, `warning`, `danger`) más radios de lámina
    (2–4px), escala de espaciado por secciones (3rem / 5rem), escala tipográfica editorial y escala
