@@ -22,6 +22,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
+import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import { logger } from "@/lib/logger";
 import { getErrorMessage, getLoadErrorMessage } from "@/lib/utils";
 
@@ -252,16 +253,24 @@ export default function TripsPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between gap-3">
                   <Link
                     href={`/trips/${trip.id}`}
                     className="text-accent hover:text-accent-hover text-sm font-medium"
                   >
                     Ver detalles
                   </Link>
-                  <div className="flex items-center text-muted">
-                    <PlayIcon className="h-5 w-5 mr-1" />
-                    {trip.airline || "Sin aerolínea"}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center text-muted">
+                      <PlayIcon className="h-5 w-5 mr-1" />
+                      {trip.airline || "Sin aerolínea"}
+                    </div>
+                    <DeleteTripButton
+                      trip={trip}
+                      onDeleted={() =>
+                        setTrips((prev) => prev.filter((t) => t.id !== trip.id))
+                      }
+                    />
                   </div>
                 </div>
               </div>

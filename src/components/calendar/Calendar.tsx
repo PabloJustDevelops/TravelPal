@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon, 
@@ -58,6 +58,13 @@ interface CalendarProps {
   selectedDate?: Date;
   className?: string;
 }
+
+// La clave de dia del calendario es 'yyyy-MM-dd', la misma que usan el esquema y
+// el planificador (commit 9883438). PostgREST devuelve las columnas
+// `timestamptz` con hora y desfase (`2026-09-20T00:00:00+00:00`), que nunca
+// iguala una fecha de dia; se toma el dia tal cual viene, sin pasar por la zona
+// horaria local, que en zonas al oeste de UTC desplazaria el evento de jornada.
+const toDayKey = (value: string) => value.slice(0, 10);
 
 const LONG_PRESS_MS = 500;
 
@@ -335,13 +342,21 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
   };
 
+  // Los eventos llegan con la fecha tal cual la devuelve PostgREST (los viajes,
+  // por ejemplo, con un `timestamptz` completo). Se normalizan una sola vez al
+  // entrar para que el filtro por dia y el arrastre usen la misma clave.
+  const normalizedEvents = useMemo(
+    () => events.map(event => ({ ...event, date: toDayKey(event.date) })),
+    [events]
+  );
+
   const days = getDays();
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   // Filtrar eventos
   const getEventsForDay = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return events.filter(event => event.date === dayStr);
+    return normalizedEvents.filter(event => event.date === dayStr);
   };
 
   const renderMonthView = () => (
