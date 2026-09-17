@@ -15,6 +15,7 @@ import Input from '../ui/Input';
 import { textareaClassName, selectClassName } from '../ui/fieldStyles';
 import CategoryIcon from '../ui/CategoryIcon';
 import { Card } from '../ui/Card';
+import { format, parseISO } from 'date-fns';
 import { formatDate, cn } from '../../lib/utils';
 
 interface Activity {
@@ -72,10 +73,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   const generateTripDays = () => {
     try {
       if (!startDate || !endDate) return [];
-      const days: string[] = [];
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
+      // Las fechas del viaje llegan como 'yyyy-MM-dd'; se parsean en local para
+      // que la clave del día sea la misma cadena ISO que usa el esquema y el
+      // mapeo de `itinerary`, y no una fecha localizada que nunca casaría.
+      const start = parseISO(startDate);
+      const end = parseISO(endDate);
+
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
 
       // Limit range to prevent infinite loops or huge arrays
@@ -84,8 +87,9 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
       
       if (diffDays > 365) return []; // Limit to 1 year
 
-      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-        days.push(formatDate(date));
+      const days: string[] = [];
+      for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        days.push(format(date, 'yyyy-MM-dd'));
       }
       
       return days;
@@ -246,7 +250,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
         {tripDays.map((date, index) => {
           const dayItinerary = getDayItinerary(date);
           const isExpanded = expandedDays.has(date);
-          const dayDate = new Date(date);
+          const dayDate = parseISO(date);
           const dayName = dayDate.toLocaleDateString('es-ES', { weekday: 'long' });
           const totalCost = getDayTotalCost(dayItinerary.activities);
 
