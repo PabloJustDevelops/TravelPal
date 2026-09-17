@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import NotesPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Note } from "@/lib/insforge";
+import { showToast } from "@/lib/toast";
 
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: jest.fn(),
@@ -58,16 +59,25 @@ interface DbChain {
 
 // Cadena encadenable y "awaitable": cualquier terminal (order, single) resuelve
 // el mismo resultado. El insert reutiliza el resultado de lectura, que no trae
-// error, para que la creacion no falle.
-function makeChain(result: QueryResult): DbChain {
+// error, para que la creacion no falle. El update puede recibir un
+// `writeResult` aparte para probar el caso de cero filas afectadas.
+function makeChain(result: QueryResult, writeResult?: QueryResult): DbChain {
   const chain = {} as DbChain;
+  let isWrite = false;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
-  chain.insert = jest.fn(() => chain);
-  chain.update = jest.fn(() => chain);
+  chain.insert = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
+  chain.update = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
   chain.single = jest.fn(() => chain);
-  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  chain.then = (resolve) =>
+    Promise.resolve(isWrite && writeResult ? writeResult : result).then(resolve);
   return chain;
 }
 
@@ -111,11 +121,13 @@ let fetchMock: jest.Mock;
 function mount({
   notesResult = { data: [note], error: null },
   tripsResult = { data: [trip], error: null },
+  notesWriteResult,
 }: {
   notesResult?: QueryResult;
   tripsResult?: QueryResult;
+  notesWriteResult?: QueryResult;
 } = {}) {
-  notesChain = makeChain(notesResult);
+  notesChain = makeChain(notesResult, notesWriteResult);
   tripsChain = makeChain(tripsResult);
   const from = jest.fn((table: string) =>
     table === "notes" ? notesChain : tripsChain,
@@ -128,6 +140,15 @@ async function openEditorAndSave() {
   fireEvent.click(screen.getByText("Nueva Nota"));
   fireEvent.click(screen.getByText("Guardar Nota"));
 }
+
+// Abre el editor sobre la nota existente (no la creacion) y guarda.
+async function openExistingAndSave() {
+  const card = screen.getByText("Notas de Roma").closest(".group");
+  fireEvent.click(within(card as HTMLElement).getByRole("button"));
+  fireEvent.click(screen.getByText("Guardar Nota"));
+}
+
+const toastMock = showToast as jest.Mock;
 
 describe("NotesPage con el SDK en el navegador", () => {
   beforeEach(() => {
@@ -229,5 +250,52 @@ describe("NotesPage con el SDK en el navegador", () => {
         "Error al cargar las notas. Por favor, inténtalo de nuevo.",
       ),
     ).toBeInTheDocument();
+  });
+
+  // Con RLS, un update sobre una nota ajena o inexistente vuelve con cero
+  // filas y sin error; el helper lo convierte en fallo para que no se cante
+  // un exito que no ha ocurrido.
+
+  it("el update sin filas afectadas avisa de error y no cierra el editor", async () => {
+    mount({ notesWriteResult: { data: [], error: null } });
+
+    render(<NotesPage />);
+
+    await screen.findByText("Notas de Roma");
+
+    mockEditorPayload = { title: "Notas de Roma", content: "Actualizado" };
+    await openExistingAndSave();
+
+    await waitFor(() => {
+      expect(notesChain.update).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error" }),
+      );
+    });
+    expect(notesChain.select).toHaveBeenCalledWith();
+    expect(toastMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success" }),
+    );
+    // El editor sigue abierto: no se ha tratado como exito.
+    expect(screen.getByText("Guardar Nota")).toBeInTheDocument();
+  });
+
+  it("con una fila afectada el update guarda sin error", async () => {
+    mount();
+
+    render(<NotesPage />);
+
+    await screen.findByText("Notas de Roma");
+
+    mockEditorPayload = { title: "Notas de Roma", content: "Actualizado" };
+    await openExistingAndSave();
+
+    await waitFor(() => {
+      expect(notesChain.update).toHaveBeenCalled();
+    });
+    expect(notesChain.select).toHaveBeenCalledWith();
+    expect(toastMock).not.toHaveBeenCalled();
   });
 });

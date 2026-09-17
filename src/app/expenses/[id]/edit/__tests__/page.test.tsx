@@ -101,7 +101,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
   function mount({
     tripsResult = { data: [trip], error: null },
     loadResult = { data: expense, error: null },
-    writeResult = { data: expense, error: null },
+    writeResult = { data: [expense], error: null },
   }: {
     tripsResult?: QueryResult;
     loadResult?: QueryResult;
@@ -212,7 +212,6 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     expect(writeChain.eq).toHaveBeenCalledWith("id", "e1");
     expect(writeChain.eq).toHaveBeenCalledWith("user_id", "user-123");
     expect(writeChain.select).toHaveBeenCalledWith();
-    expect(writeChain.single).toHaveBeenCalled();
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/expenses");
@@ -321,5 +320,50 @@ describe("EditExpensePage con el SDK en el navegador", () => {
       );
     });
     expect(screen.queryByRole("option", { name: "Escapada a Roma" })).toBeNull();
+  });
+
+  // Con RLS, un update/delete sobre un gasto ajeno o inexistente vuelve con
+  // cero filas y sin error; el helper lo convierte en fallo.
+
+  it("un update sin filas afectadas muestra el error y no navega", async () => {
+    mount({ writeResult: { data: [], error: null } });
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Guardar Cambios"));
+
+    expect(
+      await screen.findByText(/No se pudo actualizar el gasto/),
+    ).toBeInTheDocument();
+    expect(writeChain.select).toHaveBeenCalledWith();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("un delete sin filas afectadas muestra el error y no navega", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    mount({ writeResult: { data: [], error: null } });
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Eliminar"));
+
+    expect(
+      await screen.findByText("Error al eliminar el gasto"),
+    ).toBeInTheDocument();
+    expect(writeChain.select).toHaveBeenCalledWith();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

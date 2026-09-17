@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TasksPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Task } from "@/lib/insforge";
+import { showToast } from "@/lib/toast";
 
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: jest.fn(),
@@ -43,6 +44,7 @@ jest.mock("@/components/tasks/TaskBoard", () => {
       {tasks.map((task) => (
         <div key={task.id}>
           <span>{task.title}</span>
+          <span data-testid={`status-${task.id}`}>{task.status}</span>
           <Button type="button" onClick={() => onEditTask(task)}>
             Editar {task.title}
           </Button>
@@ -106,17 +108,29 @@ interface DbChain {
 
 // Cadena encadenable y "awaitable": cualquier terminal (order, single) resuelve
 // el mismo resultado. Las escrituras reutilizan el resultado de lectura, que no
-// trae error, para que no fallen.
-function makeChain(result: QueryResult): DbChain {
+// trae error, para que no fallen... salvo que el test pase un `writeResult`
+// aparte: asi se prueba el update/delete que no afecta a ninguna fila.
+function makeChain(result: QueryResult, writeResult?: QueryResult): DbChain {
   const chain = {} as DbChain;
+  let isWrite = false;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
-  chain.insert = jest.fn(() => chain);
-  chain.update = jest.fn(() => chain);
-  chain.delete = jest.fn(() => chain);
+  chain.insert = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
+  chain.update = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
+  chain.delete = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
   chain.single = jest.fn(() => chain);
-  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  chain.then = (resolve) =>
+    Promise.resolve(isWrite && writeResult ? writeResult : result).then(resolve);
   return chain;
 }
 
@@ -137,12 +151,17 @@ const mockedClient = createInsforgeClient as jest.Mock;
 let tasksChain: DbChain;
 let fetchMock: jest.Mock;
 
-function mount(result: QueryResult = { data: [task], error: null }) {
-  tasksChain = makeChain(result);
+function mount(
+  result: QueryResult = { data: [task], error: null },
+  writeResult?: QueryResult,
+) {
+  tasksChain = makeChain(result, writeResult);
   const from = jest.fn(() => tasksChain);
   mockedClient.mockReturnValue({ database: { from } });
   return { from };
 }
+
+const toastMock = showToast as jest.Mock;
 
 describe("TasksPage con el SDK en el navegador", () => {
   beforeEach(() => {
@@ -269,6 +288,7 @@ describe("TasksPage con el SDK en el navegador", () => {
         description: "Centrico",
       });
     });
+    expect(tasksChain.select).toHaveBeenCalledWith();
     expect(tasksChain.eq).toHaveBeenCalledWith("id", "t1");
     expect(tasksChain.eq).toHaveBeenCalledWith("user_id", "user-123");
     expect(fetchMock).not.toHaveBeenCalled();
@@ -288,8 +308,10 @@ describe("TasksPage con el SDK en el navegador", () => {
     await waitFor(() => {
       expect(tasksChain.update).toHaveBeenCalledWith({ status: "completed" });
     });
+    expect(tasksChain.select).toHaveBeenCalledWith();
     expect(tasksChain.eq).toHaveBeenCalledWith("id", "t1");
     expect(tasksChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(screen.getByTestId("status-t1")).toHaveTextContent("completed");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -307,6 +329,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     await waitFor(() => {
       expect(tasksChain.delete).toHaveBeenCalled();
     });
+    expect(tasksChain.select).toHaveBeenCalledWith();
     expect(tasksChain.eq).toHaveBeenCalledWith("id", "t1");
     expect(tasksChain.eq).toHaveBeenCalledWith("user_id", "user-123");
     expect(fetchMock).not.toHaveBeenCalled();
@@ -321,5 +344,110 @@ describe("TasksPage con el SDK en el navegador", () => {
       await screen.findByText("No se pudieron cargar las tareas."),
     ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // Con RLS, un update/delete sobre una fila ajena o inexistente no trae error:
+  // la consulta vuelve con cero filas. El helper las trata como fallo, asi que
+  // la UI no puede cantar exito.
+
+  it("el update optimista de estado revierte si no afecta a ninguna fila", async () => {
+    mount({ data: [task], error: null }, { data: [], error: null });
+
+    render(<TasksPage />);
+
+    await screen.findByText("Reservar hotel en Roma");
+    expect(screen.getByTestId("status-t1")).toHaveTextContent("pending");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /completar reservar hotel en roma/i }),
+    );
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error" }),
+      );
+    });
+    // Cero filas: el estado local vuelve al previo, no se queda "completed".
+    expect(screen.getByTestId("status-t1")).toHaveTextContent("pending");
+    expect(tasksChain.select).toHaveBeenCalledWith();
+    expect(toastMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success" }),
+    );
+  });
+
+  it("un update sin filas afectadas avisa de error y no cierra el modal", async () => {
+    mount({ data: [task], error: null }, { data: [], error: null });
+
+    render(<TasksPage />);
+
+    await screen.findByText("Reservar hotel en Roma");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /editar reservar hotel en roma/i }),
+    );
+    mockModalPayload = { title: "Reservar hotel en Roma" };
+    fireEvent.click(screen.getByText("Guardar Tarea"));
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error" }),
+      );
+    });
+    expect(toastMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success" }),
+    );
+    // El modal sigue abierto: no se ha tratado como exito.
+    expect(screen.getByText("Modo editar")).toBeInTheDocument();
+  });
+
+  it("un delete sin filas afectadas avisa de error y no quita la tarea", async () => {
+    mount({ data: [task], error: null }, { data: [], error: null });
+
+    render(<TasksPage />);
+
+    await screen.findByText("Reservar hotel en Roma");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /borrar reservar hotel en roma/i }),
+    );
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "error" }),
+      );
+    });
+    expect(screen.getByText("Reservar hotel en Roma")).toBeInTheDocument();
+    expect(toastMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success" }),
+    );
+  });
+
+  it("con una fila afectada el update y el delete si confirman exito", async () => {
+    mount();
+
+    render(<TasksPage />);
+
+    await screen.findByText("Reservar hotel en Roma");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /completar reservar hotel en roma/i }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-t1")).toHaveTextContent("completed");
+    });
+    expect(toastMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "error" }),
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /borrar reservar hotel en roma/i }),
+    );
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "success", message: "Tarea eliminada" }),
+      );
+    });
   });
 });
