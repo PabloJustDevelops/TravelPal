@@ -13,6 +13,8 @@ jest.mock('../insforge/auth-actions', () => ({
   sendResetPasswordEmailAction: jest.fn(),
   resetPasswordAction: jest.fn(),
   updateProfileAction: jest.fn(),
+  verifyEmailAction: jest.fn(),
+  resendVerificationEmailAction: jest.fn(),
 }));
 
 jest.mock('../logger', () => ({
