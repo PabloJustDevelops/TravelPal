@@ -174,8 +174,12 @@ export default function TripDetailsPage({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/trips" className="text-gray-500 hover:text-gray-700">
-              <ArrowLeftIcon className="h-6 w-6" />
+            <Link
+              href="/trips"
+              className="text-gray-500 hover:text-gray-700"
+              aria-label="Volver a Mis Viajes"
+            >
+              <ArrowLeftIcon className="h-6 w-6" aria-hidden="true" />
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{trip.title}</h1>

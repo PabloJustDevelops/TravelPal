@@ -189,6 +189,7 @@ export default function TripsPage() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className={selectClassName}
+                aria-label="Filtrar por estado"
               >
                 <option value="all">Todos los estados</option>
                 <option value="planned">Planificado</option>
