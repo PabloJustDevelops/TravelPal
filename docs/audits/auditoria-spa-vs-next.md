@@ -1,6 +1,6 @@
 # Auditoría: dependencia del servidor de Next.js y decisión sobre migrar a SPA
 
-> Fecha: 2026-09-15. Alcance: `src/app`, `src/lib`, `src/contexts`, `src/components`, `src/middleware.ts`.
+> Fecha: 2026-09-15. Alcance: `src/app`, `src/lib`, `src/contexts`, `src/components`, `src/proxy.ts`.
 > Issue: #36.
 > Método: conteo sobre el árbol (grep/glob), medición de artefactos de build y prueba en navegador real
 > (Edge headless por CDP) contra producción y contra versiones de preview.
@@ -29,7 +29,7 @@ El landing (`src/app/page.tsx`) es estático puro: compone componentes de `src/c
 | Route handlers (`route.ts`) | **14 ficheros / 25 métodos** | analytics, trips(2), tasks(2), tasks/[id](2), planning(3), notes(2), expenses(2), expenses/[id](3), budget(2), budget/[id](2), dashboard, chat, flights/search, auth/refresh |
 | Handlers con `requireUser()` | **13 ficheros** | sesión de servidor; `auth/refresh` lo da el SDK |
 | Server actions (`"use server"`) | **1 fichero / 6 acciones** | `src/lib/insforge/auth-actions.ts`: signIn, signUp, signOut, sendResetPasswordEmail, resetPassword, updateProfile |
-| `middleware.ts` | **1** | `updateSession()` (refresco de cookies) + redirecciones |
+| `proxy.ts` | **1** | `updateSession()` (refresco de cookies) + redirecciones |
 | `cookies()` | **4** | sólo servidor (`auth-actions` ×3, `server.ts` ×1) |
 | `headers()` | **0** | — |
 | `redirect()` | **3** | middleware ×2, `app/login/page.tsx` ×1 |

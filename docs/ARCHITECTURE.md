@@ -79,7 +79,7 @@ Sólo sobrevive lo que no puede bajar al cliente:
 - Las mutaciones (sign in/up/out, perfil, reset) corren en **server actions**
   (`src/lib/insforge/auth-actions.ts`) con `createAuthActions`, de modo que el refresh token se
   guarda como cookie httpOnly.
-- `src/middleware.ts` llama a `updateSession()` para refrescar antes de renderizar.
+- `src/proxy.ts` llama a `updateSession()` para refrescar antes de renderizar.
 - `requireUser()` (`src/lib/insforge/server.ts`) verifica la sesión con `getCurrentUser()` y
   devuelve `{ ok: true, client, user }` o `{ ok: false, response }` (401/500). Tras retirar el BFF no
   lo llama ningún handler (ver ADR-009); sigue exportado y con sus tests.
