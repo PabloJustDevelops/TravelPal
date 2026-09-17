@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { updateSession } from '@insforge/sdk/ssr/middleware'
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   // Respuesta base donde updateSession escribirá las cookies de sesión.
   const baseRes = NextResponse.next({ request: req })
 

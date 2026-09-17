@@ -8,7 +8,7 @@ con el HTML correcto. La investigación inicial atribuyó el fallo a la
 compresión: pidiendo con cabecera de navegador (`Accept-Encoding: gzip, deflate,
 br, zstd`) la respuesta traía `Content-Encoding: zstd`. De ahí salieron dos
 "arreglos": `compress: false` en `next.config.js` (`ba609f4`) y un
-`Cache-Control: no-transform` escrito desde `src/middleware.ts`.
+`Cache-Control: no-transform` escrito desde `src/proxy.ts`.
 
 ## Decisión
 

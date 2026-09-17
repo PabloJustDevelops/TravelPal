@@ -115,7 +115,7 @@ son la puerta y el escaparate.
 
 **HUÉRFANAS.**
 - **`/alerts`**: no está en el array `navigation` y **nada** enlaza a ella. El grep de `/alerts` en
-  todo `src` solo devuelve el `middleware` (la protege) y la lista del test de diseño. Se llega
+  todo `src` solo devuelve el `proxy` (la protege) y la lista del test de diseño. Se llega
   únicamente escribiendo la URL.
 - **`/notes/[id]`**: **nada** enlaza a una nota concreta. `NoteCard` solo expone `onEdit` (línea
   89), que abre el editor en la propia lista. No hay ningún `href` ni `router.push` hacia
@@ -176,7 +176,7 @@ Coste (en unidades, no en tiempo):
   sub-páginas intactas.
 - **Ficheros a borrar**: 5 de UI + 2 de librería.
 - **Tests que hay que actualizar**: el guardián de diseño nombra `alerts/AlertCard.tsx` en la lista
-  de botones nativos, y `middleware.test.ts` protege `/alerts` y `/notes/abc` como rutas privadas.
+  de botones nativos, y `proxy.test.ts` protege `/alerts` y `/notes/abc` como rutas privadas.
 - **Navegación**: el array `navigation` pasa de 8 entradas a 3 o 4.
 - **Backend**: solo el borrado de `reminders` y `calendar_events`, con su propia migración y su
   propia decisión (no cabe en un rework de UI).

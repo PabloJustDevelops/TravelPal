@@ -63,7 +63,7 @@ en el [ADR-008](ADR-008-retirada-del-asistente.md) y el proxy de Amadeus en el
 - **Se pierde el 401 explícito.** Con RLS, un usuario sin sesión que consulte una tabla recibe
   `200 []` en vez de `401`, y el 500 «Error de autenticación» de una verificación fallida
   desaparece. Es un cambio de semántica de error, no de acceso: el middleware redirige a `/signin`
-  en las rutas protegidas cuando no hay sesión (`src/middleware.ts`) y `ProtectedRoute` lo repite en
+  en las rutas protegidas cuando no hay sesión (`src/proxy.ts`) y `ProtectedRoute` lo repite en
   cliente.
 - **Se pierde el ocultamiento de la forma de las consultas.** El cliente pasa a saber qué columnas y
   qué filtros usa la app. Con RLS no es un problema de seguridad, pero es información que antes no

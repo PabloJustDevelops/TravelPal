@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { middleware } from '@/middleware'
+import { proxy } from '@/proxy'
 import { updateSession } from '@insforge/sdk/ssr/middleware'
 
 jest.mock('@insforge/sdk/ssr/middleware', () => ({
@@ -24,7 +24,7 @@ const protectedPaths = [
   '/profile',
 ]
 
-async function runMiddleware(
+async function runProxy(
   path: string,
   accessToken: string | null,
   search = '',
@@ -33,7 +33,7 @@ async function runMiddleware(
   const request = new NextRequest(
     new URL(`${path}${search}`, 'https://travelpal.test'),
   )
-  return middleware(request)
+  return proxy(request)
 }
 
 function passesThrough(res: Response) {
@@ -45,7 +45,7 @@ function redirectTarget(res: Response) {
   return location ? new URL(location) : null
 }
 
-describe('middleware - protección de rutas', () => {
+describe('proxy - protección de rutas', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -53,7 +53,7 @@ describe('middleware - protección de rutas', () => {
   it.each(protectedPaths)(
     'sin sesión redirige %s a /signin con redirectTo',
     async (path) => {
-      const res = await runMiddleware(path, null)
+      const res = await runProxy(path, null)
 
       expect(res.status).toBe(307)
       const target = redirectTarget(res)
@@ -63,7 +63,7 @@ describe('middleware - protección de rutas', () => {
   )
 
   it.each(protectedPaths)('con sesión deja pasar %s', async (path) => {
-    const res = await runMiddleware(path, 'access-token')
+    const res = await runProxy(path, 'access-token')
 
     expect(passesThrough(res)).toBe(true)
   })
@@ -71,21 +71,21 @@ describe('middleware - protección de rutas', () => {
   it.each(['/', '/signin', '/signup', '/forgot-password', '/reset-password'])(
     'sin sesión deja pasar la ruta pública %s',
     async (path) => {
-      const res = await runMiddleware(path, null)
+      const res = await runProxy(path, null)
 
       expect(passesThrough(res)).toBe(true)
     },
   )
 
   it('con sesión redirige /signin a /dashboard', async () => {
-    const res = await runMiddleware('/signin', 'access-token')
+    const res = await runProxy('/signin', 'access-token')
 
     expect(res.status).toBe(307)
     expect(redirectTarget(res)?.pathname).toBe('/dashboard')
   })
 
   it('con sesión respeta el redirectTo al volver de una ruta protegida', async () => {
-    const res = await runMiddleware(
+    const res = await runProxy(
       '/signin',
       'access-token',
       '?redirectTo=%2Ftasks',
@@ -96,7 +96,7 @@ describe('middleware - protección de rutas', () => {
   })
 
   it('con sesión ignora un redirectTo externo', async () => {
-    const res = await runMiddleware(
+    const res = await runProxy(
       '/signin',
       'access-token',
       '?redirectTo=https%3A%2F%2Fevil.test',
