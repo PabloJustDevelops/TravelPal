@@ -3,11 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import type { JournalEntry } from "@/lib/insforge";
 import { createInsforgeClient } from "@/lib/insforge";
-import { assertRowsAffected } from "@/lib/insforge-query";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
-import { cn, formatDate, getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  cn,
+  formatDate,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
@@ -54,29 +65,34 @@ export default function TripJournal({ tripId }: TripJournalProps) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setLoadError(null);
 
     try {
       const insforge = createInsforgeClient();
-      const { data, error: loadError } = await insforge.database
-        .from("journal_entries")
-        .select("*")
-        .eq("trip_id", tripId)
-        .order("entry_date", { ascending: false });
+      const { data, error: entryError } = await withQueryTimeout(
+        insforge.database
+          .from("journal_entries")
+          .select("*")
+          .eq("trip_id", tripId)
+          .order("entry_date", { ascending: false }),
+        { label: "journal-entries" },
+      );
 
-      if (loadError) throw loadError;
+      if (entryError) throw entryError;
 
       setEntries((data ?? []) as JournalEntry[]);
     } catch (err) {
       logger.error("TripJournal: load failed", err);
-      setError(LOAD_ERROR);
+      setLoadError({ kind: queryErrorKind(err) });
     } finally {
       setLoading(false);
     }
@@ -85,6 +101,11 @@ export default function TripJournal({ tripId }: TripJournalProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadErrorMessage = getLoadErrorMessage(loadError, {
+    timeout: "La carga del diario ha tardado demasiado.",
+    request: LOAD_ERROR,
+  });
 
   const openNewEntry = () => {
     setEditingEntry(null);
@@ -113,20 +134,26 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       };
 
       if (editingEntry) {
-        const { data: updatedRows, error: saveError } = await insforge.database
-          .from("journal_entries")
-          .update(payload)
-          .eq("id", editingEntry.id)
-          .select();
+        const { data: updatedRows, error: saveError } = await withQueryTimeout(
+          insforge.database
+            .from("journal_entries")
+            .update(payload)
+            .eq("id", editingEntry.id)
+            .select(),
+          { label: "journal-entries:update" },
+        );
 
         if (saveError) throw saveError;
         assertRowsAffected(updatedRows, "No se pudo guardar la entrada");
       } else {
         if (!user?.id) throw new Error("Sesion no disponible");
 
-        const { error: saveError } = await insforge.database
-          .from("journal_entries")
-          .insert([{ ...payload, user_id: user.id, trip_id: tripId }]);
+        const { error: saveError } = await withQueryTimeout(
+          insforge.database
+            .from("journal_entries")
+            .insert([{ ...payload, user_id: user.id, trip_id: tripId }]),
+          { label: "journal-entries:insert" },
+        );
 
         if (saveError) throw saveError;
       }
@@ -136,7 +163,11 @@ export default function TripJournal({ tripId }: TripJournalProps) {
     } catch (err) {
       logger.error("TripJournal: save failed", err);
       // El formulario ensena el mensaje; no lo tragamos.
-      throw new Error(getErrorMessage(err, "No se pudo guardar la entrada"));
+      throw new Error(
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "No se pudo guardar la entrada"),
+      );
     } finally {
       setSaving(false);
     }
@@ -152,11 +183,14 @@ export default function TripJournal({ tripId }: TripJournalProps) {
 
     try {
       const insforge = createInsforgeClient();
-      const { data: deletedRows, error: deleteError } = await insforge.database
-        .from("journal_entries")
-        .delete()
-        .eq("id", entry.id)
-        .select();
+      const { data: deletedRows, error: deleteError } = await withQueryTimeout(
+        insforge.database
+          .from("journal_entries")
+          .delete()
+          .eq("id", entry.id)
+          .select(),
+        { label: "journal-entries:delete" },
+      );
 
       if (deleteError) throw deleteError;
       assertRowsAffected(deletedRows, "No se pudo borrar la entrada");
@@ -164,7 +198,10 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       setEntries((current) => current.filter((item) => item.id !== entry.id));
       showToast({ type: "success", message: "Entrada borrada" });
     } catch (err) {
-      const message = getErrorMessage(err, "No se pudo borrar la entrada");
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "No se pudo borrar la entrada");
       logger.error("TripJournal: delete failed", { error: message });
       showToast({ type: "error", title: "Error al borrar la entrada", message });
     }
@@ -192,8 +229,8 @@ export default function TripJournal({ tripId }: TripJournalProps) {
           >
             <LoadingSpinner />
           </div>
-        ) : error ? (
-          <ErrorState message={error} onRetry={load} />
+        ) : loadErrorMessage ? (
+          <ErrorState message={loadErrorMessage} onRetry={load} />
         ) : entries.length === 0 ? (
           <EmptyState
             icon={<BookOpenIcon className="h-12 w-12" />}

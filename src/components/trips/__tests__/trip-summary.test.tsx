@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TripSummary from "../TripSummary";
 import { createInsforgeClient } from "@/lib/insforge";
 
@@ -93,6 +93,33 @@ describe("TripSummary", () => {
 
     expect(screen.getByText("150,00 €")).toBeInTheDocument();
     expect(screen.getByText("200,00 €")).toBeInTheDocument();
+  });
+
+  it("muestra el mensaje de timeout cuando la lectura no responde", async () => {
+    jest.useFakeTimers();
+
+    try {
+      const chain = makeChain({ data: [] });
+      // Nunca resuelve: sin el envoltorio el componente se queda cargando y el
+      // mensaje de timeout no llega a pintarse.
+      chain.then = () => new Promise(() => {});
+      mockedClient.mockReturnValue({ database: { from: jest.fn(() => chain) } });
+
+      render(<TripSummary tripId="trip-1" />);
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(15000);
+      });
+
+      expect(
+        screen.getByText("La carga del resumen ha tardado demasiado."),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("No se pudo cargar el resumen del viaje"),
+      ).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("si falla la carga lo dice y ofrece reintentar", async () => {

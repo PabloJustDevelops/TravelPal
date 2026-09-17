@@ -3,10 +3,14 @@ import Input from "../ui/Input";
 import { selectClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
 import { Booking, createInsforgeClient } from "@/lib/insforge";
-import { assertRowsAffected } from "@/lib/insforge-query";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+} from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
-import { getErrorMessage } from "@/lib/utils";
+import { CONNECTION_TIMEOUT_MESSAGE, getErrorMessage } from "@/lib/utils";
 
 interface NewBookingFormProps {
   onSuccess: () => void;
@@ -37,11 +41,14 @@ export default function NewBookingForm({
       const fetchTrips = async () => {
           try {
               const insforge = createInsforgeClient();
-              const { data, error } = await insforge
-                  .database.from("trips")
-                  .select("*")
-                  .eq("user_id", userId)
-                  .order("departure_date", { ascending: false });
+              const { data, error } = await withQueryTimeout(
+                  insforge
+                      .database.from("trips")
+                      .select("*")
+                      .eq("user_id", userId)
+                      .order("departure_date", { ascending: false }),
+                  { label: "trips" },
+              );
 
               if (error) throw error;
               if (!active) return;
@@ -159,41 +166,10 @@ export default function NewBookingForm({
       const insforge = createInsforgeClient();
 
       if (initialData) {
-        const { data: updatedRows, error } = await insforge
-          .database.from("bookings")
-          .update({
-            type: formData.type,
-            title: formData.title,
-            description: formData.description || null,
-            start_date: formData.start_date,
-            start_time: startTime,
-            end_date: null,
-            end_time: null,
-            location: null,
-            confirmation_number: null,
-            airline: flightFields?.airline || null,
-            flight_number: flightFields?.flight_number || null,
-            origin: flightFields?.origin || null,
-            destination: flightFields?.destination || null,
-            cost: flightFields?.cost || 0,
-            currency: flightFields?.currency || "EUR",
-            status: status || "pending",
-            notes: notes || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", initialData.id)
-          .eq("user_id", user.id)
-          .select();
-
-        if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo guardar la reserva");
-      } else {
-        const { error } = await insforge
-          .database.from("bookings")
-          .insert([
-            {
-              user_id: user.id,
-              trip_id: formData.trip_id,
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from("bookings")
+            .update({
               type: formData.type,
               title: formData.title,
               description: formData.description || null,
@@ -211,10 +187,47 @@ export default function NewBookingForm({
               currency: flightFields?.currency || "EUR",
               status: status || "pending",
               notes: notes || null,
-            },
-          ])
-          .select()
-          .single();
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", initialData.id)
+            .eq("user_id", user.id)
+            .select(),
+          { label: "bookings:update" },
+        );
+
+        if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo guardar la reserva");
+      } else {
+        const { error } = await withQueryTimeout(
+          insforge
+            .database.from("bookings")
+            .insert([
+              {
+                user_id: user.id,
+                trip_id: formData.trip_id,
+                type: formData.type,
+                title: formData.title,
+                description: formData.description || null,
+                start_date: formData.start_date,
+                start_time: startTime,
+                end_date: null,
+                end_time: null,
+                location: null,
+                confirmation_number: null,
+                airline: flightFields?.airline || null,
+                flight_number: flightFields?.flight_number || null,
+                origin: flightFields?.origin || null,
+                destination: flightFields?.destination || null,
+                cost: flightFields?.cost || 0,
+                currency: flightFields?.currency || "EUR",
+                status: status || "pending",
+                notes: notes || null,
+              },
+            ])
+            .select()
+            .single(),
+          { label: "bookings:insert" },
+        );
 
         if (error) throw error;
       }
@@ -222,7 +235,10 @@ export default function NewBookingForm({
       logger.info(`Booking ${initialData ? "updated" : "created"} successfully`);
       onSuccess();
     } catch (err: unknown) {
-      const message = getErrorMessage(err, "Error al guardar la reserva");
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "Error al guardar la reserva");
       logger.error("Error saving booking:", { error: message, raw: err });
       setError(message);
     } finally {
