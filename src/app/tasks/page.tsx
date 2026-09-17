@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
 import ErrorState from "@/components/ui/ErrorState";
-import { Task } from "@/lib/insforge";
+import { createInsforgeClient, Task } from "@/lib/insforge";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { TaskModal } from "@/components/tasks/TaskModal";
@@ -15,32 +15,69 @@ import {
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { showToast } from "@/lib/toast";
-import { getLoadErrorMessage } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useApiResource } from "@/hooks/use-api-resource";
+import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/lib/logger";
 
 export default function TasksPage() {
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [viewMode, setViewMode] = useState<"board" | "calendar">("board");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const {
-    data,
-    loading,
-    error: loadError,
-    refetch,
-  } = useApiResource<Task[]>("/api/tasks");
+  const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
 
   useEffect(() => {
-    if (data) setTasks(data);
-  }, [data]);
+    if (authLoading) return;
 
-  const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de tareas ha tardado demasiado.",
-    request: "No se pudieron cargar las tareas.",
-  });
+    if (!user?.id) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setLoading(true);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        const insforge = createInsforgeClient();
+        const { data, error } = await insforge
+          .database.from("tasks")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        if (!active) return;
+        setTasks((data as Task[]) ?? []);
+      } catch (err) {
+        if (!active) return;
+        logger.error("TasksPage: Error loading tasks", {
+          error: getErrorMessage(err, "Error al cargar las tareas"),
+        });
+        setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, reloadToken]);
+
+  const error = loadError ? "No se pudieron cargar las tareas." : null;
 
   const handleCreateTask = () => {
     setEditingTask(null);
@@ -53,18 +90,38 @@ export default function TasksPage() {
   };
 
   const handleSaveTask = async (data: Partial<Task>) => {
+    if (!user) return;
+
     try {
       setSaving(true);
-      const method = editingTask ? "PUT" : "POST";
-      const url = editingTask ? `/api/tasks/${editingTask.id}` : "/api/tasks";
+      const insforge = createInsforgeClient();
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      if (editingTask) {
+        const { error } = await insforge
+          .database.from("tasks")
+          .update(data)
+          .eq("id", editingTask.id)
+          .eq("user_id", user.id);
 
-      if (!res.ok) throw new Error("Error al guardar la tarea");
+        if (error) throw error;
+      } else {
+        const { error } = await insforge
+          .database.from("tasks")
+          .insert([
+            {
+              user_id: user.id,
+              title: data.title,
+              description: data.description,
+              status: data.status || "pending",
+              priority: data.priority || "medium",
+              due_date: data.due_date || null,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+      }
 
       showToast({
         type: "success",
@@ -72,8 +129,10 @@ export default function TasksPage() {
       });
       setIsModalOpen(false);
       refetch(); // Reload tasks
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      logger.error("TasksPage: Error saving task", {
+        error: getErrorMessage(err, "Error al guardar la tarea"),
+      });
       showToast({ type: "error", message: "Error al guardar la tarea" });
     } finally {
       setSaving(false);
@@ -81,19 +140,25 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = async (task: Task) => {
+    if (!user) return;
     if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
 
     try {
-      const res = await fetch(`/api/tasks/${task.id}`, {
-        method: "DELETE",
-      });
+      const insforge = createInsforgeClient();
+      const { error } = await insforge
+        .database.from("tasks")
+        .delete()
+        .eq("id", task.id)
+        .eq("user_id", user.id);
 
-      if (!res.ok) throw new Error("Error al eliminar");
+      if (error) throw error;
 
       showToast({ type: "success", message: "Tarea eliminada" });
       setTasks(tasks.filter((t) => t.id !== task.id));
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      logger.error("TasksPage: Error deleting task", {
+        error: getErrorMessage(err, "Error al eliminar la tarea"),
+      });
       showToast({ type: "error", message: "Error al eliminar la tarea" });
     }
   };
@@ -102,6 +167,8 @@ export default function TasksPage() {
     taskId: string,
     newStatus: Task["status"],
   ) => {
+    if (!user) return;
+
     // Optimistic update
     const previousTasks = [...tasks];
     setTasks(
@@ -109,17 +176,20 @@ export default function TasksPage() {
     );
 
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      const insforge = createInsforgeClient();
+      const { error } = await insforge
+        .database.from("tasks")
+        .update({ status: newStatus })
+        .eq("id", taskId)
+        .eq("user_id", user.id);
 
-      if (!res.ok) throw new Error("Error al actualizar estado");
+      if (error) throw error;
 
       // No need to fetch if successful, state is already updated
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      logger.error("TasksPage: Error updating task status", {
+        error: getErrorMessage(err, "Error al actualizar el estado"),
+      });
       showToast({ type: "error", message: "Error al actualizar el estado" });
       setTasks(previousTasks); // Revert on error
     }
