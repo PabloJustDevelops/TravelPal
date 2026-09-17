@@ -1,7 +1,15 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import PlanningPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Booking } from "@/lib/insforge";
+import { QueryTimeoutError } from "@/lib/insforge-query";
+import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
 
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: jest.fn(),
@@ -114,7 +122,10 @@ interface DbChain {
   update: jest.Mock;
   delete: jest.Mock;
   single: jest.Mock;
-  then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
+  then: (
+    resolve: (value: QueryResult) => unknown,
+    reject?: (reason: unknown) => unknown,
+  ) => Promise<unknown>;
 }
 
 // Cadena encadenable y "awaitable": cualquier terminal (order, eq, single)
@@ -129,7 +140,7 @@ function makeChain(result: QueryResult): DbChain {
   chain.update = jest.fn(() => chain);
   chain.delete = jest.fn(() => chain);
   chain.single = jest.fn(() => chain);
-  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  chain.then = (resolve, reject) => Promise.resolve(result).then(resolve, reject);
   return chain;
 }
 
@@ -188,14 +199,32 @@ describe("PlanningPage con el SDK en el navegador", () => {
     tripsResult = { data: [trip], error: null },
     bookingsResult = { data: [booking], error: null },
     activitiesResult = { data: [activity], error: null },
+    activitiesWriteError,
   }: {
     tripsResult?: QueryResult;
     bookingsResult?: QueryResult;
     activitiesResult?: QueryResult;
+    activitiesWriteError?: unknown;
   } = {}) {
     tripsChain = makeChain(tripsResult);
     bookingsChain = makeChain(bookingsResult);
     activitiesChain = makeChain(activitiesResult);
+
+    // La lectura resuelve con `activitiesResult`; a partir de la segunda
+    // suscripcion (la escritura del planificador) la cadena falla con el error
+    // indicado. Es la unica forma de distinguir lectura y escritura sobre la
+    // misma tabla sin cambiar el resto del arnes.
+    if (activitiesWriteError !== undefined) {
+      let thenCalls = 0;
+      activitiesChain.then = (resolve, reject) => {
+        thenCalls += 1;
+        if (thenCalls === 1) {
+          return Promise.resolve(activitiesResult).then(resolve, reject);
+        }
+        return Promise.reject(activitiesWriteError).then(resolve, reject);
+      };
+    }
+
     const from = jest.fn((table: string) => {
       if (table === "trips") return tripsChain;
       if (table === "bookings") return bookingsChain;
@@ -203,6 +232,25 @@ describe("PlanningPage con el SDK en el navegador", () => {
     });
     mockedClient.mockReturnValue({ database: { from } });
     return { from };
+  }
+
+  // El planificador es real: se entra a su vista desde el calendario, se
+  // despliega un dia y se opera con el modal o con los botones de la fila.
+  async function openItineraryPlanner() {
+    render(<PlanningPage />);
+    expect(
+      await screen.findByText("Planificación de Viajes"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Itinerario"));
+    fireEvent.click(await screen.findByText("Escapada a Roma"));
+    await screen.findByText("Planificador de Itinerario");
+  }
+
+  function submitActivity(title: string, label: string) {
+    const titleInput = screen.getByPlaceholderText("Nombre de la actividad");
+    fireEvent.change(titleInput, { target: { value: title } });
+    const form = titleInput.closest("form") as HTMLFormElement;
+    fireEvent.click(within(form).getByText(label));
   }
 
   beforeEach(() => {
@@ -345,6 +393,142 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     expect(await screen.findByText("Planificación de Viajes")).toBeInTheDocument();
     expect(from).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("da de alta una actividad del planificador por el SDK y recarga", async () => {
+    mount();
+    await openItineraryPlanner();
+
+    // Dia 1 (2026-05-01) vacio: la clave del dia es ISO y casa con el mapeo.
+    fireEvent.click(screen.getByText(/Día 1/));
+    fireEvent.click(screen.getByText("Agregar primera actividad"));
+
+    submitActivity("Tour por el Coliseo", "Agregar");
+
+    await waitFor(() => {
+      expect(activitiesChain.insert).toHaveBeenCalled();
+    });
+
+    // El alta llena la fila con el usuario, el viaje y la fecha del dia, y
+    // reproduce los campos del modal (moneda por defecto EUR, como el esquema).
+    expect(activitiesChain.insert).toHaveBeenCalledWith([
+      {
+        user_id: "user-123",
+        trip_id: "trip-1",
+        date: "2026-05-01",
+        title: "Tour por el Coliseo",
+        description: null,
+        start_time: "09:00",
+        end_time: "10:00",
+        location: null,
+        category: "activity",
+        cost: null,
+        currency: "EUR",
+        notes: null,
+        completed: false,
+        order_index: 0,
+      },
+    ]);
+    expect(activitiesChain.select).toHaveBeenCalledWith();
+
+    // El refetch recarga las tres tablas: la fuente de verdad es el servidor.
+    await waitFor(() => {
+      expect(tripsChain.select).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("edita una actividad por el SDK con el id persistido", async () => {
+    mount();
+    await openItineraryPlanner();
+
+    fireEvent.click(screen.getByText(/Día 2/));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Editar Cena en Trastevere" }),
+    );
+
+    submitActivity("Cena en Testaccio", "Actualizar");
+
+    await waitFor(() => {
+      expect(activitiesChain.update).toHaveBeenCalled();
+    });
+
+    expect(activitiesChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Cena en Testaccio",
+        start_time: "20:00",
+        category: "food",
+      }),
+    );
+    // El id que viaja es el uuid de la fila, nunca uno sintetico.
+    expect(activitiesChain.eq).toHaveBeenCalledWith("id", "a1");
+    expect(activitiesChain.eq).not.toHaveBeenCalledWith(
+      "id",
+      expect.stringMatching(/^activity_/),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("borra una actividad por el SDK con el id persistido y recarga", async () => {
+    mount();
+    await openItineraryPlanner();
+
+    fireEvent.click(screen.getByText(/Día 2/));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Eliminar Cena en Trastevere" }),
+    );
+
+    await waitFor(() => {
+      expect(activitiesChain.delete).toHaveBeenCalled();
+    });
+
+    expect(activitiesChain.eq).toHaveBeenCalledWith("id", "a1");
+    expect(activitiesChain.eq).not.toHaveBeenCalledWith(
+      "id",
+      expect.stringMatching(/^activity_/),
+    );
+    expect(activitiesChain.select).toHaveBeenCalledWith();
+
+    // Nada de borrado local: se recarga desde el servidor.
+    await waitFor(() => {
+      expect(tripsChain.select).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no canta exito ni recarga si el alta no afecta a ninguna fila", async () => {
+    mount({ activitiesResult: { data: [], error: null } });
+    await openItineraryPlanner();
+
+    fireEvent.click(screen.getByText(/Día 1/));
+    fireEvent.click(screen.getByText("Agregar primera actividad"));
+
+    submitActivity("Tour por el Coliseo", "Agregar");
+
+    expect(
+      await screen.findByText(/Error al guardar la actividad/),
+    ).toBeInTheDocument();
+    // Cero filas afectadas es un fallo: no hay refetch ni exito.
+    expect(tripsChain.select).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("avisa del timeout cuando el guardado no responde", async () => {
+    // La cadena de la escritura rechaza con el error que lanza
+    // `withQueryTimeout` al vencer; el temporizador real esta cubierto en
+    // src/lib/__tests__/insforge-query.test.ts.
+    mount({ activitiesWriteError: new QueryTimeoutError("tarde") });
+    await openItineraryPlanner();
+
+    fireEvent.click(screen.getByText(/Día 1/));
+    fireEvent.click(screen.getByText("Agregar primera actividad"));
+
+    submitActivity("Tour por el Coliseo", "Agregar");
+
+    expect(
+      await screen.findByText(CONNECTION_TIMEOUT_MESSAGE),
+    ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
