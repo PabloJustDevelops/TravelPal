@@ -3,6 +3,7 @@ import NewTripPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { createInsforgeClient } from "@/lib/insforge";
+import { logger } from "@/lib/logger";
 
 jest.mock("@/contexts/AuthContext", () => ({
   __esModule: true,
@@ -48,20 +49,24 @@ const mockedClient = createInsforgeClient as jest.Mock;
 
 describe("NewTripPage con el SDK en el navegador", () => {
   const mockPush = jest.fn();
-  let insertChain: DbChain;
+  let tripsChain: DbChain;
+  let budgetsChain: DbChain;
   let fetchMock: jest.Mock;
 
-  const jsonResponse = (data: unknown, ok = true, status = 200) => ({
-    ok,
-    status,
-    json: async () => data,
-  });
-
-  const mount = (
-    result: QueryResult = { data: { id: "new-trip-id" }, error: null },
-  ) => {
-    insertChain = makeChain(result);
-    const from = jest.fn(() => insertChain);
+  // El viaje y su presupuesto inicial salen del SDK, tabla a tabla: ya no hay
+  // ningun fetch en la pagina.
+  const mount = ({
+    tripsResult = { data: { id: "new-trip-id" }, error: null },
+    budgetsResult = { data: { id: "budget-1" }, error: null },
+  }: {
+    tripsResult?: QueryResult;
+    budgetsResult?: QueryResult;
+  } = {}) => {
+    tripsChain = makeChain(tripsResult);
+    budgetsChain = makeChain(budgetsResult);
+    const from = jest.fn((table: string) =>
+      table === "budgets" ? budgetsChain : tripsChain,
+    );
     mockedClient.mockReturnValue({ database: { from } });
     return { from };
   };
@@ -70,7 +75,8 @@ describe("NewTripPage con el SDK en el navegador", () => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useAuth as jest.Mock).mockReturnValue({ user: { id: "test-user-id" } });
-    fetchMock = jest.fn().mockResolvedValue(jsonResponse({ id: "budget-1" }));
+    // La pagina migrada no debe tocar el BFF: cualquier fetch seria un fallo.
+    fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
@@ -89,8 +95,8 @@ describe("NewTripPage con el SDK en el navegador", () => {
     });
   }
 
-  it("crea el viaje por el SDK con los campos del handler y navega al detalle", async () => {
-    mount();
+  it("crea el viaje y el presupuesto inicial por el SDK y navega al detalle", async () => {
+    const { from } = mount();
 
     render(<NewTripPage />);
 
@@ -113,7 +119,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
 
     // El alta reproduce el objeto de insercion del handler borrado: el user_id
     // lo ponia la API, y los opcionales vacios caian a null.
-    expect(insertChain.insert).toHaveBeenCalledWith([
+    expect(tripsChain.insert).toHaveBeenCalledWith([
       {
         user_id: "test-user-id",
         title: "Test Trip",
@@ -128,26 +134,56 @@ describe("NewTripPage con el SDK en el navegador", () => {
         status: "planned",
       },
     ]);
-    expect(insertChain.select).toHaveBeenCalledWith();
-    expect(insertChain.single).toHaveBeenCalled();
+    expect(tripsChain.select).toHaveBeenCalledWith();
+    expect(tripsChain.single).toHaveBeenCalled();
 
-    // El viaje ya no pasa por el BFF: el unico fetch que queda es el del
-    // presupuesto, que es de otro dominio y no se migra en este PR.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const budgetCall = fetchMock.mock.calls[0];
-    expect(budgetCall[0]).toBe("/api/budget");
-    const budgetPayload = JSON.parse(budgetCall[1].body);
-    expect(budgetPayload).toEqual(
-      expect.objectContaining({
+    // El presupuesto inicial tambien va por el SDK, con el objeto del POST
+    // borrado: mismas fechas recortadas a dia, EUR fijo y `description` a null.
+    expect(from).toHaveBeenCalledWith("budgets");
+    expect(budgetsChain.insert).toHaveBeenCalledWith([
+      {
+        user_id: "test-user-id",
         name: "Presupuesto General",
         total_amount: 1000,
+        currency: "EUR",
+        category: "General",
+        start_date: "2025-01-01",
+        end_date: "2025-01-01",
         trip_id: "new-trip-id",
-      }),
-    );
+        description: null,
+      },
+    ]);
+    expect(budgetsChain.select).toHaveBeenCalledWith();
+    expect(budgetsChain.single).toHaveBeenCalled();
+
+    // Y ni una llamada al BFF.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no crea el presupuesto cuando el presupuesto estimado es 0", async () => {
+    const { from } = mount();
+
+    render(<NewTripPage />);
+
+    fillRequiredFields();
+    fireEvent.change(screen.getByLabelText(/Presupuesto Estimado/i), {
+      target: { value: "0" },
+    });
+
+    fireEvent.click(screen.getByText("Crear Viaje"));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/trips/new-trip-id");
+    });
+
+    expect(tripsChain.insert).toHaveBeenCalled();
+    expect(from).not.toHaveBeenCalledWith("budgets");
+    expect(budgetsChain.insert).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("no se traga el error del SDK y no navega", async () => {
-    mount({ data: null, error: { message: "Database error occurred" } });
+    mount({ tripsResult: { data: null, error: { message: "Database error occurred" } } });
 
     render(<NewTripPage />);
 
@@ -158,7 +194,35 @@ describe("NewTripPage con el SDK en el navegador", () => {
       expect(screen.getByText("Database error occurred")).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
+    expect(budgetsChain.insert).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("mantiene el viaje y navega aunque falle el presupuesto inicial", async () => {
+    mount({ budgetsResult: { data: null, error: { message: "budget boom" } } });
+
+    render(<NewTripPage />);
+
+    fillRequiredFields();
+    fireEvent.change(screen.getByLabelText(/Presupuesto Estimado/i), {
+      target: { value: "1000" },
+    });
+
+    fireEvent.click(screen.getByText("Crear Viaje"));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/trips/new-trip-id");
+    });
+
+    // El fallo del presupuesto no impide el alta del viaje ni la navegacion:
+    // solo queda registrado como aviso.
+    expect(tripsChain.insert).toHaveBeenCalled();
+    expect(budgetsChain.insert).toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Error al crear presupuesto inicial:",
+      { message: "budget boom" },
+    );
+    expect(screen.queryByText("budget boom")).not.toBeInTheDocument();
   });
 
   it("valida los campos obligatorios antes de llamar al SDK", async () => {
@@ -176,7 +240,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
         screen.getByText("Por favor completa todos los campos requeridos"),
       ).toBeInTheDocument();
     });
-    expect(insertChain.insert).not.toHaveBeenCalled();
+    expect(tripsChain.insert).not.toHaveBeenCalled();
   });
 
   it("rechaza una fecha de regreso anterior a la de salida", async () => {
@@ -198,6 +262,6 @@ describe("NewTripPage con el SDK en el navegador", () => {
         ),
       ).toBeInTheDocument();
     });
-    expect(insertChain.insert).not.toHaveBeenCalled();
+    expect(tripsChain.insert).not.toHaveBeenCalled();
   });
 });

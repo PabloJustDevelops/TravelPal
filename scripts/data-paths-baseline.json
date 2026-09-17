@@ -5,21 +5,11 @@
     "expenses": 0,
     "tasks": 0,
     "notes": 0,
-    "budget": 2,
+    "budget": 0,
     "planning": 0,
     "dashboard": 0
   },
   "files": {
-    "src/app/api/budget/[id]/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 2
-    },
-    "src/app/api/budget/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 4
-    },
     "src/app/api/dashboard/route.ts": {
       "bff": 0,
       "bffUnknown": 0,
@@ -46,9 +36,9 @@
       "sdk": 4
     },
     "src/app/expenses/page.tsx": {
-      "bff": 1,
-      "bffUnknown": 2,
-      "sdk": 3
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 9
     },
     "src/app/notes/page.tsx": {
       "bff": 0,
@@ -71,9 +61,9 @@
       "sdk": 3
     },
     "src/app/trips/new/page.tsx": {
-      "bff": 1,
+      "bff": 0,
       "bffUnknown": 0,
-      "sdk": 2
+      "sdk": 3
     },
     "src/app/trips/page.tsx": {
       "bff": 0,
@@ -112,8 +102,8 @@
     }
   },
   "totals": {
-    "bff": 2,
-    "bffUnknown": 5,
-    "sdk": 86
+    "bff": 0,
+    "bffUnknown": 3,
+    "sdk": 87
   }
 }

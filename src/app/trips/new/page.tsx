@@ -117,28 +117,32 @@ export default function NewTripPage() {
       // Create budget if provided
       if (formData.budget > 0) {
         logger.info("Creando presupuesto inicial para el viaje");
-        // Nota: Idealmente esto también debería ir a una API, pero por ahora lo dejamos o lo migramos después
-        // Para mantener consistencia, deberíamos migrarlo, pero el usuario pidió arreglar la creación del viaje primero.
-        // Si falla el presupuesto, el viaje ya está creado.
-        
+        // Si falla el presupuesto, el viaje ya está creado: el fallo se registra
+        // y la navegación sigue igual.
         try {
-            await fetch("/api/budget", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    trip_id: data.id,
-                    name: "Presupuesto General",
-                    total_amount: formData.budget,
-                    category: "General",
-                    start_date: formData.departure_date.split("T")[0],
-                    end_date: formData.return_date
-                      ? formData.return_date.split("T")[0]
-                      : formData.departure_date.split("T")[0],
-                    currency: "EUR",
-                })
-            });
+          const { error: budgetError } = await insforge
+            .database.from("budgets")
+            .insert([
+              {
+                user_id: user.id,
+                name: "Presupuesto General",
+                total_amount: formData.budget,
+                currency: "EUR",
+                category: "General",
+                start_date: formData.departure_date.split("T")[0],
+                end_date: formData.return_date
+                  ? formData.return_date.split("T")[0]
+                  : formData.departure_date.split("T")[0],
+                trip_id: data.id,
+                description: null,
+              },
+            ])
+            .select()
+            .single();
+
+          if (budgetError) throw budgetError;
         } catch (budgetError) {
-             logger.warn("Error al crear presupuesto inicial:", budgetError);
+          logger.warn("Error al crear presupuesto inicial:", budgetError);
         }
       }
 

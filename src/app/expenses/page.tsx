@@ -23,14 +23,9 @@ import {
   CalendarIcon,
   TrophyIcon,
 } from "@heroicons/react/24/outline";
-import {
-  formatCurrency,
-  getErrorMessage,
-  getLoadErrorMessage,
-} from "@/lib/utils";
+import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
-import { useApiResource } from "@/hooks/use-api-resource";
 import { logger } from "@/lib/logger";
 
 interface Budget {
@@ -121,13 +116,15 @@ export default function ExpensesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Los gastos y los viajes del filtro se leen del SDK, tabla a tabla: reproduce
-  // el GET del endpoint borrado (gastos con `*, trip:trips(*)`, `eq('user_id')` y
-  // `order('date', ...)`; viajes con el select de campos explicitos y
-  // `order('departure_date', ...)`).
+  // Los gastos, los viajes del filtro y los presupuestos se leen del SDK, tabla a
+  // tabla: reproduce el GET de los endpoints borrados (gastos con
+  // `*, trip:trips(*)`, `eq('user_id')` y `order('date', ...)`; viajes con el
+  // select de campos explicitos y `order('departure_date', ...)`; presupuestos con
+  // `*, eq('user_id')` y `order('created_at', ...)`).
   const [expensesData, setExpensesData] = useState<{
     expenses: (Expense & { trip?: Trip })[];
     trips: Trip[];
+    budgets: Budget[];
   } | null>(null);
   const [expensesLoading, setExpensesLoading] = useState(true);
   const [expensesLoadError, setExpensesLoadError] = useState(false);
@@ -156,7 +153,7 @@ export default function ExpensesPage() {
     (async () => {
       try {
         const insforge = createInsforgeClient();
-        const [expensesRes, tripsRes] = await Promise.all([
+        const [expensesRes, tripsRes, budgetsRes] = await Promise.all([
           insforge
             .database.from("expenses")
             .select(`*, trip:trips(*)`)
@@ -169,15 +166,22 @@ export default function ExpensesPage() {
             )
             .eq("user_id", userId)
             .order("departure_date", { ascending: false }),
+          insforge
+            .database.from("budgets")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false }),
         ]);
 
         if (expensesRes.error) throw expensesRes.error;
         if (tripsRes.error) throw tripsRes.error;
+        if (budgetsRes.error) throw budgetsRes.error;
 
         if (!active) return;
         setExpensesData({
           expenses: (expensesRes.data as (Expense & { trip?: Trip })[]) ?? [],
           trips: (tripsRes.data as Trip[]) ?? [],
+          budgets: (budgetsRes.data as Budget[]) ?? [],
         });
       } catch (err) {
         if (!active) return;
@@ -195,17 +199,11 @@ export default function ExpensesPage() {
     };
   }, [authLoading, user?.id, expensesReloadToken]);
 
-  // Los presupuestos siguen viniendo de su endpoint: /api/budget conserva GET
-  // (lectura) y POST/PATCH/DELETE (escritura) y asi no queda ninguna ruta huerfana.
-  const budgetsUrl = !authLoading && user ? "/api/budget" : null;
-
-  const budgetsResource = useApiResource<{ budgets: Budget[] }>(budgetsUrl);
-
   const { expenses, trips, filteredExpenses, budgets, filteredBudgets } =
     useMemo(() => {
       const expenseRows = expensesData?.expenses ?? [];
       const tripsData = expensesData?.trips ?? [];
-      const budgetsData = budgetsResource.data?.budgets ?? [];
+      const budgetsData = expensesData?.budgets ?? [];
 
       // "Previsto frente a real": el gastado de cada presupuesto se recalcula
       // cruzandolo con los gastos (fecha dentro del periodo, categoria y viaje)
@@ -297,41 +295,19 @@ export default function ExpensesPage() {
         budgets: budgetsWithSpent,
         filteredBudgets: filteredBudgetsList,
       };
-    }, [
-      expensesData,
-      budgetsResource.data,
-      searchTerm,
-      categoryFilter,
-      tripFilter,
-    ]);
+    }, [expensesData, searchTerm, categoryFilter, tripFilter]);
 
-  // El timeout de 15 s era del hook del BFF: con el SDK solo lo conserva la
-  // lectura de presupuestos, que sigue por /api/budget. El error de gastos llega
-  // como fallo del SDK y reutiliza el mensaje que el handler daba para su 500.
-  const budgetLoadError = getLoadErrorMessage(budgetsResource.error, {
-    timeout:
-      "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
-    request: "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
-  });
-
-  const error =
-    budgetLoadError ??
-    (expensesLoadError
-      ? "Error al cargar los gastos. Por favor, inténtalo de nuevo."
-      : null);
+  // El timeout de 15 s era del hook del BFF: con el SDK la lectura de cualquiera
+  // de las tres tablas falla como error del SDK y reutiliza el mensaje que el
+  // handler daba para su 500.
+  const error = expensesLoadError
+    ? "Error al cargar los gastos. Por favor, inténtalo de nuevo."
+    : null;
 
   const showSkeleton =
     authLoading ||
     expensesLoading ||
-    budgetsResource.loading ||
-    ((!authLoading && !!user) &&
-      (expensesData === null || budgetsResource.data === null) &&
-      !error);
-
-  const refetchAll = () => {
-    refetchExpenses();
-    budgetsResource.refetch();
-  };
+    ((!authLoading && !!user) && expensesData === null && !error);
 
   const getExpenseStats = () => {
     const totalAmount = expenses.reduce((sum, expense) => {
@@ -493,11 +469,15 @@ export default function ExpensesPage() {
     e.preventDefault();
 
     if (!validateBudgetForm()) return;
+    if (!user) return;
 
     try {
       setSubmitting(true);
       setSubmitError(null);
 
+      // Mismo objeto que el POST/PATCH borrado: nombre recortado, importe
+      // numerico, `trip_id` y `description` a null si vienen vacios y el
+      // `updated_at` explicito de la edicion.
       const budgetData = {
         name: formData.name.trim(),
         total_amount: parseFloat(formData.total_amount),
@@ -507,26 +487,35 @@ export default function ExpensesPage() {
         start_date: formData.start_date,
         end_date: formData.end_date,
         description: formData.description.trim() || null,
-        user_id: user?.id,
       };
 
-      const isEditing = !!editingBudget;
-      const url = isEditing ? `/api/budget/${editingBudget.id}` : "/api/budget";
-      const method = isEditing ? "PATCH" : "POST";
+      const insforge = createInsforgeClient();
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(budgetData),
-      });
+      if (editingBudget) {
+        const { error } = await insforge
+          .database.from("budgets")
+          .update({
+            ...budgetData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingBudget.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Error al guardar el presupuesto");
+        if (error) throw error;
+      } else {
+        const { error } = await insforge
+          .database.from("budgets")
+          .insert([{ user_id: user.id, ...budgetData }])
+          .select()
+          .single();
+
+        if (error) throw error;
       }
 
       setShowBudgetModal(false);
-      refetchAll();
+      refetchExpenses();
     } catch (err) {
       const msg = getErrorMessage(err, "Error al guardar el presupuesto");
       logger.error("Error saving budget:", { error: msg, raw: err });
@@ -537,20 +526,21 @@ export default function ExpensesPage() {
   };
 
   const handleDeleteBudget = async (budgetId: string) => {
+    if (!user) return;
     if (!confirm("¿Estás seguro de que quieres eliminar este presupuesto?"))
       return;
 
     try {
-      const res = await fetch(`/api/budget/${budgetId}`, {
-        method: "DELETE",
-      });
+      const insforge = createInsforgeClient();
+      const { error } = await insforge
+        .database.from("budgets")
+        .delete()
+        .eq("id", budgetId)
+        .eq("user_id", user.id);
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Error al eliminar el presupuesto");
-      }
+      if (error) throw error;
 
-      refetchAll();
+      refetchExpenses();
     } catch (err) {
       const msg = getErrorMessage(err, "Error al eliminar el presupuesto");
       logger.error("Error deleting budget:", { error: msg, raw: err });
@@ -569,7 +559,7 @@ export default function ExpensesPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <ErrorState message={error} onRetry={refetchAll} />
+        <ErrorState message={error} onRetry={refetchExpenses} />
       </DashboardLayout>
     );
   }
