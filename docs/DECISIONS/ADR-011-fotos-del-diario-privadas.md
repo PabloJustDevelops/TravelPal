@@ -45,6 +45,27 @@ con el bucket ya privado ([#64]):
    caducable complica el render sin aportar privacidad: no es contenido del viaje. Lo que este ADR
    cambia es el bucket de las fotos del diario, no el resto de Storage.
 
+## La privacidad son las dos cosas juntas
+
+Las urls firmadas en la app (punto 2) y las **politicas de propietario de `storage.objects`** ([#68])
+son la misma decisión vista desde dos lados: la url firmada decide **qué se pide**, y la politica
+decide **quién puede firmarlo**. Sin la segunda, el bucket privado no daba privacidad: `storage.objects`
+estaba con RLS deshabilitada y cero politicas, así que en un bucket privado **cualquier usuario
+autenticado listaba, firmaba y descargaba los objetos de otro** —dos usuarios reales, medido en
+[#68]—. Firmar no es autorizar.
+
+Las politicas viven en `migrations/20260917120000_storage-objects-owner-only.sql`: RLS habilitada en
+`storage.objects`, el `drop policy if exists` antes de cada `create policy` (idempotente, como el resto
+de migraciones) y las cuatro de propietario `to authenticated` —select, insert, update y delete— con
+`uploaded_by = (select auth.jwt() ->> 'sub')`, más los grants de tabla y de esquema que el propietario
+necesita. El dueño del objeto es `uploaded_by`, el `sub` del token, **no el prefijo de la `key`**: la
+key lleva el id del usuario por convención, no es una frontera de seguridad.
+
+**`avatars` sigue público a propósito**, como ya decía el punto 5: no hay contenido del viaje que
+proteger ahí y multiplicaría las firmas en las vistas que pintan avatares. Estas politicas son
+`to authenticated` y no añaden grant a `anon`: gobiernan el acceso autenticado a la tabla, mientras que
+la visibilidad de un bucket se decide en el bucket.
+
 ## Consecuencias
 
 - **Una llamada de red más por carga del listado**: el `select` de las filas y, después, la firma en
@@ -82,3 +103,4 @@ con el bucket ya privado ([#64]):
 Aprobado
 
 [#64]: https://github.com/PabloJustDevelops/TravelPal/issues/64
+[#68]: https://github.com/PabloJustDevelops/TravelPal/issues/68
