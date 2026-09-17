@@ -47,6 +47,55 @@ export async function signInAction(input: {
   return { user: { id: data.user.id, email: data.user.email } };
 }
 
+export type SessionUser = {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+};
+
+// El cliente de navegador del SDK no resuelve la sesión a partir de las cookies:
+// busca un usuario en memoria que el login por Server Action nunca le deja y, al
+// no encontrarlo, refresca contra el backend desde el navegador (petición
+// cross-origin que no lleva ni el refresh token httpOnly ni el token CSRF y que
+// responde 401). Con lo cual `user` acababa siendo null teniendo una sesión
+// válida. Aquí la identidad se lee en el servidor, donde el access token de la
+// cookie sí viaja como credencial de la petición.
+export async function getCurrentUserAction(): Promise<SessionUser | null> {
+  const client = await createServerInsforgeClient();
+  const { data, error } = await client.auth.getCurrentUser();
+
+  if (error) {
+    const status = error.statusCode;
+    const authServerFailed =
+      status === 0 || (typeof status === "number" && status >= 500);
+
+    if (authServerFailed) {
+      logger.error("getCurrentUserAction: fallo del servidor de auth", {
+        error: error.message,
+        statusCode: status,
+      });
+      throw new Error(error.message);
+    }
+
+    // 401/403: la cookie no autoriza (no hay sesión o ya no vale).
+    return null;
+  }
+
+  const user = data?.user;
+
+  if (!user?.id) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    full_name: user.profile?.name,
+    avatar_url: user.profile?.avatar_url,
+  };
+}
+
 export async function signUpAction(input: {
   email: string;
   password: string;
