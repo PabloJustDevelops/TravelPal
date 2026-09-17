@@ -2,6 +2,7 @@ import { act, render, waitFor } from '@testing-library/react'
 import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { authService } from '@/lib/auth'
+import type { SignUpActionResult } from '@/lib/insforge/auth-actions'
 
 // El setup global sustituye AuthContext por un mock fijo; aqui se ejercita el
 // provider real, asi que se pide el modulo autentico.
@@ -68,16 +69,16 @@ describe('AuthContext: alta y verificacion', () => {
     )
 
   it('signUp devuelve el flag y no relee una sesion que no existe', async () => {
-    mockedSignUp.mockResolvedValue({ requireEmailVerification: true })
+    mockedSignUp.mockResolvedValue({ ok: true, requireEmailVerification: true })
     mount()
     await waitFor(() => expect(mockedGetCurrentUser).toHaveBeenCalledTimes(1))
 
-    let result: { requireEmailVerification: boolean } | undefined
+    let result: SignUpActionResult | undefined
     await act(async () => {
       result = await readApi().signUp('ana@example.com', 'Password1', 'Ana')
     })
 
-    expect(result).toEqual({ requireEmailVerification: true })
+    expect(result).toEqual({ ok: true, requireEmailVerification: true })
     expect(mockedSignUp).toHaveBeenCalledWith(
       'ana@example.com',
       'Password1',
@@ -88,7 +89,7 @@ describe('AuthContext: alta y verificacion', () => {
   })
 
   it('refresca la sesion cuando el alta no pide verificacion', async () => {
-    mockedSignUp.mockResolvedValue({ requireEmailVerification: false })
+    mockedSignUp.mockResolvedValue({ ok: true, requireEmailVerification: false })
     mount()
     await waitFor(() => expect(mockedGetCurrentUser).toHaveBeenCalledTimes(1))
 
@@ -97,6 +98,23 @@ describe('AuthContext: alta y verificacion', () => {
     })
 
     expect(mockedGetCurrentUser).toHaveBeenCalledTimes(2)
+  })
+
+  it('no relee la sesion ni la toca cuando el alta falla', async () => {
+    mockedSignUp.mockResolvedValue({
+      ok: false,
+      code: 'email_exists',
+      statusCode: 409,
+    })
+    mount()
+    await waitFor(() => expect(mockedGetCurrentUser).toHaveBeenCalledTimes(1))
+
+    await act(async () => {
+      await readApi().signUp('ana@example.com', 'Password1', 'Ana')
+    })
+
+    expect(mockedGetCurrentUser).toHaveBeenCalledTimes(1)
+    expect(readApi().user).toBeNull()
   })
 
   it('verifyEmail relee el usuario para que la UI lo vea', async () => {
@@ -155,3 +173,4 @@ describe('AuthContext: alta y verificacion', () => {
     expect(readApi().sessionError).toBe(false)
   })
 })
+

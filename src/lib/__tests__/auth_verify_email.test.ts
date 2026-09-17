@@ -37,6 +37,7 @@ describe('AuthService verificacion por codigo', () => {
 
   it('propaga requireEmailVerification del alta en vez de descartarlo', async () => {
     (signUpAction as jest.Mock).mockResolvedValue({
+      ok: true,
       user: { id: 'user-123', email: 'ana@example.com' },
       requireEmailVerification: true,
     });
@@ -52,11 +53,12 @@ describe('AuthService verificacion por codigo', () => {
       password: 'Password1',
       name: 'Ana',
     });
-    expect(result.requireEmailVerification).toBe(true);
+    expect(result).toMatchObject({ requireEmailVerification: true });
   });
 
   it('mantiene el flag en false cuando el backend no pide verificacion', async () => {
     (signUpAction as jest.Mock).mockResolvedValue({
+      ok: true,
       user: { id: 'user-123', email: 'ana@example.com' },
       requireEmailVerification: false,
     });
@@ -67,7 +69,19 @@ describe('AuthService verificacion por codigo', () => {
       'Ana',
     );
 
-    expect(result.requireEmailVerification).toBe(false);
+    expect(result).toMatchObject({ requireEmailVerification: false });
+  });
+
+  it('devuelve el codigo del alta fallida en vez de lanzar', async () => {
+    (signUpAction as jest.Mock).mockResolvedValue({
+      ok: false,
+      code: 'email_exists',
+      statusCode: 409,
+    });
+
+    await expect(
+      authService.signUp('ana@example.com', 'Password1', 'Ana'),
+    ).resolves.toEqual({ ok: false, code: 'email_exists', statusCode: 409 });
   });
 
   it('verifyEmail delega en la server action con email y otp', async () => {

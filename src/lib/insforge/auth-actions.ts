@@ -6,6 +6,11 @@ import { createAuthActions } from "@insforge/sdk/ssr";
 import { publicEnv } from "@/lib/public-env";
 import { logger } from "@/lib/logger";
 import { createServerInsforgeClient } from "./server";
+import {
+  classifySignInError,
+  classifySignUpError,
+  type AuthFailure,
+} from "./auth-error-codes";
 
 // Las mutaciones de auth van en servidor: el refresh token es httpOnly y sólo
 // aquí se pueden escribir las cookies de sesión.
@@ -30,21 +35,31 @@ function toAuthActionError(
   return wrapped;
 }
 
+// El login no lanza un mensaje crudo del backend: devuelve un resultado con el
+// código que la UI traduce. Así ni se filtra el texto del servidor ni se pierde
+// el statusCode, que es lo único que distingue un email sin verificar.
+export type SignInActionResult =
+  | { ok: true; user: { id: string; email: string } }
+  | AuthFailure;
+
 export async function signInAction(input: {
   email: string;
   password: string;
-}) {
+}): Promise<SignInActionResult> {
   const auth = createAuthActions({ cookies: await cookies() });
   const { data, error } = await auth.signInWithPassword(input);
 
   if (error || !data?.user) {
+    const failure = classifySignInError(error);
     logger.error("signInAction: fallo de autenticación", {
+      code: failure.code,
+      statusCode: failure.statusCode,
       error: error?.message,
     });
-    throw new Error(error?.message ?? "No se pudo iniciar sesión");
+    return failure;
   }
 
-  return { user: { id: data.user.id, email: data.user.email } };
+  return { ok: true, user: { id: data.user.id, email: data.user.email } };
 }
 
 export type SessionUser = {
@@ -96,21 +111,39 @@ export async function getCurrentUserAction(): Promise<SessionUser | null> {
   };
 }
 
+// El alta del backend distingue el email repetido con AUTH_EMAIL_EXISTS (409):
+// ese código viaja a la UI en vez de la cadena de Firebase que nunca disparaba.
+export type SignUpActionResult =
+  | {
+      ok: true;
+      user: { id: string; email: string } | null;
+      requireEmailVerification: boolean;
+    }
+  | AuthFailure;
+
 export async function signUpAction(input: {
   email: string;
   password: string;
   name: string;
-}) {
+}): Promise<SignUpActionResult> {
   const auth = createAuthActions({ cookies: await cookies() });
   const { data, error } = await auth.signUp(input);
 
   if (error) {
-    logger.error("signUpAction: fallo de registro", { error: error.message });
-    throw new Error(error.message);
+    const failure = classifySignUpError(error);
+    logger.error("signUpAction: fallo de registro", {
+      code: failure.code,
+      statusCode: failure.statusCode,
+      error: error.message,
+    });
+    return failure;
   }
 
   return {
-    user: data?.user ?? null,
+    ok: true,
+    user: data?.user
+      ? { id: data.user.id, email: data.user.email }
+      : null,
     requireEmailVerification: data?.requireEmailVerification ?? false,
   };
 }

@@ -89,28 +89,29 @@ export default function RegisterForm() {
     setError('')
 
     try {
-      const { requireEmailVerification } = await signUp(
-        data.email,
-        data.password,
-        data.fullName,
-      )
+      const result = await signUp(data.email, data.password, data.fullName)
 
-      if (requireEmailVerification) {
+      if (!result.ok) {
+        // El backend sí distingue el email repetido (AUTH_EMAIL_EXISTS, 409):
+        // la cadena de Firebase que se miraba antes no existe aquí. Cualquier
+        // otro fallo se queda en un mensaje genérico, sin el texto del backend.
+        setError(
+          result.code === 'email_exists'
+            ? 'Este email ya está registrado'
+            : 'No se pudo crear la cuenta. Inténtalo de nuevo.',
+        )
+        return
+      }
+
+      if (result.requireEmailVerification) {
         setPendingEmail(data.email)
       } else {
         // El alta ya dejó sesión: no hay nada que confirmar.
         router.replace('/dashboard')
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.includes('auth/email-already-in-use')) {
-          setError('Este email ya está registrado')
-        } else {
-          setError(err.message)
-        }
-      } else {
-        setError('Error al crear la cuenta')
-      }
+    } catch {
+      // Un fallo de transporte al hablar con el servidor, no un alta rechazada.
+      setError('No se pudo crear la cuenta. Inténtalo de nuevo.')
     } finally {
       setIsLoading(false)
     }

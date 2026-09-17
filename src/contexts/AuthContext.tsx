@@ -3,22 +3,27 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { AuthUser, authService as defaultAuthService } from '@/lib/auth'
 import { logger as defaultLogger } from '@/lib/logger'
-import { getErrorMessage } from '@/lib/utils'
+import type {
+  SignInActionResult,
+  SignUpActionResult,
+} from '@/lib/insforge/auth-actions'
 
 interface AuthContextType {
   user: AuthUser | null
+
   loading: boolean
+
   // true cuando la sesión no se pudo comprobar (timeout o fallo del servidor),
   // que es distinto de "no hay sesión". Sin esta distinción el guardia no puede
   // saber si redirigir o reintentar.
   sessionError: boolean
   reloadSession: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<SignInActionResult>
   signUp: (
     email: string,
     password: string,
     fullName: string,
-  ) => Promise<{ requireEmailVerification: boolean }>
+  ) => Promise<SignUpActionResult>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   verifyEmail: (email: string, otp: string) => Promise<AuthUser | null>
@@ -96,34 +101,54 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     return current
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (
+    email: string,
+    password: string,
+  ): Promise<SignInActionResult> => {
     logger.info('AuthContext: Iniciando signIn')
     setLoading(true)
     try {
       const result = await authService.signIn(email, password)
-      logger.info('AuthContext: signIn exitoso', result)
+
+      if (!result.ok) {
+        logger.warn('AuthContext: signIn rechazado', {
+          code: result.code,
+          statusCode: result.statusCode,
+        })
+        // No hay sesión que releer y el usuario se queda como estaba: el
+        // formulario decide el mensaje con el código.
+        return result
+      }
+
+      logger.info('AuthContext: signIn exitoso')
       // El login acaba de dejar la sesión en cookies y su respuesta ya trae el
       // usuario: fijarlo evita una ventana sin usuario entre el login y la
       // relectura en la que el guardia podría redirigir.
-      const basicUser = result?.user
-        ? { id: result.user.id, email: result.user.email }
-        : null
       const current = await authService.getCurrentUser()
-      setUser(current ?? basicUser)
+      setUser(current ?? result.user)
       setSessionError(false)
+      return result
     } catch (err: unknown) {
-      const message = getErrorMessage(err)
-      logger.error('AuthContext: Error en signIn', { error: message })
+      logger.error('AuthContext: Error en signIn', { error: err })
       throw err
     } finally {
       setLoading(false)
     }
   }
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<SignUpActionResult> => {
     setLoading(true)
     try {
       const result = await authService.signUp(email, password, fullName)
+
+      if (!result.ok) {
+        return result
+      }
+
       // Con verificación pendiente no hay sesión que releer: el alta deja al
       // usuario fuera hasta que confirme el código.
       if (!result.requireEmailVerification) {
@@ -147,11 +172,10 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     await authService.resendVerificationEmail(email)
   }
 
-  const signOut = async () => {
-    setLoading(true)
+  const signOut = async () => {    setLoading(true)
     try {
       // Timeout de seguridad para el logout
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Sign out timeout')), 5000),
       )
 
