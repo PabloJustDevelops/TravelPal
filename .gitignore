@@ -44,6 +44,12 @@ next-env.d.ts
 .dev.vars*
 cloudflare-env.d.ts
 
+# Playwright (trazas y artefactos de los E2E)
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
+
 # Testsprite
 # Ignora directorio temporal y artefactos generados por la herramienta de pruebas
 testsprite_tests/tmp/

@@ -19,6 +19,7 @@ npm run dev          # Next dev
 npm run lint         # ESLint
 npm run type-check   # tsc --noEmit
 npm run test:ci      # Jest (CI)
+npm run test:e2e     # Playwright E2E (ver docs/TESTING.md)
 npm run build        # next build
 npm run preview      # OpenNext build + wrangler dev
 npm run deploy       # OpenNext build + wrangler deploy

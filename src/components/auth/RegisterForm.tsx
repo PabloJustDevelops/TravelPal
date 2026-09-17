@@ -151,6 +151,7 @@ export default function RegisterForm() {
               </label>
               <input
                 {...register('fullName')}
+                id="fullName"
                 type="text"
                 autoComplete="name"
                 className={cn(fieldClassName, 'mt-1')}
@@ -167,6 +168,7 @@ export default function RegisterForm() {
               </label>
               <input
                 {...register('email')}
+                id="email"
                 type="email"
                 autoComplete="email"
                 className={cn(fieldClassName, 'mt-1')}
@@ -184,6 +186,7 @@ export default function RegisterForm() {
               <div className="mt-1 relative">
                 <input
                   {...register('password')}
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={cn(fieldClassName, 'pr-10')}
@@ -244,6 +247,7 @@ export default function RegisterForm() {
               <div className="mt-1 relative">
                 <input
                   {...register('confirmPassword')}
+                  id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={cn(fieldClassName, 'pr-10')}

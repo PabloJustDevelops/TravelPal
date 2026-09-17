@@ -31,6 +31,23 @@ jobs:
         run: node scripts/check-data-paths.mjs
       - run: npm run build
 
+  # El mismo job de e2e, dos veces: en el PR contra el dev server local (prueba
+  # el codigo del PR) y tras el deploy de main contra produccion (prueba lo
+  # desplegado). La suite vive en .github/workflows/e2e.yml.
+  e2e:
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  e2e-produccion:
+    needs: [deploy]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/e2e.yml
+    with:
+      base-url: https://app-viajes.prg-dev.workers.dev
+    secrets: inherit
+
   worker:
     name: worker-build
     runs-on: ubuntu-latest

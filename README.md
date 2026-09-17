@@ -89,6 +89,7 @@ npm run dev          # Desarrollo (http://localhost:3000)
 npm run lint         # ESLint
 npm run type-check   # TypeScript
 npm run test:ci      # Jest
+npm run test:e2e     # Playwright (ver docs/TESTING.md)
 npm run build        # next build
 ```
 
@@ -105,6 +106,7 @@ npm run deploy       # Build de OpenNext + deploy a Cloudflare
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**: arquitectura y flujo de datos
 - **[docs/DECISIONS/](docs/DECISIONS/)**: ADRs (InsForge, Cloudflare, esquema)
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: guía técnica
+- **[docs/TESTING.md](docs/TESTING.md)**: tests unitarios y E2E (Playwright)
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**: cómo contribuir
 - **[docs/COMMITS.md](docs/COMMITS.md)** / **[docs/PR_PROCESS.md](docs/PR_PROCESS.md)**: flujo de trabajo
 
@@ -116,7 +118,7 @@ npm run deploy       # Build de OpenNext + deploy a Cloudflare
 - Estilos: Tailwind CSS
 - Backend: InsForge (Postgres, Auth, Storage) vía `@insforge/sdk`
 - Hosting: Cloudflare Workers con `@opennextjs/cloudflare`
-- Testing: Jest + Testing Library
+- Testing: Jest + Testing Library (unitarios y componentes) y Playwright (E2E)
 - CI/CD: GitHub Actions (lint, type-check, tests, build y build del Worker)
 
 ## 📋 Roadmap
