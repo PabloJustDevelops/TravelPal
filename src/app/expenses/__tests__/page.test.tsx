@@ -38,16 +38,25 @@ interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
   order: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  single: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
-// Cadena encadenable y "awaitable": el terminal (order) resuelve el resultado de
-// la lectura, que es lo que espera el `await` del componente.
+// Cadena encadenable y "awaitable": el terminal (order, single) resuelve el
+// resultado de la lectura, que es lo que espera el `await` del componente.
+// Las escrituras reutilizan ese mismo resultado, que no trae error.
 function makeChain(result: QueryResult): DbChain {
   const chain = {} as DbChain;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
+  chain.insert = jest.fn(() => chain);
+  chain.update = jest.fn(() => chain);
+  chain.delete = jest.fn(() => chain);
+  chain.single = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
@@ -134,7 +143,7 @@ const expenses = [
   },
 ];
 
-// El API devuelve spent_amount 0: el "real" solo puede salir del cruce con gastos.
+// La tabla trae spent_amount 0: el "real" solo puede salir del cruce con gastos.
 const budgets = [
   {
     id: "b1",
@@ -171,35 +180,28 @@ const mockedClient = createInsforgeClient as jest.Mock;
 describe("ExpensesPage con el presupuesto fusionado", () => {
   let expensesChain: DbChain;
   let tripsChain: DbChain;
+  let budgetsChain: DbChain;
   let fetchMock: jest.Mock;
 
-  const jsonResponse = (data: unknown) => ({
-    ok: true,
-    status: 200,
-    json: async () => data,
-  });
-
-  function findCall(url: string, method: string) {
-    return fetchMock.mock.calls.find(
-      ([inputUrl, init]) =>
-        inputUrl === url &&
-        (init as RequestInit | undefined)?.method === method,
-    );
-  }
-
-  // Los gastos y los viajes llegan del SDK; los presupuestos siguen por /api/budget.
+  // Gastos, viajes y presupuestos llegan del SDK, tabla a tabla: ya no hay
+  // ningun fetch en la pagina.
   function mount({
     expensesResult = { data: expenses, error: null },
     tripsResult = { data: trips, error: null },
+    budgetsResult = { data: budgets, error: null },
   }: {
     expensesResult?: QueryResult;
     tripsResult?: QueryResult;
+    budgetsResult?: QueryResult;
   } = {}) {
     expensesChain = makeChain(expensesResult);
     tripsChain = makeChain(tripsResult);
-    const from = jest.fn((table: string) =>
-      table === "expenses" ? expensesChain : tripsChain,
-    );
+    budgetsChain = makeChain(budgetsResult);
+    const from = jest.fn((table: string) => {
+      if (table === "expenses") return expensesChain;
+      if (table === "trips") return tripsChain;
+      return budgetsChain;
+    });
     mockedClient.mockReturnValue({ database: { from } });
     return { from };
   }
@@ -212,22 +214,8 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     jest.clearAllMocks();
     (useAuth as jest.Mock).mockReturnValue({ user: mockUser, loading: false });
 
-    fetchMock = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
-      const method = init?.method ?? "GET";
-
-      if (url === "/api/budget" && method === "POST") {
-        return Promise.resolve(jsonResponse({ id: "budget-new" }));
-      }
-      if (url.startsWith("/api/budget/")) {
-        return Promise.resolve(jsonResponse({ id: "budget-deleted" }));
-      }
-      if (url.startsWith("/api/budget")) {
-        return Promise.resolve(jsonResponse({ budgets, trips, expenses }));
-      }
-      return Promise.resolve(jsonResponse({}));
-    });
-
+    // La pagina migrada no debe tocar el BFF: cualquier fetch seria un fallo.
+    fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
@@ -235,24 +223,25 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     jest.restoreAllMocks();
   });
 
-  it("lee los gastos y los viajes del SDK y los pinta, sin tocar /api/expenses", async () => {
+  it("lee gastos, viajes y presupuestos del SDK y los pinta, sin tocar ningun /api", async () => {
     const { from } = mount();
 
     render(<ExpensesPage />);
 
     await screen.findByText("Mis Gastos");
 
-    // La lectura sale del SDK, tabla a tabla.
+    // Las tres lecturas salen del SDK, tabla a tabla.
     expect(from).toHaveBeenCalledWith("expenses");
     expect(from).toHaveBeenCalledWith("trips");
+    expect(from).toHaveBeenCalledWith("budgets");
     expect(screen.getByText("Cena en Trastevere")).toBeInTheDocument();
+    expect(screen.getByText("Presupuesto Roma")).toBeInTheDocument();
 
-    // El unico fetch que queda es el de presupuestos, que no se migra aqui.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/budget");
+    // Y ni una llamada al BFF: el camino migratedo ya no pasa por fetch.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("pide el select con el viaje embebido y las columnas de viajes del handler", async () => {
+  it("pide los select, filtros y orders de los handlers borrados", async () => {
     mount();
 
     render(<ExpensesPage />);
@@ -270,6 +259,13 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     expect(tripsChain.order).toHaveBeenCalledWith("departure_date", {
       ascending: false,
     });
+
+    // El `*`, el filtro de usuario y el order del GET de presupuestos.
+    expect(budgetsChain.select).toHaveBeenCalledWith("*");
+    expect(budgetsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(budgetsChain.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
+    });
   });
 
   it("no se traga el error del SDK y ofrece reintentar por el SDK", async () => {
@@ -285,12 +281,22 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     fireEvent.click(screen.getByText("Reintentar"));
 
-    // El reintento vuelve a leer los gastos del SDK, no del BFF: los unicos
-    // fetch son los de presupuestos, que sigue en su endpoint.
+    // El reintento vuelve a leer los gastos del SDK, no del BFF.
     expect(expensesChain.select).toHaveBeenCalledTimes(2);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no se traga el error del SDK al leer los presupuestos", async () => {
+    mount({ budgetsResult: { data: null, error: { message: "boom" } } });
+
+    render(<ExpensesPage />);
+
     expect(
-      fetchMock.mock.calls.every(([url]) => String(url).startsWith("/api/budget")),
-    ).toBe(true);
+      await screen.findByText(
+        "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("lee previsto frente a real y recalcula el gastado cruzando los gastos", async () => {
@@ -303,7 +309,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     // El listado de gastos sigue en pie.
     expect(screen.getByText("Cena en Trastevere")).toBeInTheDocument();
 
-    // b1 (travel, 900/1000) y b2 (comida, 900/100) recalculan a 900: el API decia 0.
+    // b1 (travel, 900/1000) y b2 (comida, 900/100) recalculan a 900: la tabla decia 0.
     expect(
       screen.getAllByText(flat(`Gastado: ${formatCurrency(900, "USD")}`)),
     ).toHaveLength(2);
@@ -344,7 +350,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     expect(screen.queryByText("Taxi")).not.toBeInTheDocument();
   });
 
-  it("crea un presupuesto desde el modal y hace POST a /api/budget", async () => {
+  it("crea un presupuesto por el SDK con el objeto y los defaults del handler", async () => {
     mount();
 
     render(<ExpensesPage />);
@@ -354,7 +360,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     fireEvent.click(screen.getByText("Nuevo Presupuesto"));
 
     fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
-      target: { value: "Presupuesto Playa" },
+      target: { value: "  Presupuesto Playa  " },
     });
     fireEvent.change(screen.getByLabelText("Monto Total"), {
       target: { value: "500" },
@@ -373,23 +379,79 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     fireEvent.submit(submitButton.closest("form") as HTMLFormElement);
 
     await waitFor(() => {
-      expect(findCall("/api/budget", "POST")).toBeDefined();
+      expect(budgetsChain.insert).toHaveBeenCalled();
     });
 
-    const postCall = findCall("/api/budget", "POST");
-    const payload = JSON.parse((postCall![1] as RequestInit).body as string);
-    expect(payload).toEqual(
-      expect.objectContaining({
+    // El alta reproduce el insert del POST borrado: `user_id` lo ponia la API,
+    // el nombre entra recortado y los opcionales vacios caen a null. La moneda
+    // sale del formulario, cuyo valor inicial es el mismo default "USD".
+    expect(budgetsChain.insert).toHaveBeenCalledWith([
+      {
+        user_id: "user-123",
         name: "Presupuesto Playa",
         total_amount: 500,
+        currency: "USD",
         category: "food",
         start_date: "2026-07-01",
         end_date: "2026-07-10",
-      }),
-    );
+        trip_id: null,
+        description: null,
+      },
+    ]);
+    expect(budgetsChain.select).toHaveBeenCalledWith();
+    expect(budgetsChain.single).toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("borra un presupuesto desde su tarjeta y hace DELETE a /api/budget/:id", async () => {
+  it("edita con el update del handler, scopeado a id y user_id", async () => {
+    mount();
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    const card = screen.getByText("Presupuesto Roma").closest(".group");
+    expect(card).not.toBeNull();
+    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    fireEvent.click(editButton);
+
+    fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
+      target: { value: "Presupuesto Roma 2026" },
+    });
+    fireEvent.change(screen.getByLabelText("Monto Total"), {
+      target: { value: "1200" },
+    });
+
+    const submitButton = screen.getByText("Actualizar Presupuesto");
+    fireEvent.submit(submitButton.closest("form") as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(budgetsChain.update).toHaveBeenCalled();
+    });
+
+    // El update replica el PATCH borrado: mismos campos, el `updated_at`
+    // explicito y el scope por id y usuario. Ni `user_id` ni `spent_amount`
+    // viajan en el payload.
+    const updatePayload = budgetsChain.update.mock.calls[0][0];
+    expect(updatePayload).toEqual({
+      name: "Presupuesto Roma 2026",
+      total_amount: 1200,
+      currency: "USD",
+      category: "travel",
+      start_date: "2026-05-01",
+      end_date: "2026-05-07",
+      trip_id: "trip-1",
+      description: null,
+      updated_at: expect.any(String),
+    });
+    expect(updatePayload).not.toHaveProperty("user_id");
+    expect(updatePayload).not.toHaveProperty("spent_amount");
+    expect(budgetsChain.eq).toHaveBeenCalledWith("id", "b1");
+    expect(budgetsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("borra con el delete del handler, scopeado a id y user_id", async () => {
     jest.spyOn(window, "confirm").mockReturnValue(true);
 
     mount();
@@ -409,7 +471,10 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     fireEvent.click(deleteButton as HTMLElement);
 
     await waitFor(() => {
-      expect(findCall("/api/budget/b1", "DELETE")).toBeDefined();
+      expect(budgetsChain.delete).toHaveBeenCalled();
     });
+    expect(budgetsChain.eq).toHaveBeenCalledWith("id", "b1");
+    expect(budgetsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
