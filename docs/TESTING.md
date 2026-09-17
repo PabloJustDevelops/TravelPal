@@ -32,6 +32,11 @@ Playwright arranca el dev server por su cuenta (`webServer` con `npm run dev`) y
 reutiliza el que ya tengas levantado en el 3000. Para ver los pasos en el
 navegador, `npx playwright test --headed`; con `--debug`, paso a paso.
 
+La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`. Los
+cuatro flujos comparten el usuario dedicado y las mismas pantallas, asi que en
+paralelo no se aislaban: se hacian la zancadilla y caia un spec distinto en cada
+corrida local, siempre en el `toHaveURL` de `createTrip`.
+
 ## Las dos formas de la misma suite
 
 El destino lo elige `E2E_BASE_URL`, y por defecto es localhost:
@@ -74,8 +79,11 @@ viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
 
 ```bash
 npx playwright test e2e/flows                 # local, contra el dev server
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npx playwright test e2e/flows --workers=1
+E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npx playwright test e2e/flows
 ```
+
+El proyecto `flows` ya limita a un worker, asi que no hace falta pasar
+`--workers=1` a mano.
 
 ## Limitaciones conocidas: un viaje no se puede borrar desde la UI
 

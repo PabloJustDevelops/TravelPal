@@ -30,10 +30,24 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
+  // Dos proyectos y no uno: el smoke puede correr en paralelo, pero los flujos
+  // de `e2e/flows` comparten estado (el mismo usuario dedicado y las mismas
+  // pantallas: alta de viaje, itinerario, gastos) y no ganan nada con ir a la
+  // vez. Con los cuatro workers locales sobre un solo `next dev`, que compila
+  // las rutas on-demand, la navegacion a `/trips/<uuid>` tras "Crear Viaje" se
+  // agotaba en el `toHaveURL` y caia un spec distinto en cada corrida. Un worker
+  // para el directorio entero quita esa carrera; el smoke sigue en paralelo.
   projects: [
     {
-      name: 'chromium',
+      name: 'smoke',
+      testMatch: 'smoke/**/*.spec.ts',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'flows',
+      testMatch: 'flows/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+      workers: 1,
     },
   ],
   // Contra produccion no se arranca nada: se prueba lo desplegado.
