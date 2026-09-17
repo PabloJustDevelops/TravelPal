@@ -366,4 +366,32 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     expect(writeChain.select).toHaveBeenCalledWith();
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it("abre un gasto huerfano (sin viaje) y lo puede reasignar a otro viaje", async () => {
+    mount({ loadResult: { data: { ...expense, trip_id: null }, error: null } });
+
+    render(<EditExpensePage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
+        "Cena en Trastevere",
+      );
+    });
+
+    // El gasto que dejo su viaje al borrarlo se sigue abriendo: el selector cae
+    // en "Sin viaje asociado" en vez de romper.
+    const select = document.querySelector(
+      'select[name="trip_id"]',
+    ) as HTMLSelectElement;
+    expect(select.value).toBe("");
+    expect(
+      screen.getByRole("option", { name: "Sin viaje asociado" }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: "trip-1" } });
+    fireEvent.click(screen.getByText("Guardar Cambios"));
+
+    await waitFor(() => expect(writeChain.update).toHaveBeenCalled());
+    expect(writeChain.update.mock.calls[0][0].trip_id).toBe("trip-1");
+  });
 });

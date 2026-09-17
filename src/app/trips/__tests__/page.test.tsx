@@ -171,9 +171,8 @@ describe("TripsPage con el SDK en el navegador", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("borra el viaje por el SDK tras confirmar y lo quita de la lista", async () => {
+  it("borra el viaje por el SDK tras confirmar en el dialogo y lo quita de la lista", async () => {
     mount();
-    jest.spyOn(window, "confirm").mockReturnValue(true);
 
     render(<TripsPage />);
     await screen.findByText("Escapada a Roma");
@@ -181,6 +180,13 @@ describe("TripsPage con el SDK en el navegador", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Eliminar el viaje Escapada a Roma" }),
     );
+
+    // El borrado ya no pasa por un window.confirm: se confirma en el dialogo.
+    const confirmButton = await screen.findByRole("button", {
+      name: "Eliminar viaje",
+    });
+    await waitFor(() => expect(confirmButton).toBeEnabled());
+    fireEvent.click(confirmButton);
 
     await waitFor(() => expect(tripsChain.delete).toHaveBeenCalledTimes(1));
     expect(tripsChain.eq).toHaveBeenCalledWith("id", "trip-1");
@@ -190,9 +196,8 @@ describe("TripsPage con el SDK en el navegador", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("no borra el viaje si se cancela la confirmacion", async () => {
+  it("no borra el viaje si se cancela el dialogo", async () => {
     mount();
-    jest.spyOn(window, "confirm").mockReturnValue(false);
 
     render(<TripsPage />);
     await screen.findByText("Escapada a Roma");
@@ -200,6 +205,7 @@ describe("TripsPage con el SDK en el navegador", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Eliminar el viaje Escapada a Roma" }),
     );
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar" }));
 
     expect(tripsChain.delete).not.toHaveBeenCalled();
     expect(screen.getByText("Escapada a Roma")).toBeInTheDocument();
