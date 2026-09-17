@@ -86,6 +86,11 @@ export function getLoadErrorMessage(
   return error.kind === "timeout" ? messages.timeout : messages.request;
 }
 
+// Texto de las escrituras que se quedan esperando: el SDK no tiene techo
+// propio, asi que un guardado colgado cae aqui en vez de en su error generico.
+export const CONNECTION_TIMEOUT_MESSAGE =
+  "La conexión ha tardado demasiado. Por favor verifica tu conexión a internet e inténtalo de nuevo.";
+
 export function getErrorMessage(err: unknown, fallbackMessage?: string): string {
   let baseMessage: string
   if (err instanceof Error) {

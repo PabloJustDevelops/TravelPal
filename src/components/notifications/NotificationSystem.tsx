@@ -17,8 +17,18 @@ import {
   type Task,
 } from "../../lib/insforge";
 import { deriveAlerts, type AlertBudget } from "../../lib/alerts";
-import { formatDate, getErrorMessage } from "../../lib/utils";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+} from "../../lib/insforge-query";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  formatDate,
+  getErrorMessage,
+} from "../../lib/utils";
 import { logger } from "@/lib/logger";
+import { showToast } from "@/lib/toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Notification {
@@ -63,7 +73,10 @@ async function loadUnreadAlerts(
     .eq("is_read", false)
     .order("created_at", { ascending: false });
 
-  const { data, error } = await (signal ? query.abortSignal(signal) : query);
+  const { data, error } = await withQueryTimeout(
+    signal ? query.abortSignal(signal) : query,
+    { label: "alerts" },
+  );
   if (error) throw error;
 
   return (data || []) as Alert[];
@@ -87,9 +100,10 @@ async function ensureDerivedAlerts(
     .select("title, message")
     .eq("user_id", userId);
 
-  const { data: existingData, error: existingError } = await (signal
-    ? existingQuery.abortSignal(signal)
-    : existingQuery);
+  const { data: existingData, error: existingError } = await withQueryTimeout(
+    signal ? existingQuery.abortSignal(signal) : existingQuery,
+    { label: "alerts:existing" },
+  );
   if (existingError) throw existingError;
 
   const existingKeys = new Set(
@@ -98,12 +112,15 @@ async function ensureDerivedAlerts(
     )
   );
 
-  const [tasksRes, bookingsRes, budgetsRes, expensesRes] = await Promise.all([
-    insforge.database.from("tasks").select("*").eq("user_id", userId),
-    insforge.database.from("bookings").select("*").eq("user_id", userId),
-    insforge.database.from("budgets").select("*").eq("user_id", userId),
-    insforge.database.from("expenses").select("*").eq("user_id", userId),
-  ]);
+  const [tasksRes, bookingsRes, budgetsRes, expensesRes] = await withQueryTimeout(
+    Promise.all([
+      insforge.database.from("tasks").select("*").eq("user_id", userId),
+      insforge.database.from("bookings").select("*").eq("user_id", userId),
+      insforge.database.from("budgets").select("*").eq("user_id", userId),
+      insforge.database.from("expenses").select("*").eq("user_id", userId),
+    ]),
+    { label: "alerts:sources" },
+  );
 
   if (tasksRes.error) throw tasksRes.error;
   if (bookingsRes.error) throw bookingsRes.error;
@@ -130,9 +147,10 @@ async function ensureDerivedAlerts(
 
   if (toInsert.length === 0) return false;
 
-  const { error: insertError } = await insforge
-    .database.from("alerts")
-    .insert(toInsert);
+  const { error: insertError } = await withQueryTimeout(
+    insforge.database.from("alerts").insert(toInsert),
+    { label: "alerts:insert" },
+  );
   if (insertError) throw insertError;
 
   return true;
@@ -219,6 +237,16 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
         const message = getErrorMessage(err);
         logger.error("NotificationSystem: Error loading alerts", { error: message });
+
+        // La campana no tiene zona de error propia: si la espera vence, se avisa
+        // con un toast en vez de dejar el panel girando sin explicacion.
+        if (queryErrorKind(err) === "timeout") {
+          showToast({
+            type: "error",
+            title: "Error al cargar las notificaciones",
+            message: CONNECTION_TIMEOUT_MESSAGE,
+          });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -265,15 +293,19 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     try {
       const insforge = createInsforgeClient();
       const alertId = notificationId.replace("alert_", "");
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
-        .eq("id", alertId);
+        .eq("id", alertId)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo marcar la alerta como leída");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking alert as read", { error: message });
+      showToast({ type: "error", title: "Error al marcar como leída", message });
+      return;
     }
 
     setNotifications((prev) =>
@@ -286,15 +318,19 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     try {
       const insforge = createInsforgeClient();
       const alertId = notificationId.replace("alert_", "");
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
-        .eq("id", alertId);
+        .eq("id", alertId)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo descartar la alerta");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error dismissing alert", { error: message });
+      showToast({ type: "error", title: "Error al descartar", message });
+      return;
     }
 
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
@@ -304,16 +340,20 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   const markAllAsRead = async () => {
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
+      const { data: updatedRows, error } = await insforge
         .database.from("alerts")
         .update({ is_read: true })
         .eq("user_id", user!.id)
-        .eq("is_read", false);
+        .eq("is_read", false)
+        .select();
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudieron marcar como leídas");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking all alerts as read", { error: message });
+      showToast({ type: "error", title: "Error al marcar todas", message });
+      return;
     }
 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

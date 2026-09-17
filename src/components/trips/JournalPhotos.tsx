@@ -3,10 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JournalPhoto } from "@/lib/insforge";
 import { createInsforgeClient, JOURNAL_PHOTOS_BUCKET } from "@/lib/insforge";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
@@ -26,29 +36,34 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
   const { user } = useAuth();
   const [photos, setPhotos] = useState<JournalPhoto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setLoadError(null);
 
     try {
       const insforge = createInsforgeClient();
-      const { data, error: loadError } = await insforge.database
-        .from("journal_photos")
-        .select("*")
-        .eq("trip_id", tripId)
-        .order("created_at", { ascending: false });
+      const { data, error: photoError } = await withQueryTimeout(
+        insforge.database
+          .from("journal_photos")
+          .select("*")
+          .eq("trip_id", tripId)
+          .order("created_at", { ascending: false }),
+        { label: "journal-photos" },
+      );
 
-      if (loadError) throw loadError;
+      if (photoError) throw photoError;
 
       setPhotos((data ?? []) as JournalPhoto[]);
     } catch (err) {
       logger.error("JournalPhotos: load failed", err);
-      setError(LOAD_ERROR);
+      setLoadError({ kind: queryErrorKind(err) });
     } finally {
       setLoading(false);
     }
@@ -57,6 +72,11 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadErrorMessage = getLoadErrorMessage(loadError, {
+    timeout: "La carga de las fotos ha tardado demasiado.",
+    request: LOAD_ERROR,
+  });
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user?.id) return;
@@ -77,9 +97,10 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
       const insforge = createInsforgeClient();
       const key = objectKey(user.id, tripId, file.name);
 
-      const { data, error: uploadError } = await insforge.storage
-        .from(JOURNAL_PHOTOS_BUCKET)
-        .upload(key, file);
+      const { data, error: uploadError } = await withQueryTimeout(
+        insforge.storage.from(JOURNAL_PHOTOS_BUCKET).upload(key, file),
+        { label: "storage:upload" },
+      );
 
       if (uploadError) throw uploadError;
 
@@ -89,19 +110,28 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
       const storedKey = data?.key ?? key;
       if (!url) throw new Error("No se pudo obtener la url de la foto");
 
-      const { error: insertError } = await insforge.database
-        .from("journal_photos")
-        .insert([{ user_id: user.id, trip_id: tripId, url, key: storedKey }]);
+      const { error: insertError } = await withQueryTimeout(
+        insforge.database
+          .from("journal_photos")
+          .insert([{ user_id: user.id, trip_id: tripId, url, key: storedKey }]),
+        { label: "journal-photos:insert" },
+      );
 
       if (insertError) {
         // Sin fila no hay foto: no dejamos el objeto huerfano en el bucket.
-        await insforge.storage.from(JOURNAL_PHOTOS_BUCKET).remove(storedKey);
+        await withQueryTimeout(
+          insforge.storage.from(JOURNAL_PHOTOS_BUCKET).remove(storedKey),
+          { label: "storage:remove" },
+        );
         throw insertError;
       }
 
       await load();
     } catch (err) {
-      const message = getErrorMessage(err, "No se pudo subir la foto");
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "No se pudo subir la foto");
       logger.error("JournalPhotos: upload failed", { error: message });
       showToast({ type: "error", title: "Error al subir la foto", message });
     } finally {
@@ -123,21 +153,30 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
     try {
       const insforge = createInsforgeClient();
 
-      const { error: storageError } = await insforge.storage
-        .from(JOURNAL_PHOTOS_BUCKET)
-        .remove(photo.key);
+      const { error: storageError } = await withQueryTimeout(
+        insforge.storage.from(JOURNAL_PHOTOS_BUCKET).remove(photo.key),
+        { label: "storage:remove" },
+      );
       if (storageError) throw storageError;
 
-      const { error: deleteError } = await insforge.database
-        .from("journal_photos")
-        .delete()
-        .eq("id", photo.id);
+      const { data: deletedRows, error: deleteError } = await withQueryTimeout(
+        insforge.database
+          .from("journal_photos")
+          .delete()
+          .eq("id", photo.id)
+          .select(),
+        { label: "journal-photos:delete" },
+      );
       if (deleteError) throw deleteError;
+      assertRowsAffected(deletedRows, "No se pudo borrar la foto");
 
       setPhotos((current) => current.filter((item) => item.id !== photo.id));
       showToast({ type: "success", message: "Foto borrada" });
     } catch (err) {
-      const message = getErrorMessage(err, "No se pudo borrar la foto");
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "No se pudo borrar la foto");
       logger.error("JournalPhotos: delete failed", { error: message });
       showToast({ type: "error", title: "Error al borrar la foto", message });
     } finally {
@@ -180,8 +219,8 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
         >
           <LoadingSpinner />
         </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
+      ) : loadErrorMessage ? (
+        <ErrorState message={loadErrorMessage} onRetry={load} />
       ) : photos.length === 0 ? (
         <EmptyState
           icon={<PhotoIcon className="h-12 w-12" />}

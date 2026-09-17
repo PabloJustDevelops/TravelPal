@@ -13,8 +13,18 @@ import { selectClassName } from "@/components/ui/fieldStyles";
 import ErrorState from "@/components/ui/ErrorState";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Note, Trip } from "@/lib/insforge";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
-import { getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import { showToast } from "@/lib/toast";
 import {
   PlusIcon,
@@ -42,7 +52,9 @@ export default function NotesPage() {
     trips: Trip[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -60,25 +72,28 @@ export default function NotesPage() {
     let active = true;
 
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
 
     (async () => {
       try {
         const insforge = createInsforgeClient();
-        const [notesRes, tripsRes] = await Promise.all([
-          insforge
-            .database.from("notes")
-            .select(`*, trip:trips(*)`)
-            .eq("user_id", userId)
-            .order("updated_at", { ascending: false }),
-          insforge
-            .database.from("trips")
-            .select(
-              "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
-            )
-            .eq("user_id", userId)
-            .order("departure_date", { ascending: false }),
-        ]);
+        const [notesRes, tripsRes] = await withQueryTimeout(
+          Promise.all([
+            insforge
+              .database.from("notes")
+              .select(`*, trip:trips(*)`)
+              .eq("user_id", userId)
+              .order("updated_at", { ascending: false }),
+            insforge
+              .database.from("trips")
+              .select(
+                "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
+              )
+              .eq("user_id", userId)
+              .order("departure_date", { ascending: false }),
+          ]),
+          { label: "notes" },
+        );
 
         if (notesRes.error) throw notesRes.error;
         if (tripsRes.error) throw tripsRes.error;
@@ -93,7 +108,7 @@ export default function NotesPage() {
         logger.error("NotesPage: Error loading notes", {
           error: getErrorMessage(err, "Error al cargar las notas"),
         });
-        setLoadError(true);
+        setLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) setLoading(false);
       }
@@ -133,9 +148,10 @@ export default function NotesPage() {
     return { notes: notesData, trips: tripsData, filteredNotes: filtered };
   }, [data, searchTerm, categoryFilter, tripFilter]);
 
-  const error = loadError
-    ? "Error al cargar las notas. Por favor, inténtalo de nuevo."
-    : null;
+  const error = getLoadErrorMessage(loadError, {
+    timeout: "La carga de notas ha tardado demasiado.",
+    request: "Error al cargar las notas. Por favor, inténtalo de nuevo.",
+  });
 
   const showSkeleton =
     authLoading || loading || (!!user?.id && data === null && !loadError);
@@ -150,35 +166,43 @@ export default function NotesPage() {
         // Update existing note
         // TODO: Implement PUT API
         const insforge = createInsforgeClient();
-        const { error } = await insforge
-          .database.from("notes")
-          .update({
-            title: noteData.title,
-            content: noteData.content,
-            category: noteData.category,
-            trip_id: noteData.trip_id || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingNote.id);
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from("notes")
+            .update({
+              title: noteData.title,
+              content: noteData.content,
+              category: noteData.category,
+              trip_id: noteData.trip_id || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", editingNote.id)
+            .select(),
+          { label: "notes:update" },
+        );
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo actualizar la nota");
       } else {
         // Create new note using the InsForge SDK
         const insforge = createInsforgeClient();
-        const { error } = await insforge
-          .database.from("notes")
-          .insert([
-            {
-              user_id: user.id,
-              title: noteData.title,
-              content: noteData.content,
-              category: noteData.category || "general",
-              trip_id: noteData.trip_id || null,
-              is_favorite: false,
-            },
-          ])
-          .select()
-          .single();
+        const { error } = await withQueryTimeout(
+          insforge
+            .database.from("notes")
+            .insert([
+              {
+                user_id: user.id,
+                title: noteData.title,
+                content: noteData.content,
+                category: noteData.category || "general",
+                trip_id: noteData.trip_id || null,
+                is_favorite: false,
+              },
+            ])
+            .select()
+            .single(),
+          { label: "notes:insert" },
+        );
 
         if (error) throw error;
       }
@@ -186,7 +210,10 @@ export default function NotesPage() {
       refetch();
       handleCloseEditor();
     } catch (err: unknown) {
-      const message = getErrorMessage(err, "Error al guardar la nota");
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "Error al guardar la nota");
       logger.error("NotesPage: Error saving note", { error: message });
       showToast({
         type: "error",

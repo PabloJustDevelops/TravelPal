@@ -47,17 +47,29 @@ interface DbChain {
 
 // Cadena encadenable y "awaitable": el terminal (order, single) resuelve el
 // resultado de la lectura, que es lo que espera el `await` del componente.
-// Las escrituras reutilizan ese mismo resultado, que no trae error.
-function makeChain(result: QueryResult): DbChain {
+// Las escrituras reutilizan ese mismo resultado, que no trae error... salvo que
+// el test pase un `writeResult` aparte para el update/delete sin filas.
+function makeChain(result: QueryResult, writeResult?: QueryResult): DbChain {
   const chain = {} as DbChain;
+  let isWrite = false;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
-  chain.insert = jest.fn(() => chain);
-  chain.update = jest.fn(() => chain);
-  chain.delete = jest.fn(() => chain);
+  chain.insert = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
+  chain.update = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
+  chain.delete = jest.fn(() => {
+    isWrite = true;
+    return chain;
+  });
   chain.single = jest.fn(() => chain);
-  chain.then = (resolve) => Promise.resolve(result).then(resolve);
+  chain.then = (resolve) =>
+    Promise.resolve(isWrite && writeResult ? writeResult : result).then(resolve);
   return chain;
 }
 
@@ -189,14 +201,16 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     expensesResult = { data: expenses, error: null },
     tripsResult = { data: trips, error: null },
     budgetsResult = { data: budgets, error: null },
+    budgetsWriteResult,
   }: {
     expensesResult?: QueryResult;
     tripsResult?: QueryResult;
     budgetsResult?: QueryResult;
+    budgetsWriteResult?: QueryResult;
   } = {}) {
     expensesChain = makeChain(expensesResult);
     tripsChain = makeChain(tripsResult);
-    budgetsChain = makeChain(budgetsResult);
+    budgetsChain = makeChain(budgetsResult, budgetsWriteResult);
     const from = jest.fn((table: string) => {
       if (table === "expenses") return expensesChain;
       if (table === "trips") return tripsChain;
@@ -448,6 +462,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     expect(updatePayload).not.toHaveProperty("spent_amount");
     expect(budgetsChain.eq).toHaveBeenCalledWith("id", "b1");
     expect(budgetsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(budgetsChain.select).toHaveBeenCalledWith();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -475,6 +490,95 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     });
     expect(budgetsChain.eq).toHaveBeenCalledWith("id", "b1");
     expect(budgetsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(budgetsChain.select).toHaveBeenCalledWith();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // Con RLS, un update/delete sobre un presupuesto ajeno o inexistente vuelve
+  // con cero filas y sin error; el helper lo convierte en fallo.
+
+  it("un update sin filas afectadas muestra el error y no cierra el modal", async () => {
+    mount({ budgetsWriteResult: { data: [], error: null } });
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    const card = screen.getByText("Presupuesto Roma").closest(".group");
+    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    fireEvent.click(editButton);
+
+    fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
+      target: { value: "Presupuesto Roma 2026" },
+    });
+
+    fireEvent.submit(
+      screen
+        .getByText("Actualizar Presupuesto")
+        .closest("form") as HTMLFormElement,
+    );
+
+    expect(
+      await screen.findByText(/No se pudo guardar el presupuesto/),
+    ).toBeInTheDocument();
+    expect(budgetsChain.select).toHaveBeenCalledWith();
+    // El modal sigue abierto: no se ha tratado como exito.
+    expect(screen.getByText("Actualizar Presupuesto")).toBeInTheDocument();
+  });
+
+  it("un delete sin filas afectadas avisa de error y no recarga", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+    mount({ budgetsWriteResult: { data: [], error: null } });
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    const card = screen.getByText("Presupuesto Roma").closest(".group");
+    const deleteButton = within(card as HTMLElement)
+      .getAllByRole("button")
+      .find((button) => button.className.includes("text-danger"));
+    fireEvent.click(deleteButton as HTMLElement);
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        expect.stringContaining("No se pudo eliminar el presupuesto"),
+      );
+    });
+    // Sin exito no se recarga: el presupuesto sigue en la lista.
+    expect(screen.getByText("Presupuesto Roma")).toBeInTheDocument();
+  });
+
+  it("con una fila afectada el update cierra el modal sin error", async () => {
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+    mount();
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    const card = screen.getByText("Presupuesto Roma").closest(".group");
+    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    fireEvent.click(editButton);
+
+    fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
+      target: { value: "Presupuesto Roma 2026" },
+    });
+
+    fireEvent.submit(
+      screen
+        .getByText("Actualizar Presupuesto")
+        .closest("form") as HTMLFormElement,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Actualizar Presupuesto"),
+      ).not.toBeInTheDocument();
+    });
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 });

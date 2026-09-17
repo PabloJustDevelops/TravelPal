@@ -6,6 +6,13 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import { createInsforgeClient, Trip, Expense } from '@/lib/insforge'
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from '@/lib/insforge-query'
+import { CONNECTION_TIMEOUT_MESSAGE, getLoadErrorMessage } from '@/lib/utils'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -25,7 +32,9 @@ export default function EditExpensePage() {
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState('')
-  const [loadError, setLoadError] = useState('')
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind
+  } | null>(null)
   const [trips, setTrips] = useState<Trip[]>([])
 
   const [formData, setFormData] = useState({
@@ -44,16 +53,19 @@ export default function EditExpensePage() {
 
     try {
       setLoadingData(true)
-      setLoadError('')
+      setLoadError(null)
       
       // Cargar viajes para el selector
       try {
         const insforge = createInsforgeClient()
-        const { data: tripsData, error: tripsError } = await insforge
-          .database.from('trips')
-          .select('*')
-          .eq('user_id', userId)
-          .order('departure_date', { ascending: false })
+        const { data: tripsData, error: tripsError } = await withQueryTimeout(
+          insforge
+            .database.from('trips')
+            .select('*')
+            .eq('user_id', userId)
+            .order('departure_date', { ascending: false }),
+          { label: 'trips' },
+        )
 
         if (tripsError) throw tripsError
         setTrips((tripsData as Trip[]) || [])
@@ -65,12 +77,15 @@ export default function EditExpensePage() {
       // Cargar datos del gasto: misma lectura que el GET borrado (`select('*')`,
       // por `id` y por `user_id`).
       const insforge = createInsforgeClient()
-      const { data, error } = await insforge
-        .database.from('expenses')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', userId)
-        .single()
+      const { data, error } = await withQueryTimeout(
+        insforge
+          .database.from('expenses')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', userId)
+          .single(),
+        { label: 'expenses:detail' },
+      )
 
       if (error) throw error
 
@@ -88,7 +103,7 @@ export default function EditExpensePage() {
       
     } catch (error) {
       logger.error('Error loading expense data:', error)
-      setLoadError('Error al cargar los datos del gasto')
+      setLoadError({ kind: queryErrorKind(error) })
     } finally {
       setLoadingData(false)
     }
@@ -134,29 +149,37 @@ export default function EditExpensePage() {
       // de `description`, la columna `description` sale de `notes` y `updated_at`
       // lo fija el propio handler.
       const insforge = createInsforgeClient()
-      const { error } = await insforge
-        .database.from('expenses')
-        .update({
-          title: formData.description,
-          amount: amount,
-          currency: formData.currency || 'EUR',
-          category: formData.category || 'other',
-          date: formData.date,
-          trip_id: formData.trip_id || null,
-          description: formData.notes || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single()
+      const { data: updatedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from('expenses')
+          .update({
+            title: formData.description,
+            amount: amount,
+            currency: formData.currency || 'EUR',
+            category: formData.category || 'other',
+            date: formData.date,
+            trip_id: formData.trip_id || null,
+            description: formData.notes || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select(),
+        { label: 'expenses:update' },
+      )
 
       if (error) throw error
+      assertRowsAffected(updatedRows, 'No se pudo actualizar el gasto')
 
       router.push('/expenses')
       router.refresh()
     } catch (error: unknown) {
       logger.error('EditExpensePage: Error al actualizar el gasto', error)
+
+      if (queryErrorKind(error) === 'timeout') {
+        setError(CONNECTION_TIMEOUT_MESSAGE)
+        return
+      }
 
       let errorMessage = 'Error al actualizar el gasto'
       if (error instanceof Error) {
@@ -182,19 +205,28 @@ export default function EditExpensePage() {
     setLoading(true)
     try {
       const insforge = createInsforgeClient()
-      const { error } = await insforge
-        .database.from('expenses')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
+      const { data: deletedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from('expenses')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select(),
+        { label: 'expenses:delete' },
+      )
 
       if (error) throw error
+      assertRowsAffected(deletedRows, 'No se pudo eliminar el gasto')
 
       router.push('/expenses')
       router.refresh()
     } catch (error) {
       logger.error('EditExpensePage: Error al eliminar el gasto', error)
-      setError('Error al eliminar el gasto')
+      setError(
+        queryErrorKind(error) === 'timeout'
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : 'Error al eliminar el gasto',
+      )
       setLoading(false)
     }
   }
@@ -217,6 +249,11 @@ export default function EditExpensePage() {
     { value: 'JPY', label: 'JPY (¥)' },
   ]
 
+  const loadErrorMessage = getLoadErrorMessage(loadError, {
+    timeout: CONNECTION_TIMEOUT_MESSAGE,
+    request: 'Error al cargar los datos del gasto',
+  })
+
   if (loadingData) {
     return (
       <DashboardLayout>
@@ -227,12 +264,12 @@ export default function EditExpensePage() {
     )
   }
 
-  if (loadError) {
+  if (loadErrorMessage) {
     return (
       <DashboardLayout>
         <ErrorState
           title="No se pudo cargar el gasto"
-          message={loadError}
+          message={loadErrorMessage}
           onRetry={() => loadData()}
         />
       </DashboardLayout>

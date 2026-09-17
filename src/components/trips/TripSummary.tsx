@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Booking, Expense } from "@/lib/insforge";
 import { createInsforgeClient } from "@/lib/insforge";
+import {
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import {
   summarizeTrip,
   type TripSummary as TripSummaryData,
 } from "@/lib/trip-summary";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getLoadErrorMessage } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
@@ -24,19 +29,24 @@ const LOAD_ERROR = "No se pudo cargar el resumen del viaje";
 export default function TripSummary({ tripId }: TripSummaryProps) {
   const [summary, setSummary] = useState<TripSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setLoadError(null);
 
     try {
       const insforge = createInsforgeClient();
 
-      const [expensesRes, bookingsRes] = await Promise.all([
-        insforge.database.from("expenses").select("*").eq("trip_id", tripId),
-        insforge.database.from("bookings").select("*").eq("trip_id", tripId),
-      ]);
+      const [expensesRes, bookingsRes] = await withQueryTimeout(
+        Promise.all([
+          insforge.database.from("expenses").select("*").eq("trip_id", tripId),
+          insforge.database.from("bookings").select("*").eq("trip_id", tripId),
+        ]),
+        { label: "trip-summary" },
+      );
 
       if (expensesRes.error) throw expensesRes.error;
       if (bookingsRes.error) throw bookingsRes.error;
@@ -49,7 +59,7 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
       );
     } catch (err) {
       logger.error("TripSummary: load failed", err);
-      setError(LOAD_ERROR);
+      setLoadError({ kind: queryErrorKind(err) });
     } finally {
       setLoading(false);
     }
@@ -58,6 +68,11 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadErrorMessage = getLoadErrorMessage(loadError, {
+    timeout: "La carga del resumen ha tardado demasiado.",
+    request: LOAD_ERROR,
+  });
 
   if (loading) {
     return (
@@ -73,11 +88,11 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
     );
   }
 
-  if (error) {
+  if (loadErrorMessage) {
     return (
       <Card>
         <CardContent className="py-2">
-          <ErrorState message={error} onRetry={load} />
+          <ErrorState message={loadErrorMessage} onRetry={load} />
         </CardContent>
       </Card>
     );

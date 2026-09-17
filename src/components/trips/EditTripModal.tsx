@@ -5,6 +5,12 @@ import Input from "../ui/Input";
 import { selectClassName, textareaClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+} from "@/lib/insforge-query";
+import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
 interface EditTripModalProps {
@@ -107,19 +113,28 @@ export default function EditTripModal({
         status: formData.status,
       };
 
-      const { error } = await insforge
-        .database.from("trips")
-        .update(tripData)
-        .eq("id", trip.id);
+      const { data: updatedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("trips")
+          .update(tripData)
+          .eq("id", trip.id)
+          .select(),
+        { label: "trips:update" },
+      );
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo actualizar el viaje");
 
       logger.info("Viaje actualizado exitosamente:", trip.id);
       onSuccess();
       onClose();
     } catch (error: any) {
       logger.error("Error al actualizar viaje:", error);
-      setError(error.message || "Error al actualizar el viaje");
+      setError(
+        queryErrorKind(error) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : error.message || "Error al actualizar el viaje",
+      );
     } finally {
       setLoading(false);
     }

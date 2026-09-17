@@ -6,6 +6,12 @@ import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
 import ErrorState from "@/components/ui/ErrorState";
 import { createInsforgeClient, Task } from "@/lib/insforge";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { TaskModal } from "@/components/tasks/TaskModal";
@@ -15,7 +21,11 @@ import {
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { showToast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
@@ -28,7 +38,9 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -46,16 +58,19 @@ export default function TasksPage() {
     let active = true;
 
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
 
     (async () => {
       try {
         const insforge = createInsforgeClient();
-        const { data, error } = await insforge
-          .database.from("tasks")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+        const { data, error } = await withQueryTimeout(
+          insforge
+            .database.from("tasks")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false }),
+          { label: "tasks" },
+        );
 
         if (error) throw error;
 
@@ -66,7 +81,7 @@ export default function TasksPage() {
         logger.error("TasksPage: Error loading tasks", {
           error: getErrorMessage(err, "Error al cargar las tareas"),
         });
-        setLoadError(true);
+        setLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) setLoading(false);
       }
@@ -77,7 +92,10 @@ export default function TasksPage() {
     };
   }, [authLoading, user?.id, reloadToken]);
 
-  const error = loadError ? "No se pudieron cargar las tareas." : null;
+  const error = getLoadErrorMessage(loadError, {
+    timeout: "La carga de tareas ha tardado demasiado.",
+    request: "No se pudieron cargar las tareas.",
+  });
 
   const handleCreateTask = () => {
     setEditingTask(null);
@@ -97,28 +115,36 @@ export default function TasksPage() {
       const insforge = createInsforgeClient();
 
       if (editingTask) {
-        const { error } = await insforge
-          .database.from("tasks")
-          .update(data)
-          .eq("id", editingTask.id)
-          .eq("user_id", user.id);
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from("tasks")
+            .update(data)
+            .eq("id", editingTask.id)
+            .eq("user_id", user.id)
+            .select(),
+          { label: "tasks:update" },
+        );
 
         if (error) throw error;
+        assertRowsAffected(updatedRows, "No se pudo actualizar la tarea");
       } else {
-        const { error } = await insforge
-          .database.from("tasks")
-          .insert([
-            {
-              user_id: user.id,
-              title: data.title,
-              description: data.description,
-              status: data.status || "pending",
-              priority: data.priority || "medium",
-              due_date: data.due_date || null,
-            },
-          ])
-          .select()
-          .single();
+        const { error } = await withQueryTimeout(
+          insforge
+            .database.from("tasks")
+            .insert([
+              {
+                user_id: user.id,
+                title: data.title,
+                description: data.description,
+                status: data.status || "pending",
+                priority: data.priority || "medium",
+                due_date: data.due_date || null,
+              },
+            ])
+            .select()
+            .single(),
+          { label: "tasks:insert" },
+        );
 
         if (error) throw error;
       }
@@ -133,7 +159,13 @@ export default function TasksPage() {
       logger.error("TasksPage: Error saving task", {
         error: getErrorMessage(err, "Error al guardar la tarea"),
       });
-      showToast({ type: "error", message: "Error al guardar la tarea" });
+      showToast({
+        type: "error",
+        message:
+          queryErrorKind(err) === "timeout"
+            ? CONNECTION_TIMEOUT_MESSAGE
+            : "Error al guardar la tarea",
+      });
     } finally {
       setSaving(false);
     }
@@ -145,13 +177,18 @@ export default function TasksPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
-        .database.from("tasks")
-        .delete()
-        .eq("id", task.id)
-        .eq("user_id", user.id);
+      const { data: deletedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("tasks")
+          .delete()
+          .eq("id", task.id)
+          .eq("user_id", user.id)
+          .select(),
+        { label: "tasks:delete" },
+      );
 
       if (error) throw error;
+      assertRowsAffected(deletedRows, "No se pudo eliminar la tarea");
 
       showToast({ type: "success", message: "Tarea eliminada" });
       setTasks(tasks.filter((t) => t.id !== task.id));
@@ -159,7 +196,13 @@ export default function TasksPage() {
       logger.error("TasksPage: Error deleting task", {
         error: getErrorMessage(err, "Error al eliminar la tarea"),
       });
-      showToast({ type: "error", message: "Error al eliminar la tarea" });
+      showToast({
+        type: "error",
+        message:
+          queryErrorKind(err) === "timeout"
+            ? CONNECTION_TIMEOUT_MESSAGE
+            : "Error al eliminar la tarea",
+      });
     }
   };
 
@@ -177,20 +220,31 @@ export default function TasksPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { error } = await insforge
-        .database.from("tasks")
-        .update({ status: newStatus })
-        .eq("id", taskId)
-        .eq("user_id", user.id);
+      const { data: updatedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("tasks")
+          .update({ status: newStatus })
+          .eq("id", taskId)
+          .eq("user_id", user.id)
+          .select(),
+        { label: "tasks:status" },
+      );
 
       if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo actualizar el estado");
 
       // No need to fetch if successful, state is already updated
     } catch (err) {
       logger.error("TasksPage: Error updating task status", {
         error: getErrorMessage(err, "Error al actualizar el estado"),
       });
-      showToast({ type: "error", message: "Error al actualizar el estado" });
+      showToast({
+        type: "error",
+        message:
+          queryErrorKind(err) === "timeout"
+            ? CONNECTION_TIMEOUT_MESSAGE
+            : "Error al actualizar el estado",
+      });
       setTasks(previousTasks); // Revert on error
     }
   };

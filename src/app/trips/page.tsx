@@ -10,6 +10,11 @@ import { selectClassName } from "@/components/ui/fieldStyles";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
 import {
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
+import {
   PlusIcon,
   MagnifyingGlassIcon,
   PlayIcon,
@@ -18,7 +23,7 @@ import {
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 import { logger } from "@/lib/logger";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, getLoadErrorMessage } from "@/lib/utils";
 
 export default function TripsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -26,7 +31,9 @@ export default function TripsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -44,16 +51,19 @@ export default function TripsPage() {
     let active = true;
 
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
 
     (async () => {
       try {
         const insforge = createInsforgeClient();
-        const { data, error } = await insforge
-          .database.from("trips")
-          .select("*")
-          .eq("user_id", userId)
-          .order("departure_date", { ascending: false });
+        const { data, error } = await withQueryTimeout(
+          insforge
+            .database.from("trips")
+            .select("*")
+            .eq("user_id", userId)
+            .order("departure_date", { ascending: false }),
+          { label: "trips" },
+        );
 
         if (error) throw error;
 
@@ -64,7 +74,7 @@ export default function TripsPage() {
         logger.error("TripsPage: Error loading trips", {
           error: getErrorMessage(err, "Error al cargar los viajes"),
         });
-        setLoadError(true);
+        setLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) setLoading(false);
       }
@@ -106,9 +116,10 @@ export default function TripsPage() {
     return filtered;
   }, [trips, searchTerm, statusFilter]);
 
-  const error = loadError
-    ? "Error al cargar los viajes. Por favor, intenta recargar."
-    : null;
+  const error = getLoadErrorMessage(loadError, {
+    timeout: "La carga de viajes ha tardado demasiado. Por favor, reintenta.",
+    request: "Error al cargar los viajes. Por favor, intenta recargar.",
+  });
 
   const showSkeleton = authLoading || loading;
 

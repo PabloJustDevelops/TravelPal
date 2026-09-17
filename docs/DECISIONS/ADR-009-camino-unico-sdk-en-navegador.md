@@ -36,6 +36,11 @@ en código: este ADR la registra.
    `insforge-functions.ts` ni un módulo por dominio: las páginas llaman al SDK. El disparador para
    extraer uno es el **tercer uso del mismo `select` o del mismo mapeo**: dos copias se toleran, la
    tercera se extrae a un módulo.
+   `src/lib/insforge-query.ts` no es esa capa de datos: no envuelve un dominio ni decide consultas,
+   son **dos funciones transversales** que se aplican a cualquier consulta —el guardián de filas
+   afectadas (`assertRowsAffected`, [#53]) y el envoltorio de espera (`withQueryTimeout`, [#56])—.
+   Que exista ese fichero no abre la puerta a un `insforge-functions.ts` por dominio: el disparador
+   del tercer uso sigue vigente.
 4. **El guardián deja de congelar y pasa a ser valla.** `scripts/check-data-paths.mjs` con
    `scripts/data-paths-baseline.json` ya no mide deuda pendiente (todo a cero): ahora **prohíbe**
    volver al BFF. Cualquier `fetch('/api/<dominio>')` o `useApiResource('/api/<dominio>')` nuevo,
@@ -63,8 +68,10 @@ en el [ADR-008](ADR-008-retirada-del-asistente.md) y el proxy de Amadeus en el
 - **Se pierde el ocultamiento de la forma de las consultas.** El cliente pasa a saber qué columnas y
   qué filtros usa la app. Con RLS no es un problema de seguridad, pero es información que antes no
   salía del servidor.
-- **Se pierde el `logger.error` por consulta del handler y el timeout.** El hook `useApiResource`
-  tenía un timeout de 15 s que el SDK no tiene; queda anotado en el [#56].
+- **Se pierde el `logger.error` por consulta del handler.** El hook `useApiResource` lo emitía en
+  cada carga; con el SDK el registro queda a cargo de cada página. El timeout de 15 s que ese hook
+  también tenía **no se pierde**: lo devuelve `withQueryTimeout` (`src/lib/insforge-query.ts`), que
+  usan las páginas y los componentes migrados (ver "Pérdidas que cerró la etapa 4").
 - **Sin el BFF no hay 400 ni 500 propios.** Lo que el handler validara (el de `dashboard` no
   validaba nada: no tenía 400) se va con él; los errores del SDK se muestran tal cual.
 - **`requireUser()`, `ensureUserExists()` y `useApiResource` quedan sin llamadores** (solo sus
@@ -75,10 +82,21 @@ en el [ADR-008](ADR-008-retirada-del-asistente.md) y el proxy de Amadeus en el
 - **Menos código de servidor**: los `route.ts` de datos de usuario, con sus métodos y sus tests de
   endpoint, ya no existen.
 
-## Pérdidas que se corrigen aparte (etapa 4)
+## Pérdidas que cerró la etapa 4
 
-- [#53]: el `update`/`delete` de una fila ajena no debe reportar éxito en la UI.
-- [#56]: las consultas del SDK no tienen timeout desde que se retiró el BFF.
+Las dos pérdidas que esta decisión dejó anotadas se corrigieron en la propia etapa 4, sin reabrir el
+camino único:
+
+- **[#53]** — con RLS, un `update`/`delete` sobre una fila ajena o inexistente vuelve con cero filas
+  y sin error, así que la UI podía cantar un éxito que no había ocurrido. El guardián
+  `assertRowsAffected` (`src/lib/insforge-query.ts`, commit `28a40e1`) convierte esas cero filas en
+  un fallo tipado; las mutaciones encadenan `.select()` para pedir al backend las filas afectadas.
+- **[#56]** — desde que se retiró el BFF, ninguna consulta del SDK en el navegador tenía techo: si
+  la red o el backend se colgaban, el spinner no paraba y el usuario no recibía ni error ni mensaje.
+  El envoltorio `withQueryTimeout` (`src/lib/insforge-query.ts`, commit `77e97ed`) devuelve el corte
+  de 15 s y distingue el timeout (`QueryTimeoutError`) del error del SDK, sin abortar la petición por
+  debajo: el timeout es de la espera del cliente. Se aplicó a las páginas migradas (`b8fb2c5`) y a
+  los componentes que consultan (`a9b33c9`), con el mensaje de timeout separado del genérico.
 
 ## Por qué es difícil de revertir
 

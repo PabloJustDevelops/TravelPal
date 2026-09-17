@@ -6,9 +6,19 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EditTripModal from "@/components/trips/EditTripModal";
 import TripJournal from "@/components/trips/TripJournal";
@@ -32,7 +42,9 @@ export default function TripDetailsPage({
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
 
@@ -42,11 +54,10 @@ export default function TripDetailsPage({
       // setLoading(true); 
       const insforge = createInsforgeClient();
 
-      const { data, error } = await insforge
-        .database.from("trips")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data, error } = await withQueryTimeout(
+        insforge.database.from("trips").select("*").eq("id", id).single(),
+        { label: "trips:detail" },
+      );
 
       if (error) throw error;
 
@@ -57,7 +68,7 @@ export default function TripDetailsPage({
       setTrip(data);
     } catch (err: unknown) {
       logger.error("Error loading trip details:", err);
-      setError("No se pudo cargar la información del viaje");
+      setLoadError({ kind: queryErrorKind(err) });
     } finally {
       setLoading(false);
     }
@@ -74,6 +85,11 @@ export default function TripDetailsPage({
     setLoading(true);
     loadTrip();
   }, [id, user, authLoading, router, loadTrip]);
+
+  const error = getLoadErrorMessage(loadError, {
+    timeout: CONNECTION_TIMEOUT_MESSAGE,
+    request: "No se pudo cargar la información del viaje",
+  });
 
   if (loading || authLoading) {
     return (
@@ -94,7 +110,7 @@ export default function TripDetailsPage({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
               onClick={() => {
-                setError("");
+                setLoadError(null);
                 setLoading(true);
                 loadTrip();
               }}
@@ -124,18 +140,23 @@ export default function TripDetailsPage({
 
     try {
       const insforge = createInsforgeClient();
-      const { error: updateError } = await insforge.database
-        .from("trips")
-        .update({ status: "completed" })
-        .eq("id", trip.id);
+      const { data: updatedRows, error: updateError } = await withQueryTimeout(
+        insforge.database
+          .from("trips")
+          .update({ status: "completed" })
+          .eq("id", trip.id)
+          .select(),
+        { label: "trips:complete" },
+      );
 
       if (updateError) throw updateError;
+      assertRowsAffected(updatedRows, "No se pudo marcar el viaje como completado");
       await loadTrip();
     } catch (err) {
-      const message = getErrorMessage(
-        err,
-        "No se pudo marcar el viaje como completado",
-      );
+      const message =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "No se pudo marcar el viaje como completado");
       logger.error("TripDetailsPage: mark completed failed", { error: message });
       showToast({
         type: "error",
