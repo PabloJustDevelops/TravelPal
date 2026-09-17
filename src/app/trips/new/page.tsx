@@ -8,6 +8,7 @@ import Input from "@/components/ui/Input";
 import { selectClassName, textareaClassName } from "@/components/ui/fieldStyles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/contexts/AuthContext";
+import { createInsforgeClient } from "@/lib/insforge";
 import { logger } from "@/lib/logger";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -86,7 +87,8 @@ export default function NewTripPage() {
         ? `${formData.notes}\n\nViajeros: ${formData.travelers}`
         : `Viajeros: ${formData.travelers}`;
 
-      const tripData = {
+      const newTrip = {
+        user_id: user.id,
         title: formData.title,
         origin: formData.origin,
         destination: formData.destination,
@@ -95,45 +97,20 @@ export default function NewTripPage() {
         airline: formData.airline || null,
         flight_number: formData.flight_number || null,
         confirmation_number: formData.confirmation_number || null,
-        notes: notesWithTravelers,
-        status: formData.status,
+        notes: notesWithTravelers || null,
+        status: formData.status || "planned",
       };
 
-      logger.debug("Enviando datos a API:", tripData);
+      logger.debug("Enviando datos al SDK:", newTrip);
 
-      // Timeout de seguridad para evitar carga infinita (15 segundos)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              new Error(
-                "La conexión ha tardado demasiado. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
-              ),
-            ),
-          15000,
-        ),
-      );
+      const insforge = createInsforgeClient();
+      const { data, error: insertError } = await insforge
+        .database.from("trips")
+        .insert([newTrip])
+        .select()
+        .single();
 
-      const fetchPromise = fetch("/api/trips", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(tripData),
-      });
-
-      // Usamos Promise.race para competir entre la DB y el timeout
-      const res = (await Promise.race([
-        fetchPromise,
-        timeoutPromise,
-      ])) as Response;
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Error al crear el viaje");
-      }
-
-      const data = await res.json();
+      if (insertError) throw insertError;
 
       logger.info("Viaje creado exitosamente:", data.id);
 

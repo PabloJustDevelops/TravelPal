@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
@@ -8,7 +8,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import { selectClassName } from "@/components/ui/fieldStyles";
 import { useAuth } from "@/contexts/AuthContext";
-import { Trip } from "@/lib/insforge";
+import { createInsforgeClient, Trip } from "@/lib/insforge";
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -17,23 +17,63 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
-import { useApiResource } from "@/hooks/use-api-resource";
-import { getLoadErrorMessage } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function TripsPage() {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const url = !authLoading && user?.id ? "/api/trips" : null;
-  const {
-    data,
-    loading,
-    error: loadError,
-    refetch,
-  } = useApiResource<Trip[]>(url);
+  const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
 
-  const trips = useMemo(() => data ?? [], [data]);
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user?.id) {
+      setTrips([]);
+      setLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setLoading(true);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        const insforge = createInsforgeClient();
+        const { data, error } = await insforge
+          .database.from("trips")
+          .select("*")
+          .eq("user_id", userId)
+          .order("departure_date", { ascending: false });
+
+        if (error) throw error;
+
+        if (!active) return;
+        setTrips((data as Trip[]) ?? []);
+      } catch (err) {
+        if (!active) return;
+        logger.error("TripsPage: Error loading trips", {
+          error: getErrorMessage(err, "Error al cargar los viajes"),
+        });
+        setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, reloadToken]);
 
   const filteredTrips = useMemo(() => {
     let filtered = trips;
@@ -66,13 +106,11 @@ export default function TripsPage() {
     return filtered;
   }, [trips, searchTerm, statusFilter]);
 
-  const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de viajes ha tardado demasiado. Por favor, reintenta.",
-    request: "Error al cargar los viajes. Por favor, intenta recargar.",
-  });
+  const error = loadError
+    ? "Error al cargar los viajes. Por favor, intenta recargar."
+    : null;
 
-  const showSkeleton =
-    authLoading || loading || (url !== null && data === null && !loadError);
+  const showSkeleton = authLoading || loading;
 
   if (showSkeleton) {
     return (

@@ -1,7 +1,7 @@
 {
   "note": "Baseline de la etapa 0 del issue #38. 'bff' = fetch/useApiResource con literal /api/<dominio>; 'bffUnknown' = useApiResource con URL variable o fetch sin literal; 'sdk' informativo. Regenerar con --update solo al bajar el camino bff.",
   "domains": {
-    "trips": 4,
+    "trips": 0,
     "expenses": 4,
     "tasks": 0,
     "notes": 0,
@@ -40,25 +40,20 @@
       "bffUnknown": 0,
       "sdk": 5
     },
-    "src/app/api/trips/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 2
-    },
     "src/app/dashboard/page.tsx": {
       "bff": 0,
       "bffUnknown": 1,
       "sdk": 0
     },
     "src/app/expenses/[id]/edit/page.tsx": {
-      "bff": 4,
+      "bff": 3,
       "bffUnknown": 0,
-      "sdk": 0
+      "sdk": 2
     },
     "src/app/expenses/new/page.tsx": {
-      "bff": 2,
+      "bff": 1,
       "bffUnknown": 0,
-      "sdk": 0
+      "sdk": 2
     },
     "src/app/expenses/page.tsx": {
       "bff": 1,
@@ -86,14 +81,14 @@
       "sdk": 3
     },
     "src/app/trips/new/page.tsx": {
-      "bff": 2,
+      "bff": 1,
       "bffUnknown": 0,
-      "sdk": 0
+      "sdk": 2
     },
     "src/app/trips/page.tsx": {
       "bff": 0,
-      "bffUnknown": 1,
-      "sdk": 0
+      "bffUnknown": 0,
+      "sdk": 2
     },
     "src/components/notifications/NotificationSystem.tsx": {
       "bff": 0,
@@ -101,9 +96,9 @@
       "sdk": 14
     },
     "src/components/planning/NewBookingForm.tsx": {
-      "bff": 1,
+      "bff": 0,
       "bffUnknown": 1,
-      "sdk": 0
+      "sdk": 2
     },
     "src/components/trips/EditTripModal.tsx": {
       "bff": 0,
@@ -127,8 +122,8 @@
     }
   },
   "totals": {
-    "bff": 10,
-    "bffUnknown": 7,
-    "sdk": 73
+    "bff": 6,
+    "bffUnknown": 6,
+    "sdk": 81
   }
 }

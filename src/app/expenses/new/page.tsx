@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
-import { Trip } from '@/lib/insforge'
+import { createInsforgeClient, Trip } from '@/lib/insforge'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -30,29 +30,29 @@ export default function NewExpensePage() {
     notes: '',
   })
 
-  const loadTrips = useCallback(async () => {
+  const loadTrips = useCallback(async (userId: string) => {
     try {
-      // Usar la API de viajes en lugar de insforge directo para consistencia
-      // Aunque aquí usamos solo lectura, es mejor centralizar
-      // Pero como ya existe la API /api/expenses que devuelve { expenses, trips }
-      // podríamos usar esa o simplemente /api/trips
-      // Usaremos /api/trips para ser más específicos
-      
-      const res = await fetch('/api/trips');
-      if (!res.ok) throw new Error('Error al cargar viajes');
-      const data = await res.json();
-      setTrips(data || []);
+      // Los viajes alimentan el selector: se leen del SDK, no del BFF.
+      const insforge = createInsforgeClient()
+      const { data, error } = await insforge
+        .database.from('trips')
+        .select('*')
+        .eq('user_id', userId)
+        .order('departure_date', { ascending: false })
+
+      if (error) throw error
+      setTrips((data as Trip[]) || [])
     } catch (error) {
-      console.error('Error loading trips:', error);
+      console.error('Error loading trips:', error)
       // No bloqueamos la UI si fallan los viajes, solo no aparecen en el selector
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    if (user) {
-      loadTrips()
+    if (user?.id) {
+      loadTrips(user.id)
     }
-  }, [user, loadTrips])
+  }, [user?.id, loadTrips])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
