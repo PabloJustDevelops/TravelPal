@@ -3,6 +3,15 @@ import JournalPhotos from "../JournalPhotos";
 import { createInsforgeClient } from "@/lib/insforge";
 import type { JournalPhoto } from "@/lib/insforge";
 
+// El mock global de jest.setup.js solo expone `createInsforgeClient`, asi que
+// el componente recibiria sus constantes de storage a `undefined`. Aqui se
+// declaran con su valor real (no se puede `requireActual` del modulo: arrastra
+// el SDK, que es ESM).
+jest.mock("@/lib/insforge", () => ({
+  createInsforgeClient: jest.fn(() => ({ database: { from: jest.fn() } })),
+  JOURNAL_PHOTOS_BUCKET: "journal-photos",
+  JOURNAL_PHOTOS_SIGNED_URL_TTL: 3600,
+}));
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "user-a" }, loading: false }),
 }));
@@ -49,11 +58,23 @@ function makeDbChain(
 function makeStorage(
   uploadResult: QueryResult = { data: { url: "https://cdn/photo.jpg", key: "k1" } },
   removeResult: QueryResult = { data: null, error: null },
+  signResult?: QueryResult,
 ) {
   return {
     upload: jest.fn(() => Promise.resolve(uploadResult)),
     remove: jest.fn(() => Promise.resolve(removeResult)),
+    // Por defecto firma todas las keys que le pasen; con `signResult` se
+    // simula el fallo de una entrada suelta o de la llamada entera.
+    createSignedUrls: jest.fn((paths: string[]) =>
+      Promise.resolve(
+        signResult ?? { data: paths.map(signedEntry), error: null },
+      ),
+    ),
   };
+}
+
+function signedEntry(path: string) {
+  return { path, signedUrl: `https://signed/${path}`, error: null };
 }
 
 const mockedClient = createInsforgeClient as jest.Mock;
@@ -97,7 +118,7 @@ describe("JournalPhotos", () => {
   });
 
   it("invita a anadir la primera foto cuando no hay ninguna", async () => {
-    mount(makeDbChain({ data: [] }));
+    const { storage } = mount(makeDbChain({ data: [] }));
 
     render(<JournalPhotos tripId="trip-1" />);
 
@@ -106,18 +127,100 @@ describe("JournalPhotos", () => {
         screen.getByText("Todavia no hay fotos del viaje"),
       ).toBeInTheDocument();
     });
+
+    expect(storage.createSignedUrls).not.toHaveBeenCalled();
   });
 
-  it("muestra las fotos del viaje", async () => {
-    mount(makeDbChain({ data: [photo({ id: "p1" })] }));
+  it("pinta la url firmada de la foto y no la url publica de la fila", async () => {
+    const chain = makeDbChain({ data: [photo({ id: "p1" })] });
+    const { storage } = mount(chain);
 
     render(<JournalPhotos tripId="trip-1" />);
 
     await waitFor(() => {
       expect(screen.getByAltText("Foto del diario")).toHaveAttribute(
         "src",
-        "https://cdn/foto.jpg",
+        "https://signed/user-a/trip-1/foto.jpg",
       );
+    });
+
+    expect(screen.getByAltText("Foto del diario")).not.toHaveAttribute(
+      "src",
+      "https://cdn/foto.jpg",
+    );
+    expect(storage.createSignedUrls).toHaveBeenCalledWith(
+      ["user-a/trip-1/foto.jpg"],
+      3600,
+    );
+  });
+
+  it("el fallo de firma de una foto no afecta a las demas", async () => {
+    const chain = makeDbChain({
+      data: [
+        photo({ id: "p1", key: "user-a/trip-1/buena.jpg" }),
+        photo({
+          id: "p2",
+          key: "user-a/trip-1/rota.jpg",
+          url: "https://cdn/rota.jpg",
+        }),
+      ],
+    });
+    const { storage } = mount(
+      chain,
+      makeStorage(undefined, undefined, {
+        data: [
+          signedEntry("user-a/trip-1/buena.jpg"),
+          {
+            path: "user-a/trip-1/rota.jpg",
+            signedUrl: null,
+            error: "objeto no encontrado",
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    render(<JournalPhotos tripId="trip-1" />);
+
+    await waitFor(() => {
+      expect(screen.getByAltText("Foto del diario")).toHaveAttribute(
+        "src",
+        "https://signed/user-a/trip-1/buena.jpg",
+      );
+    });
+
+    expect(
+      screen.getByRole("img", { name: "Foto del diario no disponible" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "Borrar foto" }),
+    ).toHaveLength(2);
+    expect(storage.createSignedUrls).toHaveBeenCalledWith(
+      ["user-a/trip-1/buena.jpg", "user-a/trip-1/rota.jpg"],
+      3600,
+    );
+  });
+
+  it("si falla la firma en bloque lo dice y permite reintentar", async () => {
+    const chain = makeDbChain({ data: [photo({ id: "p1" })] });
+    mount(
+      chain,
+      makeStorage(undefined, undefined, { error: { message: "boom" } }),
+    );
+
+    render(<JournalPhotos tripId="trip-1" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No se pudieron cargar las fotos del diario"),
+      ).toBeInTheDocument();
+    });
+
+    const callsBefore = chain.select.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    await waitFor(() => {
+      expect(chain.select.mock.calls.length).toBeGreaterThan(callsBefore);
     });
   });
 
