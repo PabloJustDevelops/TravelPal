@@ -29,14 +29,14 @@
   --surface: #f3ede3;
   --surface-strong: #e9e1d3;
   --ink: #1a1815;
-  --muted: #6b655c;
+  --muted: #6a645b;
   --line: #e4dcd0;
-  --accent: #b45309;
+  --accent: #ac4f09;
   --accent-hover: #94430a;
   --accent-soft: #fbf1e3;
   --on-accent: #fbf8f3;
-  --success: #2f6f5e;
-  --warning: #a16207;
+  --success: #2e6d5c;
+  --warning: #8d5606;
   --danger: #9f1239;
 
   --background: var(--paper);

@@ -83,9 +83,14 @@ export default function ExpenseCard({ expense, showTripTitle = false }: ExpenseC
             <span>{expense.title || expense.description}</span>
           </CardTitle>
           <div className="text-right flex flex-col items-end">
-             <Link href={`/expenses/${expense.id}/edit`}>
-               <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                 <PencilSquareIcon className="h-4 w-4" />
+             <Link href={`/expenses/${expense.id}/edit`} aria-label="Editar gasto">
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 aria-label="Editar gasto"
+                 className="opacity-0 group-hover:opacity-100 transition-opacity mb-1"
+               >
+                 <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
                </Button>
              </Link>
             <div className="text-lg font-bold text-ink">
