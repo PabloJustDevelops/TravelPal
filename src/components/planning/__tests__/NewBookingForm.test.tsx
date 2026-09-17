@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import NewBookingForm from "../NewBookingForm";
 import { useAuth } from "@/contexts/AuthContext";
-import { createInsforgeClient } from "@/lib/insforge";
+import { createInsforgeClient, type Booking } from "@/lib/insforge";
 import { logger } from "@/lib/logger";
 
 // Mock dependencies
@@ -22,33 +22,49 @@ interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
   order: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  single: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
-// Cadena encadenable y "awaitable": el terminal (order) resuelve la lectura de
-// viajes que alimenta el selector.
+// Cadena encadenable y "awaitable": cualquier terminal (order, single) resuelve
+// el mismo resultado. La lectura de viajes del selector y la escritura de la
+// reserva comparten cadena, asi que un resultado con error prueba las dos.
 function makeChain(result: QueryResult): DbChain {
   const chain = {} as DbChain;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
+  chain.insert = jest.fn(() => chain);
+  chain.update = jest.fn(() => chain);
+  chain.delete = jest.fn(() => chain);
+  chain.single = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
 
 const mockedClient = createInsforgeClient as jest.Mock;
 
+const existingBooking: Booking = {
+  id: "b1",
+  user_id: "test-user-id",
+  trip_id: "trip-1",
+  type: "hotel",
+  title: "Hotel en Paris",
+  status: "confirmed",
+  start_date: "2025-04-01",
+  start_time: "15:00",
+  created_at: "2026-01-01T00:00:00.000Z",
+  updated_at: "2026-01-01T00:00:00.000Z",
+};
+
 describe("NewBookingForm", () => {
   const mockOnSuccess = jest.fn();
   const mockOnCancel = jest.fn();
-  let tripsChain: DbChain;
+  let chain: DbChain;
   let fetchMock: jest.Mock;
-
-  const jsonResponse = (data: unknown) => ({
-    ok: true,
-    status: 200,
-    json: async () => data,
-  });
 
   const mount = (
     result: QueryResult = {
@@ -56,8 +72,8 @@ describe("NewBookingForm", () => {
       error: null,
     },
   ) => {
-    tripsChain = makeChain(result);
-    const from = jest.fn(() => tripsChain);
+    chain = makeChain(result);
+    const from = jest.fn(() => chain);
     mockedClient.mockReturnValue({ database: { from } });
     return { from };
   };
@@ -69,8 +85,8 @@ describe("NewBookingForm", () => {
     })
 
     mount()
-    // El POST /api/planning guarda la reserva; sigue en el BFF (otro dominio).
-    fetchMock = jest.fn(() => Promise.resolve(jsonResponse({ id: 'booking-1' })))
+    // El formulario migrado no debe tocar el BFF: cualquier fetch seria un fallo.
+    fetchMock = jest.fn()
     global.fetch = fetchMock as unknown as typeof fetch
   })
 
@@ -87,9 +103,9 @@ describe("NewBookingForm", () => {
 
     // El selector sale del SDK, con el mismo select, filtro y order del handler.
     expect(from).toHaveBeenCalledWith('trips')
-    expect(tripsChain.select).toHaveBeenCalledWith('*')
-    expect(tripsChain.eq).toHaveBeenCalledWith('user_id', 'test-user-id')
-    expect(tripsChain.order).toHaveBeenCalledWith('departure_date', {
+    expect(chain.select).toHaveBeenCalledWith('*')
+    expect(chain.eq).toHaveBeenCalledWith('user_id', 'test-user-id')
+    expect(chain.order).toHaveBeenCalledWith('departure_date', {
       ascending: false,
     })
     // Nada de fetch al cargar: el camino migrado no pasa por el BFF.
@@ -129,7 +145,7 @@ describe("NewBookingForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits form with correct data", async () => {
+  it("da de alta la reserva por el SDK con los campos y defaults del handler", async () => {
     render(
       <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
     );
@@ -153,20 +169,118 @@ describe("NewBookingForm", () => {
       expect(mockOnSuccess).toHaveBeenCalled();
     });
 
-    // Verifica el payload real que el componente envía a la API
-    const planningCall = fetchMock.mock.calls.find(
-      ([url]) => url === '/api/planning',
-    );
-    expect(planningCall).toBeDefined();
-    const payload = JSON.parse(planningCall![1].body);
-    expect(payload).toEqual(
-      expect.objectContaining({
-        title: "Test Booking",
-        start_date: "2025-05-01",
-        notes: expect.stringContaining("Personas: 2"),
+    // El insert reproduce el POST borrado: `user_id` lo ponia la API, el numero
+    // de personas viaja dentro de `notes` y los opcionales vacios caen a null
+    // (`cost` a 0 y `currency` a EUR).
+    expect(chain.insert).toHaveBeenCalledWith([
+      {
+        user_id: "test-user-id",
         trip_id: "trip-1",
-      }),
+        type: "other",
+        title: "Test Booking",
+        description: null,
+        start_date: "2025-05-01",
+        start_time: "12:00",
+        end_date: null,
+        end_time: null,
+        location: null,
+        confirmation_number: null,
+        airline: null,
+        flight_number: null,
+        origin: null,
+        destination: null,
+        cost: 0,
+        currency: "EUR",
+        status: "confirmed",
+        notes: "Personas: 2\n",
+      },
+    ]);
+    expect(chain.select).toHaveBeenCalledWith();
+    expect(chain.single).toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("da de alta una reserva de tipo actividad con los mismos campos", async () => {
+    render(
+      <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
     );
+
+    await screen.findByRole('option', { name: 'Trip to Paris' });
+
+    fireEvent.change(screen.getByLabelText(/Título/i), {
+      target: { value: "Cena en Roma" },
+    });
+    fireEvent.change(screen.getByLabelText(/Tipo/i), {
+      target: { value: "activity" },
+    });
+    fireEvent.change(screen.getByLabelText(/Fecha/i), {
+      target: { value: "2025-06-01" },
+    });
+
+    fireEvent.click(screen.getByText("Guardar Reserva"));
+
+    await waitFor(() => {
+      expect(mockOnSuccess).toHaveBeenCalled();
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        type: "activity",
+        title: "Cena en Roma",
+        start_date: "2025-06-01",
+        airline: null,
+        cost: 0,
+        currency: "EUR",
+      }),
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("edita la reserva con el update del handler, scopeado a id y user_id", async () => {
+    render(
+      <NewBookingForm
+        onSuccess={mockOnSuccess}
+        onCancel={mockOnCancel}
+        initialData={existingBooking}
+      />,
+    );
+
+    const submitButton = screen.getByText("Guardar Reserva");
+    fireEvent.submit(submitButton.closest("form") as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(mockOnSuccess).toHaveBeenCalled();
+    });
+
+    // El update reproduce el PUT borrado: mismos campos con sus defaults, el
+    // `updated_at` explicito y el scope por id y usuario. Ni `trip_id` ni
+    // `user_id` viajan en el payload.
+    const updatePayload = chain.update.mock.calls[0][0];
+    expect(updatePayload).toEqual({
+      type: "hotel",
+      title: "Hotel en Paris",
+      description: null,
+      start_date: "2025-04-01",
+      start_time: "15:00",
+      end_date: null,
+      end_time: null,
+      location: null,
+      confirmation_number: null,
+      airline: null,
+      flight_number: null,
+      origin: null,
+      destination: null,
+      cost: 0,
+      currency: "EUR",
+      status: "confirmed",
+      notes: "Personas: 1\n",
+      updated_at: expect.any(String),
+    });
+    expect(updatePayload).not.toHaveProperty("trip_id");
+    expect(updatePayload).not.toHaveProperty("user_id");
+    expect(chain.eq).toHaveBeenCalledWith("id", "b1");
+    expect(chain.eq).toHaveBeenCalledWith("user_id", "test-user-id");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("handles cancellation", async () => {
@@ -237,11 +351,7 @@ describe("NewBookingForm", () => {
       expect(mockOnSuccess).toHaveBeenCalled();
     });
 
-    const planningCall = fetchMock.mock.calls.find(
-      ([url]) => url === '/api/planning',
-    );
-    const payload = JSON.parse(planningCall![1].body);
-    expect(payload).toEqual(
+    expect(chain.insert).toHaveBeenCalledWith([
       expect.objectContaining({
         type: "flight",
         title: "Vuelo a Nueva York",
@@ -252,7 +362,8 @@ describe("NewBookingForm", () => {
         cost: 123.45,
         currency: "EUR",
       }),
-    );
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("no envia datos de vuelo si el tipo no es Vuelo", async () => {
@@ -274,14 +385,31 @@ describe("NewBookingForm", () => {
       expect(mockOnSuccess).toHaveBeenCalled();
     });
 
-    const planningCall = fetchMock.mock.calls.find(
-      ([url]) => url === '/api/planning',
+    // Los campos de vuelo del handler caen a null y `cost` a 0.
+    const payload = chain.insert.mock.calls[0][0][0];
+    expect(payload.airline).toBeNull();
+    expect(payload.flight_number).toBeNull();
+    expect(payload.origin).toBeNull();
+    expect(payload.destination).toBeNull();
+    expect(payload.cost).toBe(0);
+    expect(payload.currency).toBe("EUR");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("no se traga el error del SDK al guardar la reserva", async () => {
+    mount({ data: null, error: { message: 'boom' } })
+
+    render(
+      <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
     );
-    const payload = JSON.parse(planningCall![1].body);
-    expect(payload.airline).toBeUndefined();
-    expect(payload.flight_number).toBeUndefined();
-    expect(payload.origin).toBeUndefined();
-    expect(payload.destination).toBeUndefined();
-    expect(payload.cost).toBeUndefined();
+
+    const submitButton = screen.getByText("Guardar Reserva");
+    fireEvent.submit(submitButton.closest("form") as HTMLFormElement);
+
+    expect(
+      await screen.findByText(/Error al guardar la reserva/),
+    ).toBeInTheDocument();
+    expect(mockOnSuccess).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

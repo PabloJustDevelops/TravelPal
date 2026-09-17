@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarIcon,
@@ -33,10 +33,9 @@ import Modal from "../../components/ui/Modal";
 import NewBookingForm from "../../components/planning/NewBookingForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { createInsforgeClient, Booking } from "../../lib/insforge";
-import { formatDate, cn } from "../../lib/utils";
+import { formatDate, cn, getErrorMessage } from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import PageSkeleton from "@/components/ui/PageSkeleton";
-import { useApiResource } from "@/hooks/use-api-resource";
 
 import { format } from 'date-fns';
 
@@ -69,7 +68,9 @@ export default function PlanningPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [activities, setActivities] = useState<ItineraryActivity[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -106,42 +107,85 @@ export default function PlanningPage() {
     }
   };
 
-  const url = !authLoading && user ? "/api/planning" : null;
-  const {
-    data,
-    loading,
-    error: loadError,
-    refetch,
-  } = useApiResource<{
-    trips: Trip[];
-    bookings: Booking[];
-    activities: ItineraryActivity[];
-  }>(url);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const { trips, activities } = useMemo(
-    () => ({
-      trips: data?.trips ?? [],
-      activities: data?.activities ?? [],
-    }),
-    [data],
-  );
+  const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
 
+  // El GET de /api/planning traia tres consultas en paralelo; se reproducen tal
+  // cual, tabla a tabla, desde el SDK: mismo `*`, mismo filtro por usuario y el
+  // mismo `order` (viajes por salida y reservas por inicio, actividades sin
+  // orden), y el cliente decide lo mismo que decidia antes con `data`.
   useEffect(() => {
-    if (data) setBookings(data.bookings ?? []);
-  }, [data]);
+    if (authLoading) return;
 
-  useEffect(() => {
-    setSilentReload(false);
-  }, [data, loadError]);
+    if (!user?.id) {
+      setTrips([]);
+      setBookings([]);
+      setActivities([]);
+      setLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setLoading(true);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        const client = createInsforgeClient();
+        const [tripsRes, bookingsRes, activitiesRes] = await Promise.all([
+          client
+            .database.from("trips")
+            .select("*")
+            .eq("user_id", userId)
+            .order("departure_date", { ascending: true }),
+          client
+            .database.from("bookings")
+            .select("*")
+            .eq("user_id", userId)
+            .order("start_date", { ascending: true }),
+          client
+            .database.from("itinerary_activities")
+            .select("*")
+            .eq("user_id", userId),
+        ]);
+
+        if (tripsRes.error) throw tripsRes.error;
+        if (bookingsRes.error) throw bookingsRes.error;
+        if (activitiesRes.error) throw activitiesRes.error;
+
+        if (!active) return;
+        setTrips((tripsRes.data as Trip[]) ?? []);
+        setBookings((bookingsRes.data as Booking[]) ?? []);
+        setActivities((activitiesRes.data as ItineraryActivity[]) ?? []);
+      } catch (err) {
+        if (!active) return;
+        logger.error("PlanningPage: Error loading planning data", {
+          error: getErrorMessage(err, "Error al cargar la planificación"),
+        });
+        setLoadError(true);
+      } finally {
+        if (active) {
+          setLoading(false);
+          setSilentReload(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, reloadToken]);
 
   const error = loadError
     ? "Error al cargar la planificación. Por favor, inténtalo de nuevo."
     : null;
 
-  const showSkeleton =
-    authLoading ||
-    (loading && !silentReload) ||
-    (url !== null && data === null && !loadError);
+  const showSkeleton = authLoading || (loading && !silentReload);
 
   const generateCalendarEvents = useCallback(() => {
     const calendarEvents: CalendarEvent[] = [];

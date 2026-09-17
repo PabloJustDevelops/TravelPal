@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 import { Booking, createInsforgeClient } from "@/lib/insforge";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/utils";
 
 interface NewBookingFormProps {
   onSuccess: () => void;
@@ -135,25 +136,13 @@ export default function NewBookingForm({
     setError("");
 
     try {
-      // Map number of people to notes/description
+      // El handler borrado envolvia el numero de personas y la descripcion en
+      // `notes` y aplicaba sus defaults al construir la fila: opcionales vacios
+      // a null, `cost` a 0 y `currency` a EUR. Se reproduce tal cual.
       const notes = `Personas: ${formData.number_of_people}\n${formData.description}`;
-
-      // Ensure start_time is valid or null if empty
       const startTime = formData.start_time || null;
+      const status = initialData ? initialData.status : "confirmed";
 
-      // Usamos el ID del viaje seleccionado si existe en el contexto global (si lo tuviéramos)
-      // Como este componente es genérico, debemos asegurarnos de tener un trip_id
-      // NOTA: Para esta implementación rápida, asumiremos que si no hay trip_id, 
-      // la API lo manejará o fallará. Lo ideal sería pasar tripId como prop.
-      // Dado que initialData ya tiene trip_id, lo usamos. Si es nuevo, necesitamos un trip_id.
-      // Pero el formulario actual no pide trip_id. 
-      // Solución temporal: Si es una creación nueva y no tenemos trip_id, 
-      // esto fallará en la API. El usuario debería seleccionar un viaje antes o en el formulario.
-      // Vamos a añadir un selector de viaje si es necesario, pero por ahora 
-      // mantenemos la lógica existente y asumimos que se llamará desde un contexto con viaje
-      // O vamos a hacer fetch a la API sin trip_id y dejar que la API valide.
-      
-      // Los campos de vuelo solo se envian cuando la reserva es un vuelo.
       const flightFields =
         formData.type === "flight"
           ? {
@@ -164,97 +153,77 @@ export default function NewBookingForm({
               cost: formData.cost === "" ? 0 : Number(formData.cost),
               currency: formData.currency || "EUR",
             }
-          : {};
+          : null;
 
-      const bookingData = {
-        title: formData.title,
-        type: formData.type,
-        start_date: formData.start_date,
-        start_time: startTime,
-        notes: notes,
-        status: initialData ? initialData.status : 'confirmed',
-        // Propiedades adicionales necesarias para la API
-        description: formData.description,
-        // Si estamos editando, usamos el trip_id existente
-        trip_id: initialData?.trip_id,
-        ...flightFields,
-      };
+      const insforge = createInsforgeClient();
 
-      logger.debug('Submitting booking data:', {
-        ...bookingData,
-        isUpdate: !!initialData
-      });
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('La conexión ha tardado demasiado...')), 15000)
-      );
-
-      // Si no tenemos trip_id y es creación nueva, necesitamos obtenerlo o pedirlo.
-      // Por ahora, para que funcione la creación básica desde la vista de calendario global,
-      // la API requerirá trip_id.
-      // Si el usuario está en la vista general, no hay trip_id seleccionado.
-      // Vamos a permitir que falle si falta trip_id, pero lo ideal es añadir el campo.
-      
-      // NOTA CRÍTICA: La API espera un trip_id. Si este formulario se usa sin un viaje preseleccionado,
-      // la creación fallará. 
-      // Para arreglar esto rápidamente sin cambiar toda la UI, vamos a hacer fetch a los viajes
-      // y seleccionar el primero si no hay uno, o mostrar error.
-      // Pero mejor aún, vamos a enviar la petición a la API.
-
-      const url = '/api/planning'; 
-      let method = 'POST';
-      
       if (initialData) {
-          method = 'PUT';
+        const { error } = await insforge
+          .database.from("bookings")
+          .update({
+            type: formData.type,
+            title: formData.title,
+            description: formData.description || null,
+            start_date: formData.start_date,
+            start_time: startTime,
+            end_date: null,
+            end_time: null,
+            location: null,
+            confirmation_number: null,
+            airline: flightFields?.airline || null,
+            flight_number: flightFields?.flight_number || null,
+            origin: flightFields?.origin || null,
+            destination: flightFields?.destination || null,
+            cost: flightFields?.cost || 0,
+            currency: flightFields?.currency || "EUR",
+            status: status || "pending",
+            notes: notes || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", initialData.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+      } else {
+        const { error } = await insforge
+          .database.from("bookings")
+          .insert([
+            {
+              user_id: user.id,
+              trip_id: formData.trip_id,
+              type: formData.type,
+              title: formData.title,
+              description: formData.description || null,
+              start_date: formData.start_date,
+              start_time: startTime,
+              end_date: null,
+              end_time: null,
+              location: null,
+              confirmation_number: null,
+              airline: flightFields?.airline || null,
+              flight_number: flightFields?.flight_number || null,
+              origin: flightFields?.origin || null,
+              destination: flightFields?.destination || null,
+              cost: flightFields?.cost || 0,
+              currency: flightFields?.currency || "EUR",
+              status: status || "pending",
+              notes: notes || null,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
       }
 
-      // Necesitamos un trip_id obligatorio.
-      // Si no viene en initialData (que es null en creación), tenemos un problema.
-      // Vamos a hardcodear un fetch de viajes para seleccionar uno por defecto
-      // o inyectar el trip_id desde las props (que deberíamos añadir).
-      
-      // MOCK: Para que funcione, necesitamos que el usuario seleccione un viaje.
-      // Vamos a añadir el campo de selección de viaje al formulario si no hay initialData.
-      
-      // ... (Lógica de selección de viaje añadida en el render) ...
-      
-      // Construimos el body final
-      const body = {
-          ...bookingData,
-          id: initialData?.id, // Necesario para PUT
-          // trip_id debe venir del estado del formulario (que añadiremos)
-          trip_id: formData.trip_id
-      };
-
-      const fetchPromise = fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-      });
-
-      const res = (await Promise.race([
-        fetchPromise,
-        timeoutPromise,
-      ])) as Response;
-
-      if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Error al guardar la reserva');
-      }
-
-      const data = await res.json();
-
-      logger.info(`Booking ${initialData ? 'updated' : 'created'} successfully:`, data);
+      logger.info(`Booking ${initialData ? "updated" : "created"} successfully`);
       onSuccess();
-    } catch (err: any) {
-      logger.error('Error saving booking:', JSON.stringify(err, null, 2));
-      
-      let message = 'Error desconocido al guardar';
-      if (err instanceof Error) {
-        message = err.message;
-      }
-      
-      setError(`Error al guardar la reserva: ${message}`);
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Error al guardar la reserva");
+      logger.error("Error saving booking:", { error: message, raw: err });
+      setError(message);
     } finally {
       setLoading(false);
     }
