@@ -16,6 +16,20 @@ function publicClient() {
   });
 }
 
+// El SDK devuelve `InsForgeError` con statusCode; conservarlo deja a la UI
+// distinguir un código caducado de un reenvío prematuro sin leer el texto del
+// backend (que además puede cambiar).
+type AuthActionError = Error & { statusCode?: number };
+
+function toAuthActionError(
+  error: { message: string; statusCode: number } | null,
+  fallback: string,
+): AuthActionError {
+  const wrapped = new Error(error?.message || fallback) as AuthActionError;
+  if (error) wrapped.statusCode = error.statusCode;
+  return wrapped;
+}
+
 export async function signInAction(input: {
   email: string;
   password: string;
@@ -50,6 +64,37 @@ export async function signUpAction(input: {
     user: data?.user ?? null,
     requireEmailVerification: data?.requireEmailVerification ?? false,
   };
+}
+
+export async function verifyEmailAction(input: { email: string; otp: string }) {
+  const auth = createAuthActions({ cookies: await cookies() });
+  const { data, error } = await auth.verifyEmail(input);
+
+  if (error || !data?.user) {
+    logger.error("verifyEmailAction: fallo al verificar el email", {
+      error: error?.message,
+      statusCode: error?.statusCode,
+    });
+    throw toAuthActionError(error, "No se pudo verificar el email");
+  }
+
+  // El código correcto deja la sesión hecha: `createAuthActions` ya escribió las
+  // cookies httpOnly antes de devolver.
+  return { user: { id: data.user.id, email: data.user.email } };
+}
+
+export async function resendVerificationEmailAction(input: { email: string }) {
+  // Las auth actions no exponen el reenvío, así que va con el cliente público
+  // (mismo patrón que el reset). No toca cookies: reenviar no crea sesión.
+  const { error } = await publicClient().auth.resendVerificationEmail(input);
+
+  if (error) {
+    logger.error("resendVerificationEmailAction: fallo", {
+      error: error.message,
+      statusCode: error.statusCode,
+    });
+    throw toAuthActionError(error, "No se pudo reenviar el código de verificación");
+  }
 }
 
 export async function signOutAction() {

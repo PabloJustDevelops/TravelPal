@@ -11,6 +11,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Button from '@/components/ui/Button'
 import { fieldClassName } from '@/components/ui/fieldStyles'
 import { cn } from '@/lib/utils'
+import VerifyEmailStep from './VerifyEmailStep'
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -34,7 +35,9 @@ export default function RegisterForm() {
   const [isClient, setIsClient] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  // Email pendiente de verificar: si el backend pide confirmación, el registro
+  // se queda en el paso del código en vez de mandar al dashboard.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   
   const { signUp } = useAuth()
   const router = useRouter()
@@ -86,11 +89,18 @@ export default function RegisterForm() {
     setError('')
 
     try {
-      await signUp(data.email, data.password, data.fullName)
-      setSuccess(true)
-      setTimeout(() => {
-        router.replace('/signin')
-      }, 2000)
+      const { requireEmailVerification } = await signUp(
+        data.email,
+        data.password,
+        data.fullName,
+      )
+
+      if (requireEmailVerification) {
+        setPendingEmail(data.email)
+      } else {
+        // El alta ya dejó sesión: no hay nada que confirmar.
+        router.replace('/dashboard')
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         if (err.message.includes('auth/email-already-in-use')) {
@@ -106,24 +116,8 @@ export default function RegisterForm() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-green-600">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            ¡Cuenta creada exitosamente!
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Revisa tu email para confirmar tu cuenta. Serás redirigido al login en unos segundos.
-          </p>
-        </div>
-      </div>
-    )
+  if (pendingEmail) {
+    return <VerifyEmailStep email={pendingEmail} />
   }
 
   return (
@@ -147,18 +141,6 @@ export default function RegisterForm() {
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
-
-          {success && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="text-sm text-green-700">
-                ¡Cuenta creada exitosamente! 
-                {/* Mensaje condicional basado en si se requiere confirmación */}
-                <br />
-                <strong>Nota:</strong> Si no puedes iniciar sesión inmediatamente, 
-                revisa tu email para confirmar tu cuenta.
-              </div>
             </div>
           )}
 
