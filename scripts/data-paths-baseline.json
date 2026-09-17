@@ -15,11 +15,6 @@
       "bffUnknown": 0,
       "sdk": 3
     },
-    "src/app/api/planning/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 5
-    },
     "src/app/dashboard/page.tsx": {
       "bff": 0,
       "bffUnknown": 1,
@@ -47,8 +42,8 @@
     },
     "src/app/planning/page.tsx": {
       "bff": 0,
-      "bffUnknown": 1,
-      "sdk": 7
+      "bffUnknown": 0,
+      "sdk": 11
     },
     "src/app/tasks/page.tsx": {
       "bff": 0,
@@ -77,8 +72,8 @@
     },
     "src/components/planning/NewBookingForm.tsx": {
       "bff": 0,
-      "bffUnknown": 1,
-      "sdk": 2
+      "bffUnknown": 0,
+      "sdk": 5
     },
     "src/components/trips/EditTripModal.tsx": {
       "bff": 0,
@@ -103,7 +98,7 @@
   },
   "totals": {
     "bff": 0,
-    "bffUnknown": 3,
-    "sdk": 87
+    "bffUnknown": 1,
+    "sdk": 89
   }
 }
