@@ -133,4 +133,25 @@ describe('AuthContext: alta y verificacion', () => {
       'ana@example.com',
     )
   })
+
+  it('marca sessionError si la comprobacion falla, en vez de dar la sesion por inexistente', async () => {
+    mockedGetCurrentUser.mockRejectedValue(new Error('auth unreachable'))
+
+    mount()
+
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    expect(readApi().user).toBeNull()
+    // Distinto de "no hay sesion": el guardia no debe redirigir en falso.
+    expect(readApi().sessionError).toBe(true)
+  })
+
+  it('no marca sessionError cuando el servidor confirma que no hay sesion', async () => {
+    mount()
+
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    expect(readApi().user).toBeNull()
+    expect(readApi().sessionError).toBe(false)
+  })
 })
