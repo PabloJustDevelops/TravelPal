@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Expense, Trip } from "@/lib/insforge";
-import { assertRowsAffected } from "@/lib/insforge-query";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
 import BudgetCard from "@/components/budget/BudgetCard";
@@ -24,7 +29,12 @@ import {
   CalendarIcon,
   TrophyIcon,
 } from "@heroicons/react/24/outline";
-import { formatCurrency, getErrorMessage } from "@/lib/utils";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  formatCurrency,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "@/lib/utils";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 import { logger } from "@/lib/logger";
@@ -128,7 +138,9 @@ export default function ExpensesPage() {
     budgets: Budget[];
   } | null>(null);
   const [expensesLoading, setExpensesLoading] = useState(true);
-  const [expensesLoadError, setExpensesLoadError] = useState(false);
+  const [expensesLoadError, setExpensesLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [expensesReloadToken, setExpensesReloadToken] = useState(0);
 
   const refetchExpenses = useCallback(
@@ -149,30 +161,33 @@ export default function ExpensesPage() {
     let active = true;
 
     setExpensesLoading(true);
-    setExpensesLoadError(false);
+    setExpensesLoadError(null);
 
     (async () => {
       try {
         const insforge = createInsforgeClient();
-        const [expensesRes, tripsRes, budgetsRes] = await Promise.all([
-          insforge
-            .database.from("expenses")
-            .select(`*, trip:trips(*)`)
-            .eq("user_id", userId)
-            .order("date", { ascending: false }),
-          insforge
-            .database.from("trips")
-            .select(
-              "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
-            )
-            .eq("user_id", userId)
-            .order("departure_date", { ascending: false }),
-          insforge
-            .database.from("budgets")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false }),
-        ]);
+        const [expensesRes, tripsRes, budgetsRes] = await withQueryTimeout(
+          Promise.all([
+            insforge
+              .database.from("expenses")
+              .select(`*, trip:trips(*)`)
+              .eq("user_id", userId)
+              .order("date", { ascending: false }),
+            insforge
+              .database.from("trips")
+              .select(
+                "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
+              )
+              .eq("user_id", userId)
+              .order("departure_date", { ascending: false }),
+            insforge
+              .database.from("budgets")
+              .select("*")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false }),
+          ]),
+          { label: "expenses" },
+        );
 
         if (expensesRes.error) throw expensesRes.error;
         if (tripsRes.error) throw tripsRes.error;
@@ -189,7 +204,7 @@ export default function ExpensesPage() {
         logger.error("ExpensesPage: Error loading expenses", {
           error: getErrorMessage(err, "Error al cargar los gastos"),
         });
-        setExpensesLoadError(true);
+        setExpensesLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) setExpensesLoading(false);
       }
@@ -298,12 +313,12 @@ export default function ExpensesPage() {
       };
     }, [expensesData, searchTerm, categoryFilter, tripFilter]);
 
-  // El timeout de 15 s era del hook del BFF: con el SDK la lectura de cualquiera
-  // de las tres tablas falla como error del SDK y reutiliza el mensaje que el
-  // handler daba para su 500.
-  const error = expensesLoadError
-    ? "Error al cargar los gastos. Por favor, inténtalo de nuevo."
-    : null;
+  // Las tres lecturas comparten el techo del envoltorio: si alguna no responde
+  // a tiempo, el mensaje es el de timeout y no el generico del error del SDK.
+  const error = getLoadErrorMessage(expensesLoadError, {
+    timeout: "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
+    request: "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
+  });
 
   const showSkeleton =
     authLoading ||
@@ -493,24 +508,30 @@ export default function ExpensesPage() {
       const insforge = createInsforgeClient();
 
       if (editingBudget) {
-        const { data: updatedRows, error } = await insforge
-          .database.from("budgets")
-          .update({
-            ...budgetData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingBudget.id)
-          .eq("user_id", user.id)
-          .select();
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from("budgets")
+            .update({
+              ...budgetData,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", editingBudget.id)
+            .eq("user_id", user.id)
+            .select(),
+          { label: "budgets:update" },
+        );
 
         if (error) throw error;
         assertRowsAffected(updatedRows, "No se pudo guardar el presupuesto");
       } else {
-        const { error } = await insforge
-          .database.from("budgets")
-          .insert([{ user_id: user.id, ...budgetData }])
-          .select()
-          .single();
+        const { error } = await withQueryTimeout(
+          insforge
+            .database.from("budgets")
+            .insert([{ user_id: user.id, ...budgetData }])
+            .select()
+            .single(),
+          { label: "budgets:insert" },
+        );
 
         if (error) throw error;
       }
@@ -518,7 +539,10 @@ export default function ExpensesPage() {
       setShowBudgetModal(false);
       refetchExpenses();
     } catch (err) {
-      const msg = getErrorMessage(err, "Error al guardar el presupuesto");
+      const msg =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "Error al guardar el presupuesto");
       logger.error("Error saving budget:", { error: msg, raw: err });
       setSubmitError(msg);
     } finally {
@@ -533,19 +557,25 @@ export default function ExpensesPage() {
 
     try {
       const insforge = createInsforgeClient();
-      const { data: deletedRows, error } = await insforge
-        .database.from("budgets")
-        .delete()
-        .eq("id", budgetId)
-        .eq("user_id", user.id)
-        .select();
+      const { data: deletedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("budgets")
+          .delete()
+          .eq("id", budgetId)
+          .eq("user_id", user.id)
+          .select(),
+        { label: "budgets:delete" },
+      );
 
       if (error) throw error;
       assertRowsAffected(deletedRows, "No se pudo eliminar el presupuesto");
 
       refetchExpenses();
     } catch (err) {
-      const msg = getErrorMessage(err, "Error al eliminar el presupuesto");
+      const msg =
+        queryErrorKind(err) === "timeout"
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : getErrorMessage(err, "Error al eliminar el presupuesto");
       logger.error("Error deleting budget:", { error: msg, raw: err });
       alert(msg);
     }

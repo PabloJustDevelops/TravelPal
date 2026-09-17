@@ -9,6 +9,8 @@ import { selectClassName, textareaClassName } from "@/components/ui/fieldStyles"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
+import { queryErrorKind, withQueryTimeout } from "@/lib/insforge-query";
+import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -104,11 +106,14 @@ export default function NewTripPage() {
       logger.debug("Enviando datos al SDK:", newTrip);
 
       const insforge = createInsforgeClient();
-      const { data, error: insertError } = await insforge
-        .database.from("trips")
-        .insert([newTrip])
-        .select()
-        .single();
+      const { data, error: insertError } = await withQueryTimeout(
+        insforge
+          .database.from("trips")
+          .insert([newTrip])
+          .select()
+          .single(),
+        { label: "trips:insert" },
+      );
 
       if (insertError) throw insertError;
 
@@ -120,25 +125,28 @@ export default function NewTripPage() {
         // Si falla el presupuesto, el viaje ya está creado: el fallo se registra
         // y la navegación sigue igual.
         try {
-          const { error: budgetError } = await insforge
-            .database.from("budgets")
-            .insert([
-              {
-                user_id: user.id,
-                name: "Presupuesto General",
-                total_amount: formData.budget,
-                currency: "EUR",
-                category: "General",
-                start_date: formData.departure_date.split("T")[0],
-                end_date: formData.return_date
-                  ? formData.return_date.split("T")[0]
-                  : formData.departure_date.split("T")[0],
-                trip_id: data.id,
-                description: null,
-              },
-            ])
-            .select()
-            .single();
+          const { error: budgetError } = await withQueryTimeout(
+            insforge
+              .database.from("budgets")
+              .insert([
+                {
+                  user_id: user.id,
+                  name: "Presupuesto General",
+                  total_amount: formData.budget,
+                  currency: "EUR",
+                  category: "General",
+                  start_date: formData.departure_date.split("T")[0],
+                  end_date: formData.return_date
+                    ? formData.return_date.split("T")[0]
+                    : formData.departure_date.split("T")[0],
+                  trip_id: data.id,
+                  description: null,
+                },
+              ])
+              .select()
+              .single(),
+            { label: "trips:budget" },
+          );
 
           if (budgetError) throw budgetError;
         } catch (budgetError) {
@@ -150,6 +158,12 @@ export default function NewTripPage() {
       router.push(`/trips/${data.id}`);
     } catch (error: unknown) {
       logger.error("Excepción al crear viaje:", error);
+
+      if (queryErrorKind(error) === "timeout") {
+        setError(CONNECTION_TIMEOUT_MESSAGE);
+        return;
+      }
+
       let errorMessage = "Error al crear el viaje. Por favor intenta de nuevo.";
 
       if (error instanceof Error) {

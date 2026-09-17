@@ -4,6 +4,11 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Trip, Expense } from "@/lib/insforge";
+import {
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "@/lib/insforge-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import TripChart from "@/components/charts/TripChart";
 import { Card } from "@/components/ui/Card";
@@ -20,7 +25,11 @@ import {
   PaperAirplaneIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { getErrorMessage, cn } from "@/lib/utils";
+import {
+  getErrorMessage,
+  getLoadErrorMessage,
+  cn,
+} from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { Menu, Transition } from "@headlessui/react";
 import { toPng } from "html-to-image";
@@ -108,7 +117,9 @@ export default function DashboardPage() {
     budgets: Budget[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -126,7 +137,7 @@ export default function DashboardPage() {
     let active = true;
 
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
 
     (async () => {
       try {
@@ -164,11 +175,10 @@ export default function DashboardPage() {
           .eq("user_id", userId)
           .order("created_at", { ascending: false });
 
-        const [tripsRes, expensesRes, budgetsRes] = await Promise.all([
-          tripsQuery,
-          expensesQuery,
-          budgetsQuery,
-        ]);
+        const [tripsRes, expensesRes, budgetsRes] = await withQueryTimeout(
+          Promise.all([tripsQuery, expensesQuery, budgetsQuery]),
+          { label: "dashboard" },
+        );
 
         if (tripsRes.error) throw tripsRes.error;
         if (expensesRes.error) throw expensesRes.error;
@@ -185,7 +195,7 @@ export default function DashboardPage() {
         logger.error("DashboardPage: Error loading dashboard", {
           error: getErrorMessage(err, "Error al cargar los datos"),
         });
-        setLoadError(true);
+        setLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) setLoading(false);
       }
@@ -245,11 +255,10 @@ export default function DashboardPage() {
     };
   }, [data, selectedCurrency]);
 
-  // El timeout de 15 s era del hook del BFF: con el SDK, cualquiera de las tres
-  // lecturas falla como error del SDK y reutiliza el mensaje del 500 del handler.
-  const error = loadError
-    ? "Error al cargar los datos. Por favor, intenta recargar."
-    : null;
+  const error = getLoadErrorMessage(loadError, {
+    timeout: "La carga de datos ha tardado demasiado. Por favor, reintenta.",
+    request: "Error al cargar los datos. Por favor, intenta recargar.",
+  });
 
   const showSkeleton =
     authLoading || loading || (!!user?.id && data === null && !loadError);

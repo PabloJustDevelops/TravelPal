@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TasksPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Task } from "@/lib/insforge";
@@ -162,6 +162,24 @@ function mount(
 }
 
 const toastMock = showToast as jest.Mock;
+
+// Cadena que nunca resuelve: reproduce la consulta que se queda colgada, que es
+// justo lo que el envoltorio tiene que cortar.
+function mountHanging() {
+  const chain = {} as DbChain;
+  chain.select = jest.fn(() => chain);
+  chain.eq = jest.fn(() => chain);
+  chain.order = jest.fn(() => chain);
+  chain.insert = jest.fn(() => chain);
+  chain.update = jest.fn(() => chain);
+  chain.delete = jest.fn(() => chain);
+  chain.single = jest.fn(() => chain);
+  chain.then = () => new Promise<never>(() => {});
+  tasksChain = chain;
+  const from = jest.fn(() => tasksChain);
+  mockedClient.mockReturnValue({ database: { from } });
+  return { from };
+}
 
 describe("TasksPage con el SDK en el navegador", () => {
   beforeEach(() => {
@@ -344,6 +362,34 @@ describe("TasksPage con el SDK en el navegador", () => {
       await screen.findByText("No se pudieron cargar las tareas."),
     ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // Sin el envoltorio, esta lectura se queda esperando para siempre y el
+  // spinner no da ni mensaje ni error: la prueba se queda sin el texto de
+  // timeout (ver el rojo demostrado en el informe).
+  it("muestra el mensaje de timeout, no el generico, cuando la lectura no responde", async () => {
+    jest.useFakeTimers();
+
+    try {
+      mountHanging();
+
+      render(<TasksPage />);
+
+      // La consulta no responde sola: hay que vencer su techo de 15 s.
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(15000);
+      });
+
+      expect(
+        screen.getByText("La carga de tareas ha tardado demasiado."),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("No se pudieron cargar las tareas."),
+      ).not.toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   // Con RLS, un update/delete sobre una fila ajena o inexistente no trae error:

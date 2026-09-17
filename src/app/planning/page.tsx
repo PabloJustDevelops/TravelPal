@@ -33,8 +33,19 @@ import Modal from "../../components/ui/Modal";
 import NewBookingForm from "../../components/planning/NewBookingForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { createInsforgeClient, Booking } from "../../lib/insforge";
-import { assertRowsAffected } from "../../lib/insforge-query";
-import { formatDate, cn, getErrorMessage } from "../../lib/utils";
+import {
+  assertRowsAffected,
+  queryErrorKind,
+  withQueryTimeout,
+  type QueryErrorKind,
+} from "../../lib/insforge-query";
+import {
+  CONNECTION_TIMEOUT_MESSAGE,
+  formatDate,
+  cn,
+  getErrorMessage,
+  getLoadErrorMessage,
+} from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 
@@ -109,7 +120,9 @@ export default function PlanningPage() {
   };
 
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<{
+    kind: QueryErrorKind;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -133,27 +146,30 @@ export default function PlanningPage() {
     let active = true;
 
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
 
     (async () => {
       try {
         const client = createInsforgeClient();
-        const [tripsRes, bookingsRes, activitiesRes] = await Promise.all([
-          client
-            .database.from("trips")
-            .select("*")
-            .eq("user_id", userId)
-            .order("departure_date", { ascending: true }),
-          client
-            .database.from("bookings")
-            .select("*")
-            .eq("user_id", userId)
-            .order("start_date", { ascending: true }),
-          client
-            .database.from("itinerary_activities")
-            .select("*")
-            .eq("user_id", userId),
-        ]);
+        const [tripsRes, bookingsRes, activitiesRes] = await withQueryTimeout(
+          Promise.all([
+            client
+              .database.from("trips")
+              .select("*")
+              .eq("user_id", userId)
+              .order("departure_date", { ascending: true }),
+            client
+              .database.from("bookings")
+              .select("*")
+              .eq("user_id", userId)
+              .order("start_date", { ascending: true }),
+            client
+              .database.from("itinerary_activities")
+              .select("*")
+              .eq("user_id", userId),
+          ]),
+          { label: "planning" },
+        );
 
         if (tripsRes.error) throw tripsRes.error;
         if (bookingsRes.error) throw bookingsRes.error;
@@ -168,7 +184,7 @@ export default function PlanningPage() {
         logger.error("PlanningPage: Error loading planning data", {
           error: getErrorMessage(err, "Error al cargar la planificación"),
         });
-        setLoadError(true);
+        setLoadError({ kind: queryErrorKind(err) });
       } finally {
         if (active) {
           setLoading(false);
@@ -182,9 +198,10 @@ export default function PlanningPage() {
     };
   }, [authLoading, user?.id, reloadToken]);
 
-  const error = loadError
-    ? "Error al cargar la planificación. Por favor, inténtalo de nuevo."
-    : null;
+  const error = getLoadErrorMessage(loadError, {
+    timeout: "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
+    request: "Error al cargar la planificación. Por favor, inténtalo de nuevo.",
+  });
 
   const showSkeleton = authLoading || (loading && !silentReload);
 
@@ -352,29 +369,38 @@ export default function PlanningPage() {
     void (async () => {
       try {
         if (event.type === "booking" && event.bookingId) {
-          const { data: deletedRows, error } = await insforge
-            .database.from("bookings")
-            .delete()
-            .eq("id", event.bookingId)
-            .select();
+          const { data: deletedRows, error } = await withQueryTimeout(
+            insforge
+              .database.from("bookings")
+              .delete()
+              .eq("id", event.bookingId)
+              .select(),
+            { label: "bookings:delete" },
+          );
 
           if (error) throw error;
           assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "activity" && event.activityId) {
-          const { data: deletedRows, error } = await insforge
-            .database.from("itinerary_activities")
-            .delete()
-            .eq("id", event.activityId)
-            .select();
+          const { data: deletedRows, error } = await withQueryTimeout(
+            insforge
+              .database.from("itinerary_activities")
+              .delete()
+              .eq("id", event.activityId)
+              .select(),
+            { label: "activities:delete" },
+          );
 
           if (error) throw error;
           assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "trip" && event.tripId) {
-          const { data: deletedRows, error } = await insforge
-            .database.from("trips")
-            .delete()
-            .eq("id", event.tripId)
-            .select();
+          const { data: deletedRows, error } = await withQueryTimeout(
+            insforge
+              .database.from("trips")
+              .delete()
+              .eq("id", event.tripId)
+              .select(),
+            { label: "trips:delete" },
+          );
 
           if (error) throw error;
           assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
@@ -383,7 +409,11 @@ export default function PlanningPage() {
         refetch();
       } catch (error) {
         logger.error("Error deleting event:", error);
-        alert("Error al eliminar el evento");
+        alert(
+          queryErrorKind(error) === "timeout"
+            ? CONNECTION_TIMEOUT_MESSAGE
+            : "Error al eliminar el evento",
+        );
       }
     })();
   };
@@ -426,28 +456,37 @@ export default function PlanningPage() {
 
       // Update in DB based on event type
       if (event.type === 'booking' && event.bookingId) {
-        const { data: updatedRows, error } = await insforge
-          .database.from('bookings')
-          .update({ start_date: formattedDate })
-          .eq('id', event.bookingId)
-          .select();
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from('bookings')
+            .update({ start_date: formattedDate })
+            .eq('id', event.bookingId)
+            .select(),
+          { label: 'bookings:move' },
+        );
         if (error) throw error;
         assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       } else if (event.type === 'activity' && event.activityId) {
-        const { data: updatedRows, error } = await insforge
-          .database.from('itinerary_activities')
-          .update({ date: formattedDate })
-          .eq('id', event.activityId)
-          .select();
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from('itinerary_activities')
+            .update({ date: formattedDate })
+            .eq('id', event.activityId)
+            .select(),
+          { label: 'activities:move' },
+        );
         if (error) throw error;
         assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       } else if (event.type === 'trip' && event.tripId) {
         // For trips, we might need to handle end date logic, but for simple move:
-        const { data: updatedRows, error } = await insforge
-          .database.from('trips')
-          .update({ departure_date: formattedDate })
-          .eq('id', event.tripId)
-          .select();
+        const { data: updatedRows, error } = await withQueryTimeout(
+          insforge
+            .database.from('trips')
+            .update({ departure_date: formattedDate })
+            .eq('id', event.tripId)
+            .select(),
+          { label: 'trips:move' },
+        );
         if (error) throw error;
         assertRowsAffected(updatedRows, 'No se pudo mover el evento');
       }
@@ -457,7 +496,11 @@ export default function PlanningPage() {
       refetch();
     } catch (error) {
       console.error('Error updating event date:', error);
-      alert('Error al mover el evento');
+      alert(
+        queryErrorKind(error) === 'timeout'
+          ? CONNECTION_TIMEOUT_MESSAGE
+          : 'Error al mover el evento',
+      );
       setSilentReload(true); // Revert on error
       refetch();
     }

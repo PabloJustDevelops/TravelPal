@@ -2,6 +2,7 @@ import {
   QUERY_TIMEOUT_MS,
   QueryTimeoutError,
   withQueryTimeout,
+  queryErrorKind,
   assertRowsAffected,
   RowsNotAffectedError,
 } from "@/lib/insforge-query";
@@ -141,5 +142,16 @@ describe("withQueryTimeout", () => {
     await assertion;
 
     expect(query.thenCalls).toBe(1);
+  });
+});
+
+describe("queryErrorKind", () => {
+  it("marca el timeout del envoltorio como timeout", () => {
+    expect(queryErrorKind(new QueryTimeoutError("tarde"))).toBe("timeout");
+  });
+
+  it("marca cualquier otro error del sdk como fallo de peticion", () => {
+    expect(queryErrorKind({ message: "permission denied" })).toBe("request");
+    expect(queryErrorKind(new Error("boom"))).toBe("request");
   });
 });

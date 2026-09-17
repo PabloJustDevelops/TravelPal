@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import { createInsforgeClient, Trip } from '@/lib/insforge'
+import { queryErrorKind, withQueryTimeout } from '@/lib/insforge-query'
+import { CONNECTION_TIMEOUT_MESSAGE } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
@@ -35,11 +37,14 @@ export default function NewExpensePage() {
     try {
       // Los viajes alimentan el selector: se leen del SDK, no del BFF.
       const insforge = createInsforgeClient()
-      const { data, error } = await insforge
-        .database.from('trips')
-        .select('*')
-        .eq('user_id', userId)
-        .order('departure_date', { ascending: false })
+      const { data, error } = await withQueryTimeout(
+        insforge
+          .database.from('trips')
+          .select('*')
+          .eq('user_id', userId)
+          .order('departure_date', { ascending: false }),
+        { label: 'trips' },
+      )
 
       if (error) throw error
       setTrips((data as Trip[]) || [])
@@ -102,17 +107,25 @@ export default function NewExpensePage() {
       logger.debug('Enviando datos de gasto al SDK:', newExpense)
 
       const insforge = createInsforgeClient()
-      const { error } = await insforge
-        .database.from('expenses')
-        .insert([newExpense])
-        .select()
-        .single()
+      const { error } = await withQueryTimeout(
+        insforge
+          .database.from('expenses')
+          .insert([newExpense])
+          .select()
+          .single(),
+        { label: 'expenses:insert' },
+      )
 
       if (error) throw error
 
       router.push('/expenses')
     } catch (error: unknown) {
       logger.error('NewExpensePage: Error al registrar el gasto', error)
+
+      if (queryErrorKind(error) === 'timeout') {
+        setError(CONNECTION_TIMEOUT_MESSAGE)
+        return
+      }
 
       let errorMessage = 'Error al registrar el gasto'
       if (error instanceof Error) {

@@ -86,3 +86,15 @@ export function withQueryTimeout<T>(
     );
   });
 }
+
+/**
+ * Tipo del desenlace de una lectura fallida, el mismo que entiende
+ * `getLoadErrorMessage`: `timeout` cuando vencio la espera, `request` para
+ * cualquier error del SDK. Evita que cada pagina repita el `instanceof`.
+ */
+
+export type QueryErrorKind = "timeout" | "request";
+
+export function queryErrorKind(error: unknown): QueryErrorKind {
+  return error instanceof QueryTimeoutError ? "timeout" : "request";
+}
