@@ -20,7 +20,13 @@ import {
   Calendar,
   type CalendarEvent,
 } from "../../components/calendar/Calendar";
-import { ItineraryPlanner } from "../../components/planning/ItineraryPlanner";
+import {
+  ItineraryPlanner,
+  toPlannerCategory,
+  type DayItinerary,
+  type PlannerActivity,
+  type PlannerActivityDraft,
+} from "../../components/planning/ItineraryPlanner";
 import { BookingCard } from "../../components/planning/BookingCard";
 import Button from "../../components/ui/Button";
 import PageTitle from "../../components/ui/PageTitle";
@@ -277,18 +283,18 @@ export default function PlanningPage() {
 
   // Transformar actividades para el planificador de itinerarios
   const getTripItinerary = useCallback(
-    (tripId: string) => {
+    (tripId: string): DayItinerary[] => {
       const tripActivities = activities.filter((a) => a.trip_id === tripId);
-      const itineraryMap = new Map<string, any[]>();
+      const itineraryMap = new Map<string, PlannerActivity[]>();
 
       tripActivities.forEach((a) => {
-        const activity = {
+        const activity: PlannerActivity = {
           id: a.id,
           title: a.title,
           description: a.description,
           startTime: a.start_time || "",
           endTime: a.end_time || "",
-          category: a.category || "other",
+          category: toPlannerCategory(a.category),
           location: a.location,
           cost: a.cost,
           currency: a.currency,
@@ -302,13 +308,9 @@ export default function PlanningPage() {
         itineraryMap.get(a.date)?.push(activity);
       });
 
-      const itinerary: any[] = [];
+      const itinerary: DayItinerary[] = [];
       itineraryMap.forEach((acts, date) => {
-        itinerary.push({
-          date,
-          activities: acts,
-          notes: "",
-        });
+        itinerary.push({ date, activities: acts });
       });
 
       return itinerary;
@@ -505,6 +507,105 @@ export default function PlanningPage() {
       refetch();
     }
   };
+
+  // Persistencia por operación del planificador: cada alta, edición y borrado
+  // escribe su fila en el momento. El refetch posterior es la única fuente de
+  // verdad: el planificador no guarda copia local de las actividades.
+  const handleCreateActivity = useCallback(
+    async (date: string, activity: PlannerActivityDraft) => {
+      const userId = user?.id;
+      const tripId = selectedTrip?.id;
+
+      if (!userId || !tripId) {
+        throw new Error("No se pudo identificar el viaje o la sesión");
+      }
+
+      const orderIndex = activities.filter(
+        (a) => a.trip_id === tripId && a.date === date,
+      ).length;
+
+      const insforge = createInsforgeClient();
+      const { data: insertedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("itinerary_activities")
+          .insert([
+            {
+              user_id: userId,
+              trip_id: tripId,
+              date,
+              title: activity.title,
+              description: activity.description || null,
+              start_time: activity.startTime || null,
+              end_time: activity.endTime || null,
+              location: activity.location || null,
+              category: activity.category,
+              cost: activity.cost ?? null,
+              currency: activity.currency || "EUR",
+              notes: activity.notes || null,
+              completed: activity.completed ?? false,
+              order_index: orderIndex,
+            },
+          ])
+          .select(),
+        { label: "activities:insert" },
+      );
+
+      if (error) throw error;
+      assertRowsAffected(insertedRows, "No se pudo guardar la actividad");
+      refetch();
+    },
+    [user?.id, selectedTrip?.id, activities, refetch],
+  );
+
+  const handleUpdateActivity = useCallback(
+    async (activityId: string, activity: PlannerActivityDraft) => {
+      const insforge = createInsforgeClient();
+      const { data: updatedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("itinerary_activities")
+          .update({
+            title: activity.title,
+            description: activity.description || null,
+            start_time: activity.startTime || null,
+            end_time: activity.endTime || null,
+            location: activity.location || null,
+            category: activity.category,
+            cost: activity.cost ?? null,
+            currency: activity.currency || "EUR",
+            notes: activity.notes || null,
+            completed: activity.completed ?? false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", activityId)
+          .select(),
+        { label: "activities:update" },
+      );
+
+      if (error) throw error;
+      assertRowsAffected(updatedRows, "No se pudo actualizar la actividad");
+      refetch();
+    },
+    [refetch],
+  );
+
+  const handleDeleteActivity = useCallback(
+    async (activityId: string) => {
+      const insforge = createInsforgeClient();
+      const { data: deletedRows, error } = await withQueryTimeout(
+        insforge
+          .database.from("itinerary_activities")
+          .delete()
+          .eq("id", activityId)
+          .select(),
+        { label: "activities:delete" },
+      );
+
+      if (error) throw error;
+      assertRowsAffected(deletedRows, "No se pudo eliminar la actividad");
+      refetch();
+    },
+    [refetch],
+  );
 
   if (showSkeleton) {
     return (
@@ -758,16 +859,14 @@ export default function PlanningPage() {
                 </div>
 
                 <ItineraryPlanner
-                  tripId={selectedTrip.id}
                   startDate={selectedTrip.departure_date}
                   endDate={
                     selectedTrip.return_date || selectedTrip.departure_date
                   }
                   itinerary={getTripItinerary(selectedTrip.id)}
-                  onSave={(itinerary) => {
-                    logger.debug("Saving itinerary:", itinerary);
-                    // Aquí se guardaría el itinerario en InsForge
-                  }}
+                  onCreateActivity={handleCreateActivity}
+                  onUpdateActivity={handleUpdateActivity}
+                  onDeleteActivity={handleDeleteActivity}
                 />
               </div>
             ) : (
