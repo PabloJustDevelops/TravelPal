@@ -32,6 +32,48 @@ const TRIP_CHILD_TABLES = [
   'notes',
 ] as const
 
+export interface ExpenseFixture {
+  title: string
+  amount: number
+  category: string
+  tripTitle: string
+}
+
+// Un gasto colgado de un viaje por el mismo camino que la app (SDK + RLS): el
+// viaje se localiza por su titulo y el `user_id` sale de la propia fila. Sirve
+// para dejar el escenario listo sin depender del formulario.
+export async function createExpense(fixture: ExpenseFixture): Promise<void> {
+  const client = await signedInClient()
+
+  const { data, error } = await client
+    .database.from('trips')
+    .select('id, user_id')
+    .eq('title', fixture.tripTitle)
+  if (error) throw new Error(`Gastos: no se pudo leer el viaje (${error.message})`)
+
+  const trips = (data ?? []) as Array<{ id: string; user_id: string }>
+  if (trips.length === 0) throw new Error(`Gastos: no existe el viaje ${fixture.tripTitle}`)
+
+  const { error: insertError } = await client.database.from('expenses').insert([
+    {
+      user_id: trips[0].user_id,
+      trip_id: trips[0].id,
+      title: fixture.title,
+      amount: fixture.amount,
+      category: fixture.category,
+      date: new Date().toISOString(),
+    },
+  ])
+  if (insertError) throw new Error(`Gastos: no se pudo crear el gasto (${insertError.message})`)
+}
+
+export async function deleteExpense(title: string): Promise<void> {
+  const client = await signedInClient()
+
+  const { error } = await client.database.from('expenses').delete().eq('title', title)
+  if (error) throw new Error(`Limpieza: no se pudo borrar el gasto (${error.message})`)
+}
+
 export async function deleteTrip(title: string): Promise<void> {
   const client = await signedInClient()
 
