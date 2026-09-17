@@ -45,11 +45,12 @@ export default function ForgotPasswordForm() {
       await resetPassword(data.email)
       setIsSuccess(true)
     } catch (err) {
+      // Nada del texto del backend: si el error fuese "no existe ese email", o
+      // el aviso de espera entre envíos, mostrar cualquiera de los dos dejaría
+      // averiguar desde fuera qué direcciones están registradas.
       console.error('Error al enviar recuperación de contraseña:', err)
       setError(
-        err instanceof Error 
-          ? err.message 
-          : 'Error al enviar el email de recuperación. Inténtalo de nuevo.'
+        'No hemos podido enviar el email de recuperación. Inténtalo de nuevo.'
       )
     } finally {
       setIsLoading(false)

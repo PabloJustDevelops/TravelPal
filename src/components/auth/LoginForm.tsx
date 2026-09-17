@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import { fieldClassName } from "@/components/ui/fieldStyles";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import type { AuthFailureCode } from "@/lib/insforge/auth-error-codes";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un email válido"),
@@ -20,18 +21,55 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Mensajes de los códigos que el login sí puede devolver. El de email sin
+// verificar no va aquí: lleva su propio aviso con el reenvío del código.
+const SIGN_IN_ERROR_MESSAGES: Partial<Record<AuthFailureCode, string>> = {
+  invalid_credentials: "Email o contraseña incorrectos.",
+  rate_limited: "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+};
+
+const SIGN_IN_FALLBACK_MESSAGE = "No se pudo iniciar sesión. Inténtalo de nuevo.";
+
+const PASSWORD_UPDATED_MESSAGE =
+  "Tu contraseña se ha actualizado. Ya puedes iniciar sesión.";
+
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { signIn } = useAuth();
+  const [notice, setNotice] = useState("");
+  // Email sin verificar con el que se intentó entrar: mientras esté puesto se
+  // muestra el aviso y el botón de reenviar el código.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendNotice, setResendNotice] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const { signIn, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Mensajes que llegan por URL (el reset manda `password-updated`). Solo se
+  // enseña el que se conoce y se limpia el parámetro para que recargar no lo
+  // repita; uno desconocido se descarta sin romper el formulario.
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (!message) return;
+
+    if (message === "password-updated") {
+      setNotice(PASSWORD_UPDATED_MESSAGE);
+    }
+
+    const redirectTo = searchParams.get("redirectTo");
+    router.replace(
+      redirectTo
+        ? `/signin?redirectTo=${encodeURIComponent(redirectTo)}`
+        : "/signin",
+    );
+  }, [searchParams, router]);
 
   const {
     register,
@@ -45,53 +83,81 @@ export default function LoginForm() {
     logger.info("LoginForm: Iniciando onSubmit");
     setIsLoading(true);
     setError("");
+    setNotice("");
+    setPendingEmail(null);
+    setResendNotice("");
 
     try {
       logger.debug("LoginForm: Llamando a signIn");
 
       // Añadir timeout para evitar que se quede colgado
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
           () => reject(new Error("Timeout: El login tardó demasiado")),
           10000
         );
       });
 
-      const signInPromise = signIn(data.email, data.password);
+      const result = await Promise.race([
+        signIn(data.email, data.password),
+        timeoutPromise,
+      ]);
 
-      await Promise.race([signInPromise, timeoutPromise]);
+      if (!result.ok) {
+        logger.warn("LoginForm: login rechazado", {
+          code: result.code,
+          statusCode: result.statusCode,
+        });
+
+        if (result.code === "email_not_verified") {
+          setPendingEmail(data.email);
+        } else {
+          setError(
+            SIGN_IN_ERROR_MESSAGES[result.code] ?? SIGN_IN_FALLBACK_MESSAGE,
+          );
+        }
+        return;
+      }
+
       logger.info("LoginForm: signIn completado exitosamente");
-
-      // Esperar un momento para que el estado de autenticación se actualice
-      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Obtener la URL de redirección de los parámetros de búsqueda
       const redirectTo = searchParams.get("redirectTo") || "/dashboard";
       logger.debug("LoginForm: Redirigiendo a:", redirectTo);
-      logger.debug("LoginForm: URL actual:", window.location.href);
 
-      // Usar router.push en lugar de window.location para mejor compatibilidad
-      logger.debug("LoginForm: Ejecutando redirección con router...");
       router.push(redirectTo);
-      logger.debug("LoginForm: Redirección con router ejecutada");
     } catch (err: unknown) {
       logger.error("LoginForm: Error en onSubmit:", err);
 
-      let displayMessage = "Error al iniciar sesión";
-      if (err instanceof Error) {
-        const raw = err.message || "";
-        // Normalizar mensaje para Testsprite cuando las credenciales son inválidas
-        if (raw.includes("Invalid login credentials")) {
-          // Coincidir exactamente con el texto esperado por Testsprite
-          displayMessage = "Login Failed: Invalid Credentials";
-        } else {
-          displayMessage = raw;
-        }
-      }
-      setError(displayMessage);
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : SIGN_IN_FALLBACK_MESSAGE,
+      );
     } finally {
       logger.debug("LoginForm: Finalizando onSubmit");
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingEmail) return;
+
+    setError("");
+    setResendNotice("");
+    setIsResending(true);
+
+    try {
+      await resendVerificationEmail(pendingEmail);
+      setResendNotice("Te hemos enviado un código nuevo.");
+    } catch (err: unknown) {
+      // El reenvío sí puede contar lo que diga el backend: no revela si existe
+      // otro email, solo si puedes pedir otro código ahora.
+      setError(
+        err instanceof Error ? err.message : "No se pudo reenviar el código",
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -113,9 +179,36 @@ export default function LoginForm() {
       </div>
 
       <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        {notice && (
+          <div className="rounded-md bg-green-50 p-4">
+            <div className="text-sm text-green-700">{notice}</div>
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md bg-red-50 p-4">
             <div className="text-sm text-red-700">{error}</div>
+          </div>
+        )}
+
+        {pendingEmail && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-800">
+              Tu email aún no está verificado. Revisa tu bandeja de entrada y
+              confirma tu cuenta antes de iniciar sesión.
+            </p>
+            {resendNotice && (
+              <p className="mt-2 text-sm text-green-700">{resendNotice}</p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              loading={isResending}
+              onClick={handleResendVerification}
+              className="mt-3 w-full"
+            >
+              Reenviar código de verificación
+            </Button>
           </div>
         )}
 

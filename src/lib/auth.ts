@@ -11,6 +11,8 @@ import {
   signUpAction,
   updateProfileAction,
   verifyEmailAction,
+  type SignInActionResult,
+  type SignUpActionResult,
 } from './insforge/auth-actions'
 
 export interface AuthUser {
@@ -40,9 +42,20 @@ const UPLOAD_TIMEOUT_MS = 30000
 export class AuthService {
   private insforge = createInsforgeClient()
 
-  async signUp(email: string, password: string, fullName: string) {
+  async signUp(
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<SignUpActionResult> {
     logger.info('AuthService: Iniciando signUp con email:', email)
     const result = await signUpAction({ email, password, name: fullName })
+    if (!result.ok) {
+      logger.warn('AuthService: signUp rechazado', {
+        code: result.code,
+        statusCode: result.statusCode,
+      })
+      return result
+    }
     // El flag viaja hasta el formulario: con verificación por código el alta no
     // abre sesión, así que la UI tiene que decidir a dónde ir.
     logger.info('AuthService: signUp completado', {
@@ -61,23 +74,24 @@ export class AuthService {
     await resendVerificationEmailAction({ email })
   }
 
-  async signIn(email: string, password: string) {
+  async signIn(email: string, password: string): Promise<SignInActionResult> {
     logger.info('AuthService: Iniciando signIn con email:', email)
 
-    try {
-      const result = await signInAction({ email, password })
+    const result = await signInAction({ email, password })
 
-      if (!result?.user) {
-        logger.error('AuthService: No se obtuvo usuario después del signIn')
-        throw new Error('No se pudo autenticar el usuario')
-      }
-
-      logger.info('AuthService: signIn completado exitosamente')
+    if (!result.ok) {
+      // Credenciales malas y email sin verificar son respuestas esperadas del
+      // backend: el código sube a la UI para que ponga el mensaje (y el reenvío)
+      // en vez de filtrar el texto que devuelva el servidor.
+      logger.warn('AuthService: signIn rechazado', {
+        code: result.code,
+        statusCode: result.statusCode,
+      })
       return result
-    } catch (err: unknown) {
-      logger.error('AuthService: Excepción en signIn:', { error: getErrorMessage(err) })
-      throw err
     }
+
+    logger.info('AuthService: signIn completado exitosamente')
+    return result
   }
 
   async signOut() {

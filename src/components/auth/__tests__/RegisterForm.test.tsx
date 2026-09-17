@@ -55,7 +55,7 @@ describe('RegisterForm: rama del alta', () => {
   })
 
   it('pasa al paso del codigo cuando el backend pide verificar el email', async () => {
-    mockSignUp.mockResolvedValue({ requireEmailVerification: true })
+    mockSignUp.mockResolvedValue({ ok: true, requireEmailVerification: true })
 
     render(<RegisterForm />)
     fillForm()
@@ -70,7 +70,7 @@ describe('RegisterForm: rama del alta', () => {
   })
 
   it('va al dashboard cuando el alta deja sesion hecha', async () => {
-    mockSignUp.mockResolvedValue({ requireEmailVerification: false })
+    mockSignUp.mockResolvedValue({ ok: true, requireEmailVerification: false })
 
     render(<RegisterForm />)
     fillForm()
@@ -87,15 +87,39 @@ describe('RegisterForm: rama del alta', () => {
     )
   })
 
-  it('muestra el error del backend sin cambiar de paso', async () => {
-    mockSignUp.mockRejectedValue(new Error('Email already registered'))
+  it('traduce el codigo de email repetido del backend', async () => {
+    // El backend contesta 409 AUTH_EMAIL_EXISTS: la cadena de Firebase
+    // ('auth/email-already-in-use') no existe en este backend.
+    mockSignUp.mockResolvedValue({
+      ok: false,
+      code: 'email_exists',
+      statusCode: 409,
+    })
 
     render(<RegisterForm />)
     fillForm()
     submit()
 
-    expect(await screen.findByText('Email already registered')).toBeInTheDocument()
+    expect(await screen.findByText('Este email ya está registrado')).toBeInTheDocument()
     expect(screen.queryByText(/Verifica tu email/i)).not.toBeInTheDocument()
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it('da un mensaje generico en un alta fallida y no filtra el del backend', async () => {
+    mockSignUp.mockResolvedValue({
+      ok: false,
+      code: 'unexpected',
+      statusCode: 500,
+    })
+
+    render(<RegisterForm />)
+    fillForm()
+    submit()
+
+    expect(
+      await screen.findByText(/no se pudo crear la cuenta/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/INTERNAL_ERROR/i)).not.toBeInTheDocument()
     expect(mockReplace).not.toHaveBeenCalled()
   })
 })
