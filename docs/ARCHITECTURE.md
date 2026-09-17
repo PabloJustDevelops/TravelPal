@@ -23,7 +23,7 @@ server actions) y acceso a datos (SDK de InsForge).
 ```
 src/
 ├── app/                  # App Router: páginas y API routes
-│   └── api/              # Route handlers (auth/refresh, trips, expenses, ...)
+│   └── api/              # Route handlers (solo auth/refresh; ver ADR-009)
 ├── components/           # UI por dominio (trips, notes, planning, ...)
 ├── contexts/             # AuthContext, ThemeContext
 └── lib/
@@ -40,18 +40,38 @@ migrations/               # Esquema InsForge (fuente de verdad; ver ADR-004)
 
 ## Flujo de datos
 
+Hay **un único camino** para los datos de usuario: el navegador habla directamente con InsForge por
+el SDK. El BFF de `/api/*` se retiró; el porqué y las pérdidas quedan en
+[ADR-009](DECISIONS/ADR-009-camino-unico-sdk-en-navegador.md).
+
 ```mermaid
 graph TB
     A[Usuario] --> B[Next.js App Router]
     B --> C[Componentes React]
     C --> D[Contextos: AuthContext]
-    D --> E[AuthService / API routes]
-    E --> F[SDK InsForge]
-    F --> G[InsForge: Postgres + Auth]
+    C --> E[SDK InsForge en el navegador]
+    D --> F[Server actions de auth]
+    E --> G[InsForge: Postgres + Auth]
+    F --> G
 ```
 
-En cliente, el acceso a datos va por `createInsforgeClient().database.from(...)`. En servidor, los
-route handlers usan `requireUser()` y `client.database.from(...)`.
+En cliente, el acceso a datos va por `createInsforgeClient().database.from(...)`, autenticado con el
+access token que el servidor manda como `Authorization: Bearer`. La autorización la decide **RLS**
+(`auth.uid() = user_id`), no un handler: cada usuario ve y toca sólo sus filas aunque llame al SDK
+directamente. La agregación y el cálculo viven en las páginas, no en el servidor.
+
+El **guardián** `scripts/check-data-paths.mjs` (con `scripts/data-paths-baseline.json`) es la valla
+que impide volver al BFF: cuenta los `fetch`/`useApiResource` a `/api/<dominio>` y falla el build si
+aparece uno nuevo, con literal o con la url en variable. Hoy está en `puntos bff: 0 / 0` y
+`sin dominio 0 / 0`.
+
+### Endpoints que quedan
+
+Sólo sobrevive lo que no puede bajar al cliente:
+
+| Endpoint | Por qué vive en el servidor |
+|---|---|
+| `src/app/api/auth/refresh/route.ts` | El refresh token es httpOnly; `createRefreshAuthRouter()` lo rota y publica el nuevo access token en cookie. |
 
 ## Autenticación
 
@@ -61,7 +81,8 @@ route handlers usan `requireUser()` y `client.database.from(...)`.
   guarda como cookie httpOnly.
 - `src/middleware.ts` llama a `updateSession()` para refrescar antes de renderizar.
 - `requireUser()` (`src/lib/insforge/server.ts`) verifica la sesión con `getCurrentUser()` y
-  devuelve `{ ok: true, client, user }` o `{ ok: false, response }` (401/500).
+  devuelve `{ ok: true, client, user }` o `{ ok: false, response }` (401/500). Tras retirar el BFF no
+  lo llama ningún handler (ver ADR-009); sigue exportado y con sus tests.
 
 ## Modelo de datos
 
@@ -85,16 +106,19 @@ Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities
 `worker-build` (`npx opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
 mensajes de commit.
 
-El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): congela el
-recuento de los dos caminos de datos — llamadas al BFF por `/api` (`fetch` y `useApiResource`) y
-puntos de uso del SDK de InsForge (`.database.from`) — y falla si aparece un `fetch` nuevo a un
-endpoint de datos de usuario. El baseline por fichero y por dominio vive en
-`scripts/data-paths-baseline.json` y se regenera con `--update` al borrar un endpoint.
+El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): cuenta las
+llamadas al BFF por `/api` (`fetch` y `useApiResource`) y los puntos de uso del SDK de InsForge
+(`.database.from`), y falla si aparece un `fetch` nuevo a un endpoint de datos de usuario. Con el BFF
+retirado no queda ningún punto (todo a cero), así que el guardián ya no congela deuda: **prohíbe**
+volver a él (ver [ADR-009](DECISIONS/ADR-009-camino-unico-sdk-en-navegador.md)). El baseline por
+fichero y por dominio vive en `scripts/data-paths-baseline.json` y se regenera con `--update` al
+borrar un endpoint.
 
 [#38]: https://github.com/PabloJustDevelops/TravelPal/issues/38
 
 
 ## Decisiones
 
-Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS). El
-ADR-001 (adaptador de sesión sobre Supabase) queda como histórico.
+Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS), 009
+(camino único de datos por el SDK). El ADR-001 (adaptador de sesión sobre Supabase) queda como
+histórico.

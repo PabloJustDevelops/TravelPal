@@ -10,15 +10,10 @@
     "dashboard": 0
   },
   "files": {
-    "src/app/api/dashboard/route.ts": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 3
-    },
     "src/app/dashboard/page.tsx": {
       "bff": 0,
-      "bffUnknown": 1,
-      "sdk": 0
+      "bffUnknown": 0,
+      "sdk": 4
     },
     "src/app/expenses/[id]/edit/page.tsx": {
       "bff": 0,
@@ -98,7 +93,7 @@
   },
   "totals": {
     "bff": 0,
-    "bffUnknown": 1,
-    "sdk": 89
+    "bffUnknown": 0,
+    "sdk": 90
   }
 }

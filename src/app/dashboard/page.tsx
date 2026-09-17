@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { Trip, Expense } from "@/lib/insforge";
+import { createInsforgeClient, Trip, Expense } from "@/lib/insforge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import TripChart from "@/components/charts/TripChart";
 import { Card } from "@/components/ui/Card";
@@ -20,9 +20,8 @@ import {
   PaperAirplaneIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { getLoadErrorMessage, cn } from "@/lib/utils";
+import { getErrorMessage, cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { useApiResource } from "@/hooks/use-api-resource";
 import { Menu, Transition } from "@headlessui/react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
@@ -99,18 +98,103 @@ export default function DashboardPage() {
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const url =
-    !authLoading && user?.id ? `/api/dashboard?range=${dateRange}` : null;
-  const {
-    data,
-    loading,
-    error: loadError,
-    refetch,
-  } = useApiResource<{
+  // Las tres lecturas del GET borrado llegan del SDK, tabla a tabla: ya no hay
+  // ningun fetch en la pagina. El rango solo acota viajes (por salida) y gastos
+  // (por fecha); los presupuestos se leen completos porque no tienen fecha de
+  // referencia util para el panel.
+  const [data, setData] = useState<{
     trips: Trip[];
     expenses: Expense[];
     budgets: Budget[];
-  }>(url);
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const refetch = useCallback(() => setReloadToken((token) => token + 1), []);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user?.id) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    const userId = user.id;
+    let active = true;
+
+    setLoading(true);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        // Mismo calculo del inicio del rango que hacia el handler.
+        let startISO: string | null = null;
+        if (dateRange !== "all") {
+          const days = parseInt(dateRange, 10);
+          if (!isNaN(days)) {
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - (days - 1));
+            startISO = d.toISOString();
+          }
+        }
+
+        const insforge = createInsforgeClient();
+
+        let tripsQuery = insforge
+          .database.from("trips")
+          .select("*")
+          .eq("user_id", userId)
+          .order("departure_date", { ascending: true });
+        if (startISO) tripsQuery = tripsQuery.gte("departure_date", startISO);
+
+        let expensesQuery = insforge
+          .database.from("expenses")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: false });
+        if (startISO) expensesQuery = expensesQuery.gte("date", startISO);
+
+        const budgetsQuery = insforge
+          .database.from("budgets")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false });
+
+        const [tripsRes, expensesRes, budgetsRes] = await Promise.all([
+          tripsQuery,
+          expensesQuery,
+          budgetsQuery,
+        ]);
+
+        if (tripsRes.error) throw tripsRes.error;
+        if (expensesRes.error) throw expensesRes.error;
+        if (budgetsRes.error) throw budgetsRes.error;
+
+        if (!active) return;
+        setData({
+          trips: (tripsRes.data as Trip[]) ?? [],
+          expenses: (expensesRes.data as Expense[]) ?? [],
+          budgets: (budgetsRes.data as Budget[]) ?? [],
+        });
+      } catch (err) {
+        if (!active) return;
+        logger.error("DashboardPage: Error loading dashboard", {
+          error: getErrorMessage(err, "Error al cargar los datos"),
+        });
+        setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id, dateRange, reloadToken]);
 
   const {
     trips,
@@ -161,13 +245,14 @@ export default function DashboardPage() {
     };
   }, [data, selectedCurrency]);
 
-  const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de datos ha tardado demasiado. Por favor, reintenta.",
-    request: "Error al cargar los datos. Por favor, intenta recargar.",
-  });
+  // El timeout de 15 s era del hook del BFF: con el SDK, cualquiera de las tres
+  // lecturas falla como error del SDK y reutiliza el mensaje del 500 del handler.
+  const error = loadError
+    ? "Error al cargar los datos. Por favor, intenta recargar."
+    : null;
 
   const showSkeleton =
-    authLoading || loading || (url !== null && data === null && !loadError);
+    authLoading || loading || (!!user?.id && data === null && !loadError);
 
   const exportToJSON = () => {
     try {
