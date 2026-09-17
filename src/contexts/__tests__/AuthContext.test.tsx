@@ -34,9 +34,19 @@ jest.mock('@/lib/logger', () => ({
 }))
 
 const mockedSignUp = authService.signUp as jest.Mock
+const mockedSignIn = authService.signIn as jest.Mock
+const mockedSignOut = authService.signOut as jest.Mock
 const mockedGetCurrentUser = authService.getCurrentUser as jest.Mock
 
 let api: ReturnType<typeof useAuth> | undefined
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
 
 function Capture({
   onReady,
@@ -174,3 +184,90 @@ describe('AuthContext: alta y verificacion', () => {
   })
 })
 
+describe('AuthContext: hidratacion frente a mutacion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockedGetCurrentUser.mockResolvedValue(null)
+  });
+
+  const mount = () =>
+    render(
+      <AuthProvider>
+        <Capture onReady={(value) => { api = value }} />
+      </AuthProvider>,
+    )
+
+  it('un login en curso no devuelve la app al esqueleto de carga', async () => {
+    const login = deferred<{ ok: true; user: { id: string; email: string } }>()
+    mockedSignIn.mockReturnValue(login.promise)
+
+    mount()
+    // La hidratacion ya termino: a partir de aqui `loading` no vuelve a true.
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    expect(readApi().pending).toBe(false)
+
+    let inFlight: Promise<unknown> | undefined
+    await act(async () => {
+      inFlight = readApi().signIn('ana@example.com', 'Password1')
+    })
+
+    await waitFor(() => expect(readApi().pending).toBe(true))
+    expect(readApi().loading).toBe(false)
+
+    const user = { id: 'user-123', email: 'ana@example.com' }
+    mockedGetCurrentUser.mockResolvedValue(user)
+    await act(async () => {
+      login.resolve({ ok: true, user })
+      await inFlight
+    })
+
+    expect(readApi().pending).toBe(false)
+    expect(readApi().loading).toBe(false)
+    expect(readApi().user).toEqual(user)
+  })
+
+  it('deja el usuario quieto y no relee la sesion si el login falla', async () => {
+    mockedSignIn.mockResolvedValue({
+      ok: false,
+      code: 'invalid_credentials',
+      statusCode: 401,
+    })
+
+    mount()
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    const readsAfterHydration = mockedGetCurrentUser.mock.calls.length
+
+    await act(async () => {
+      await readApi().signIn('ana@example.com', 'Password1')
+    })
+
+    expect(readApi().user).toBeNull()
+    expect(readApi().pending).toBe(false)
+    expect(mockedGetCurrentUser).toHaveBeenCalledTimes(readsAfterHydration)
+  })
+
+  it('cerrar sesion va por pending y no por loading', async () => {
+    const logout = deferred<void>()
+    mockedSignOut.mockReturnValue(logout.promise)
+
+    mount()
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    let inFlight: Promise<unknown> | undefined
+    await act(async () => {
+      inFlight = readApi().signOut()
+    })
+
+    await waitFor(() => expect(readApi().pending).toBe(true))
+    expect(readApi().loading).toBe(false)
+
+    await act(async () => {
+      logout.resolve()
+      await inFlight
+    })
+
+    expect(readApi().pending).toBe(false)
+    expect(readApi().loading).toBe(false)
+    expect(readApi().user).toBeNull()
+  })
+})

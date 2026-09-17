@@ -30,12 +30,15 @@ const SIGN_IN_ERROR_MESSAGES: Partial<Record<AuthFailureCode, string>> = {
 
 const SIGN_IN_FALLBACK_MESSAGE = "No se pudo iniciar sesión. Inténtalo de nuevo.";
 
+const PASSWORD_UPDATED_MESSAGE =
+  "Tu contraseña se ha actualizado. Ya puedes iniciar sesión.";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   // Email sin verificar con el que se intentó entrar: mientras esté puesto se
   // muestra el aviso y el botón de reenviar el código.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -49,6 +52,24 @@ export default function LoginForm() {
     setIsClient(true);
   }, []);
 
+  // Mensajes que llegan por URL (el reset manda `password-updated`). Solo se
+  // enseña el que se conoce y se limpia el parámetro para que recargar no lo
+  // repita; uno desconocido se descarta sin romper el formulario.
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (!message) return;
+
+    if (message === "password-updated") {
+      setNotice(PASSWORD_UPDATED_MESSAGE);
+    }
+
+    const redirectTo = searchParams.get("redirectTo");
+    router.replace(
+      redirectTo
+        ? `/signin?redirectTo=${encodeURIComponent(redirectTo)}`
+        : "/signin",
+    );
+  }, [searchParams, router]);
 
   const {
     register,
@@ -62,6 +83,7 @@ export default function LoginForm() {
     logger.info("LoginForm: Iniciando onSubmit");
     setIsLoading(true);
     setError("");
+    setNotice("");
     setPendingEmail(null);
     setResendNotice("");
 
@@ -157,6 +179,11 @@ export default function LoginForm() {
       </div>
 
       <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        {notice && (
+          <div className="rounded-md bg-green-50 p-4">
+            <div className="text-sm text-green-700">{notice}</div>
+          </div>
+        )}
 
         {error && (
           <div className="rounded-md bg-red-50 p-4">

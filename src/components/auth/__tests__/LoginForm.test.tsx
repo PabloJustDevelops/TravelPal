@@ -148,4 +148,39 @@ describe('LoginForm', () => {
     expect(await screen.findByText(/demasiados intentos/i)).toBeInTheDocument()
   })
 
+  it('muestra la confirmacion del reset y limpia el parametro de la URL', async () => {
+    mockSearch = new URLSearchParams('message=password-updated')
+
+    render(<LoginForm />)
+
+    expect(
+      await screen.findByText(/contraseña se ha actualizado/i),
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/signin')
+    })
+  })
+
+  it('conserva el redirectTo al limpiar el mensaje del reset', async () => {
+    mockSearch = new URLSearchParams(
+      'message=password-updated&redirectTo=%2Fsettings',
+    )
+
+    render(<LoginForm />)
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/signin?redirectTo=%2Fsettings')
+    })
+  })
+
+  it('no rompe ni inventa nada con un message desconocido', async () => {
+    mockSearch = new URLSearchParams('message=vete-a-saber')
+
+    render(<LoginForm />)
+
+    expect(
+      screen.getByRole('heading', { name: 'Inicia sesión en tu cuenta' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/vete-a-saber/i)).not.toBeInTheDocument()
+  })
 })

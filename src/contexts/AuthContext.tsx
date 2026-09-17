@@ -10,9 +10,12 @@ import type {
 
 interface AuthContextType {
   user: AuthUser | null
-
+  // true solo mientras se hidrata la sesión inicial (o se reintenta): es el
+  // estado que usan las pantallas para no decidir "no hay sesión" antes de
+  // tiempo. Una mutación no lo toca, para no devolver la app al esqueleto.
   loading: boolean
-
+  // true mientras hay una mutación de auth en curso (login, alta, logout).
+  pending: boolean
   // true cuando la sesión no se pudo comprobar (timeout o fallo del servidor),
   // que es distinto de "no hay sesión". Sin esta distinción el guardia no puede
   // saber si redirigir o reintentar.
@@ -43,6 +46,7 @@ type AuthProviderDeps = {
 export function AuthProvider({ children, deps }: { children: React.ReactNode; deps?: AuthProviderDeps }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pending, setPending] = useState(false)
   const [sessionError, setSessionError] = useState(false)
   const authService = deps?.authService ?? defaultAuthService
   const logger = deps?.logger ?? defaultLogger
@@ -106,7 +110,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     password: string,
   ): Promise<SignInActionResult> => {
     logger.info('AuthContext: Iniciando signIn')
-    setLoading(true)
+    setPending(true)
     try {
       const result = await authService.signIn(email, password)
 
@@ -132,7 +136,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
       logger.error('AuthContext: Error en signIn', { error: err })
       throw err
     } finally {
-      setLoading(false)
+      setPending(false)
     }
   }
 
@@ -141,7 +145,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     password: string,
     fullName: string,
   ): Promise<SignUpActionResult> => {
-    setLoading(true)
+    setPending(true)
     try {
       const result = await authService.signUp(email, password, fullName)
 
@@ -156,7 +160,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
       }
       return result
     } finally {
-      setLoading(false)
+      setPending(false)
     }
   }
 
@@ -172,7 +176,10 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     await authService.resendVerificationEmail(email)
   }
 
-  const signOut = async () => {    setLoading(true)
+  const signOut = async () => {
+    // El logout no hidrata nada: va por pending para que las pantallas que ya
+    // tienen sesión no se vacíen al esqueleto mientras se cierra.
+    setPending(true)
     try {
       // Timeout de seguridad para el logout
       const timeoutPromise = new Promise<never>((_, reject) =>
@@ -185,7 +192,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     } finally {
       // Aseguramos que el estado local se limpie independientemente del resultado
       setUser(null)
-      setLoading(false)
+      setPending(false)
     }
   }
 
@@ -205,6 +212,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
   const value = {
     user,
     loading,
+    pending,
     sessionError,
     reloadSession: loadSession,
     signIn,
