@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { Calendar } from '../Calendar';
 import { format } from 'date-fns';
 
@@ -70,5 +70,51 @@ describe('Calendar Component', () => {
     fireEvent.doubleClick(todayCell!);
     
     expect(handleAddEvent).toHaveBeenCalledTimes(1);
+  });
+
+  // La fecha tal cual la devuelve PostgREST para una columna `timestamptz`. Con
+  // el filtro comparando la cadena entera, el viaje no se pintaba en ningun dia.
+  it('pinta en su dia un evento con la fecha timestamptz de PostgREST', () => {
+    // El dia 15 nunca se repite en la rejilla del mes: sirve de celda inequivoca
+    // sea cual sea el mes en que corra la prueba.
+    const day = new Date(today.getFullYear(), today.getMonth(), 15);
+    const dayStr = format(day, 'yyyy-MM-dd');
+
+    const events = [
+      {
+        id: 'trip_1',
+        title: 'Viaje a Roma',
+        date: `${dayStr}T00:00:00+00:00`,
+        type: 'trip' as const,
+        color: 'bg-blue-500',
+      },
+      {
+        // El mismo dia, en otra hora: tiene que caer en la misma celda.
+        id: 'booking_1',
+        title: 'Reserva del mismo dia',
+        date: `${dayStr}T18:30:00+00:00`,
+        type: 'booking' as const,
+        color: 'bg-green-500',
+      },
+      {
+        id: 'activity_1',
+        title: 'Actividad ya en clave de dia',
+        date: dayStr,
+        type: 'activity' as const,
+        color: 'bg-purple-500',
+      },
+    ];
+
+    render(<Calendar events={events} />);
+
+    const dayCell = screen
+      .getByText(day.getDate().toString())
+      .closest('div')?.parentElement;
+
+    expect(within(dayCell!).getByText('Viaje a Roma')).toBeInTheDocument();
+    expect(within(dayCell!).getByText('Reserva del mismo dia')).toBeInTheDocument();
+    expect(
+      within(dayCell!).getByText('Actividad ya en clave de dia'),
+    ).toBeInTheDocument();
   });
 });
