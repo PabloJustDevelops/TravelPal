@@ -3,11 +3,13 @@ import { logger } from '@/lib/logger'
 import { getErrorMessage } from '@/lib/utils'
 import {
   resetPasswordAction,
+  resendVerificationEmailAction,
   sendResetPasswordEmailAction,
   signInAction,
   signOutAction,
   signUpAction,
   updateProfileAction,
+  verifyEmailAction,
 } from './insforge/auth-actions'
 
 export interface AuthUser {
@@ -39,7 +41,23 @@ export class AuthService {
 
   async signUp(email: string, password: string, fullName: string) {
     logger.info('AuthService: Iniciando signUp con email:', email)
-    return signUpAction({ email, password, name: fullName })
+    const result = await signUpAction({ email, password, name: fullName })
+    // El flag viaja hasta el formulario: con verificación por código el alta no
+    // abre sesión, así que la UI tiene que decidir a dónde ir.
+    logger.info('AuthService: signUp completado', {
+      requireEmailVerification: result.requireEmailVerification,
+    })
+    return result
+  }
+
+  async verifyEmail(email: string, otp: string) {
+    logger.info('AuthService: Verificando el email')
+    return verifyEmailAction({ email, otp })
+  }
+
+  async resendVerificationEmail(email: string) {
+    logger.info('AuthService: Reenviando el código de verificación')
+    await resendVerificationEmailAction({ email })
   }
 
   async signIn(email: string, password: string) {

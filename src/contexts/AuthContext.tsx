@@ -9,9 +9,15 @@ interface AuthContextType {
   user: AuthUser | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, fullName: string) => Promise<void>
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<{ requireEmailVerification: boolean }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
+  verifyEmail: (email: string, otp: string) => Promise<AuthUser | null>
+  resendVerificationEmail: (email: string) => Promise<void>
   updateProfile: (updates: { full_name?: string; avatar_url?: string }) => Promise<void>
   uploadAvatar: (file: File) => Promise<string>
 }
@@ -92,11 +98,28 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
   const signUp = async (email: string, password: string, fullName: string) => {
     setLoading(true)
     try {
-      await authService.signUp(email, password, fullName)
-      await refreshUser()
+      const result = await authService.signUp(email, password, fullName)
+      // Con verificación pendiente no hay sesión que releer: el alta deja al
+      // usuario fuera hasta que confirme el código.
+      if (!result.requireEmailVerification) {
+        await refreshUser()
+      }
+      return result
     } finally {
       setLoading(false)
     }
+  }
+
+  const verifyEmail = async (email: string, otp: string) => {
+    logger.info('AuthContext: Verificando el email')
+    await authService.verifyEmail(email, otp)
+    // El código correcto ya dejó la sesión escrita en cookies: releemos para que
+    // la UI (y ProtectedRoute) vean al usuario antes de navegar.
+    return refreshUser()
+  }
+
+  const resendVerificationEmail = async (email: string) => {
+    await authService.resendVerificationEmail(email)
   }
 
   const signOut = async () => {
@@ -137,6 +160,8 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     signUp,
     signOut,
     resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
     updateProfile,
     uploadAvatar,
   }
