@@ -29,7 +29,7 @@ src/
 └── lib/
     ├── insforge.ts       # Cliente de navegador (createInsforgeClient)
     ├── insforge/
-    │   ├── server.ts     # requireUser(), createServerInsforgeClient()
+    │   ├── server.ts     # createServerInsforgeClient()
     │   ├── auth-actions.ts # Server actions de auth (createAuthActions)
     │   └── __tests__/    # Tests del servidor
     ├── auth.ts           # AuthService (usa las server actions)
@@ -80,9 +80,9 @@ Sólo sobrevive lo que no puede bajar al cliente:
   (`src/lib/insforge/auth-actions.ts`) con `createAuthActions`, de modo que el refresh token se
   guarda como cookie httpOnly.
 - `src/proxy.ts` llama a `updateSession()` para refrescar antes de renderizar.
-- `requireUser()` (`src/lib/insforge/server.ts`) verifica la sesión con `getCurrentUser()` y
-  devuelve `{ ok: true, client, user }` o `{ ok: false, response }` (401/500). Tras retirar el BFF no
-  lo llama ningún handler (ver ADR-009); sigue exportado y con sus tests.
+- No hay verificación de sesión en route handlers de datos porque no existen (ver ADR-009).
+  `requireUser()` (`src/lib/insforge/server.ts`) se retiró en el
+  [ADR-012](DECISIONS/ADR-012-retirada-del-codigo-bff-y-public-users.md).
 
 ## Modelo de datos
 
@@ -90,7 +90,7 @@ Fuente de verdad única: `migrations/20260913181842_create-app-schema.sql` (ver 
 las consultas reales y usa `text + CHECK` en vez de enums, con RLS de propietario (`auth.uid()`).
 
 Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `reminders`,
-`calendar_events`, `alerts`, `budgets`, `profiles`, `users`. El detalle y el glosario están en
+`calendar_events`, `alerts`, `budgets`, `profiles`. El detalle y el glosario están en
 [CONTEXT.md](../CONTEXT.md).
 
 ## Configuración y entorno
@@ -120,5 +120,5 @@ borrar un endpoint.
 ## Decisiones
 
 Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS), 009
-(camino único de datos por el SDK). El ADR-001 (adaptador de sesión sobre Supabase) queda como
-histórico.
+(camino único de datos por el SDK), 012 (retirada del código BFF y de `public.users`). El ADR-001
+(adaptador de sesión sobre Supabase) queda como histórico.

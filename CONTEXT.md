@@ -32,10 +32,10 @@ contradecirse (ver ADR-004). El esquema se deriva de las consultas reales; si el
 TypeScript cambia, la migracion debe actualizarse.
 
 Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`,
-`reminders`, `calendar_events`, `alerts`, `budgets`, `journal_entries`, `profiles`, `users`.
+`reminders`, `calendar_events`, `alerts`, `budgets`, `journal_entries`, `profiles`.
 
 Reglas: `text + CHECK` en vez de enums; FKs solo si una consulta las usa; RLS de propietario con
-`auth.uid()` en cada tabla con `user_id` (y por `id` en `users`/`profiles`).
+`auth.uid()` en cada tabla con `user_id` (y por `id` en `profiles`).
 
 ## Glossary
 
