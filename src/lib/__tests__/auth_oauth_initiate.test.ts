@@ -33,7 +33,7 @@ jest.mock("@/lib/logger", () => ({
 const createAuthActionsMock = createAuthActions as jest.Mock;
 const cookiesMock = cookies as jest.Mock;
 const headersMock = headers as jest.Mock;
-const redirectMock = redirect as jest.Mock;
+const redirectMock = jest.mocked(redirect);
 
 const signInWithOAuth = jest.fn();
 const cookieStore = { set: jest.fn(), get: jest.fn(), delete: jest.fn() };
