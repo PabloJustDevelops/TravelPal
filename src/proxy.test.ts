@@ -77,6 +77,18 @@ describe('proxy - protección de rutas', () => {
     },
   )
 
+  it('sin sesión deja pasar el callback del OAuth (llega con el código)', async () => {
+    const res = await runProxy('/api/auth/callback', null, '?insforge_code=abc')
+
+    expect(passesThrough(res)).toBe(true)
+  })
+
+  it('con sesión también deja pasar el callback del OAuth', async () => {
+    const res = await runProxy('/api/auth/callback', 'access-token', '?insforge_code=abc')
+
+    expect(passesThrough(res)).toBe(true)
+  })
+
   it('con sesión redirige /signin a /dashboard', async () => {
     const res = await runProxy('/signin', 'access-token')
 
