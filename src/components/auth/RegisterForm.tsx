@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Button from '@/components/ui/Button'
+import GoogleButton from '@/components/auth/GoogleButton'
 import { fieldClassName } from '@/components/ui/fieldStyles'
 import { cn } from '@/lib/utils'
 import VerifyEmailStep from './VerifyEmailStep'
@@ -278,6 +279,10 @@ export default function RegisterForm() {
             <Button type="submit" loading={isLoading} className="w-full">
               Crear cuenta
             </Button>
+          </div>
+
+          <div>
+            <GoogleButton />
           </div>
         </form>
     </div>

@@ -1,11 +1,16 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@insforge/sdk";
 import { createAuthActions } from "@insforge/sdk/ssr";
 import { publicEnv } from "@/lib/public-env";
 import { logger } from "@/lib/logger";
 import { createServerInsforgeClient } from "./server";
+import {
+  OAUTH_CODE_VERIFIER_COOKIE,
+  OAUTH_CODE_VERIFIER_MAX_AGE_SECONDS,
+} from "./oauth";
 import {
   classifySignInError,
   classifySignUpError,
@@ -227,4 +232,68 @@ export async function updateProfileAction(profile: Record<string, unknown>) {
   }
 
   return data;
+}
+
+// La app sólo ofrece Google: el tipo literal cierra la puerta a providers que
+// el backend tenga habilitados pero la UI no ofrece (p. ej. github).
+export type OAuthProvider = "google";
+
+// El repo no define NEXT_PUBLIC_APP_URL: el origen se deriva de las cabeceras
+// de la propia request (host + protocolo reenviado), que es lo único que casa
+// en local (http://localhost:3000) y en el worker de Cloudflare
+// (https://app-viajes.prg-dev.workers.dev) sin mantener configuración extra.
+// NEXT_PUBLIC_APP_URL queda como fallback si algún día se define un origen
+// canónico distinto del que sirve cada despliegue.
+async function resolveAppOrigin(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+
+  if (host) {
+    const proto = headerList.get("x-forwarded-proto") ?? "http";
+    return `${proto}://${host}`;
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  throw new Error(
+    "No se pudo determinar el origen de la app para el redirect de OAuth",
+  );
+}
+
+// Inicia el OAuth en servidor (PKCE): el verifier baja en una cookie httpOnly y
+// el navegador sólo ve la redirección a Google. El intercambio del código lo
+// completa src/app/api/auth/callback/route.ts.
+export async function initiateOAuthAction(provider: OAuthProvider) {
+  const origin = await resolveAppOrigin();
+  const cookieStore = await cookies();
+  const auth = createAuthActions({ cookies: cookieStore });
+
+  // Sólo redirectTo y skipBrowserRedirect: client_id, scope, redirect_uri,
+  // code_challenge, state y response_type los fija el backend (e ignora
+  // cualquier valor que mande el cliente).
+  const { data, error } = await auth.signInWithOAuth(provider, {
+    redirectTo: `${origin}/api/auth/callback`,
+    skipBrowserRedirect: true,
+  });
+
+  if (error || !data?.url || !data?.codeVerifier) {
+    logger.error("initiateOAuthAction: fallo al iniciar el OAuth", {
+      provider,
+      error: error?.message,
+      statusCode: error?.statusCode,
+    });
+    throw toAuthActionError(error, "No se pudo iniciar el acceso con Google");
+  }
+
+  cookieStore.set(OAUTH_CODE_VERIFIER_COOKIE, data.codeVerifier, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: OAUTH_CODE_VERIFIER_MAX_AGE_SECONDS,
+  });
+
+  redirect(data.url);
 }

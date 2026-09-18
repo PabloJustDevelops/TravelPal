@@ -1,5 +1,10 @@
 [auth]
-allowed_redirect_urls = ["http://localhost:3000/reset-password", "https://app-viajes.prg-dev.workers.dev/reset-password"]
+allowed_redirect_urls = [
+  "http://localhost:3000/reset-password",
+  "https://app-viajes.prg-dev.workers.dev/reset-password",
+  "http://localhost:3000/api/auth/callback",
+  "https://app-viajes.prg-dev.workers.dev/api/auth/callback",
+]
 require_email_verification = true
 verify_email_method = "code"
 reset_password_method = "link"
