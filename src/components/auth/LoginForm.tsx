@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import Button from "@/components/ui/Button";
+import GoogleButton from "@/components/auth/GoogleButton";
 import { fieldClassName } from "@/components/ui/fieldStyles";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
@@ -33,6 +34,14 @@ const SIGN_IN_FALLBACK_MESSAGE = "No se pudo iniciar sesión. Inténtalo de nuev
 const PASSWORD_UPDATED_MESSAGE =
   "Tu contraseña se ha actualizado. Ya puedes iniciar sesión.";
 
+// Fallos del OAuth de Google que escribe el callback
+// (src/app/api/auth/callback/route.ts) reutilizando este mismo sistema de
+// mensajes por URL.
+const OAUTH_FAILED_MESSAGE =
+  "No se pudo iniciar sesión con Google. Inténtalo de nuevo.";
+const OAUTH_EXPIRED_MESSAGE =
+  "El acceso con Google caducó antes de completarse. Vuelve a empezar.";
+
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -52,15 +61,20 @@ export default function LoginForm() {
     setIsClient(true);
   }, []);
 
-  // Mensajes que llegan por URL (el reset manda `password-updated`). Solo se
-  // enseña el que se conoce y se limpia el parámetro para que recargar no lo
-  // repita; uno desconocido se descarta sin romper el formulario.
+  // Mensajes que llegan por URL (el reset manda `password-updated` y el
+  // callback del OAuth los suyos). Solo se enseña el que se conoce y se limpia
+  // el parámetro para que recargar no lo repita; uno desconocido se descarta
+  // sin romper el formulario.
   useEffect(() => {
     const message = searchParams.get("message");
     if (!message) return;
 
     if (message === "password-updated") {
       setNotice(PASSWORD_UPDATED_MESSAGE);
+    } else if (message === "oauth-failed") {
+      setError(OAUTH_FAILED_MESSAGE);
+    } else if (message === "oauth-expired") {
+      setError(OAUTH_EXPIRED_MESSAGE);
     }
 
     const redirectTo = searchParams.get("redirectTo");
@@ -286,6 +300,10 @@ export default function LoginForm() {
             <Button type="submit" loading={isLoading} className="w-full">
               Iniciar sesión
             </Button>
+          </div>
+
+          <div>
+            <GoogleButton />
           </div>
         </form>
     </div>

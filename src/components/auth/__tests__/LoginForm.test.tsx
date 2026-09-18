@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LoginForm from '../LoginForm'
 import { useAuth } from '@/contexts/AuthContext'
+import { initiateOAuthAction } from '@/lib/insforge/auth-actions'
 
 const mockPush = jest.fn()
 const mockReplace = jest.fn()
@@ -16,6 +17,12 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
+}))
+
+// El botón de Google llama a esta server action: mockeada para no cargar el
+// módulo del SDK (ESM) bajo jest.
+jest.mock('@/lib/insforge/auth-actions', () => ({
+  initiateOAuthAction: jest.fn(),
 }))
 
 jest.mock('@/lib/logger', () => ({
@@ -182,5 +189,41 @@ describe('LoginForm', () => {
       screen.getByRole('heading', { name: 'Inicia sesión en tu cuenta' }),
     ).toBeInTheDocument()
     expect(screen.queryByText(/vete-a-saber/i)).not.toBeInTheDocument()
+  })
+
+  it('muestra el fallo del OAuth que escribe el callback', async () => {
+    mockSearch = new URLSearchParams('message=oauth-failed')
+
+    render(<LoginForm />)
+
+    expect(
+      await screen.findByText(/no se pudo iniciar sesión con google/i),
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/signin')
+    })
+  })
+
+  it('muestra el aviso de caducidad cuando el verifier ya no está', async () => {
+    mockSearch = new URLSearchParams('message=oauth-expired')
+
+    render(<LoginForm />)
+
+    expect(
+      await screen.findByText(/el acceso con google caducó/i),
+    ).toBeInTheDocument()
+  })
+
+  it('ofrece continuar con Google y arranca el OAuth al pulsarlo', async () => {
+    ;(initiateOAuthAction as jest.Mock).mockResolvedValue(undefined)
+
+    render(<LoginForm />)
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Continuar con Google' }),
+    )
+
+    await waitFor(() => {
+      expect(initiateOAuthAction).toHaveBeenCalledWith('google')
+    })
   })
 })

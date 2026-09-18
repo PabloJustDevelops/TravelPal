@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import RegisterForm from '../RegisterForm'
 import { useAuth } from '@/contexts/AuthContext'
+import { initiateOAuthAction } from '@/lib/insforge/auth-actions'
 
 const mockReplace = jest.fn()
 const mockSignUp = jest.fn()
@@ -11,6 +12,12 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
+}))
+
+// El botón de Google llama a esta server action: mockeada para no cargar el
+// módulo del SDK (ESM) bajo jest.
+jest.mock('@/lib/insforge/auth-actions', () => ({
+  initiateOAuthAction: jest.fn(),
 }))
 
 jest.mock('@/lib/logger', () => ({
@@ -121,5 +128,18 @@ describe('RegisterForm: rama del alta', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/INTERNAL_ERROR/i)).not.toBeInTheDocument()
     expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it('ofrece continuar con Google y arranca el OAuth al pulsarlo', async () => {
+    ;(initiateOAuthAction as jest.Mock).mockResolvedValue(undefined)
+
+    render(<RegisterForm />)
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Continuar con Google' }),
+    )
+
+    await waitFor(() => {
+      expect(initiateOAuthAction).toHaveBeenCalledWith('google')
+    })
   })
 })
