@@ -89,7 +89,7 @@ src/
 ├── contexts/               # AuthContext, ThemeContext
 └── lib/
     ├── insforge.ts         # Cliente de navegador (createInsforgeClient)
-    ├── insforge/server.ts  # requireUser(), cliente de servidor
+    ├── insforge/server.ts  # cliente de servidor (createServerInsforgeClient)
     ├── insforge/auth-actions.ts  # Server actions de auth
     ├── auth.ts             # AuthService
     ├── public-env.ts       # Validación de variables públicas

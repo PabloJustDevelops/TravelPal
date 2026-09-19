@@ -12,7 +12,7 @@ Migrar el backend a InsForge (`@insforge/sdk`) conservando Postgres como base de
 
 - Datos: `createClient({ baseUrl, anonKey })` y acceso por `client.database.from(...)`.
 - Sesión de servidor: `@insforge/sdk/ssr` con `createServerClient({ cookies })`, `updateSession()`
-  en el middleware y ruta `/api/auth/refresh` con `createRefreshAuthRouter()`.
+  en el proxy (`src/proxy.ts`) y ruta `/api/auth/refresh` con `createRefreshAuthRouter()`.
 - Auth: mutaciones en servidor con `createAuthActions` (el refresh token es httpOnly).
 - Admin: `createAdminClient({ apiKey })` en código de servidor.
 - Se eliminan `@supabase/supabase-js`, `@supabase/ssr` y `@supabase/auth-ui-*`.
