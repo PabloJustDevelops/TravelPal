@@ -278,12 +278,10 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     setUnreadCount(unread);
   }, [notifications]);
 
-  // Solicitar permisos de notificación del navegador
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
+  // El permiso de notificaciones NO se pide al montar: el navegador solo deja
+  // preguntarlo una vez por origen y, sin contexto, el usuario puede decir no
+  // para siempre. Se pide desde un gesto explicito en Ajustes, con la tarjeta
+  // de notificaciones push (ver usePushNotifications).
 
   // Marcar notificación como leída (actualiza alert.is_read)
   const markAsRead = async (notificationId: string) => {

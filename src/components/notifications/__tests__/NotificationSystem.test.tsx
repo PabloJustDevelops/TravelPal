@@ -341,4 +341,31 @@ describe("NotificationSystem", () => {
     await openPanel();
     expect(await screen.findByText("Alerta existente")).toBeInTheDocument();
   });
+
+  it("no pide permiso de notificaciones al montar: quemarlo es irreversible", async () => {
+    // El navegador solo deja pedir el permiso una vez por origen: si se pide al
+    // cargar, sin contexto, el usuario puede decir no para siempre. El permiso
+    // se pide desde un gesto explicito (Ajustes), no desde el arranque.
+    const requestPermission = jest.fn().mockResolvedValue("granted");
+    Object.defineProperty(window, "Notification", {
+      configurable: true,
+      value: { permission: "default", requestPermission },
+    });
+
+    try {
+      mount({ alerts: [alertRow()] });
+
+      render(<NotificationSystem />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /1 sin leer/i }),
+        ).toBeInTheDocument();
+      });
+
+      expect(requestPermission).not.toHaveBeenCalled();
+    } finally {
+      delete (window as unknown as Record<string, unknown>).Notification;
+    }
+  });
 });
