@@ -91,6 +91,35 @@ export function getLoadErrorMessage(
 export const CONNECTION_TIMEOUT_MESSAGE =
   "La conexión ha tardado demasiado. Por favor verifica tu conexión a internet e inténtalo de nuevo.";
 
+// Un fetch abortado llega de tres formas segun quien lo propague: un Error
+// nativo con name "AbortError", un DOMException del mismo nombre, o el objeto
+// plano que fabrica el SDK al envolver la cancelacion (`{ message, details,
+// hint, code }`, que NO es instanceof Error). El criterio vive aqui, junto al
+// resto de helpers que interpretan un valor lanzado (getErrorMessage), porque
+// es generico y no del SDK de consultas: asi ningun catch lo reescribe a su
+// manera. El bug de la campana vino justo de un catch que solo miraba Error y
+// DOMException, y por eso no reconocia la cancelacion que el propio componente
+// provoca al desmontarse.
+export function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true
+  if (err instanceof Error && err.name === "AbortError") return true
+  if (typeof err !== "object" || err === null) return false
+
+  const candidate = err as {
+    code?: unknown
+    message?: unknown
+    details?: unknown
+  }
+  return (
+    candidate.code === 20 ||
+    candidate.code === "20" ||
+    (typeof candidate.message === "string" &&
+      candidate.message.includes("AbortError")) ||
+    (typeof candidate.details === "string" &&
+      candidate.details.includes("AbortError"))
+  )
+}
+
 export function getErrorMessage(err: unknown, fallbackMessage?: string): string {
   let baseMessage: string
   if (err instanceof Error) {
