@@ -36,6 +36,7 @@ src/
     ├── public-env.ts     # Validación de variables públicas (zod)
     └── env.ts            # Validación de secretos de servidor (zod)
 migrations/               # Esquema InsForge (fuente de verdad; ver ADR-004)
+public/                   # Assets estáticos y sw.js (service worker de push; ver ADR-013)
 ```
 
 ## Flujo de datos
@@ -92,6 +93,16 @@ las consultas reales y usa `text + CHECK` en vez de enums, con RLS de propietari
 Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `alerts`,
 `budgets`, `profiles`. El detalle y el glosario están en [CONTEXT.md](../CONTEXT.md).
 
+## Notificaciones push de navegador
+
+La campana lee las alertas de `alerts` con el SDK. Sobre eso, el cliente registra `public/sw.js` y
+ofrece alta/baja de suscripcion push en `/settings` (`src/hooks/usePushNotifications.ts` +
+`src/lib/push.ts`), con el permiso pedido solo desde un gesto. **El envio esta bloqueado**: faltan la
+tabla `push_subscriptions`, la marca de envio, la edge function de firma y el schedule, que no se
+tocan. La suscripcion se refleja en localStorage como puente temporal, no como fuente de verdad (esa
+es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqué están en
+[ADR-013](DECISIONS/ADR-013-push-de-navegador-solo-cliente.md).
+
 ## Configuración y entorno
 
 - `src/lib/public-env.ts`: variables `NEXT_PUBLIC_*` (van al bundle del cliente).
@@ -119,5 +130,6 @@ borrar un endpoint.
 ## Decisiones
 
 Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS), 009
-(camino único de datos por el SDK), 012 (retirada del código BFF y de `public.users`). El ADR-001
-(adaptador de sesión sobre Supabase) queda como histórico.
+(camino único de datos por el SDK), 012 (retirada del código BFF y de `public.users`), 013 (push de
+navegador: cliente ya, envío bloqueado). El ADR-001 (adaptador de sesión sobre Supabase) queda como
+histórico.
