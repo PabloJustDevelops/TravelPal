@@ -58,6 +58,24 @@ const fkIndexMigration = readFileSync(
   "utf8",
 );
 
+// El advisor de InsForge marca las 43 policies de RLS como rls-policy-perf:
+// con auth.uid() suelto, la funcion se re-evalua por fila; envuelta en
+// (select auth.uid()) se evalua una sola vez. El contrato de esta migracion es
+// solo esa reescritura mecanica: mismo propietario, mismos comandos y mismos
+// WITH CHECK.
+const subqueryMigrationName = readdirSync(MIGRATIONS_DIR).find((file) =>
+  file.endsWith("_rewrite-rls-policies-with-subquery.sql"),
+);
+if (!subqueryMigrationName) {
+  throw new Error(
+    "No se encontro la migracion de reescritura de policies con subquery",
+  );
+}
+const subqueryMigration = readFileSync(
+  path.join(MIGRATIONS_DIR, subqueryMigrationName),
+  "utf8",
+);
+
 describe("bookings: RLS y politicas de propietario", () => {
   it("tiene RLS habilitada", () => {
     expect(baseSchema).toMatch(
@@ -302,5 +320,131 @@ describe("indices de las FKs hacia trips", () => {
     expect(fkIndexMigration).not.toMatch(/enable row level security/i);
     expect(fkIndexMigration).not.toMatch(/\bgrant\b/i);
     expect(fkIndexMigration).not.toMatch(/\bbegin\b|\bcommit\b|\brollback\b/i);
+  });
+});
+
+// Deuda rls-policy-perf del advisor (#65): las 43 policies de la base siguen
+// llamando a auth.uid() por fila. La migracion la envuelve en (select auth.uid())
+// sin cambiar a quien ve que. El test fija el alcance (que tablas, que comandos)
+// y, ademas, demuestra el aislamiento de dos usuarios leyendo el propietario del
+// propio SQL, no de este fichero.
+describe("reescritura de policies RLS con subquery", () => {
+  // El SQL sin comentarios: los conteos no deben depender del texto explicativo.
+  const subquerySql = subqueryMigration.replace(/--[^\n]*/g, "");
+
+  function occurrences(text: string, pattern: RegExp): number {
+    return (text.match(pattern) || []).length;
+  }
+
+  // Las tablas se recorren con `foreach t in array array[...]`, asi que el
+  // archivo lista las tablas y los comandos una sola vez; el numero de policies
+  // es tablas * comandos, no las apariciones del texto.
+  const arrayLiterals = [
+    ...subquerySql.matchAll(/foreach t in array array\[([\s\S]*?)\]/g),
+  ].map((match) => match[1]);
+
+  function tablesOfArrayLiteral(literal: string): string[] {
+    return [...literal.matchAll(/'(\w+)'/g)].map((match) => match[1]);
+  }
+
+  const userTables = arrayLiterals[0]
+    ? tablesOfArrayLiteral(arrayLiterals[0])
+    : [];
+  const profileTables = arrayLiterals[1]
+    ? tablesOfArrayLiteral(arrayLiterals[1])
+    : [];
+
+  // Columna de propietario que el backend aplica en cada lectura, leida del SQL.
+  function ownerColumnsOfSelectPolicies(): string[] {
+    return [
+      ...subquerySql.matchAll(
+        /for select using \(\(select auth\.uid\(\)\) = (\w+)\)/g,
+      ),
+    ].map((match) => match[1]);
+  }
+
+  it("lista en el bucle las 10 tablas con user_id y profiles aparte", () => {
+    expect(userTables.sort()).toEqual(
+      [
+        "alerts",
+        "bookings",
+        "budgets",
+        "expenses",
+        "itinerary_activities",
+        "journal_entries",
+        "journal_photos",
+        "notes",
+        "tasks",
+        "trips",
+      ].sort(),
+    );
+    expect(profileTables).toEqual(["profiles"]);
+  });
+
+  it("cubre las 43 policies: cuatro por tabla con user_id y tres en profiles", () => {
+    const totalPolicies = userTables.length * 4 + profileTables.length * 3;
+    expect(totalPolicies).toBe(43);
+    // El bloque de user_id declara los cuatro comandos y el de profiles tres
+    // (profiles no tiene politica de delete).
+    expect(occurrences(subquerySql, /for select using/g)).toBe(2);
+    expect(occurrences(subquerySql, /for insert with check/g)).toBe(2);
+    expect(occurrences(subquerySql, /for update using/g)).toBe(2);
+    expect(occurrences(subquerySql, /for delete using/g)).toBe(1);
+  });
+
+  it("envuelve auth.uid() en un subquery, sin dejar llamadas sueltas", () => {
+    const calls = occurrences(subquerySql, /auth\.uid\(\)/g);
+    const wrapped = occurrences(subquerySql, /\(select auth\.uid\(\)\)/g);
+    // 5 plantillas en el bloque user_id (select + insert + update x2 + delete) y
+    // 4 en profiles, todas envueltas.
+    expect(calls).toBe(9);
+    expect(wrapped).toBe(9);
+  });
+
+  it("mantiene el propietario: user_id en las tablas de usuario e id en profiles", () => {
+    expect(ownerColumnsOfSelectPolicies()).toEqual(["user_id", "id"]);
+  });
+
+  it("cada insert y cada update conservan su with check", () => {
+    expect(
+      occurrences(subquerySql, /with check \(\(select auth\.uid\(\)\)/g),
+    ).toBe(4);
+  });
+
+  it("es idempotente: un drop policy if exists por cada create policy", () => {
+    expect(occurrences(subquerySql, /drop policy if exists %I/g)).toBe(7);
+    expect(occurrences(subquerySql, /create policy %I/g)).toBe(7);
+  });
+
+  it("no cambia la semantica: no toca tablas, permisos, RLS ni storage", () => {
+    expect(subquerySql).not.toMatch(/alter table/i);
+    expect(subquerySql).not.toMatch(/create table/i);
+    expect(subquerySql).not.toMatch(/create index/i);
+    expect(subquerySql).not.toMatch(/enable row level security/i);
+    expect(subquerySql).not.toMatch(/\bgrant\b/i);
+    expect(subquerySql).not.toMatch(/storage\.objects/i);
+  });
+
+  it("la lectura aisla a dos usuarios: cada uno solo ve sus propias filas", () => {
+    const ownerColumn = ownerColumnsOfSelectPolicies().find(
+      (column) => column === "user_id",
+    );
+    expect(ownerColumn).toBe("user_id");
+
+    const rows: Record<string, string>[] = [
+      { id: "a1", user_id: "user-a" },
+      { id: "a2", user_id: "user-a" },
+      { id: "b1", user_id: "user-b" },
+    ];
+
+    const visibleTo = (viewerId: string) =>
+      rows
+        .filter((row) => row[ownerColumn!] === viewerId)
+        .map((row) => row.id);
+
+    expect(visibleTo("user-a")).toEqual(["a1", "a2"]);
+    expect(visibleTo("user-b")).toEqual(["b1"]);
+    // La clave del aislamiento: b no ve nada de a.
+    expect(visibleTo("user-b")).not.toContain("a1");
   });
 });
