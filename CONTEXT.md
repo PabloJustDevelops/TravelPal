@@ -28,11 +28,13 @@ npm run deploy       # OpenNext build + wrangler deploy
 ## Data model — single source of truth
 
 `migrations/20260913181842_create-app-schema.sql`. No hay otro SQL: el resto se borro por
-contradecirse (ver ADR-004). El esquema se deriva de las consultas reales; si el modelo
-TypeScript cambia, la migracion debe actualizarse.
+contradecirse (ver ADR-004). La migracion base tambien se limpio al retirar `reminders` y
+`calendar_events`, tablas que nunca existieron en el backend (ver
+`docs/audits/auditoria-utilidad-y-rework.md`). El esquema se deriva de las consultas reales; si el
+modelo TypeScript cambia, la migracion debe actualizarse.
 
 Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`,
-`reminders`, `calendar_events`, `alerts`, `budgets`, `journal_entries`, `profiles`.
+`alerts`, `budgets`, `journal_entries`, `profiles`.
 
 Reglas: `text + CHECK` en vez de enums; FKs solo si una consulta las usa; RLS de propietario con
 `auth.uid()` en cada tabla con `user_id` (y por `id` en `profiles`).
@@ -49,8 +51,6 @@ Reglas: `text + CHECK` en vez de enums; FKs solo si una consulta las usa; RLS de
   la memoria post-viaje; distinta de una Note, que es global.
 - **Task**: tarea con estado y prioridad.
 - **Alert**: aviso mostrado en la campana de notificaciones.
-- **Reminder**: recordatorio con fecha/hora de disparo.
-- **CalendarEvent**: evento del calendario, puede derivar de Booking o ItineraryActivity.
 - **Profile**: datos públicos del usuario (`profiles`); la identidad vive en `auth.users`.
 
 ## Where to look

@@ -144,43 +144,15 @@ create table if not exists public.itinerary_activities (
   updated_at timestamptz not null default now()
 );
 
--- reminders: insforge-functions (recordatorios)
-create table if not exists public.reminders (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  booking_id uuid references public.bookings(id) on delete cascade,
-  trip_id uuid references public.trips(id) on delete cascade,
-  title text not null,
-  message text not null,
-  reminder_datetime timestamptz not null,
-  type text not null default 'general'
-    check (type in ('booking', 'activity', 'general', 'document', 'payment')),
-  status text not null default 'pending'
-    check (status in ('pending', 'sent', 'dismissed')),
-  sent_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
--- calendar_events: insforge-functions (eventos sincronizados)
-create table if not exists public.calendar_events (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  trip_id uuid references public.trips(id) on delete cascade,
-  booking_id uuid references public.bookings(id) on delete cascade,
-  activity_id uuid references public.itinerary_activities(id) on delete cascade,
-  title text not null,
-  description text,
-  event_date date not null,
-  start_time time,
-  end_time time,
-  type text not null
-    check (type in ('trip', 'booking', 'activity', 'reminder', 'custom')),
-  color text not null default 'blue',
-  all_day boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- ---------------------------------------------------------------------------
+-- Tablas retiradas: reminders y calendar_events
+--
+-- Se quitaron de este esquema porque nunca existieron en el backend de
+-- InsForge: nadie las escribia ni las leia (ver
+-- docs/audits/auditoria-utilidad-y-rework.md). El backend actual no las tiene,
+-- asi que sus definiciones de tabla, indices, triggers de updated_at y RLS se
+-- eliminaron de esta migracion. En un backend nuevo no deben volver a crearse.
+-- ---------------------------------------------------------------------------
 
 -- alerts: alerts page y NotificationSystem
 create table if not exists public.alerts (
@@ -240,13 +212,6 @@ create index if not exists idx_itinerary_activities_user_id on public.itinerary_
 create index if not exists idx_itinerary_activities_trip_id on public.itinerary_activities (trip_id);
 create index if not exists idx_itinerary_activities_date on public.itinerary_activities (date);
 
-create index if not exists idx_reminders_user_id on public.reminders (user_id);
-create index if not exists idx_reminders_datetime on public.reminders (reminder_datetime);
-create index if not exists idx_reminders_status on public.reminders (status);
-
-create index if not exists idx_calendar_events_user_id on public.calendar_events (user_id);
-create index if not exists idx_calendar_events_event_date on public.calendar_events (event_date);
-
 create index if not exists idx_alerts_user_id on public.alerts (user_id);
 create index if not exists idx_alerts_created_at on public.alerts (created_at);
 
@@ -262,7 +227,7 @@ declare
 begin
   foreach t in array array[
     'users', 'profiles', 'trips', 'expenses', 'notes', 'tasks', 'bookings',
-    'itinerary_activities', 'reminders', 'calendar_events', 'alerts', 'budgets'
+    'itinerary_activities', 'alerts', 'budgets'
   ]
   loop
     execute format('drop trigger if exists set_%1$s_updated_at on public.%1$s', t);
@@ -284,8 +249,6 @@ alter table public.notes enable row level security;
 alter table public.tasks enable row level security;
 alter table public.bookings enable row level security;
 alter table public.itinerary_activities enable row level security;
-alter table public.reminders enable row level security;
-alter table public.calendar_events enable row level security;
 alter table public.alerts enable row level security;
 alter table public.budgets enable row level security;
 
@@ -296,7 +259,7 @@ declare
 begin
   foreach t in array array[
     'trips', 'expenses', 'notes', 'tasks', 'bookings',
-    'itinerary_activities', 'reminders', 'calendar_events', 'alerts', 'budgets'
+    'itinerary_activities', 'alerts', 'budgets'
   ]
   loop
     execute format('drop policy if exists %I on public.%I', t || '_select_own', t);

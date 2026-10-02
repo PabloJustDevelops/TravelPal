@@ -89,9 +89,8 @@ Sólo sobrevive lo que no puede bajar al cliente:
 Fuente de verdad única: `migrations/20260913181842_create-app-schema.sql` (ver ADR-004). Deriva de
 las consultas reales y usa `text + CHECK` en vez de enums, con RLS de propietario (`auth.uid()`).
 
-Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `reminders`,
-`calendar_events`, `alerts`, `budgets`, `profiles`. El detalle y el glosario están en
-[CONTEXT.md](../CONTEXT.md).
+Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `alerts`,
+`budgets`, `profiles`. El detalle y el glosario están en [CONTEXT.md](../CONTEXT.md).
 
 ## Configuración y entorno
 

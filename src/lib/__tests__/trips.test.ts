@@ -41,16 +41,22 @@ function makeChain(result: QueryResult): DbChain {
 
 const mockedClient = createInsforgeClient as jest.Mock;
 
+// Tablas que un viaje tiene de verdad en el backend. Cualquier tabla fuera de
+// esta lista (p. ej. las retiradas reminders y calendar_events) hace fallar el
+// test de contrato de mas abajo.
 const ALL_TABLES = [
   "itinerary_activities",
   "bookings",
-  "reminders",
-  "calendar_events",
   "journal_entries",
   "journal_photos",
   "expenses",
   "notes",
 ] as const;
+
+// Tablas retiradas del backend: se crearon en la migracion base pero nunca
+// existieron en InsForge (no tienen escritor ni lector). Ver
+// docs/audits/auditoria-utilidad-y-rework.md. No deben volver a consultarse.
+const RETIRED_TABLES = ["reminders", "calendar_events"] as const;
 
 function mount(
   results: Record<string, QueryResult>,
@@ -76,8 +82,6 @@ describe("getTripDeletionImpact", () => {
     const { from, chains } = mount({
       itinerary_activities: { data: null, count: 3, error: null },
       bookings: { data: null, count: 1, error: null },
-      reminders: { data: null, count: 0, error: null },
-      calendar_events: { data: null, count: 0, error: null },
       journal_entries: { data: null, count: 2, error: null },
       journal_photos: { data: null, count: 0, error: null },
       expenses: { data: null, count: 1, error: null },
@@ -103,13 +107,6 @@ describe("getTripDeletionImpact", () => {
         count: 3,
       },
       { table: "bookings", one: "reserva", many: "reservas", count: 1 },
-      { table: "reminders", one: "recordatorio", many: "recordatorios", count: 0 },
-      {
-        table: "calendar_events",
-        one: "evento del calendario",
-        many: "eventos del calendario",
-        count: 0,
-      },
       {
         table: "journal_entries",
         one: "entrada del diario",
@@ -125,6 +122,19 @@ describe("getTripDeletionImpact", () => {
     ]);
     expect(impact.expenses.count).toBe(1);
     expect(impact.notes.count).toBe(2);
+  });
+
+  it("no consulta ninguna tabla retirada ni fuera de las que cuelgan del viaje", async () => {
+    const { from } = mount({});
+
+    await getTripDeletionImpact("trip-1");
+
+    const consulted = from.mock.calls.map(([table]) => table);
+    // Contrato: exactamente las tablas hijas reales, sin colarse ninguna.
+    expect([...new Set(consulted)].sort()).toEqual([...ALL_TABLES].sort());
+    for (const retired of RETIRED_TABLES) {
+      expect(consulted).not.toContain(retired);
+    }
   });
 
   it("omite del aviso la tabla que no se puede contar en vez de inventarla", async () => {

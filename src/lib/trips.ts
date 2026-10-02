@@ -10,6 +10,11 @@ import { logger } from "@/lib/logger";
  *
  * `tasks` no aparece a proposito: no tiene `trip_id`, no cuelga del viaje (ver
  * `migrations/20260913181842_create-app-schema.sql`).
+ *
+ * `reminders` y `calendar_events` tampoco: son tablas retiradas, nunca
+ * existieron en el backend de InsForge (no tienen escritor ni lector). Ver
+ * `docs/audits/auditoria-utilidad-y-rework.md`. No volver a anadirlas: cada
+ * consulta aqui es un error real contra el backend.
  */
 interface ChildTableLabel {
   table: string;
@@ -24,12 +29,6 @@ const CASCADE_CHILD_TABLES: readonly ChildTableLabel[] = [
     many: "actividades del itinerario",
   },
   { table: "bookings", one: "reserva", many: "reservas" },
-  { table: "reminders", one: "recordatorio", many: "recordatorios" },
-  {
-    table: "calendar_events",
-    one: "evento del calendario",
-    many: "eventos del calendario",
-  },
   {
     table: "journal_entries",
     one: "entrada del diario",
@@ -200,8 +199,8 @@ async function deleteTripChildren(
  * encontrarlas por su viaje; de ahi borrarlas antes. Si ese borrado opcional
  * falla se aborta antes de tocar el viaje: el viaje nunca se queda borrado a
  * medias (como mucho queda borrada parte de lo opcional). Las tablas que
- * cascadean (itinerario, reservas, recordatorios, eventos y diario) no se tocan
- * aqui: se van con el viaje.
+ * cascadean (itinerario, reservas y diario) no se tocan aqui: se van con el
+ * viaje.
  */
 export async function deleteTrip(
   tripId: string,
