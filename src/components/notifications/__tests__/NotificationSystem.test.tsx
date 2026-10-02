@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NotificationSystem } from "../NotificationSystem";
 import { createInsforgeClient } from "@/lib/insforge";
 import { deriveAlerts } from "@/lib/alerts";
+import { logger } from "@/lib/logger";
+import { showToast } from "@/lib/toast";
 import type { Task } from "@/lib/insforge";
 
 // El objeto `user` debe ser estable entre renders: si cambia de referencia en cada
@@ -18,6 +20,9 @@ jest.mock("@/lib/logger", () => ({
     error: jest.fn(),
   },
 }));
+// logger.error dispara un toast, pero aqui el logger esta mockeado: se mockea el
+// toast aparte para poder afirmar que una cancelacion no llega a mostrarlo.
+jest.mock("@/lib/toast", () => ({ showToast: jest.fn() }));
 
 type Row = Record<string, unknown>;
 type TableName = "alerts" | "tasks" | "bookings" | "budgets" | "expenses";
@@ -152,6 +157,20 @@ function dueSoonTask(overrides: Partial<Task> = {}): Task {
   };
 }
 
+// Forma EXACTA que tendria el AbortError una vez envuelto por withQueryTimeout y
+// el SDK: un objeto plano (NO instanceof Error) con `code: "20"` y el texto
+// "AbortError" en message/details. El bug depende de esta forma: el criterio
+// anterior solo miraba Error/DOMException y por eso lo trataba como fallo real.
+function abortQueryError(): Row {
+  return {
+    message: "AbortError: signal is aborted without reason",
+    details:
+      "AbortError: signal is aborted without reason\n    at commitHookPassiveUnmountEffects (react-dom-client.development.js:1:1)\n    at recursivelyTraversePassiveUnmountEffects (react-dom-client.development.js:2:2)",
+    hint: "",
+    code: "20",
+  };
+}
+
 function mount(tables: Tables, errors: Partial<Record<TableName, unknown>> = {}) {
   const { client, inserted } = makeClient(tables, errors);
   mockedCreate.mockReturnValue(client);
@@ -264,6 +283,62 @@ describe("NotificationSystem", () => {
 
     await openPanel();
 
+    expect(await screen.findByText("Alerta existente")).toBeInTheDocument();
+  });
+
+  it("una carga abortada no registra error ni muestra un toast", async () => {
+    // El AbortController del propio componente cancela el enriquecimiento al
+    // desmontarse; la consulta rechaza con la forma envuelta, no con un Error.
+    mount({ alerts: [alertRow()] }, { tasks: abortQueryError() });
+
+    render(<NotificationSystem />);
+
+    // La campana termina de cargar con lo que ya habia...
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /1 sin leer/i }),
+      ).toBeInTheDocument();
+    });
+
+    // ...y la cancelacion NO se registra ni dispara el toast rojo.
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it("un fallo real del enriquecimiento se registra y no rompe la campana", async () => {
+    mount(
+      { alerts: [alertRow()] },
+      { tasks: { message: "sin acceso a tasks" } },
+    );
+
+    render(<NotificationSystem />);
+
+    // Un error que NO es cancelacion sigue registrandose como antes...
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(
+        "NotificationSystem: Error deriving alerts",
+        expect.anything(),
+      );
+    });
+
+    // ...y no lanza: la campana sigue mostrando lo que ya habia.
+    await openPanel();
+    expect(await screen.findByText("Alerta existente")).toBeInTheDocument();
+  });
+
+  it("una cancelacion durante el enriquecimiento no oculta lo que ya habia", async () => {
+    mount({ alerts: [alertRow()] }, { tasks: abortQueryError() });
+
+    render(<NotificationSystem />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /1 sin leer/i }),
+      ).toBeInTheDocument();
+    });
+
+    // Salir en silencio no puede llevarse por delante las alertas ya leidas.
+    await openPanel();
     expect(await screen.findByText("Alerta existente")).toBeInTheDocument();
   });
 });

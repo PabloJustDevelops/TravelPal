@@ -26,6 +26,7 @@ import {
   CONNECTION_TIMEOUT_MESSAGE,
   formatDate,
   getErrorMessage,
+  isAbortError,
 } from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
@@ -181,14 +182,19 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
         // Enriquecimiento best-effort: da fuente a la campana insertando las
         // alertas derivadas que falten. Un fallo aqui NO debe romper la campana:
-        // se registra y se sigue mostrando lo que ya hubiera.
+        // se registra y se sigue mostrando lo que ya hubiera. Si lo que salta es
+        // la cancelacion que provoca el propio AbortController al desmontar el
+        // componente, no es un fallo: no se registra (logger.error dispara un
+        // toast rojo y ensucia el log del worker) y se continua sin mas.
         let inserted = false;
         try {
           inserted = await ensureDerivedAlerts(insforge, user.id, signal);
         } catch (enrichErr: unknown) {
-          logger.error("NotificationSystem: Error deriving alerts", {
-            error: getErrorMessage(enrichErr),
-          });
+          if (!isAbortError(enrichErr)) {
+            logger.error("NotificationSystem: Error deriving alerts", {
+              error: getErrorMessage(enrichErr),
+            });
+          }
         }
 
         if (signal?.aborted) return;
@@ -222,17 +228,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
           return [...prev, ...newNotifications];
         });
       } catch (err: unknown) {
-        if (
-          (err instanceof Error && err.name === "AbortError") ||
-          (typeof err === "object" && err !== null && "code" in err && (err as any).code === 20) ||
-          (err instanceof DOMException && err.name === "AbortError")
-        ) {
+        // La cancelacion (el AbortController del propio componente al desmontarse,
+        // o cualquier fetch abortado) no es un fallo: fuera del log y del toast.
+        // El criterio vive en un solo sitio (isAbortError) para no reescribirlo.
+        if (isAbortError(err)) {
           return;
-        }
-        
-        const errObj = err as any;
-        if (errObj?.message?.includes("AbortError") || errObj?.details?.includes("AbortError")) {
-            return;
         }
 
         const message = getErrorMessage(err);
