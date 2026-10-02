@@ -43,6 +43,21 @@ const journalPhotosMigration = readFileSync(
 
 const FLIGHT_COLUMNS = ["airline", "flight_number", "origin", "destination"];
 
+// Las FKs sin indice hacen que borrar un viaje escanee la tabla hija entera
+// (advisor del backend: missing-fk-index en alerts y budgets). El contrato de
+// esta migracion es solo indice: si alguien anade columnas, policies o RLS, el
+// test falla y obliga a justificarlo aqui.
+const fkIndexMigrationName = readdirSync(MIGRATIONS_DIR).find((file) =>
+  file.endsWith("_add-fk-indexes-alerts-budgets.sql"),
+);
+if (!fkIndexMigrationName) {
+  throw new Error("No se encontro la migracion de indices de FK en alerts y budgets");
+}
+const fkIndexMigration = readFileSync(
+  path.join(MIGRATIONS_DIR, fkIndexMigrationName),
+  "utf8",
+);
+
 describe("bookings: RLS y politicas de propietario", () => {
   it("tiene RLS habilitada", () => {
     expect(baseSchema).toMatch(
@@ -238,5 +253,54 @@ describe("fotos del diario: RLS y aislamiento de dos usuarios", () => {
     expect(visibleTo("user-a")).toEqual(["pa1"]);
     expect(visibleTo("user-b")).toEqual(["pb1"]);
     expect(visibleTo("user-b")).not.toContain("pa1");
+  });
+});
+
+// El advisor del backend marca missing-fk-index en alerts.trip_id y
+// budgets.trip_id: sin indice, borrar o actualizar un viaje escanea la tabla
+// hija entera. Con pocas filas no se nota, pero es el tipo de deuda que se paga
+// justo cuando la app empieza a usarse.
+describe("indices de las FKs hacia trips", () => {
+  const INDEXES = [
+    { table: "alerts", index: "idx_alerts_trip_id" },
+    { table: "budgets", index: "idx_budgets_trip_id" },
+  ];
+
+  it("crea el indice de trip_id en cada tabla hija, de forma idempotente", () => {
+    for (const { table, index } of INDEXES) {
+      expect(fkIndexMigration).toMatch(
+        new RegExp(
+          `create index if not exists ${index} on public\\.${table} \\(trip_id\\);`,
+        ),
+      );
+    }
+  });
+
+  // El indice tiene que cubrir tambien las filas sin viaje (trip_id nulo): son
+  // las alerts y budgets globales, y las que deja huerfanas un borrado. Un
+  // indice parcial sobre trip_id is not null no las cubre.
+  it("el indice de budgets cubre tambien las filas sin viaje", () => {
+    expect(fkIndexMigration).toMatch(
+      /create index if not exists idx_budgets_trip_id on public\.budgets \(trip_id\);/,
+    );
+    expect(fkIndexMigration).not.toMatch(/where trip_id is not null/i);
+  });
+
+  it("cubre las dos FKs que el advisor reporta, y solo esas", () => {
+    const indexed = [...fkIndexMigration.matchAll(/on public\.(\w+) \(/g)].map(
+      (match) => match[1],
+    );
+    expect(indexed.sort()).toEqual(["alerts", "budgets"]);
+  });
+
+  // La migracion es solo indice: si alguien la cuelga de columnas, policies o
+  // RLS, el alcance del cambio deja de ser el que se reviso.
+  it("no toca columnas, politicas, RLS ni permisos", () => {
+    expect(fkIndexMigration).not.toMatch(/alter table/i);
+    expect(fkIndexMigration).not.toMatch(/create policy/i);
+    expect(fkIndexMigration).not.toMatch(/drop policy/i);
+    expect(fkIndexMigration).not.toMatch(/enable row level security/i);
+    expect(fkIndexMigration).not.toMatch(/\bgrant\b/i);
+    expect(fkIndexMigration).not.toMatch(/\bbegin\b|\bcommit\b|\brollback\b/i);
   });
 });
