@@ -16,16 +16,19 @@ gzip (main @3b84755, antes de la etapa 0) a 13258.90 KiB / 2755.23 KiB gzip (mai
    usa `auth-actions.ts`.
 2. El guardián sigue vigilando `useApiResource(` como valla.
 3. `public.users` sale del modelo con la migración `20260918210000_drop-public-users.sql`,
-   pendiente de aplicar con aprobación humana (DROP en producción pasa por el guard de InsForge);
-   hasta entonces la tabla vacía no rompe nada.
+   **aplicada el 2026-10-02** con aprobación humana (backup previo `antes-de-drop-users`): la tabla
+   ya no existe en el backend y sus 3 policies RLS se fueron con ella; hasta entonces la tabla vacía
+   no rompía nada.
 4. Docs alineadas (ARCHITECTURE, TECHNICAL, CONTEXT, ADR-002).
 
 ## Consecuencias
 
-Menos superficie; el modelo de `CONTEXT.md` coincide con el backend; una migración pendiente de
-aplicar. Alternativa descartada: conservar la tabla «por si acaso» (mantiene 3 políticas RLS que el
-advisor cuenta como deuda y una doc que miente).
+Menos superficie; el modelo de `CONTEXT.md` coincide con el backend. Alternativa descartada: conservar
+la tabla «por si acaso» (mantiene 3 políticas RLS que el advisor cuenta como deuda y una doc que
+miente).
 
 ## Estado
 
-Aprobado.
+Aprobado y aplicado. La migración se ejecutó el 2026-10-02 contra el backend de InsForge, con backup
+previo (`antes-de-drop-users`) y verificación posterior: `to_regclass('public.users')` devuelve null,
+las 3 policies `users_*_own` desaparecieron y la migración consta en `system.custom_migrations`.
