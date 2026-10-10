@@ -15,17 +15,17 @@ assertions exactos. No hay pasos `agent.*`, autenticación de IA ni llamadas al 
 Requiere Node 22.22.3+ en la rama 22 o Node 24.8+. CI fija 22.22.3.
 
 ```bash
-npm ci
-npx @e2e-dev/web install chromium --with-deps
-npm run test:tester
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npm run test:tester
+pnpm install --frozen-lockfile
+pnpm exec e2e-web install chromium --with-deps
+pnpm run test:tester
+E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:tester
 ```
 
 Sin `E2E_BASE_URL`, el runner inicia o reutiliza Next en localhost:3000. Next carga su entorno
 habitual. En CI, las variables necesarias se pasan explícitamente al proceso de Next porque
 `app.command` no hereda todo el entorno del runner. Contra una URL remota no arranca servidor.
 
-Los informes viven en `.e2e/` (ignorado). `npm run test:tester` desactiva telemetría; CI conserva
+Los informes viven en `.e2e/` (ignorado). `pnpm run test:tester` desactiva telemetría; CI conserva
 el informe siete días. El gate corre después de Playwright y forma parte del requisito previo
 al deploy. No actualizar snapshots automáticamente en CI.
 

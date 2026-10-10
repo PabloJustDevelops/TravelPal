@@ -45,14 +45,14 @@ el trabajo `deploy` de `.github/workflows/ci.yml`, no los vuelvas a crear.
 ### Despliegue automatico (GitHub Actions)
 
 El despliegue lo hace el trabajo `deploy` de `.github/workflows/ci.yml`: al empujar a `main` corre
-`npm ci`, `npx opennextjs-cloudflare build` y `npx opennextjs-cloudflare deploy` con Node 22.22.3.
+`pnpm install --frozen-lockfile`, `pnpm exec opennextjs-cloudflare build` y `pnpm exec opennextjs-cloudflare deploy` con Node 22.22.3.
 El trabajo depende de `build`, `worker` y `e2e`, y solo se ejecuta en push a `main` (nunca en pull requests).
 
 Usa el secreto `CLOUDFLARE_API_TOKEN`, mas `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`
 e `INSFORGE_API_KEY`. El `CLOUDFLARE_ACCOUNT_ID` va literal en el workflow, no es un secreto.
 
 No hace falta configurar Workers Builds a mano en el dashboard: GitHub Actions es la unica via de deploy.
-Manual, si hiciera falta: `npm run deploy` (build de OpenNext + deploy) con `wrangler login`.
+Manual, si hiciera falta: `pnpm run deploy` (build de OpenNext + deploy) con `wrangler login`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

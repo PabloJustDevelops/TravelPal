@@ -8,7 +8,7 @@ Closes #
 
 ## Checklist
 
-- [ ] Lint pasa (`npm run lint`)
-- [ ] Tests pasan (`npm test`)
+- [ ] Lint pasa (`pnpm run lint`)
+- [ ] Tests pasan (`pnpm test`)
 - [ ] Actualicé documentación si aplica
 - [ ] Aprobé el checklist de review (ver `docs/code-review-checklist.md`)

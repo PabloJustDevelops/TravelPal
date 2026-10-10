@@ -309,6 +309,7 @@ export default function TasksPage() {
 
             <Button
               onClick={handleCreateTask}
+              aria-label="Nueva Tarea"
               className="gap-2"
             >
               <PlusIcon className="w-5 h-5" />

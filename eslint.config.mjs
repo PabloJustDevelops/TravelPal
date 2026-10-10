@@ -11,6 +11,7 @@ const eslintConfig = [
       ".wrangler/**",
       "out/**",
       "build/**",
+      "storybook-static/**",
       "next-env.d.ts",
       "jest.config.js",
       "jest.polyfills.js",

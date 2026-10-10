@@ -60,14 +60,15 @@ app-viajes/
 
 ### Prerrequisitos
 - Node.js 22.22.3+ (o 24.8+)
-- npm
+- pnpm 12.3.4 (versión fijada en `package.json`)
 - Un proyecto de InsForge (URL + anon key + API key)
 
 ### Instalación
 ```bash
 git clone https://github.com/PabloJustDevelops/TravelPal.git
 cd TravelPal
-npm ci
+npm install --global pnpm@12.3.4 # solo si todavía no tienes pnpm
+pnpm install --frozen-lockfile
 ```
 
 ### Configuración
@@ -85,19 +86,21 @@ INSFORGE_API_KEY=<api key de proyecto, solo servidor>
 
 ### Ejecución
 ```bash
-npm run dev          # Desarrollo (http://localhost:3000)
-npm run lint         # ESLint
-npm run type-check   # TypeScript
-npm run test:ci      # Jest
-npm run test:e2e     # Playwright (ver docs/TESTING.md)
-npm run test:tester  # Tester Army: acceso publico, escritorio y viewport estrecho
-npm run build        # next build
+pnpm run dev          # Desarrollo (http://localhost:3000)
+pnpm run lint         # ESLint
+pnpm run type-check   # TypeScript
+pnpm run test:ci      # Jest
+pnpm run test:e2e     # Playwright (ver docs/TESTING.md)
+pnpm run test:tester  # Tester Army: acceso publico, escritorio y viewport estrecho
+pnpm run storybook    # Catálogo de componentes: http://localhost:6006
+pnpm run test:storybook # Interacciones y axe de las stories en Chromium
+pnpm run build        # next build
 ```
 
 ### Despliegue (Cloudflare Workers)
 ```bash
-npm run preview      # Build de OpenNext + wrangler dev local
-npm run deploy       # Build de OpenNext + deploy a Cloudflare
+pnpm run preview      # Build de OpenNext + wrangler dev local
+pnpm run deploy       # Build de OpenNext + deploy a Cloudflare
 ```
 `INSFORGE_API_KEY` es un secreto de runtime: se sube con `wrangler secret put INSFORGE_API_KEY`.
 

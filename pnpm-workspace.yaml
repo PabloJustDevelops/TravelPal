@@ -1,0 +1,8 @@
+# Scripts nativos necesarios para Next, OpenNext y Tailwind.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+  '@tailwindcss/oxide': true
+  unrs-resolver: true
+  core-js: false # Su postinstall solo muestra un mensaje de financiacion.

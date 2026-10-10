@@ -2,9 +2,9 @@
 
 | Nivel | Herramienta | Donde vive | Comando |
 | --- | --- | --- | --- |
-| Unidad y componente | Jest + Testing Library | `src/**/__tests__/` | `npm run test:ci` |
-| End-to-end con datos | Playwright | `e2e/` | `npm run test:e2e` |
-| Acceso público, escritorio y viewport estrecho | Tester Army (`e2e`) | `tests/*.e2e.ts` | `npm run test:tester` |
+| Unidad y componente | Jest + Testing Library | `src/**/__tests__/` | `pnpm run test:ci` |
+| End-to-end con datos | Playwright | `e2e/` | `pnpm run test:e2e` |
+| Acceso público, escritorio y viewport estrecho | Tester Army (`e2e`) | `tests/*.e2e.ts` | `pnpm run test:tester` |
 
 ## Regla: ningun bug entra sin el test que falla sin el arreglo
 
@@ -23,15 +23,15 @@ produccion; la suite nunca crea usuarios):
 ```bash
 export E2E_USER_EMAIL=<email del usuario dedicado>
 export E2E_USER_PASSWORD=<su contrasena>
-npm run test:e2e
+pnpm run test:e2e
 ```
 
 Si prefieres no exportarlas en cada shell, dejarlas en `.env.local` (esta en
 `.gitignore`): el runner lo carga. Las credenciales no se versionan nunca.
 
-Playwright arranca el dev server por su cuenta (`webServer` con `npm run dev`) y
+Playwright arranca el dev server por su cuenta (`webServer` con `pnpm run dev`) y
 reutiliza el que ya tengas levantado en el 3000. Para ver los pasos en el
-navegador, `npx playwright test --headed`; con `--debug`, paso a paso.
+navegador, `pnpm exec playwright test --headed`; con `--debug`, paso a paso.
 
 La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`. Los
 flujos comparten el usuario dedicado y las mismas pantallas, asi que en
@@ -43,8 +43,8 @@ corrida local, siempre en el `toHaveURL` de `createTrip`.
 El destino lo elige `E2E_BASE_URL`, y por defecto es localhost:
 
 ```bash
-npm run test:e2e                      # codigo local (rama y PR)
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npm run test:e2e   # lo desplegado
+pnpm run test:e2e                      # codigo local (rama y PR)
+E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:e2e   # lo desplegado
 ```
 
 ## Que cubre el smoke de la etapa 0
@@ -82,8 +82,8 @@ viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
 ## Correr solo los flujos que crean datos
 
 ```bash
-npx playwright test e2e/flows                 # local, contra el dev server
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npx playwright test e2e/flows
+pnpm exec playwright test e2e/flows                 # local, contra el dev server
+E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm exec playwright test e2e/flows
 ```
 
 El proyecto `flows` ya limita a un worker, asi que no hace falta pasar
@@ -111,7 +111,7 @@ usuarios), asi que queda uno por corrida.
 
 ## Tester Army
 
-`npm run test:tester` ejecuta tres casos públicos en Chromium a 1440×900 y 390×844:
+`pnpm run test:tester` ejecuta tres casos públicos en Chromium a 1440×900 y 390×844:
 redirección de ruta protegida, opciones de acceso y recuperación de contraseña. No crea
 usuarios, no envía correos y no necesita modelo ni suscripción. El viewport estrecho comprueba
 layout responsive; no equivale a Safari/iOS ni a un dispositivo táctil real.
@@ -135,6 +135,23 @@ La telemetría de Tester Army está desactivada. No hay pasos con modelos en el 
 ## Cobertura pendiente
 
 No existe aún cobertura completa de móvil real, WebKit/Firefox, OAuth de Google con proveedor
-real, verificación de email completa, tareas, notas, perfil/ajustes ni regresión visual.
+real, verificación de email completa, CRUD completo de tareas/notas, perfil/ajustes ni regresión visual.
 Jest prueba la capa cliente de push; no demuestra entrega real de avisos. Los asserts de axe
 existentes tampoco constituyen una auditoría completa de accesibilidad.
+
+## Componentes y accesibilidad aislada
+
+`pnpm run storybook` abre el catálogo en localhost:6006 con controles y formularios reales,
+datos sintéticos y selector de tema. `pnpm run build-storybook` genera el catálogo estático
+local (ignorado por Git; no se publica con el Worker).
+
+`pnpm run test:storybook` usa Vitest exclusivamente para las stories, en Chromium real.
+Jest conserva las pruebas de unidad y aplicación. El addon de accesibilidad tiene
+`a11y.test: error`: sus violaciones fallan el test. La CI construye el catálogo y ejecuta
+estas pruebas después de instalar Chromium.
+
+`e2e/flows/forms-accessibility.spec.ts` verifica Tareas y Notas en claro/oscuro a 390 y
+1440 px: etiquetas, error de título, radios con teclado, axe completo dentro del diálogo,
+cierre y restauración del foco. No guarda tareas ni notas. Espera al final de la transición
+antes de medir contraste. No acredita compatibilidad con lectores de pantalla reales ni
+un cumplimiento WCAG de toda la app.

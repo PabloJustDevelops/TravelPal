@@ -50,3 +50,11 @@ describe("NoteEditor con una nota sin viaje", () => {
     );
   });
 });
+
+it('expone etiquetas, grupo de categorías y ayuda para lectores de pantalla', () => {
+  render(<NoteEditor trips={trips} onSave={jest.fn()} onCancel={jest.fn()} />)
+  expect(screen.getByLabelText('Contenido *')).toHaveAccessibleDescription(/Puedes usar Markdown/)
+  expect(screen.getByLabelText('Asociar a Viaje (Opcional)')).toBeInTheDocument()
+  expect(screen.getByRole('group', { name: 'Categoría *' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Cerrar editor de nota' })).toBeInTheDocument()
+})

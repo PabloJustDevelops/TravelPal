@@ -12,7 +12,7 @@ arquitectura, [ARCHITECTURE.md](./ARCHITECTURE.md). Para las decisiones, [DECISI
 | Componente | Versión | Descripción |
 |------------|---------|-------------|
 | Node.js | 22.22.3+ o 24.8+ | CI fija 22.22.3; requerido por Tester Army |
-| npm | 10+ | Gestor de paquetes (repo con `package-lock.json`) |
+| pnpm | 12.3.4 | Gestor de paquetes (repo con `pnpm-lock.yaml`) |
 | Proyecto InsForge | - | Postgres + Auth + Storage |
 
 ---
@@ -33,9 +33,9 @@ Consulta `package.json` para las versiones exactas.
 ```bash
 git clone https://github.com/PabloJustDevelops/TravelPal.git
 cd TravelPal
-npm ci
+pnpm install --frozen-lockfile
 cp .env.example .env.local   # y rellena los valores
-npm run dev
+pnpm run dev
 ```
 
 La app queda en `http://localhost:3000`.
@@ -46,15 +46,15 @@ La app queda en `http://localhost:3000`.
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run lint` | ESLint |
-| `npm run type-check` | `tsc --noEmit` |
-| `npm run test:ci` | Jest (CI) |
-| `npm run test:e2e` | Playwright: flujos con datos |
-| `npm run test:tester` | Tester Army: acceso público en dos viewports |
-| `npm run build` | `next build` |
-| `npm run preview` | Build de OpenNext + `wrangler dev` local |
-| `npm run deploy` | Build de OpenNext + deploy a Cloudflare |
+| `pnpm run dev` | Servidor de desarrollo |
+| `pnpm run lint` | ESLint |
+| `pnpm run type-check` | `tsc --noEmit` |
+| `pnpm run test:ci` | Jest (CI) |
+| `pnpm run test:e2e` | Playwright: flujos con datos |
+| `pnpm run test:tester` | Tester Army: acceso público en dos viewports |
+| `pnpm run build` | `next build` |
+| `pnpm run preview` | Build de OpenNext + `wrangler dev` local |
+| `pnpm run deploy` | Build de OpenNext + deploy a Cloudflare |
 
 ---
 
@@ -112,7 +112,7 @@ migrations/                 # Esquema InsForge (fuente de verdad)
 
 ### Error de instalación de dependencias
 ```bash
-npm ci
+pnpm install --frozen-lockfile
 ```
 
 ### Error de variables de entorno
@@ -121,4 +121,4 @@ npm ci
 
 ### La app no arranca en Cloudflare
 - Recuerda que `INSFORGE_API_KEY` debe existir como secreto de runtime.
-- `npm run preview` reproduce el runtime de Workers en local.
+- `pnpm run preview` reproduce el runtime de Workers en local.
