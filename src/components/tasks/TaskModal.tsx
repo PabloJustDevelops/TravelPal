@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { Fragment, useEffect, useId } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useForm } from 'react-hook-form';
 import { Task } from '@/lib/insforge';
@@ -29,6 +29,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   initialData,
   isLoading = false
 }) => {
+  const formId = useId();
   const {
     register,
     handleSubmit,
@@ -116,30 +117,33 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-muted">
+                    <label htmlFor={`${formId}-title`} className="block text-sm font-medium text-muted">
                       Título
                     </label>
                     <input
                       type="text"
+                      id={`${formId}-title`}
                       {...register('title', {
                         required: 'El título es obligatorio'
                       })}
                       className={fieldClassName}
                       placeholder="Ej: Revisar presupuesto"
                       aria-invalid={errors.title ? 'true' : 'false'}
+                      aria-describedby={errors.title ? `${formId}-title-error` : undefined}
                     />
                     {errors.title && (
-                      <p className="mt-1 text-sm text-danger">
+                      <p id={`${formId}-title-error`} role="alert" className="mt-1 text-sm text-danger">
                         {errors.title.message}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted">
+                    <label htmlFor={`${formId}-description`} className="block text-sm font-medium text-muted">
                       Descripción
                     </label>
                     <textarea
+                      id={`${formId}-description`}
                       {...register('description')}
                       rows={3}
                       className={textareaClassName}
@@ -149,10 +153,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-muted">
+                      <label htmlFor={`${formId}-status`} className="block text-sm font-medium text-muted">
                         Estado
                       </label>
                       <select
+                        id={`${formId}-status`}
                         {...register('status')}
                         className={fieldClassName}
                       >
@@ -163,10 +168,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-muted">
+                      <label htmlFor={`${formId}-priority`} className="block text-sm font-medium text-muted">
                         Prioridad
                       </label>
                       <select
+                        id={`${formId}-priority`}
                         {...register('priority')}
                         className={fieldClassName}
                       >
@@ -178,11 +184,12 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted">
+                    <label htmlFor={`${formId}-due_date`} className="block text-sm font-medium text-muted">
                       Fecha Límite
                     </label>
                     <input
                       type="date"
+                      id={`${formId}-due_date`}
                       {...register('due_date')}
                       className={fieldClassName}
                     />

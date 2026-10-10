@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Note } from '@/lib/insforge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -24,6 +24,7 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel, loading = false }: NoteEditorProps) {
+  const formId = useId()
   const [formData, setFormData] = useState({
     title: note?.title || '',
     content: note?.content || '',
@@ -66,7 +67,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
       .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mb-2">$1</h3>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
+      .replace(/`(.*?)`/g, '<code class="bg-surface-strong px-1 py-0.5 rounded text-sm">$1</code>')
       .replace(/\n\n/g, '</p><p class="mb-4">')
       .replace(/\n/g, '<br>')
       .replace(/^(.*)$/gm, '<p class="mb-4">$1</p>')
@@ -115,6 +116,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
               variant="ghost"
               size="sm"
               onClick={onCancel}
+              aria-label="Cerrar editor de nota"
             >
               <XMarkIcon className="h-4 w-4" />
             </Button>
@@ -142,18 +144,18 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
               />
 
               {/* Category */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+              <fieldset className="space-y-2">
+                <legend className="block text-sm font-medium text-ink">
                   Categoría *
-                </label>
+                </legend>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {categories.map((category) => (
                     <label
                       key={category.value}
-                      className={`relative flex flex-col items-center p-2 border rounded-lg cursor-pointer transition-colors ${
+                      className={`relative flex flex-col items-center p-2 border rounded-lg cursor-pointer transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent has-[:focus-visible]:outline-offset-2 ${
                         formData.category === category.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-accent bg-accent-soft text-ink'
+                          : 'border-line hover:border-accent text-ink'
                       }`}
                     >
                       <input
@@ -166,7 +168,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
                       />
                       <CategoryIcon
                         category={category.value}
-                        className="h-5 w-5 mb-1 text-gray-600"
+                        className="h-5 w-5 mb-1 text-muted"
                       />
                       <span className="text-xs text-center font-medium">
                         {category.label}
@@ -174,15 +176,16 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               {/* Trip Selector (Optional) */}
               {trips.length > 0 && (
                   <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label htmlFor={`${formId}-trip`} className="block text-sm font-medium text-ink">
                           Asociar a Viaje (Opcional)
                       </label>
                       <select
+                          id={`${formId}-trip`}
                           name="trip_id"
                           value={formData.trip_id}
                           onChange={handleInputChange}
@@ -198,10 +201,12 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
 
               {/* Content */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor={`${formId}-content`} className="block text-sm font-medium text-ink">
                   Contenido *
                 </label>
                 <textarea
+                  id={`${formId}-content`}
+                  aria-describedby={`${formId}-content-help`}
                   name="content"
                   value={formData.content}
                   onChange={handleInputChange}
@@ -220,7 +225,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
                   data-testid="note-content-textarea"
                   required
                 />
-                <p className="text-xs text-gray-500">
+                <p id={`${formId}-content-help`} className="text-xs text-muted">
                   Puedes usar Markdown para formatear tu texto. Usa la vista previa para ver cómo se verá.
                 </p>
               </div>
@@ -237,7 +242,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
                   <h1 className="text-2xl font-bold">{formData.title || 'Sin título'}</h1>
                 </div>
                 
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[300px]">
+                <div className="border border-line rounded-lg p-4 bg-paper min-h-[300px]">
                   {formData.content ? (
                     <div 
                       className="prose prose-sm max-w-none"
@@ -246,7 +251,7 @@ export default function NoteEditor({ note, tripId, trips = [], onSave, onCancel,
                       }}
                     />
                   ) : (
-                    <p className="text-gray-500 italic">Sin contenido para mostrar</p>
+                    <p className="text-muted italic">Sin contenido para mostrar</p>
                   )}
                 </div>
               </div>

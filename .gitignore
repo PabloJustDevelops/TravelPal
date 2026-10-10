@@ -75,3 +75,7 @@ testsprite_tests/testsprite_frontend_test_plan.json
 .roo
 .trae
 .windsurf
+
+# Storybook y pruebas de componentes
+/storybook-static/
+/.storybook/.cache/

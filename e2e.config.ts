@@ -7,8 +7,8 @@ const app = {
   url,
   ...(local ? {
     command: {
-      executable: 'npm',
-      args: ['run', 'dev', '--', '--port', new URL(url).port || '3000'],
+      executable: 'pnpm',
+      args: ['run', 'dev', '--port', new URL(url).port || '3000'],
       reuseExisting: true,
       startupTimeout: 120_000,
       // El runner no hereda el entorno del proceso padre. Pasar solo lo que usa Next.

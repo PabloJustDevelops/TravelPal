@@ -115,7 +115,7 @@ es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqu
 ## CI
 
 `.github/workflows/ci.yml` ejecuta en PR: `lint`, `type-check`, `test:ci`, `build` y un job
-`worker-build` (`npx opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
+`worker-build` (`pnpm exec opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
 mensajes de commit.
 
 Los E2E de Playwright y Tester Army corren contra el código en PR y en push a `main`.

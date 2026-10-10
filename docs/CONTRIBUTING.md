@@ -19,8 +19,8 @@ Antes de empezar, asegúrate de leer:
 1. **Fork** el repositorio
 2. **Clona** tu fork localmente
 3. **Configura** `.env.local` (ver `TECHNICAL.md`)
-4. **Instala** dependencias: `npm install`
-5. **Verifica** que todo funciona: `npm run dev`
+4. **Instala** dependencias: `pnpm install`
+5. **Verifica** que todo funciona: `pnpm run dev`
 
 ---
 
@@ -44,7 +44,7 @@ git checkout -b chore/tarea-mantenimiento
 - 💻 Escribe código siguiendo las convenciones del proyecto
 - 🧪 Añade tests para nuevas funcionalidades
 - 📝 Actualiza documentación si es necesario
-- 🔍 Ejecuta `npm run lint` regularmente
+- 🔍 Ejecuta `pnpm run lint` regularmente
 
 ### 3️⃣ **Commits Semánticos**
 
@@ -72,10 +72,10 @@ git commit -m "docs(readme): actualizar instrucciones de instalación"
 
 | Verificación                | Comando              | Estado           |
 | ---------------------------- | -------------------- | ---------------- |
-| **Lint sin errores**   | `npm run lint`     | ✅ Debe pasar    |
-| **Tests funcionando**  | `npm test`         | ✅ Debe pasar    |
-| **Build exitoso**      | `npm run build`    | ✅ Debe pasar    |
-| **Formato de código** | `npm run lint:fix` | 🔧 Auto-corregir |
+| **Lint sin errores**   | `pnpm run lint`     | ✅ Debe pasar    |
+| **Tests funcionando**  | `pnpm test`         | ✅ Debe pasar    |
+| **Build exitoso**      | `pnpm run build`    | ✅ Debe pasar    |
+| **Formato de código** | `pnpm exec eslint --fix` | 🔧 Auto-corregir |
 
 ### 📝 **Convenciones de Código**
 
@@ -89,13 +89,13 @@ git commit -m "docs(readme): actualizar instrucciones de instalación"
 
 ```bash
 # Ejecutar todos los tests
-npm test
+pnpm test
 
 # Ejecutar tests en modo watch
-npm run test:watch
+pnpm run test:watch
 
 # Ejecutar tests con coverage
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 **Requisitos de testing:**

@@ -25,3 +25,17 @@ describe('puertas de despliegue', () => {
     })
   })
 })
+
+it('instala el mismo pnpm fijado en el proyecto y exige su lockfile en cada job', () => {
+  const manifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8'))
+  expect(manifest.packageManager).toBe('pnpm@12.3.4')
+  for (const job of [ci.jobs.build, ci.jobs.worker, ci.jobs.deploy, e2e.jobs.e2e]) {
+    const setupIndex = job.steps.findIndex((step: { uses?: string }) => step.uses === 'pnpm/action-setup@v6')
+    const nodeIndex = job.steps.findIndex((step: { uses?: string }) => step.uses === 'actions/setup-node@v4')
+    expect(setupIndex).toBeGreaterThanOrEqual(0)
+    expect(setupIndex).toBeLessThan(nodeIndex)
+    expect(job.steps[nodeIndex].with.cache).toBe('pnpm')
+    expect(job.steps).toContainEqual({ run: 'pnpm install --frozen-lockfile' })
+    expect(job.steps.some((step: { run?: string }) => /\b(npm|npx)\b/.test(step.run || ''))).toBe(false)
+  }
+})

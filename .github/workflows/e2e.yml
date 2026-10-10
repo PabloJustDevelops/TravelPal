@@ -31,11 +31,12 @@ jobs:
       E2E_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '22.22.3'
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
       # Sin el usuario dedicado el caso de login se omite y el job quedaria verde
       # sin haber probado la sesion: mejor fallar aqui y decir que falta.
       - name: Exigir el usuario dedicado de e2e
@@ -45,11 +46,13 @@ jobs:
             exit 1
           fi
       - name: Instalar chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
       - name: Correr los flujos de Playwright
-        run: npm run test:e2e
+        run: pnpm run test:e2e
       - name: Correr Tester Army en escritorio y viewport estrecho
-        run: npm run test:tester
+        run: pnpm run test:tester
+      - name: Probar componentes y accesibilidad en Chromium
+        run: pnpm run test:storybook
       # La traza solo se genera en el primer reintento (trace: on-first-retry).
       - name: Subir la traza del fallo
         if: failure()
