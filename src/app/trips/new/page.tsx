@@ -191,41 +191,42 @@ export default function NewTripPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="mx-auto max-w-3xl space-y-6 font-sans">
         {/* Header */}
-        <div className="flex items-center space-x-4">
-          <Link href="/trips">
-            <Button variant="ghost" size="sm">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Link
+            href="/trips"
+            className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md px-3 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            <ArrowLeftIcon aria-hidden="true" className="h-4 w-4" />
+            Volver a viajes
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Nuevo Viaje</h1>
-            <p className="text-sm text-gray-500">
-              Crea un nuevo viaje y organiza todos los detalles
+          <div className="sm:border-l sm:border-line sm:pl-5">
+            <h1 className="text-title font-bold tracking-tight text-ink">Nuevo viaje</h1>
+            <p className="mt-1 text-sm text-muted">
+              Añade las fechas y los detalles que ya tienes. Podrás completar lo demás después.
             </p>
           </div>
         </div>
 
         {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información del Viaje</CardTitle>
+        <Card className="rounded-xl border border-line bg-paper shadow-sm">
+          <CardHeader className="border-b border-line px-5 py-5 sm:px-7">
+            <CardTitle className="font-sans text-lg font-semibold text-ink">Información del viaje</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 py-6 sm:px-7">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div role="alert" className="rounded-lg border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
                   {error}
                 </div>
               )}
 
               {/* Basic Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h2 className="font-sans text-lg font-semibold text-ink">
                   Información Básica
-                </h3>
+                </h2>
 
                 <Input
                   label="Título del Viaje *"
@@ -295,11 +296,12 @@ export default function NewTripPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Estado del Viaje
+                <div className="space-y-1">
+                  <label htmlFor="trip-status" className="block text-sm font-medium text-ink">
+                    Estado del viaje
                   </label>
                   <select
+                    id="trip-status"
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
@@ -313,9 +315,9 @@ export default function NewTripPage() {
 
               {/* Flight Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h2 className="font-sans text-lg font-semibold text-ink">
                   Información de Vuelo
-                </h3>
+                </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
@@ -344,11 +346,12 @@ export default function NewTripPage() {
               </div>
 
               {/* Notes */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Notas Adicionales
+              <div className="space-y-1">
+                <label htmlFor="trip-notes" className="block text-sm font-medium text-ink">
+                  Notas adicionales
                 </label>
                 <textarea
+                  id="trip-notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
@@ -359,19 +362,20 @@ export default function NewTripPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-6">
+              <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end">
+                <Link
+                  href="/trips"
+                  className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                >
+                  Cancelar
+                </Link>
                 <Button
                   type="submit"
                   loading={loading}
-                  className="flex-1 sm:flex-none"
+                  className="min-h-11 sm:min-w-40"
                 >
                   Crear Viaje
                 </Button>
-                <Link href="/trips" className="flex-1 sm:flex-none">
-                  <Button variant="outline" className="w-full">
-                    Cancelar
-                  </Button>
-                </Link>
               </div>
             </form>
           </CardContent>

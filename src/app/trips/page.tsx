@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
-import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import { selectClassName } from "@/components/ui/fieldStyles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +24,13 @@ import PageSkeleton from "@/components/ui/PageSkeleton";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import { logger } from "@/lib/logger";
 import { getErrorMessage, getLoadErrorMessage } from "@/lib/utils";
+
+const tripStatusLabels: Record<string, string> = {
+  planned: "Planificado",
+  confirmed: "Confirmado",
+  completed: "Completado",
+  cancelled: "Cancelado",
+};
 
 export default function TripsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -135,15 +141,18 @@ export default function TripsPage() {
   if (!user) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
+        <div className="mx-auto max-w-xl py-16 text-center font-sans">
           <h3 className="text-lg font-semibold text-ink">
             Inicia sesión para ver tus viajes
           </h3>
           <p className="mt-1 text-sm text-muted">
             La sección de viajes requiere autenticación.
           </p>
-          <Link href="/signin">
-            <Button className="mt-4">Ir a Login</Button>
+          <Link
+            href="/signin"
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            Ir a Login
           </Link>
         </div>
       </DashboardLayout>
@@ -152,45 +161,47 @@ export default function TripsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 font-sans">
         {/* Header */}
         <PageTitle
           title="Mis Viajes"
           subtitle="Gestiona tus itinerarios y reservas"
           action={
-            <Link href="/trips/new">
-              <Button>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nuevo Viaje
-              </Button>
+            <Link
+              href="/trips/new"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <PlusIcon aria-hidden="true" className="h-4 w-4" />
+              Nuevo viaje
             </Link>
           }
         />
 
         {/* Filters */}
-        <div className="bg-surface p-4 rounded-lg shadow-sm border border-line">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <section
+          aria-label="Filtros de viajes"
+          className="rounded-xl border border-line bg-paper p-4 sm:p-5"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
-                <Input
-                  type="text"
-                  placeholder="Buscar viajes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <div className="min-w-0 flex-1">
+              <Input
+                label="Buscar viajes"
+                type="search"
+                placeholder="Destino, origen, título o vuelo"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="min-h-11"
+              />
             </div>
 
             {/* Status Filter */}
-            <div className="lg:w-48">
+            <div className="sm:w-56">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className={selectClassName}
                 aria-label="Filtrar por estado"
+                className={`${selectClassName} min-h-11`}
               >
                 <option value="all">Todos los estados</option>
                 <option value="planned">Planificado</option>
@@ -201,11 +212,11 @@ export default function TripsPage() {
               </select>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Error State */}
         {error ? (
-          <div className="bg-danger/10 border border-danger rounded-lg p-4 flex flex-col items-center justify-center text-danger mb-6">
+          <div role="alert" className="rounded-xl border border-danger bg-danger/10 p-5 text-center text-danger">
             <p className="font-medium mb-2">Hubo un problema al cargar tus viajes</p>
             <p className="text-sm mb-4">{error}</p>
             <Button 
@@ -213,58 +224,60 @@ export default function TripsPage() {
                 refetch();
               }}
               variant="outline"
-              className="bg-surface hover:bg-surface-strong text-danger border-danger"
+              className="mt-1 min-h-11 bg-paper hover:bg-surface-strong text-danger border-danger"
             >
               Reintentar
             </Button>
           </div>
         ) : filteredTrips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredTrips.map((trip) => (
-              <div
+              <article
                 key={trip.id}
-                className="bg-surface rounded-lg shadow-sm border border-line p-4"
+                className="flex min-w-0 flex-col rounded-xl border border-line bg-paper p-5 transition-colors hover:border-accent/40"
               >
                 <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink">
-                      {trip.title}
-                    </h3>
-                    <p className="text-sm text-muted">
-                      {trip.origin} → {trip.destination}
+                  <div className="min-w-0 pr-3">
+                    <h2 className="truncate text-lg font-semibold tracking-tight text-ink">
+                      <Link
+                        href={`/trips/${trip.id}`}
+                        className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        {trip.title}
+                      </Link>
+                    </h2>
+                    <p className="mt-1 text-sm text-muted">
+                      <span className="sr-only">Ruta: </span>
+                      {trip.origin} <span aria-hidden="true">→</span> {trip.destination}
                     </p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full capitalize ${
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                     trip.status === 'confirmed' ? 'bg-success/10 text-success' :
                     trip.status === 'cancelled' ? 'bg-danger/10 text-danger' :
                     trip.status === 'completed' ? 'bg-accent-soft text-accent' :
                     'bg-warning/10 text-warning'
                   }`}>
-                    {trip.status}
+                    {tripStatusLabels[trip.status] ?? trip.status}
                   </span>
                 </div>
-                <div className="mt-4 text-sm text-muted">
-                  <div>
-                    Salida: {new Date(trip.departure_date).toLocaleDateString()}
+                <div className="mt-5 space-y-1 text-sm text-muted">
+                  <div className="font-medium text-ink">
+                    {new Date(trip.departure_date).toLocaleDateString("es-ES", { dateStyle: "long" })}
                   </div>
                   {trip.return_date && (
                     <div>
-                      Regreso: {new Date(trip.return_date).toLocaleDateString()}
+                      Hasta el {new Date(trip.return_date).toLocaleDateString("es-ES", { dateStyle: "long" })}
                     </div>
                   )}
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <Link
-                    href={`/trips/${trip.id}`}
-                    className="text-accent hover:text-accent-hover text-sm font-medium"
-                  >
-                    Ver detalles
-                  </Link>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center text-muted">
-                      <PlayIcon className="h-5 w-5 mr-1" />
-                      {trip.airline || "Sin aerolínea"}
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 mt-5">
+                  {trip.airline && (
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-muted">
+                      <PlayIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{trip.airline}{trip.flight_number ? ` · ${trip.flight_number}` : ""}</span>
                     </div>
+                  )}
+                  <div className="ml-auto flex items-center gap-3">
                     <DeleteTripButton
                       trip={trip}
                       onDeleted={() =>
@@ -273,23 +286,39 @@ export default function TripsPage() {
                     />
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
+        ) : trips.length > 0 ? (
+          <section className="rounded-xl border border-line bg-paper px-5 py-12 text-center" aria-live="polite">
+            <MagnifyingGlassIcon aria-hidden="true" className="mx-auto h-8 w-8 text-muted" />
+            <h2 className="mt-4 text-lg font-semibold text-ink">No hay viajes que coincidan con tu búsqueda</h2>
+            <p className="mt-2 text-sm text-muted">Prueba con otro término o cambia el estado seleccionado.</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5 min-h-11"
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+              }}
+            >
+              Limpiar filtros
+            </Button>
+          </section>
         ) : (
-          <EmptyState
-            icon={<MapIcon className="h-12 w-12" />}
-            title="No tienes viajes registrados"
-            description="Crea tu primer viaje para empezar a planificar."
-            action={
-              <Link href="/trips/new">
-                <Button>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Crear Primer Viaje
-                </Button>
-              </Link>
-            }
-          />
+          <section className="rounded-xl border border-dashed border-line bg-paper px-5 py-14 text-center" aria-live="polite">
+            <MapIcon aria-hidden="true" className="mx-auto h-10 w-10 text-accent" />
+            <h2 className="mt-4 text-xl font-semibold tracking-tight text-ink">No tienes viajes registrados</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Crea tu primer viaje para empezar a organizar fechas, actividades y reservas en un solo lugar.</p>
+            <Link
+              href="/trips/new"
+              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
+              <PlusIcon aria-hidden="true" className="h-4 w-4" />
+              Crear primer viaje
+            </Link>
+          </section>
         )}
       </div>
     </DashboardLayout>

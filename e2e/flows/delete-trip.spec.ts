@@ -11,6 +11,7 @@ import {
 
 test.describe('flujo de borrado de viajes', () => {
   let createdTitle = ''
+  let createdOtherTitle = ''
   let createdExpenseTitle = ''
 
   test.beforeEach(async ({ page }) => {
@@ -25,6 +26,10 @@ test.describe('flujo de borrado de viajes', () => {
       await deleteTrip(createdTitle)
       createdTitle = ''
     }
+    if (createdOtherTitle) {
+      await deleteTrip(createdOtherTitle)
+      createdOtherTitle = ''
+    }
     if (createdExpenseTitle) {
       await deleteExpense(createdExpenseTitle)
       createdExpenseTitle = ''
@@ -34,6 +39,16 @@ test.describe('flujo de borrado de viajes', () => {
   test('borrar un viaje por la UI lo quita de la lista', async ({ page }) => {
     const departure = new Date()
     departure.setHours(9, 0, 0, 0)
+
+    // Mantiene al menos otro viaje en la lista para comprobar el estado vacío
+    // de los filtros, no el estado global de una cuenta sin viajes.
+    createdOtherTitle = uniqueName('restante')
+    await createTrip(page, {
+      title: createdOtherTitle,
+      origin: 'Cádiz',
+      destination: 'Córdoba',
+      departure: toDateTimeLocal(departure),
+    })
 
     const title = uniqueName('borrado')
     createdTitle = title
@@ -47,13 +62,13 @@ test.describe('flujo de borrado de viajes', () => {
 
     // Antes de borrar, la tarjeta esta en la lista con su accion de borrado.
     await page.goto('/trips')
-    await page.getByPlaceholder('Buscar viajes...').fill(title)
+    await page.getByRole('searchbox', { name: 'Buscar viajes' }).fill(title)
     await expect(page.getByRole('heading', { name: title })).toBeVisible()
 
     await expectNoCriticalA11yViolations(page, 'lista de viajes')
 
     // El borrado se dispara desde el detalle, que es donde deja el alta.
-    await page.getByRole('link', { name: 'Ver detalles' }).click()
+    await page.getByRole('link', { name: title }).click()
     await expect(page).toHaveURL(/\/trips\/[0-9a-f-]+$/)
     await page
       .getByRole('button', { name: `Eliminar el viaje ${title}` })
@@ -66,9 +81,11 @@ test.describe('flujo de borrado de viajes', () => {
 
     // Vuelve a la lista y el viaje ya no esta: buscarlo no devuelve su tarjeta.
     await expect(page).toHaveURL(/\/trips\/?$/)
-    await page.getByPlaceholder('Buscar viajes...').fill(title)
+    await page.getByRole('searchbox', { name: 'Buscar viajes' }).fill(title)
     await expect(page.getByRole('heading', { name: title })).toHaveCount(0)
-    await expect(page.getByText('No tienes viajes registrados')).toBeVisible()
+    await expect(
+      page.getByText('No hay viajes que coincidan con tu búsqueda'),
+    ).toBeVisible()
   })
 
   test('borrar el viaje deja el gasto huerfano sin viaje', async ({ page }) => {
@@ -94,8 +111,8 @@ test.describe('flujo de borrado de viajes', () => {
     })
 
     await page.goto('/trips')
-    await page.getByPlaceholder('Buscar viajes...').fill(title)
-    await page.getByRole('link', { name: 'Ver detalles' }).click()
+    await page.getByRole('searchbox', { name: 'Buscar viajes' }).fill(title)
+    await page.getByRole('link', { name: title }).click()
     await expect(page).toHaveURL(/\/trips\/[0-9a-f-]+$/)
     await page
       .getByRole('button', { name: `Eliminar el viaje ${title}` })

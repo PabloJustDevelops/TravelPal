@@ -47,13 +47,14 @@ test.describe('flujo de viajes', () => {
     // Y en la lista, buscandolo por su titulo (no por totales: la cuenta del
     // usuario dedicado puede tener viajes de corridas anteriores).
     await page.goto('/trips')
-    await page.getByPlaceholder('Buscar viajes...').fill(trip.title)
+    await page.getByRole('searchbox', { name: 'Buscar viajes' }).fill(trip.title)
 
-    await expect(page.getByRole('heading', { name: trip.title })).toBeVisible()
-    await expect(
-      page.getByText(`${trip.origin} → ${trip.destination}`, { exact: true }),
-    ).toBeVisible()
-    await expect(page.getByText(/^Salida:/).first()).toBeVisible()
+    const tripCard = page
+      .locator('article')
+      .filter({ has: page.getByRole('heading', { name: trip.title }) })
+    await expect(tripCard.getByRole('heading', { name: trip.title })).toBeVisible()
+    await expect(tripCard).toContainText(`${trip.origin} → ${trip.destination}`)
+    await expect(page.getByText(/\d{1,2} de \w+ de \d{4}/).first()).toBeVisible()
 
     await expectNoCriticalA11yViolations(page, 'lista de viajes')
   })
