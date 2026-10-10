@@ -10,7 +10,7 @@ export default function PageTitle({ title, subtitle, action }: PageTitleProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="font-serif text-title leading-tight text-ink sm:text-display">
+        <h1 className="font-sans font-bold tracking-tight text-title leading-tight text-ink sm:text-display">
           {title}
         </h1>
         {subtitle && (

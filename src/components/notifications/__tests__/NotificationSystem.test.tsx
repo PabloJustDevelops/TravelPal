@@ -202,6 +202,39 @@ describe("NotificationSystem", () => {
     expect(await screen.findByText("Alerta existente")).toBeInTheDocument();
   });
 
+  it("permite anclar el panel arriba a la izquierda para la barra desktop", async () => {
+    mount({});
+    render(<NotificationSystem panelPlacement="top-start" />);
+
+    await openPanel();
+
+    expect(await screen.findByRole("region", { name: "Notificaciones" })).toHaveClass(
+      "left-0",
+      "bottom-full",
+      "mb-2",
+    );
+    expect(screen.getByRole("region", { name: "Notificaciones" })).not.toHaveClass(
+      "right-0",
+      "mt-2",
+    );
+  });
+
+  it("mantiene el anclaje abajo a la derecha por defecto para móvil", async () => {
+    mount({});
+    render(<NotificationSystem />);
+
+    await openPanel();
+
+    expect(await screen.findByRole("region", { name: "Notificaciones" })).toHaveClass(
+      "right-0",
+      "mt-2",
+    );
+    expect(screen.getByRole("region", { name: "Notificaciones" })).not.toHaveClass(
+      "left-0",
+      "bottom-full",
+    );
+  });
+
   it("deriva e inserta una alerta a partir de una tarea por vencer", async () => {
     const task = dueSoonTask();
     const { inserted } = mount({ tasks: [task as unknown as Row] });

@@ -57,6 +57,7 @@ interface Alert {
 
 interface NotificationSystemProps {
   className?: string;
+  panelPlacement?: "bottom-end" | "top-start";
 }
 
 type InsforgeClient = ReturnType<typeof createInsforgeClient>;
@@ -159,6 +160,7 @@ async function ensureDerivedAlerts(
 
 export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   className = "",
+  panelPlacement = "bottom-end",
 }) => {
   const { user } = useAuth();
   // La campana se monta a la vez en la barra de escritorio y en la de movil (una de las dos
@@ -429,7 +431,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
           id={panelId}
           role="region"
           aria-labelledby={`${panelId}-titulo`}
-          className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-5rem)] bg-surface rounded-lg shadow-lg border border-line z-50 max-h-96 overflow-hidden"
+          className={`absolute ${panelPlacement === "top-start" ? "left-0 bottom-full mb-2" : "right-0 mt-2"} w-96 max-w-[calc(100vw-5rem)] bg-surface rounded-lg shadow-lg border border-line z-50 max-h-96 overflow-hidden`}
         >
           {/* Header */}
           <div className="px-4 py-3 border-b border-line flex items-center justify-between">

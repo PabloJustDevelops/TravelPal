@@ -10,6 +10,7 @@ import {
   type QueryErrorKind,
 } from "@/lib/insforge-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import NextTrip from "@/components/dashboard/NextTrip";
 import TripChart from "@/components/charts/TripChart";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -372,13 +373,13 @@ export default function DashboardPage() {
         ref={reportRef}
         className="space-y-6"
         variants={container}
-        initial="hidden"
+        initial={false}
         animate="show"
       >
         {/* Cabecera: bienvenida y menu de exportacion */}
         <PageTitle
           title={`Bienvenido, ${user?.full_name?.split(" ")[0] || "Viajero"}`}
-          subtitle="Resumen de tus viajes. Filtra y exporta el informe."
+          subtitle="Tus viajes, planes y recuerdos, en un solo lugar."
           action={
             <Menu
               as="div"
@@ -447,6 +448,8 @@ export default function DashboardPage() {
           }
         />
 
+        <NextTrip trips={trips} />
+
         {/* Filtros: moneda y rango de fechas */}
         <div
           className="bg-surface p-4 rounded-lg shadow-sm border border-line"
@@ -455,10 +458,9 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
               <FunnelIcon className="h-5 w-5 text-muted" />
-              <span className="text-sm text-muted">
-                Moneda:
-              </span>
+              <label htmlFor="dashboard-currency" className="text-sm text-muted">Moneda:</label>
               <select
+                id="dashboard-currency"
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value)}
                 className={cn(fieldClassName, "h-auto w-auto")}
@@ -471,10 +473,9 @@ export default function DashboardPage() {
               </select>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted">
-                Rango de fechas:
-              </span>
+              <label htmlFor="dashboard-range" className="text-sm text-muted">Rango de fechas:</label>
               <select
+                id="dashboard-range"
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
                 className={cn(fieldClassName, "h-auto w-auto")}
