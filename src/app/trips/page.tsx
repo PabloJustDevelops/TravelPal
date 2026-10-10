@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
 import Input from "@/components/ui/Input";
+import { accentLinkClassName } from "@/components/ui/actionStyles";
 import { selectClassName } from "@/components/ui/fieldStyles";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, Trip } from "@/lib/insforge";
@@ -150,7 +151,7 @@ export default function TripsPage() {
           </p>
           <Link
             href="/signin"
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className={`${accentLinkClassName} mt-5 min-h-11`}
           >
             Ir a Login
           </Link>
@@ -169,7 +170,7 @@ export default function TripsPage() {
           action={
             <Link
               href="/trips/new"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className={`${accentLinkClassName} min-h-11 gap-2`}
             >
               <PlusIcon aria-hidden="true" className="h-4 w-4" />
               Nuevo viaje
@@ -313,7 +314,7 @@ export default function TripsPage() {
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Crea tu primer viaje para empezar a organizar fechas, actividades y reservas en un solo lugar.</p>
             <Link
               href="/trips/new"
-              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className={`${accentLinkClassName} mt-6 min-h-11 gap-2`}
             >
               <PlusIcon aria-hidden="true" className="h-4 w-4" />
               Crear primer viaje
