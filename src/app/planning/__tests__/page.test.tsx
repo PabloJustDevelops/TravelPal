@@ -285,6 +285,48 @@ describe("PlanningPage con el SDK en el navegador", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("expone las vistas como controles seleccionables y filtra reservas con campos etiquetados", async () => {
+    mount();
+
+    render(<PlanningPage />);
+    await screen.findByText("Planificación de Viajes");
+
+    const reservationsTab = screen.getByRole("button", { name: "Reservas" });
+    expect(reservationsTab).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(reservationsTab);
+
+    expect(reservationsTab).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("searchbox", { name: "Buscar reservas" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Filtrar por estado")).toBeInTheDocument();
+  });
+
+  it("ofrece un enlace para crear un viaje cuando el itinerario está vacío", async () => {
+    mount({ tripsResult: { data: [], error: null } });
+
+    render(<PlanningPage />);
+    await screen.findByText("Planificación de Viajes");
+    fireEvent.click(screen.getByRole("button", { name: "Itinerario" }));
+
+    expect(await screen.findByRole("heading", { name: "Aún no tienes viajes para planificar" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/trips/new");
+  });
+
+  it("no invita a crear reservas si todavía no existe un viaje asociado", async () => {
+    mount({
+      tripsResult: { data: [], error: null },
+      bookingsResult: { data: [], error: null },
+      activitiesResult: { data: [], error: null },
+    });
+
+    render(<PlanningPage />);
+    await screen.findByText("Planificación de Viajes");
+    fireEvent.click(screen.getByRole("button", { name: "Reservas" }));
+
+    expect(await screen.findByRole("heading", { name: "Crea un viaje antes de añadir una reserva" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/trips/new");
+    expect(screen.queryByRole("button", { name: "Nueva reserva" })).not.toBeInTheDocument();
+  });
+
   it("pide el select, el filtro por usuario y el order de las tres consultas", async () => {
     mount();
 

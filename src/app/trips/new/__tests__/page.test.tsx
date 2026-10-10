@@ -80,6 +80,15 @@ describe("NewTripPage con el SDK en el navegador", () => {
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
+  it("expone controles de estado y notas con etiquetas accesibles", () => {
+    mount();
+
+    render(<NewTripPage />);
+
+    expect(screen.getByLabelText("Estado del viaje")).toHaveValue("planned");
+    expect(screen.getByLabelText("Notas adicionales")).toBeInTheDocument();
+  });
+
   function fillRequiredFields() {
     fireEvent.change(screen.getByLabelText(/Título del Viaje/i), {
       target: { value: "Test Trip" },

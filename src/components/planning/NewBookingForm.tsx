@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useId, useState, useEffect } from "react";
 import Input from "../ui/Input";
 import { selectClassName } from "../ui/fieldStyles";
 import Button from "../ui/Button";
@@ -26,6 +26,7 @@ export default function NewBookingForm({
   defaultDate,
 }: NewBookingFormProps) {
   const { user } = useAuth();
+  const tripSelectId = useId();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -247,7 +248,7 @@ export default function NewBookingForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 font-sans [&_input]:min-h-11 [&_select]:min-h-11">
       <div>
         <Input
           label="Título *"
@@ -261,10 +262,11 @@ export default function NewBookingForm({
 
       {!initialData && (
           <div>
-              <label className="block text-sm font-medium text-muted mb-1">
-                  Viaje Asociado *
+              <label htmlFor={tripSelectId} className="mb-1 block text-sm font-medium text-ink">
+                  Viaje asociado *
               </label>
               <select
+                  id={tripSelectId}
                   name="trip_id"
                   value={formData.trip_id}
                   onChange={handleChange}
@@ -283,7 +285,7 @@ export default function NewBookingForm({
         <div>
           <label
             htmlFor="type-select"
-            className="block text-sm font-medium text-muted mb-1"
+            className="mb-1 block text-sm font-medium text-ink"
           >
             Tipo
           </label>
@@ -393,7 +395,7 @@ export default function NewBookingForm({
           <div>
             <label
               htmlFor="currency-select"
-              className="block text-sm font-medium text-muted mb-1"
+              className="mb-1 block text-sm font-medium text-ink"
             >
               Moneda
             </label>
@@ -413,16 +415,16 @@ export default function NewBookingForm({
       )}
 
       {error && (
-        <div className="text-danger text-sm bg-danger/10 p-2 rounded">
+        <div role="alert" className="rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger">
           {error}
         </div>
       )}
 
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
+      <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:justify-end">
+        <Button variant="outline" type="button" onClick={onCancel} className="min-h-11">
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="min-h-11 sm:min-w-40">
           {loading ? "Guardando..." : "Guardar Reserva"}
         </Button>
       </div>

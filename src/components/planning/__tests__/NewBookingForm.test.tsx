@@ -145,6 +145,15 @@ describe("NewBookingForm", () => {
     ).toBeInTheDocument();
   });
 
+  it("associates the selected-trip label with its control", async () => {
+    render(
+      <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,
+    );
+
+    await screen.findByRole("option", { name: "Trip to Paris" });
+    expect(screen.getByLabelText("Viaje asociado *")).toHaveValue("trip-1");
+  });
+
   it("da de alta la reserva por el SDK con los campos y defaults del handler", async () => {
     render(
       <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,

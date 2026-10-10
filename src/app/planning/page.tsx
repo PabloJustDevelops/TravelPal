@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   CalendarIcon,
   MapIcon,
   ClockIcon,
   PlusIcon,
   FunnelIcon,
-  MagnifyingGlassIcon,
   PaperAirplaneIcon,
   HomeModernIcon,
   TruckIcon,
@@ -54,6 +54,7 @@ import {
 } from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import PageSkeleton from "@/components/ui/PageSkeleton";
+import { accentLinkClassName } from "@/components/ui/actionStyles";
 
 import { format } from 'date-fns';
 
@@ -221,7 +222,7 @@ export default function PlanningPage() {
         title: trip.title,
         date: trip.departure_date,
         type: "trip",
-        color: "bg-blue-500 text-white",
+        color: "bg-accent text-on-accent",
         description: `Inicio del viaje a ${trip.destination}`,
         tripId: trip.id,
         icon: <PaperAirplaneIcon className="h-3 w-3" />,
@@ -233,7 +234,7 @@ export default function PlanningPage() {
           title: `Fin - ${trip.title}`,
           date: trip.return_date,
           type: "trip",
-          color: "bg-blue-400 text-white",
+          color: "bg-accent-soft text-accent",
           description: `Fin del viaje a ${trip.destination}`,
           tripId: trip.id,
           icon: <PaperAirplaneIcon className="h-3 w-3" />,
@@ -250,10 +251,10 @@ export default function PlanningPage() {
         type: "booking",
         color:
           booking.status === "confirmed"
-            ? "bg-green-500 text-white"
+            ? "bg-success text-on-accent"
             : booking.status === "pending"
-              ? "bg-orange-500 text-white"
-              : "bg-red-500 text-white",
+              ? "bg-warning text-on-accent"
+              : "bg-danger text-on-accent",
         time: booking.start_time,
         description: booking.description,
         tripId: booking.trip_id,
@@ -269,7 +270,7 @@ export default function PlanningPage() {
         title: activity.title,
         date: activity.date,
         type: "activity",
-        color: "bg-purple-500 text-white",
+        color: "bg-accent-soft text-accent",
         time: activity.start_time,
         description: activity.description,
         tripId: activity.trip_id,
@@ -610,7 +611,10 @@ export default function PlanningPage() {
   if (showSkeleton) {
     return (
       <DashboardLayout>
-        <PageSkeleton />
+        <div role="status" aria-busy="true" aria-label="Cargando planificación">
+          <PageSkeleton />
+          <span className="sr-only">Cargando planificación</span>
+        </div>
       </DashboardLayout>
     );
   }
@@ -618,63 +622,69 @@ export default function PlanningPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <ErrorState message={error} onRetry={() => refetch()} />
+        <div role="alert">
+          <ErrorState message={error} onRetry={() => refetch()} />
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <PageTitle
             title="Planificación de Viajes"
             subtitle="Organiza tus viajes, itinerarios y reservas en un solo lugar"
           />
 
-          <div className="flex items-center space-x-3">
-            <div className="flex rounded-lg shadow-sm bg-surface">
+          <div role="group" aria-label="Vistas de planificación" className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-paper p-1">
               <button
+                type="button"
+                aria-pressed={viewMode === "calendar"}
                 onClick={() => setViewMode("calendar")}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
                   viewMode === "calendar"
-                    ? "bg-accent-soft text-accent border-accent"
-                    : "bg-surface text-muted border-line hover:bg-surface-strong"
+                    ? "bg-accent-soft text-accent"
+                    : "text-muted hover:bg-surface"
                 }`}
               >
-                <CalendarIcon className="h-4 w-4 mr-2 inline" />
+                <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 Calendario
               </button>
               <button
+                type="button"
+                aria-pressed={viewMode === "itinerary"}
                 onClick={() => setViewMode("itinerary")}
-                className={`px-4 py-2 text-sm font-medium border-l-0 border ${
+                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
                   viewMode === "itinerary"
-                    ? "bg-accent-soft text-accent border-accent"
-                    : "bg-surface text-muted border-line hover:bg-surface-strong"
+                    ? "bg-accent-soft text-accent"
+                    : "text-muted hover:bg-surface"
                 }`}
               >
-                <MapIcon className="h-4 w-4 mr-2 inline" />
+                <MapIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 Itinerario
               </button>
               <button
+                type="button"
+                aria-pressed={viewMode === "bookings"}
                 onClick={() => setViewMode("bookings")}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-l-0 border ${
+                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
                   viewMode === "bookings"
-                    ? "bg-accent-soft text-accent border-accent"
-                    : "bg-surface text-muted border-line hover:bg-surface-strong"
+                    ? "bg-accent-soft text-accent"
+                    : "text-muted hover:bg-surface"
                 }`}
               >
-                <ClockIcon className="h-4 w-4 mr-2 inline" />
+                <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
                 Reservas
               </button>
-            </div>
           </div>
         </div>
 
         {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Card className="rounded-xl border border-line bg-paper p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <CalendarIcon className="h-8 w-8 text-accent" />
@@ -695,7 +705,7 @@ export default function PlanningPage() {
             </div>
           </Card>
 
-          <Card className="p-4">
+          <Card className="rounded-xl border border-line bg-paper p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <ClockIcon className="h-8 w-8 text-success" />
@@ -711,7 +721,7 @@ export default function PlanningPage() {
             </div>
           </Card>
 
-          <Card className="p-4">
+          <Card className="rounded-xl border border-line bg-paper p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <MapIcon className="h-8 w-8 text-accent" />
@@ -727,7 +737,7 @@ export default function PlanningPage() {
             </div>
           </Card>
 
-          <Card className="p-4">
+          <Card className="rounded-xl border border-line bg-paper p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <PlusIcon className="h-8 w-8 text-accent" />
@@ -755,8 +765,8 @@ export default function PlanningPage() {
 
         {/* Contenido principal */}
         {viewMode === "calendar" && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3">
+          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6">
+            <div className="min-w-0">
               <Calendar
                 events={events}
                 selectedDate={selectedDate}
@@ -769,7 +779,7 @@ export default function PlanningPage() {
             </div>
 
             <div className="space-y-4">
-              <Card className="p-4">
+              <Card className="rounded-xl border border-line bg-paper p-4">
                 <h3 className="font-semibold text-ink mb-3">
                   Próximas Reservas
                 </h3>
@@ -796,7 +806,7 @@ export default function PlanningPage() {
                 </div>
               </Card>
 
-              <Card className="p-4">
+              <Card className="rounded-xl border border-line bg-paper p-4">
                 <h3 className="font-semibold text-ink mb-3">
                   Viajes Activos
                 </h3>
@@ -807,10 +817,10 @@ export default function PlanningPage() {
                         t.status === "confirmed" || t.status === "in_progress",
                     )
                     .map((trip) => (
-                      <div
+                      <Link
                         key={trip.id}
-                        className="border-l-4 border-accent pl-3 cursor-pointer hover:bg-surface-strong p-2 rounded"
-                        onClick={() => router.push(`/trips/${trip.id}`)}
+                        href={`/trips/${trip.id}`}
+                        className="block rounded-md border-l-4 border-accent p-3 pl-3 hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         <p className="font-medium text-sm text-ink">
                           {trip.title}
@@ -824,7 +834,7 @@ export default function PlanningPage() {
                             ? formatDate(new Date(trip.return_date))
                             : "Sin fecha de regreso"}
                         </p>
-                      </div>
+                      </Link>
                     ))}
                   {trips.filter(
                     (t) =>
@@ -848,11 +858,11 @@ export default function PlanningPage() {
                   <Button
                     variant="outline"
                     onClick={() => setViewMode("calendar")}
-                    className="mb-4"
+                    className="mb-4 min-h-11"
                   >
-                    ← Volver al calendario
+                    Volver al calendario
                   </Button>
-                  <h2 className="text-xl font-semibold text-ink">
+                  <h2 className="font-sans text-xl font-semibold text-ink">
                     Itinerario: {selectedTrip.title}
                   </h2>
                   <p className="text-muted">{selectedTrip.destination}</p>
@@ -870,7 +880,22 @@ export default function PlanningPage() {
                 />
               </div>
             ) : (
-              <div className="text-center py-12">
+                <div className="rounded-xl border border-line bg-paper px-5 py-10 text-center">
+                {trips.length === 0 ? (
+                  <div role="status" aria-live="polite">
+                    <MapIcon aria-hidden="true" className="mx-auto mb-4 h-12 w-12 text-accent" />
+                    <h3 className="font-sans text-lg font-semibold text-ink">
+                      Aún no tienes viajes para planificar
+                    </h3>
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
+                      Crea un viaje para organizar su itinerario y tener sus reservas junto a las fechas.
+                    </p>
+                    <Link href="/trips/new" className={`${accentLinkClassName} mt-5 min-h-11`}>
+                      Crear un viaje
+                    </Link>
+                  </div>
+                ) : (
+                  <>
                 <MapIcon className="h-12 w-12 text-muted mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-ink mb-2">
                   Selecciona un viaje
@@ -878,28 +903,28 @@ export default function PlanningPage() {
                 <p className="text-muted mb-4">
                   Elige un viaje para planificar su itinerario detallado
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {trips.map((trip) => (
-                    <Card
-                      key={trip.id}
-                      className="p-4 cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => setSelectedTrip(trip)}
-                    >
-                      <h4 className="font-medium text-ink">
-                        {trip.title}
-                      </h4>
-                      <p className="text-sm text-muted">
-                        {trip.destination}
-                      </p>
-                      <p className="text-xs text-muted mt-2">
-                        {formatDate(new Date(trip.departure_date))} -{" "}
-                        {trip.return_date
-                          ? formatDate(new Date(trip.return_date))
-                          : "Sin fecha de regreso"}
-                      </p>
+                    <Card key={trip.id} className="rounded-xl border border-line bg-paper">
+                      <button
+                        type="button"
+                        className="min-h-11 w-full rounded-xl p-4 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                        onClick={() => setSelectedTrip(trip)}
+                      >
+                        <span className="block font-semibold text-ink">{trip.title}</span>
+                        <span className="mt-1 block text-sm text-muted">{trip.destination}</span>
+                        <span className="mt-2 block text-xs text-muted">
+                          {formatDate(new Date(trip.departure_date))} -{" "}
+                          {trip.return_date
+                            ? formatDate(new Date(trip.return_date))
+                            : "Sin fecha de regreso"}
+                        </span>
+                      </button>
                     </Card>
                   ))}
                 </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -908,29 +933,30 @@ export default function PlanningPage() {
         {viewMode === "bookings" && (
           <div className="space-y-6">
             {/* Filtros y búsqueda */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
-                  <Input
-                    placeholder="Buscar reservas..."
-                    value={searchTerm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setSearchTerm(e.target.value)
-                    }
-                    className="pl-10"
-                  />
-                </div>
+            <section aria-label="Filtros de reservas" className="rounded-xl border border-line bg-paper p-4 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Input
+                  label="Buscar reservas"
+                  type="search"
+                  placeholder="Título o código de confirmación"
+                  value={searchTerm}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearchTerm(e.target.value)
+                  }
+                  className="min-h-11"
+                />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <FunnelIcon className="h-4 w-4 text-muted" />
+              <div className="flex items-center gap-2 sm:w-56">
+                <FunnelIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
                 <select
                   value={filterStatus}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                     setFilterStatus(e.target.value)
                   }
-                  className={cn(fieldClassName, 'w-auto')}
+                  aria-label="Filtrar por estado"
+                  className={cn(fieldClassName, 'min-h-11 min-w-0 flex-1')}
                 >
                   <option value="all">Todos los estados</option>
                   <option value="confirmed">Confirmado</option>
@@ -938,10 +964,11 @@ export default function PlanningPage() {
                   <option value="cancelled">Cancelado</option>
                 </select>
               </div>
-            </div>
+              </div>
+            </section>
 
             {/* Lista de reservas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {filteredBookings.map((booking) => (
                 <BookingCard
                   key={booking.id}
@@ -963,25 +990,54 @@ export default function PlanningPage() {
             </div>
 
             {filteredBookings.length === 0 && (
-              <div className="text-center py-12">
-                <ClockIcon className="h-12 w-12 text-muted mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-ink mb-2">
-                  No se encontraron reservas
+              <div role="status" aria-live="polite" className="rounded-xl border border-dashed border-line bg-paper px-5 py-12 text-center">
+                <ClockIcon aria-hidden="true" className="h-12 w-12 text-muted mx-auto mb-4" />
+                <h3 className="font-sans text-lg font-semibold text-ink mb-2">
+                  {searchTerm || filterStatus !== "all"
+                    ? "No hay reservas que coincidan con los filtros"
+                    : trips.length === 0
+                      ? "Crea un viaje antes de añadir una reserva"
+                      : "No tienes reservas todavía"}
                 </h3>
                 <p className="text-muted mb-4">
                   {searchTerm || filterStatus !== "all"
-                    ? "Intenta ajustar los filtros de búsqueda"
-                    : "Comienza agregando tu primera reserva"}
+                    ? "Prueba otro término o cambia el estado seleccionado."
+                    : trips.length === 0
+                      ? "Cada reserva necesita estar asociada a uno de tus viajes."
+                      : "Añade tus reservas para tenerlas junto a las fechas del viaje."}
                 </p>
-                <Button
-                  onClick={() => {
-                    setSelectedBooking(null);
-                    setShowBookingModal(true);
-                  }}
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Nueva Reserva
-                </Button>
+                <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                  {(searchTerm || filterStatus !== "all") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setFilterStatus("all");
+                      }}
+                    >
+                      Limpiar filtros
+                    </Button>
+                  )}
+                  {trips.length === 0 && !searchTerm && filterStatus === "all" ? (
+                    <Link href="/trips/new" className={`${accentLinkClassName} min-h-11`}>
+                      Crear un viaje
+                    </Link>
+                  ) : (
+                    <Button
+                      type="button"
+                      className="min-h-11"
+                      onClick={() => {
+                        setSelectedBooking(null);
+                        setShowBookingModal(true);
+                      }}
+                    >
+                      <PlusIcon aria-hidden="true" className="mr-2 h-4 w-4" />
+                      Nueva reserva
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
