@@ -15,8 +15,7 @@ import {
 } from "@/lib/trip-summary";
 import { formatCurrency, getLoadErrorMessage } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import EmptyState from "@/components/ui/EmptyState";
-import ErrorState from "@/components/ui/ErrorState";
+import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { CurrencyDollarIcon, TicketIcon } from "@heroicons/react/24/outline";
 
@@ -92,7 +91,11 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
     return (
       <Card>
         <CardContent className="py-2">
-          <ErrorState message={loadErrorMessage} onRetry={load} />
+          <div role="alert" className="py-8 text-center">
+            <h3 className="font-sans text-lg font-semibold text-ink">Resumen temporalmente no disponible</h3>
+            <p className="mt-2 text-sm leading-reading text-muted">{loadErrorMessage}</p>
+            <Button onClick={load} className="mt-4">Reintentar</Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -105,17 +108,19 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 font-sans text-lg font-semibold">
           <TicketIcon className="h-5 w-5 text-muted" aria-hidden="true" />
           Resumen del viaje
         </CardTitle>
       </CardHeader>
       <CardContent>
         {isEmpty ? (
-          <EmptyState
-            title="Sin gastos ni reservas todavia"
-            description="Cuando registres gastos o reservas, aqui veras el resumen del viaje."
-          />
+          <div className="py-8 text-center">
+            <h3 className="font-sans text-lg font-semibold text-ink">Sin gastos ni reservas todavia</h3>
+            <p className="mt-2 text-sm leading-reading text-muted">
+              Cuando registres gastos o reservas, aqui veras el resumen del viaje.
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
@@ -123,7 +128,7 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
                 <CurrencyDollarIcon className="h-4 w-4" aria-hidden="true" />
                 Gastos
               </p>
-              <p className="mt-1 font-serif text-heading leading-snug text-ink">
+              <p className="mt-1 font-sans text-2xl font-semibold leading-snug text-ink">
                 {summary.expenseCount}
               </p>
               {summary.expensesByCurrency.length > 0 ? (
@@ -146,7 +151,7 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
                 <TicketIcon className="h-4 w-4" aria-hidden="true" />
                 Reservas
               </p>
-              <p className="mt-1 font-serif text-heading leading-snug text-ink">
+              <p className="mt-1 font-sans text-2xl font-semibold leading-snug text-ink">
                 {summary.bookingCount}
               </p>
               {summary.bookingsByCurrency.length > 0 ? (

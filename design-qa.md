@@ -23,4 +23,8 @@ No se hizo una comparación combinada ni de regiones con el boceto poblado porqu
 2. Capturar el mismo viewport y estado que el objetivo.
 3. Comparar juntos ambos artefactos y regiones relevantes, corregir P0/P1/P2 y repetir.
 
+## Detalle del viaje
+
+El módulo de detalle e itinerario pasó QA funcional y visual en claro/oscuro a 390 y 1440 px. Se corrigió el recorte de acciones móvil y se verificaron creación, edición, recarga y borrado. Evidencia y capturas: `docs/audits/2026-10-10-atlas-detalle-viaje.md`. Esta comprobación por módulo no sustituye la comparación pendiente con el boceto del dashboard.
+
 final result: blocked

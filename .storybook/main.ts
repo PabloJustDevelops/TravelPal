@@ -10,7 +10,7 @@ const config: StorybookConfig = {
     envDir: false,
     optimizeDeps: {
       ...config.optimizeDeps,
-      include: [...new Set([...(config.optimizeDeps?.include ?? []), 'next/link'])],
+      include: [...new Set([...(config.optimizeDeps?.include ?? []), 'next/link', 'date-fns', 'zod'])],
     },
   }),
 }
