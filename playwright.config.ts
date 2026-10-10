@@ -54,6 +54,7 @@ export default defineConfig({
   webServer: isLocalTarget
     ? {
         command: 'pnpm run dev',
+        env: { E2E_DISABLE_DEV_INDICATORS: '1' },
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

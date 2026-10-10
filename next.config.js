@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // La burbuja de desarrollo no debe tapar controles durante los E2E.
+  devIndicators: process.env.E2E_DISABLE_DEV_INDICATORS === "1" ? false : undefined,
   // Configuración para Turbopack (silencia advertencia de conflicto con webpack)
   turbopack: {},
 

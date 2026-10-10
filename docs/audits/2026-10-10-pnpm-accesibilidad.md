@@ -60,3 +60,7 @@ rgb(239,233,222) y fuente Inter.
 - La elección visual, la migración a componentes shadcn/Base UI, el tablero móvil, la regla
   multimoneda y los baselines visuales quedan en el plan por módulos. Los tres conceptos
   generados son propuestas, no pantallas implementadas.
+
+## Estado posterior
+
+PR #91: CI 38069467866 completado con conclusion success. Pablo seleccionó la opción 1 después de esta auditoría; la primera base se documenta en `2026-10-10-atlas-base.md` y ADR-008. Las cifras y colores de la tabla anterior corresponden a la entrega de infraestructura previa a Atlas.

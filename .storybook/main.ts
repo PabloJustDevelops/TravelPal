@@ -5,6 +5,13 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
   framework: '@storybook/nextjs-vite',
   core: { disableTelemetry: true },
-  viteFinal: async config => ({ ...config, envDir: false }),
+  viteFinal: async config => ({
+    ...config,
+    envDir: false,
+    optimizeDeps: {
+      ...config.optimizeDeps,
+      include: [...new Set([...(config.optimizeDeps?.include ?? []), 'next/link'])],
+    },
+  }),
 }
 export default config

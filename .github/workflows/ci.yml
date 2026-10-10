@@ -34,6 +34,7 @@ jobs:
       - run: pnpm run lint
       - run: pnpm run type-check
       - run: pnpm run test:ci
+      - run: pnpm run test:timezone
       - name: Congelar los caminos de datos (issue 38, etapa 0)
         run: node scripts/check-data-paths.mjs
       - run: pnpm run build

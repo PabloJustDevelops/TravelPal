@@ -2,67 +2,47 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-/*
- * Rumbo "Cuaderno de viaje" (ver docs/DECISIONS/ADR-007-rumbo-cuaderno-de-viaje.md).
- *
- * Tres capas, en este orden:
- *   1. paleta cruda: los valores del rumbo, en `:root` (claro) y `.dark` (oscuro);
- *   2. tokens semanticos: el nombre con el que el codigo nuevo pide un color
- *      (`bg-surface`, `text-ink`, `border-line`, `bg-accent`...);
- *  3. alias de compatibilidad: la app arrastra cientos de utilidades crudas de la escala de
- *      tailwind (`gray-*`, `blue-*`, `red-*`...) repartidas por decenas de ficheros. Redefinir
- *      esas escalas aqui hace que esas pantallas hereden el rumbo sin repintarlas una a una.
- *      El codigo nuevo usa la capa 2; la capa 3 existe para no romper lo que ya hay.
- *
- * Modo oscuro: el rumbo es claro primero. El oscuro no es una piel distinta, es el inverso
- * literal del papel (mismo acento, misma tinta, del reves) y se resuelve entero por tokens, de
- * forma que el armazon y los componentes compartidos cambian de modo sin que ninguna pantalla
- * declare un `dark:` propio. Las paginas que aun llevan utilidades crudas con `dark:` son
- * deuda de pantalla, no del sistema: se barren cuando decida el rework funcional.
+/* Atlas: fondo claro, azul para acciones y verde para estados.
+ * Ver ADR-008. Se conservan tokens y alias para migrar cada modulo sin romper sus contratos.
  */
 
 /* --- Capa 1: paleta cruda ------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
-  --paper: #fbf8f3;
-  --surface: #f3ede3;
-  --surface-strong: #e9e1d3;
-  --ink: #1a1815;
-  --muted: #6a645b;
-  --line: #e4dcd0;
-  --accent: #ac4f09;
-  --accent-hover: #94430a;
-  --accent-soft: #fbf1e3;
-  --on-accent: #fbf8f3;
-  --success: #2e6d5c;
-  --warning: #8d5606;
+  --paper: #ffffff;
+  --surface: #f4f7fb;
+  --surface-strong: #e7edf5;
+  --ink: #101828;
+  --muted: #526174;
+  --line: #dce4ee;
+  --accent: #0759d3;
+  --accent-hover: #064bb5;
+  --accent-soft: #eaf2ff;
+  --on-accent: #ffffff;
+  --success: #166b50;
+  --warning: #885800;
   --danger: #9f1239;
 
   --background: var(--paper);
   --foreground: var(--ink);
 }
 
-/*
- * Modo oscuro: el rumbo es claro por naturaleza, asi que el oscuro es su inverso literal —el
- * mismo papel, la misma tinta, el mismo acento, solo que del reves— y no una piel distinta.
- * Vive en tokens para que el armazon y los componentes compartidos sean coherentes sin que
- * ninguna pantalla tenga que declarar un `dark:` propio.
- */
+/* Mismo sistema semantico en oscuro. */
 .dark {
   color-scheme: dark;
-  --paper: #14120f;
-  --surface: #1e1b16;
-  --surface-strong: #26221c;
-  --ink: #efe9de;
-  --muted: #b9b0a2;
-  --line: #332e26;
-  --accent: #e8a33d;
-  --accent-hover: #f2b44f;
-  --accent-soft: #2a2318;
-  --on-accent: #1a1815;
-  --success: #4e9c86;
-  --warning: #c99a2e;
+  --paper: #101827;
+  --surface: #182338;
+  --surface-strong: #22314a;
+  --ink: #edf3fb;
+  --muted: #b0bfd4;
+  --line: #34455f;
+  --accent: #8dbaff;
+  --accent-hover: #b3d1ff;
+  --accent-soft: #1b3457;
+  --on-accent: #101828;
+  --success: #78cbb1;
+  --warning: #e0b461;
   --danger: #d46b7f;
 
   --background: var(--paper);
@@ -93,7 +73,7 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
-  /* Escala editorial: titulares grandes, lectura larga, sin tracking negativo. */
+  /* Jerarquia de lectura compartida. */
   --text-display: 2.5rem;
   --text-display--line-height: 1.1;
   --text-title: 2rem;
@@ -106,49 +86,44 @@
   --spacing-section: 3rem;
   --spacing-section-lg: 5rem;
 
-  /* Laminas, no cajas: radios de 2 a 4px. */
-  --radius-xs: 2px;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-xl: 6px;
-  --radius-2xl: 8px;
-  --radius-3xl: 10px;
+  /* Controles suaves, con geometria compartida. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
 }
 
 /* --- Capa 3: alias de compatibilidad ---------------------------------------------------- */
 
-/*
- * Escala neutra templada: el "gris" de tailwind pasa a ser el papel y la tinta del rumbo. El
- * modo oscuro no la invierte (los `dark:` que ya existen eligen las claves 700/800/400, que
- * ya son las superficies y el secundario oscuros), de modo que las pantallas que no llevan
- * `dark:` propio siguen siendo legibles sobre papel.
- */
+/* Alias para pantallas pendientes de migrar a tokens semanticos. */
 @theme {
-  --color-gray-50: #faf7f2;
-  --color-gray-100: #f3ede3;
-  --color-gray-200: #e4dcd0;
-  --color-gray-300: #d6ccbc;
-  --color-gray-400: #a79e90;
-  --color-gray-500: #6b655c;
-  --color-gray-600: #57514a;
-  --color-gray-700: #3a342c;
-  --color-gray-800: #26221c;
-  --color-gray-900: #1a1815;
-  --color-gray-950: #14120f;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f4f7fb;
+  --color-gray-200: #dce4ee;
+  --color-gray-300: #c4d0df;
+  --color-gray-400: #96a6be;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #22314a;
+  --color-gray-900: #101828;
+  --color-gray-950: #101827;
 
-  /* `blue` es la escala de acento heredada del nombre: el unico acento del rumbo. */
-  --color-blue-50: #fbf1e3;
-  --color-blue-100: #f6e3cc;
-  --color-blue-200: #efd0a6;
-  --color-blue-300: #e4b87a;
-  --color-blue-400: #d09241;
-  --color-blue-500: #c97f26;
-  --color-blue-600: #b45309;
-  --color-blue-700: #94430a;
-  --color-blue-800: #7a3808;
-  --color-blue-900: #5f2c06;
-  --color-blue-950: #3d1b04;
+  /* Escala del acento azul de Atlas. */
+  --color-blue-50: #eaf2ff;
+  --color-blue-100: #dceaff;
+  --color-blue-200: #bed6ff;
+  --color-blue-300: #92baff;
+  --color-blue-400: #5b94f8;
+  --color-blue-500: #2875eb;
+  --color-blue-600: #0759d3;
+  --color-blue-700: #064bb5;
+  --color-blue-800: #103e89;
+  --color-blue-900: #173768;
+  --color-blue-950: #102346;
 
   /* Estados del rumbo: exito, aviso y error, tambien en escala. */
   --color-green-50: #f1f7f4;
