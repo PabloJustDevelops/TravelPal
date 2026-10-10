@@ -16,7 +16,7 @@ import {
 async function openTripItinerary(page: Page, tripTitle: string): Promise<void> {
   await page.goto('/planning')
   await page.getByRole('button', { name: 'Itinerario' }).click()
-  await page.getByRole('heading', { name: tripTitle }).click()
+  await page.getByRole('button', { name: new RegExp(tripTitle) }).click()
   await expect(
     page.getByRole('heading', { name: `Itinerario: ${tripTitle}` }),
   ).toBeVisible()

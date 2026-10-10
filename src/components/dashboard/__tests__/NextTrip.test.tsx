@@ -39,4 +39,77 @@ describe('proximo viaje', () => {
     rerender(<NextTrip trips={[]} today="2026-10-10" />);
     expect(screen.getByRole('link', { name: /Organizar un viaje/ })).toHaveAttribute('href', '/trips');
   });
+
+  it('muestra el itinerario y las tareas reales sin atribuirlas al viaje, y solo su presupuesto vinculado', () => {
+    const currentTrip = trip('viaje-1', '2026-10-18');
+    render(
+      <NextTrip
+        trips={[currentTrip]}
+        today="2026-10-10"
+        activities={[
+          {
+            id: 'activity-1', trip_id: 'viaje-1',
+            title: 'Paseo por Alfama', date: '2026-10-19', start_time: '10:00',
+            completed: false,
+          },
+          {
+            id: 'activity-other', trip_id: 'otro-viaje',
+            title: 'Actividad de otro viaje', date: '2026-10-19',
+            completed: false,
+          },
+        ]}
+        tasks={[
+          {
+            id: 'task-1', title: 'Preparar documentos',
+            status: 'pending', due_date: '2026-10-16',
+          },
+        ]}
+        budgets={[
+          {
+            id: 'budget-eur', trip_id: 'viaje-1', name: 'Alojamiento', category: 'hotel',
+            total_amount: 900, spent_amount: 420, currency: 'EUR',
+            start_date: '2026-10-18', end_date: '2026-10-20',
+          },
+          {
+            id: 'budget-usd', trip_id: 'viaje-1', name: 'Transporte', category: 'transport',
+            total_amount: 250, spent_amount: 80, currency: 'USD',
+            start_date: '2026-10-18', end_date: '2026-10-20',
+          },
+          {
+            id: 'budget-other', trip_id: 'otro-viaje', name: 'Presupuesto de otro viaje', category: 'travel',
+            total_amount: 100, spent_amount: 10, currency: 'USD',
+            start_date: '2026-10-18', end_date: '2026-10-20',
+          },
+        ]}
+        expenses={[
+          { id: 'expense-1', trip_id: 'viaje-1', date: '2026-10-19', amount: 100, currency: 'EUR', category: 'hotel' },
+          { id: 'expense-2', trip_id: 'viaje-1', date: '2026-10-20', amount: 10, currency: 'EUR', category: 'hotel' },
+          { id: 'expense-out-of-period', trip_id: 'viaje-1', date: '2026-10-21', amount: 700, currency: 'EUR', category: 'hotel' },
+          { id: 'expense-wrong-category', trip_id: 'viaje-1', date: '2026-10-19', amount: 800, currency: 'EUR', category: 'food' },
+          { id: 'expense-wrong-currency', trip_id: 'viaje-1', date: '2026-10-19', amount: 600, currency: 'USD', category: 'hotel' },
+          { id: 'expense-wrong-trip', trip_id: 'otro-viaje', date: '2026-10-19', amount: 500, currency: 'EUR', category: 'hotel' },
+          { id: 'expense-usd', trip_id: 'viaje-1', date: '2026-10-19', amount: 35, currency: 'USD', category: 'transport' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Paseo por Alfama')).toBeInTheDocument();
+    expect(screen.queryByText('Actividad de otro viaje')).not.toBeInTheDocument();
+    expect(screen.getByText('Preparar documentos')).toBeInTheDocument();
+    expect(screen.getByText(/Pendiente · Vence/)).toBeInTheDocument();
+    expect(screen.getByText('Alojamiento')).toBeInTheDocument();
+    expect(screen.getByText('Transporte')).toBeInTheDocument();
+    expect(screen.queryByText('Presupuesto de otro viaje')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Uso del presupuesto Alojamiento' })).toHaveAttribute('aria-valuenow', '12');
+    expect(screen.getByRole('progressbar', { name: 'Uso del presupuesto Transporte' })).toHaveAttribute('aria-valuenow', '14');
+    expect(screen.getByRole('link', { name: 'Ver tareas' })).toHaveAttribute('href', '/tasks');
+  });
+
+  it('no atribuye actividades ni presupuestos si no hay un viaje próximo', () => {
+    render(<NextTrip trips={[]} today="2026-10-10" tasks={[]} budgets={[]} activities={[]} />);
+
+    expect(screen.getByText('Tu itinerario aparecerá cuando tengas un viaje próximo.')).toBeInTheDocument();
+    expect(screen.getByText('Vincula un presupuesto a un viaje próximo para verlo aquí.')).toBeInTheDocument();
+    expect(screen.getByText('No tienes tareas pendientes.')).toBeInTheDocument();
+  });
 });

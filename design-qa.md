@@ -8,8 +8,8 @@
 
 ## Hallazgos pendientes del rediseño completo
 
-- [P1] El hero fotográfico y los bloques integrados de itinerario, tareas y presupuesto del boceto no están implementados. La primera entrega prepara tokens, navegación y próximo viaje real.
-- [P2] Las gráficas y módulos anteriores conservan su composición mientras se migran por flujo.
+- [P1] El hero fotográfico del boceto sigue pendiente. `Trip` no tiene una fuente de imagen por viaje; la pantalla usa datos reales y no muestra una foto genérica como si perteneciera al destino. La integración de itinerario, tareas generales y presupuestos ya está implementada con sus fuentes reales.
+- [P2] Las gráficas y filtros de análisis permanecen debajo del contenido centrado en el próximo viaje. La captura de implementación anterior no representa esta composición y aún falta capturar y comparar la misma sesión/viewport.
 
 ## Superficies y evidencia
 
@@ -17,11 +17,17 @@ Inter y los colores azul/neutros se han aplicado al armazón. El ritmo de navega
 
 No se hizo una comparación combinada ni de regiones con el boceto poblado porque no se ha construido todavía ese estado completo. La validación funcional de la base (teclado, foco, notificaciones, axe y móvil) está documentada en `docs/audits/2026-10-10-atlas-base.md`; no sustituye el gate visual.
 
+## Dashboard: integración de viaje, itinerario y presupuesto
+
+La composición actual prioriza el próximo viaje real, sus actividades de `itinerary_activities`, tareas pendientes de la cuenta y presupuestos cuyo `trip_id` coincide con ese viaje. Las tareas son globales porque el modelo `tasks` no tiene `trip_id`; los presupuestos se muestran uno a uno en su moneda y no se suman entre divisas. Si no hay viaje, actividad, tarea o presupuesto se muestra un estado vacío real. La carga de actividades se limita al próximo viaje y los resultados de tareas quedan acotados.
+
+Pruebas: `pnpm exec jest --runInBand --coverage=false` pasó 58 suites y 436 tests. Storybook verificó los estados poblado/oscuro/vacío y el viewport 390 × 844. Esta evidencia funcional no sustituye una captura del dashboard autenticado ni la comparación visual final. La captura previa `docs/audits/assets/atlas-light-1440.png` es una referencia de la implementación anterior, no una captura de esta etapa.
+
 ## Implementación pendiente
 
-1. Completar composición y flujos del dashboard con fuentes reales de datos.
-2. Capturar el mismo viewport y estado que el objetivo.
-3. Comparar juntos ambos artefactos y regiones relevantes, corregir P0/P1/P2 y repetir.
+1. Añadir una fuente auténtica de imagen asociada al viaje antes de implementar un hero fotográfico.
+2. Capturar el dashboard final con estado poblado real a 1440 × 900 y una vista a 390 × 900.
+3. Comparar juntos los artefactos y regiones relevantes, corregir P0/P1/P2 y repetir. Hasta entonces no se declara fidelidad visual global.
 
 ## Detalle del viaje
 
