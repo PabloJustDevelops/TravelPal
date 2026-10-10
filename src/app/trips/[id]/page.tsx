@@ -24,12 +24,36 @@ import EditTripModal from "@/components/trips/EditTripModal";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import TripJournal from "@/components/trips/TripJournal";
 import TripSummary from "@/components/trips/TripSummary";
+import TripItinerary from "@/components/trips/TripItinerary";
 import {
   ArrowLeftIcon,
   CalendarIcon,
   MapPinIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+
+const TRIP_STATUS_LABELS: Record<Trip["status"], string> = {
+  planned: "Planeado",
+  confirmed: "Confirmado",
+  completed: "Completado",
+  cancelled: "Cancelado",
+};
+
+function tripDate(value: string, options?: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...options,
+  }).format(new Date(value));
+}
+
+function tripTime(value: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 export default function TripDetailsPage({
   params,
@@ -95,7 +119,7 @@ export default function TripDetailsPage({
   if (loading || authLoading) {
     return (
       <DashboardLayout>
-        <div className="flex justify-center items-center min-h-[50vh]">
+        <div role="status" aria-label="Cargando viaje" className="flex min-h-[50vh] items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
@@ -105,10 +129,10 @@ export default function TripDetailsPage({
   if (error || !trip) {
     return (
       <DashboardLayout>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{error || "Viaje no encontrado"}</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <section className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center" aria-labelledby="trip-load-error">
+          <h1 id="trip-load-error" className="font-sans text-2xl font-semibold text-ink">No se pudo abrir el viaje</h1>
+          <p className="mb-6 mt-3 text-muted">{error || "Viaje no encontrado"}</p>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               onClick={() => {
                 setLoadError(null);
@@ -118,14 +142,12 @@ export default function TripDetailsPage({
             >
               Reintentar
             </Button>
-            <Link href="/trips">
-              <Button variant="outline">
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Volver a Mis Viajes
-              </Button>
+            <Link href="/trips" className="inline-flex min-h-11 items-center gap-2 rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+              Volver a Mis Viajes
             </Link>
           </div>
-        </div>
+        </section>
       </DashboardLayout>
     );
   }
@@ -171,188 +193,107 @@ export default function TripDetailsPage({
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/trips"
-              className="text-gray-500 hover:text-gray-700"
-              aria-label="Volver a Mis Viajes"
-            >
-              <ArrowLeftIcon className="h-6 w-6" aria-hidden="true" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{trip.title}</h1>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                    trip.status === "confirmed"
-                      ? "bg-green-100 text-green-800"
-                      : trip.status === "completed"
-                        ? "bg-blue-100 text-blue-800"
-                        : trip.status === "cancelled"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {trip.status}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              Editar
+      <div className="mx-auto max-w-7xl space-y-6 font-sans">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link href="/trips" className="inline-flex min-h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" /> Mis viajes
+          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+              Editar viaje
             </Button>
-            <DeleteTripButton
-              trip={trip}
-              size="md"
-              onDeleted={() => router.push("/trips")}
-            />
+            <DeleteTripButton trip={trip} size="md" onDeleted={() => router.push("/trips")} />
           </div>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Detalles del Viaje
-              </h3>
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <MapPinIcon className="h-4 w-4 mr-1" />
-                    Origen
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900">{trip.origin}</dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <MapPinIcon className="h-4 w-4 mr-1" />
-                    Destino
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {trip.destination}
-                  </dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    Fecha de Salida
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {new Date(trip.departure_date).toLocaleDateString()}
-                    <span className="block text-xs text-gray-500">
-                      {new Date(trip.departure_date).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </dd>
-                </div>
-                {trip.return_date && (
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500 flex items-center">
-                      <CalendarIcon className="h-4 w-4 mr-1" />
-                      Fecha de Regreso
-                    </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {new Date(trip.return_date).toLocaleDateString()}
-                      <span className="block text-xs text-gray-500">
-                        {new Date(trip.return_date).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-
-            {/* Notes Section */}
-            {trip.notes && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Notas
-                </h3>
-                <div className="prose prose-sm max-w-none text-gray-500 whitespace-pre-wrap">
-                  {trip.notes}
-                </div>
+        <header className="rounded-xl border border-line bg-paper p-5 sm:p-7">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Tu viaje</p>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  trip.status === "confirmed" || trip.status === "completed"
+                    ? "bg-green-100 text-green-800"
+                    : trip.status === "cancelled"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-blue-100 text-blue-800"
+                }`}>
+                  {TRIP_STATUS_LABELS[trip.status]}
+                </span>
               </div>
+              <h1 className="mt-2 break-words text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{trip.title}</h1>
+              <p className="mt-2 flex items-center gap-2 text-base text-muted">
+                <MapPinIcon className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+                <span>{trip.origin}</span><span aria-hidden="true">→</span><span>{trip.destination}</span>
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 text-sm text-muted">
+              <CalendarIcon className="h-5 w-5 text-accent" aria-hidden="true" />
+              <span>
+                {tripDate(trip.departure_date)}
+                {trip.return_date && <> <span aria-hidden="true">–</span> {tripDate(trip.return_date)}</>}
+                <span className="mt-1 block text-xs text-muted">
+                  Salida {tripTime(trip.departure_date)}
+                  {trip.return_date && <> · Regreso {tripTime(trip.return_date)}</>}
+                </span>
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.85fr)]">
+          <div className="min-w-0 space-y-6">
+            <TripItinerary
+              tripId={trip.id}
+              startDate={trip.departure_date}
+              endDate={trip.return_date || trip.departure_date}
+              userId={user?.id ?? trip.user_id}
+            />
+
+            {trip.notes && (
+              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="trip-notes-heading">
+                <h2 id="trip-notes-heading" className="text-lg font-semibold text-ink">Notas del viaje</h2>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-reading text-muted">{trip.notes}</p>
+              </section>
             )}
 
-            {/* Diario */}
             {isPast ? (
               <TripJournal tripId={trip.id} />
             ) : (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Diario del viaje
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  El diario se abre cuando el viaje haya pasado. Tambien puedes
-                  marcarlo como completado ahora.
+              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="trip-journal-heading">
+                <h2 id="trip-journal-heading" className="text-lg font-semibold text-ink">Diario del viaje</h2>
+                <p className="mb-4 mt-2 text-sm leading-reading text-muted">
+                  El diario se abre cuando el viaje haya pasado. También puedes marcarlo como completado ahora.
                 </p>
                 <Button onClick={markCompleted} disabled={markingComplete}>
-                  {markingComplete ? "Marcando..." : "Marcar como completado"}
+                  {markingComplete ? "Marcando…" : "Marcar como completado"}
                 </Button>
-              </div>
+              </section>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Resumen */}
+          <aside className="min-w-0 space-y-6" aria-label="Resumen y datos del viaje">
             <TripSummary tripId={trip.id} />
 
-            {/* Flight Info */}
-            {(trip.airline ||
-              trip.flight_number ||
-              trip.confirmation_number) && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Información de Vuelo
-                </h3>
-                <div className="space-y-4">
-                  {trip.airline && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Aerolínea
-                      </p>
-                      <p className="text-sm text-gray-900">{trip.airline}</p>
-                    </div>
-                  )}
-                  {trip.flight_number && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Número de Vuelo
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {trip.flight_number}
-                      </p>
-                    </div>
-                  )}
-                  {trip.confirmation_number && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Confirmación
-                      </p>
-                      <p className="text-sm font-mono bg-gray-50 p-1 rounded">
-                        {trip.confirmation_number}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+            {(trip.airline || trip.flight_number || trip.confirmation_number) && (
+              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="flight-details-heading">
+                <h2 id="flight-details-heading" className="text-lg font-semibold text-ink">Información de vuelo</h2>
+                <dl className="mt-4 space-y-4">
+                  {trip.airline && <div><dt className="text-sm text-muted">Aerolínea</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.airline}</dd></div>}
+                  {trip.flight_number && <div><dt className="text-sm text-muted">Número de vuelo</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.flight_number}</dd></div>}
+                  {trip.confirmation_number && <div><dt className="text-sm text-muted">Confirmación</dt><dd className="mt-1 break-all rounded-md bg-surface px-3 py-2 font-mono text-sm text-ink">{trip.confirmation_number}</dd></div>}
+                </dl>
+              </section>
             )}
-          </div>
+
+            <section className="rounded-xl border border-line bg-surface p-5" aria-labelledby="tasks-general-heading">
+              <h2 id="tasks-general-heading" className="text-base font-semibold text-ink">Tareas</h2>
+              <p className="mt-2 text-sm leading-reading text-muted">Tus tareas se gestionan en una lista general y no están asignadas a este viaje.</p>
+              <Link href="/tasks" className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md font-medium text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                Ver tareas <ArrowLeftIcon className="h-4 w-4 rotate-180" aria-hidden="true" />
+              </Link>
+            </section>
+          </aside>
         </div>
       </div>
 
