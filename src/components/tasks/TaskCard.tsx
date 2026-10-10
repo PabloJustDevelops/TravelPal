@@ -23,7 +23,7 @@ interface TaskCardProps {
 const priorityConfig = {
   low: { color: 'bg-success/10 text-success border-success', label: 'Baja' },
   medium: { color: 'bg-warning/10 text-warning border-warning', label: 'Media' },
-  high: { color: 'bg-danger/10 text-danger border-danger', label: 'Alta' },
+  high: { color: 'bg-danger/10 text-ink border-danger', label: 'Alta' },
 };
 
 const statusOptions: { value: Task['status']; label: string }[] = [
@@ -54,7 +54,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         ${className}
       `}
     >
-      <div className="flex justify-between items-start mb-3">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <span className={`
           text-xs px-2.5 py-1 rounded-full border font-medium flex items-center gap-1.5
           ${priority.color}
@@ -63,12 +63,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {priority.label}
         </span>
         
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 right-3 bg-surface/80 backdrop-blur-sm rounded-lg p-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-            className="h-7 w-7 p-0"
+            aria-label="Editar tarea"
+            className="h-11 w-11 shrink-0 p-0"
             title="Editar tarea"
           >
             <PencilSquareIcon className="w-4 h-4" />
@@ -77,7 +78,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-            className="h-7 w-7 p-0 text-danger hover:text-danger hover:bg-danger/10"
+            aria-label="Eliminar tarea"
+            className="h-11 w-11 shrink-0 p-0 text-danger hover:text-danger hover:bg-danger/10"
             title="Eliminar tarea"
           >
             <TrashIcon className="w-4 h-4" />
@@ -85,7 +87,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
       
-      <h3 className="font-semibold text-ink mb-1.5 leading-snug pr-8">
+      <h3 className="mb-1.5 font-semibold leading-snug text-ink">
         {task.title}
       </h3>
       
