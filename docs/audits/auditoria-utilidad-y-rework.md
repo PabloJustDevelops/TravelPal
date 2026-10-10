@@ -1,5 +1,11 @@
 # Auditoría de utilidad de las secciones y propuesta de rework funcional
 
+> **Documento histórico del estado previo al rework.** La propuesta se ejecutó en #44
+> (PRs #49 y #51) y el BFF se retiró en #38. Sus conteos y listas de bajas no describen
+> el código actual. `/budget`, `/analytics`, `/alerts` y `/notes/[id]` son redirecciones;
+> Tareas y Notas siguen en la navegación. No reutilizar estas cifras para el nuevo plan.
+> Estado vigente: [STATUS.md](../../STATUS.md) y [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 > Fecha: 2026-09-15. Alcance: `src/app` (22 rutas), `src/components` (55 ficheros), `src/app/api`
 > (13 rutas), el esquema de `migrations/20260913181842_create-app-schema.sql`.
 > Método: conteo sobre el árbol, lectura de las páginas y de sus consultas reales, y grep de

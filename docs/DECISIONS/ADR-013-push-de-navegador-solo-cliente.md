@@ -154,3 +154,10 @@ que haya metrica de uso de la campana y presupuesto para un envio de servidor, c
 
 [#48]: https://github.com/PabloJustDevelops/TravelPal/issues/48
 [ADR-005]: ADR-005-web-no-carga-env-no-inlineado.md
+
+## Actualización de interfaz — 2026-10-10
+
+Mientras el envío siga pendiente, Ajustes indica que los avisos fuera de la app no están
+disponibles y no permite crear una nueva suscripción. Una suscripción previa puede darse de baja.
+La capa cliente y sus pruebas se conservan para la futura implementación conjunta del backend;
+su existencia no se presenta como entrega de notificaciones.

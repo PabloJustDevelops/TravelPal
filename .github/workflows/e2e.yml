@@ -15,6 +15,12 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-24.04
+    # Las suites de todas las ramas usan el mismo usuario y backend.
+    concurrency:
+      group: travelpal-e2e-shared-user
+      cancel-in-progress: false
+      queue: max
+    timeout-minutes: 20
     env:
       NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
       NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
@@ -22,11 +28,12 @@ jobs:
       E2E_BASE_URL: ${{ inputs.base-url }}
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.22.3'
           cache: 'npm'
       - run: npm ci
       # Sin el usuario dedicado el caso de login se omite y el job quedaria verde
@@ -39,8 +46,10 @@ jobs:
           fi
       - name: Instalar chromium
         run: npx playwright install --with-deps chromium
-      - name: Correr el smoke e2e
+      - name: Correr los flujos de Playwright
         run: npm run test:e2e
+      - name: Correr Tester Army en escritorio y viewport estrecho
+        run: npm run test:tester
       # La traza solo se genera en el primer reintento (trace: on-first-retry).
       - name: Subir la traza del fallo
         if: failure()
@@ -48,5 +57,18 @@ jobs:
         with:
           name: playwright-trace
           path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Subir el informe de Tester Army
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tester-army-report-${{ inputs.base-url == '' && 'codigo' || 'produccion' }}
+          path: |
+            .e2e/report.json
+            .e2e/summary.md
+            .e2e/junit.xml
+            .e2e/results/
+          include-hidden-files: true
           retention-days: 7
           if-no-files-found: ignore

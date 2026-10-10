@@ -24,10 +24,10 @@ export default function SettingsPage() {
   const pushDescription = !push.supported
     ? "Tu navegador no soporta notificaciones push. En iPhone hay que instalar la app en la pantalla de inicio antes de activarlas."
     : push.permission === "denied"
-      ? "El navegador ha bloqueado las notificaciones para esta web. Vuelve a permitirlas en los ajustes del navegador para poder activarlas."
+      ? "El navegador ha bloqueado las notificaciones para esta web. Los avisos fuera de la app todavía no están disponibles."
       : push.subscribed
-        ? "Recibiras un aviso en el navegador cuando una tarea venza, una reserva este por empezar o superes un presupuesto."
-        : "Activa los avisos para que te lleguen aunque no tengas la app abierta.";
+        ? "La suscripción de este navegador todavía no recibe avisos. Puedes desactivarla; tus alertas siguen disponibles en la campana."
+        : "Los avisos fuera de la app todavía no están disponibles. Consulta tus alertas en la campana.";
 
   const handleTogglePush = () => {
     if (push.subscribed) {
@@ -110,8 +110,8 @@ export default function SettingsPage() {
                 type="button"
                 role="switch"
                 aria-checked={push.subscribed}
-                aria-label="Recibir notificaciones push de las alertas"
-                disabled={!push.supported || push.busy || push.permission === "denied"}
+                aria-label="Suscripción de notificaciones push"
+                disabled={!push.supported || push.busy || !push.subscribed}
                 onClick={handleTogglePush}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                   push.subscribed ? 'bg-accent' : 'bg-line'

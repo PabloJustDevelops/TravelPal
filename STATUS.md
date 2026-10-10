@@ -1,50 +1,44 @@
-# STATUS.md — TravelPal
+# Estado de TravelPal
 
-## Dónde estamos
+## Base revisada
 
-`main` está en `217d007` y el árbol de trabajo está limpio. El **doble camino de datos está
-cerrado**: el BFF se retiró y todos los datos de usuario van por el SDK de InsForge en el navegador
-con RLS (`auth.uid()`); en el servidor solo sobrevive `/api/auth/refresh` (ADR-009, ADR-012). La
-dirección visual **«Cuaderno de viaje»** está implantada en la capa de fundamentos, por tokens y
-alias de escalas (ADR-007). El **push de navegador tiene hecha la parte de cliente**; el envío real
-sigue bloqueado (ADR-013). Los últimos commits en `main` son la reescritura de las policies RLS con
-subquery, los índices de las FKs de `alerts`/`budgets` (#65) y la subida de
-`next`/`@opennextjs/cloudflare`/`tailwind` por seguridad (#88).
+Revisión del 2026-10-10 sobre `main` / `origin/main` en `dd95e8e`, sin divergencia ni WIP.
+Los issues #36, #38, #44, #65, #85 y #88 están cerrados en GitHub. Solo siguen abiertos #41 y #48.
+Este documento registra esa revisión; no pretende fijar el SHA futuro de `main`.
 
-## Ahora mismo
+El camino de datos de usuario es el SDK de InsForge en el navegador, con RLS. El BFF se retiró;
+el servidor conserva las acciones de auth, `/api/auth/refresh` y `/api/auth/callback`
+(ADR-009, ADR-012). La dirección «Cuaderno de viaje» está aplicada a fundamentos y componentes
+compartidos (ADR-007); falta auditar la experiencia completa antes de elegir su evolución.
 
-- **#85 (needs-triage)**: la migración `middleware → proxy` (#78) subió el tamaño del Worker
-  **+37 % sin comprimir / +46 % gzip**. Ya está **medido y localizado** (2026-10-03): el delta es el
-  bundle del proxy, que en runtime `nodejs` pasa de 0,54 a 3,30 MiB (`handler.mjs`). No se revierte
-  (`middleware` está deprecado en Next 16) y 4,1 MiB gzip está muy por debajo del límite de 10 MiB de
-  Workers. Queda la decisión de cierre por el propietario.
-- **Push de navegador (#48)**: la parte de cliente está entregada y probada; queda decidir cuándo se
-  desbloquea el envío de servidor.
-- **Esquema**: `20260918210000_drop-public-users.sql` **aplicada** el 2026-10-02 con aprobación humana
-  (backup previo `antes-de-drop-users`); `public.users` ya no existe y sus 3 policies RLS se fueron con
-  ella. `20261002210811_add-fk-indexes-alerts-budgets.sql` y
-  `20261002220747_rewrite-rls-policies-with-subquery.sql` también aplicadas: el advisor está en
-  **0 warnings** y el aislamiento por propietario se probó cruzando dos usuarios reales.
+El rework de #44 ya fusionó presupuesto en gastos y analítica en el panel. Las rutas antiguas
+redirigen; no son pantallas pendientes. La navegación conserva Dashboard, Tareas, Viajes,
+Planificación, Gastos y Notas, además de Perfil y Configuración en el menú de usuario.
 
-## Los siguientes 3 pasos
+## Trabajo de esta rama
 
-1. **Cerrar #38 y #36**: las etapas 0-5 de #38 están hechas (solo sobreviven `/api/auth/refresh` y el
-   callback de OAuth, que no pueden bajar al cliente) y el veredicto de #36 es NO-GO ya registrado en
-   `docs/audits/auditoria-spa-vs-next.md`. Ambos issues siguen abiertos sin motivo.
-2. **Desbloquear el envío de push (#48)** cuando haya presupuesto y métrica de uso: migración + edge
-   function + schedule en una sola etapa, con el esquema ya redactado en ADR-013.
-3. **Limpiar el backend**: 48 usuarios `e2e-*` sin verificar y 59 OTPs caducados en `auth`. InsForge no
-   expone endpoint para borrarlos; hay que hacerlo desde el dashboard.
+- CI prueba E2E del código antes del deploy y vuelve a comprobar producción después.
+- Concurrencia por rama para CI y un turno global para las suites que comparten usuario.
+- Tester Army complementa Playwright con acceso público en escritorio y viewport estrecho,
+  sin modelo y con telemetría desactivada.
+- Ajustes informa de que el envío de push no está disponible; conserva la baja de
+  suscripciones anteriores y no ofrece nuevas altas mientras falta el backend.
+- Documentación alineada con Next 16.3.8, las rutas actuales y los casos de borrado ya existentes.
+- Auditoría manual de la app publicada con una cuenta aislada; hallazgos y plan de UX/QA en
+  [la auditoría del 2026-10-10](docs/audits/2026-10-10-qa-y-plan-ux.md).
 
-## Bloqueos
+La verificación local y la ejecución remota de esta rama se registran en su PR, no se deducen
+por la mera existencia de estos cambios.
 
-| Bloqueo | Qué falta | Referencia |
+## Pendientes de producto y QA
+
+| Pendiente | Condición | Referencia |
 |---|---|---|
-| Envío real de push (Web Push) | Tabla `push_subscriptions`, marca de envío (`sent_at`), edge function `send-push` + schedule y secretos VAPID | ADR-013 / #48 |
-| Búsqueda de vuelos en vivo | Proveedor viable: Amadeus retiró su portal self-service; el vuelo se registra a mano | ADR-006 |
-| Inspiración de precios (Travelpayouts) | Cuenta y token del propietario | #41 (`ready-for-human`) |
-| Cierre de #38 y #36 | Decisión del propietario: el trabajo ya está hecho y documentado | ADR-009, ADR-012 |
+| Inspiración de precios | Decidir su utilidad y disponer de cuenta/token de Travelpayouts | #41 |
+| Envío real de push | Métrica de uso y presupuesto; tabla, deduplicación, emisor, schedule y secretos | #48 / ADR-013 |
+| Cerrar hallazgos de UI/UX | Priorizar los defectos verificables antes de escoger dirección visual | auditoría del 2026-10-10 |
+| Orientación del siguiente diseño | Revisar los hallazgos con el propietario | ADR-007 |
 
-## Última actualización
-
-2026-10-03 — `main` @ `217d007`.
+Las cifras históricas de usuarios de pruebas/OTPs y del advisor no se han vuelto a consultar
+contra el backend en este pase. No deben usarse como estado actual. La limpieza de usuarios
+creados por el E2E de registro sigue requiriendo un mecanismo de administración separado.

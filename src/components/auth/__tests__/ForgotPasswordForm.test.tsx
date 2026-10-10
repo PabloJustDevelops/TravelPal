@@ -21,6 +21,11 @@ describe('ForgotPasswordForm', () => {
     ;(useAuth as jest.Mock).mockReturnValue({ resetPassword: mockResetPassword })
   })
 
+  it('asocia la etiqueta de correo con el campo de recuperacion', () => {
+    render(<ForgotPasswordForm />)
+    expect(screen.getByRole('textbox', { name: 'Correo electrónico' })).toHaveAttribute('type', 'email')
+  })
+
   it('pide el enlace y muestra el aviso de enviado', async () => {
     mockResetPassword.mockResolvedValue(undefined)
 

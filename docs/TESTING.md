@@ -3,7 +3,8 @@
 | Nivel | Herramienta | Donde vive | Comando |
 | --- | --- | --- | --- |
 | Unidad y componente | Jest + Testing Library | `src/**/__tests__/` | `npm run test:ci` |
-| End-to-end (navegador) | Playwright | `e2e/` | `npm run test:e2e` |
+| End-to-end con datos | Playwright | `e2e/` | `npm run test:e2e` |
+| Acceso público, escritorio y viewport estrecho | Tester Army (`e2e`) | `tests/*.e2e.ts` | `npm run test:tester` |
 
 ## Regla: ningun bug entra sin el test que falla sin el arreglo
 
@@ -33,7 +34,7 @@ reutiliza el que ya tengas levantado en el 3000. Para ver los pasos en el
 navegador, `npx playwright test --headed`; con `--debug`, paso a paso.
 
 La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`. Los
-cuatro flujos comparten el usuario dedicado y las mismas pantallas, asi que en
+flujos comparten el usuario dedicado y las mismas pantallas, asi que en
 paralelo no se aislaban: se hacian la zancadilla y caia un spec distinto en cada
 corrida local, siempre en el `toHaveURL` de `createTrip`.
 
@@ -56,9 +57,9 @@ E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npm run test:e2e   # lo desp
 
 ## Que cubre la etapa 1 (flujos con datos)
 
-Cuatro flujos en `e2e/flows/`, cada uno con su limpieza y una comprobacion de
+Cinco specs con seis casos en `e2e/flows/`, cada uno con su limpieza y una comprobacion de
 accesibilidad con `@axe-core/playwright` (sin violaciones `critical` ni
-`serious` en la pantalla que toca el flujo):
+`serious` en las pantallas donde se llama al helper de axe):
 
 - `trips.spec.ts`: crear un viaje en `/trips/new`, verlo en el detalle y en la
   lista, buscandolo por su titulo. Axe en la lista de viajes.
@@ -75,6 +76,9 @@ accesibilidad con `@axe-core/playwright` (sin violaciones `critical` ni
 Los helpers compartidos viven en `e2e/support/`: `flows.ts` (login, alta del
 viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
 
+- `delete-trip.spec.ts`: borrar un viaje desde la UI y comprobar por separado que un gasto
+  conservado queda sin viaje.
+
 ## Correr solo los flujos que crean datos
 
 ```bash
@@ -85,23 +89,15 @@ E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev npx playwright test e2e/flow
 El proyecto `flows` ya limita a un worker, asi que no hace falta pasar
 `--workers=1` a mano.
 
-## Limitaciones conocidas: un viaje no se puede borrar desde la UI
+## Borrado y limpieza de datos
 
-La limpieza de los flujos va por el SDK (`e2e/support/cleanup.ts`) porque la app
-no ofrece ninguna ruta que borre un viaje:
+La lista y el detalle permiten borrar viajes y decidir qué ocurre con sus gastos y notas.
+El calendario normaliza las fechas de los viajes para mostrarlos en la rejilla. Estos fallos se
+corrigieron en #81; no son limitaciones actuales.
 
-- `/trips` solo tiene "Editar": no hay borrado ni en la lista ni en el detalle.
-- El menu contextual del calendario de `/planning` si sabe borrar un viaje
-  (`handleDeleteEvent`), pero **nunca pinta los eventos de tipo `trip`**:
-  `generateCalendarEvents` guarda en `date` el `departure_date` tal cual, que es
-  `timestamptz`, y `getEventsForDay` compara contra `'yyyy-MM-dd'`. Los viajes se
-  cuentan en "Eventos Este Mes" pero no aparecen en la rejilla, asi que la accion
-  de borrar no es alcanzable.
-
-La limpieza por SDK entra con la sesion del usuario dedicado (RLS sigue mandando),
-vacia el objeto del bucket `journal-photos` y borra las filas hijas antes que el
-viaje (`expenses` es `on delete set null` y quedaria suelta). Los dos fallos de
-arriba van a issue aparte; no se arreglan en este PR.
+Los E2E usan `e2e/support/cleanup.ts` como limpieza de seguridad, con la sesión del usuario
+dedicado y RLS. Borra los datos y fotos que el propio test creó. Los casos de borrado prueban la
+acción real de la UI; los demás no dependen de ella para limpiar tras un fallo.
 
 ## Datos de prueba y trazas
 
@@ -113,10 +109,32 @@ usuarios), asi que queda uno por corrida.
 `trace: on-first-retry` y `retries: 2` en CI: la traza de un fallo queda en
 `test-results/` y el job la sube como artefacto (`playwright-trace`).
 
+## Tester Army
+
+`npm run test:tester` ejecuta tres casos públicos en Chromium a 1440×900 y 390×844:
+redirección de ruta protegida, opciones de acceso y recuperación de contraseña. No crea
+usuarios, no envía correos y no necesita modelo ni suscripción. El viewport estrecho comprueba
+layout responsive; no equivale a Safari/iOS ni a un dispositivo táctil real.
+
+Ver [TESTER-ARMY.md](TESTER-ARMY.md) para configuración, límites y evolución.
+
 ## CI
 
-El trabajo `e2e` de `.github/workflows/ci.yml` llama dos veces a la suite
-reutilizable `.github/workflows/e2e.yml`: en el PR despues de `build`, y tras el
-`deploy` de `main` contra produccion. Necesita dos secrets del repositorio,
-`E2E_USER_EMAIL` y `E2E_USER_PASSWORD`; si faltan, el job falla en vez de pasar en
-verde con el caso de login omitido.
+El trabajo `e2e` de `.github/workflows/ci.yml` llama a la suite reutilizable
+`.github/workflows/e2e.yml` tanto en PR como en push a `main`, contra el código local.
+`deploy` espera a `build`, `worker` y `e2e`. Tras publicar, `e2e-produccion` ejecuta
+las dos suites contra el Worker. CI fija Node 22.22.3.
+
+Necesita `E2E_USER_EMAIL` y `E2E_USER_PASSWORD`; si faltan, el job falla antes de que el
+login pueda omitirse. El job completo se serializa entre ramas porque comparte usuario y
+backend. Los pushes nuevos de un PR cancelan su CI anterior; un deploy de `main` no se cancela.
+
+Los artefactos de fallo de Playwright y el informe de Tester Army se conservan siete días.
+La telemetría de Tester Army está desactivada. No hay pasos con modelos en el gate.
+
+## Cobertura pendiente
+
+No existe aún cobertura completa de móvil real, WebKit/Firefox, OAuth de Google con proveedor
+real, verificación de email completa, tareas, notas, perfil/ajustes ni regresión visual.
+Jest prueba la capa cliente de push; no demuestra entrega real de avisos. Los asserts de axe
+existentes tampoco constituyen una auditoría completa de accesibilidad.
