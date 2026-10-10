@@ -7,7 +7,7 @@ presupuestos, notas, tareas, reservas, alertas y analíticas.
 
 ## Stack
 
-- **Framework**: Next.js 16.3.5 (App Router) + React 19 + TypeScript.
+- **Framework**: Next.js 16.3.8 (App Router) + React 19 + TypeScript.
 - **Backend**: InsForge (Postgres + Auth + Storage) con `@insforge/sdk` y `@insforge/sdk/ssr`.
 - **Hosting**: Cloudflare Workers con `@opennextjs/cloudflare` (ver ADR-003).
 - **Tests**: Jest + Testing Library. **Lint**: ESLint. **Commits**: Conventional Commits.

@@ -11,7 +11,7 @@ arquitectura, [ARCHITECTURE.md](./ARCHITECTURE.md). Para las decisiones, [DECISI
 
 | Componente | Versión | Descripción |
 |------------|---------|-------------|
-| Node.js | 22+ | Runtime (Cloudflare y CI usan Node 22) |
+| Node.js | 22.22.3+ o 24.8+ | CI fija 22.22.3; requerido por Tester Army |
 | npm | 10+ | Gestor de paquetes (repo con `package-lock.json`) |
 | Proyecto InsForge | - | Postgres + Auth + Storage |
 
@@ -19,7 +19,7 @@ arquitectura, [ARCHITECTURE.md](./ARCHITECTURE.md). Para las decisiones, [DECISI
 
 ## Dependencias principales
 
-- `next` 16.3.5, `react`/`react-dom` 19
+- `next` 16.3.8, `react`/`react-dom` 19
 - `@insforge/sdk` (datos, auth, storage)
 - `@opennextjs/cloudflare` + `wrangler` (dev) para el hosting
 - `typescript`, `eslint`, `jest` + Testing Library
@@ -31,9 +31,9 @@ Consulta `package.json` para las versiones exactas.
 ## Instalación
 
 ```bash
-git clone https://github.com/PabloJustDevelops/Proyecto-TravelPal-App-de-Viajes.git
-cd Proyecto-TravelPal-App-de-Viajes
-npm install
+git clone https://github.com/PabloJustDevelops/TravelPal.git
+cd TravelPal
+npm ci
 cp .env.example .env.local   # y rellena los valores
 npm run dev
 ```
@@ -50,6 +50,8 @@ La app queda en `http://localhost:3000`.
 | `npm run lint` | ESLint |
 | `npm run type-check` | `tsc --noEmit` |
 | `npm run test:ci` | Jest (CI) |
+| `npm run test:e2e` | Playwright: flujos con datos |
+| `npm run test:tester` | Tester Army: acceso público en dos viewports |
 | `npm run build` | `next build` |
 | `npm run preview` | Build de OpenNext + `wrangler dev` local |
 | `npm run deploy` | Build de OpenNext + deploy a Cloudflare |
@@ -71,8 +73,6 @@ INSFORGE_API_KEY=<api key>
 # Logging (opcional): debug | info | warn | error
 NEXT_PUBLIC_LOG_LEVEL=info
 
-# Proveedores LLM (opcional)
-OPENROUTER_API_KEY=
 ```
 
 `NEXT_PUBLIC_*` se inlinean en el bundle del cliente. `INSFORGE_API_KEY` es un secreto de
@@ -112,8 +112,7 @@ migrations/                 # Esquema InsForge (fuente de verdad)
 
 ### Error de instalación de dependencias
 ```bash
-rm -rf node_modules package-lock.json
-npm install
+npm ci
 ```
 
 ### Error de variables de entorno

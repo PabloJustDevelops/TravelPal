@@ -102,6 +102,7 @@ export default function ForgotPasswordForm() {
             </div>
             <input
               {...register('email')}
+              id="email"
               type="email"
               autoComplete="email"
               required

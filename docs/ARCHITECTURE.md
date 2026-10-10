@@ -6,13 +6,13 @@
 
 App web Next.js (App Router) con backend InsForge y despliegue en Cloudflare Workers. El código se
 organiza por capas: UI (componentes/páginas), estado de cliente (contextos), API (route handlers y
-server actions) y acceso a datos (SDK de InsForge).
+server actions de auth) y acceso a datos (SDK de InsForge).
 
 ### Stack
 
 | Capa | Tecnología | Propósito |
 |------|------------|-----------|
-| Frontend | Next.js 16.3.5 + React 19 | Framework y UI |
+| Frontend | Next.js 16.3.8 + React 19 | Framework y UI |
 | Lenguaje | TypeScript | Tipado estático |
 | Estilos | Tailwind CSS | Diseño responsive |
 | Backend | InsForge (`@insforge/sdk`) | Postgres + Auth + Storage |
@@ -23,7 +23,7 @@ server actions) y acceso a datos (SDK de InsForge).
 ```
 src/
 ├── app/                  # App Router: páginas y API routes
-│   └── api/              # Route handlers (solo auth/refresh; ver ADR-009)
+│   └── api/              # Route handlers (auth/refresh y auth/callback)
 ├── components/           # UI por dominio (trips, notes, planning, ...)
 ├── contexts/             # AuthContext, ThemeContext
 └── lib/
@@ -72,6 +72,7 @@ Sólo sobrevive lo que no puede bajar al cliente:
 
 | Endpoint | Por qué vive en el servidor |
 |---|---|
+| `src/app/api/auth/callback/route.ts` | Intercambia el código OAuth de Google con PKCE y escribe las cookies httpOnly. |
 | `src/app/api/auth/refresh/route.ts` | El refresh token es httpOnly; `createRefreshAuthRouter()` lo rota y publica el nuevo access token en cookie. |
 
 ## Autenticación
@@ -91,7 +92,8 @@ Fuente de verdad única: `migrations/20260913181842_create-app-schema.sql` (ver 
 las consultas reales y usa `text + CHECK` en vez de enums, con RLS de propietario (`auth.uid()`).
 
 Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `alerts`,
-`budgets`, `profiles`. El detalle y el glosario están en [CONTEXT.md](../CONTEXT.md).
+`budgets`, `journal_entries`, `journal_photos`, `profiles`. Las migraciones posteriores amplían
+y corrigen la base; `public.users` se retira en `20260918210000_drop-public-users.sql`. El detalle y el glosario están en [CONTEXT.md](../CONTEXT.md).
 
 ## Notificaciones push de navegador
 
@@ -115,6 +117,11 @@ es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqu
 `.github/workflows/ci.yml` ejecuta en PR: `lint`, `type-check`, `test:ci`, `build` y un job
 `worker-build` (`npx opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
 mensajes de commit.
+
+Los E2E de Playwright y Tester Army corren contra el código en PR y en push a `main`.
+`deploy` depende de `build`, `worker` y `e2e`; después se repiten contra producción.
+Los tests del usuario dedicado se serializan entre ramas. CI usa Node 22.22.3.
+Ver [TESTING.md](TESTING.md) y [TESTER-ARMY.md](TESTER-ARMY.md).
 
 El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): cuenta las
 llamadas al BFF por `/api` (`fetch` y `useApiResource`) y los puntos de uso del SDK de InsForge

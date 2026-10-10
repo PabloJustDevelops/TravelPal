@@ -50,6 +50,9 @@ cloudflare-env.d.ts
 /blob-report/
 /.playwright/
 
+# Tester Army: informes, capturas y cache de acciones
+/.e2e/
+
 # Testsprite
 # Ignora directorio temporal y artefactos generados por la herramienta de pruebas
 testsprite_tests/tmp/

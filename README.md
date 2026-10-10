@@ -59,15 +59,15 @@ app-viajes/
 ## ⚙️ Instalación y Uso
 
 ### Prerrequisitos
-- Node.js 22+
+- Node.js 22.22.3+ (o 24.8+)
 - npm
 - Un proyecto de InsForge (URL + anon key + API key)
 
 ### Instalación
 ```bash
-git clone https://github.com/PabloJustDevelops/Proyecto-TravelPal-App-de-Viajes.git
-cd Proyecto-TravelPal-App-de-Viajes
-npm install
+git clone https://github.com/PabloJustDevelops/TravelPal.git
+cd TravelPal
+npm ci
 ```
 
 ### Configuración
@@ -90,6 +90,7 @@ npm run lint         # ESLint
 npm run type-check   # TypeScript
 npm run test:ci      # Jest
 npm run test:e2e     # Playwright (ver docs/TESTING.md)
+npm run test:tester  # Tester Army: acceso publico, escritorio y viewport estrecho
 npm run build        # next build
 ```
 
@@ -107,6 +108,7 @@ npm run deploy       # Build de OpenNext + deploy a Cloudflare
 - **[docs/DECISIONS/](docs/DECISIONS/)**: ADRs (InsForge, Cloudflare, esquema)
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: guía técnica
 - **[docs/TESTING.md](docs/TESTING.md)**: tests unitarios y E2E (Playwright)
+- **[docs/TESTER-ARMY.md](docs/TESTER-ARMY.md)**: suite complementaria y evaluación de Tester Army
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**: cómo contribuir
 - **[docs/COMMITS.md](docs/COMMITS.md)** / **[docs/PR_PROCESS.md](docs/PR_PROCESS.md)**: flujo de trabajo
 
@@ -118,8 +120,8 @@ npm run deploy       # Build de OpenNext + deploy a Cloudflare
 - Estilos: Tailwind CSS
 - Backend: InsForge (Postgres, Auth, Storage) vía `@insforge/sdk`
 - Hosting: Cloudflare Workers con `@opennextjs/cloudflare`
-- Testing: Jest + Testing Library (unitarios y componentes) y Playwright (E2E)
-- CI/CD: GitHub Actions (lint, type-check, tests, build y build del Worker)
+- Testing: Jest + Testing Library, Playwright (flujos con datos) y Tester Army (acceso público)
+- CI/CD: GitHub Actions; build, Worker y E2E antes del deploy, y E2E contra producción después
 
 ## 📋 Roadmap
 - Internacionalización (i18n)
