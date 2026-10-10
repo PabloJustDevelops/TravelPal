@@ -4,9 +4,10 @@ export interface ExpenseTrendPoint {
   name: string
   value: number
   color: string
+  currency: string
 }
 
-type TrendExpense = Pick<Expense, 'date' | 'amount'>
+type TrendExpense = Pick<Expense, 'date' | 'amount' | 'currency'>
 
 const TREND_COLOR = '#3B82F6'
 
@@ -16,27 +17,28 @@ const TREND_COLOR = '#3B82F6'
 export function buildExpenseTrend(
   expenses: TrendExpense[]
 ): ExpenseTrendPoint[] {
-  const months = new Map<string, { name: string; value: number }>()
+  const months = new Map<string, { name: string; value: number; currency: string }>()
 
   for (const expense of expenses) {
     const date = new Date(expense.date)
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${expense.currency}`
     const month = months.get(key)
 
     if (month) {
       month.value += expense.amount
     } else {
-      months.set(key, {
-        name: date.toLocaleDateString('es-ES', {
-          month: 'short',
-          year: 'numeric',
-        }),
-        value: expense.amount,
-      })
+        months.set(key, {
+          name: date.toLocaleDateString('es-ES', {
+            month: 'short',
+            year: 'numeric',
+          }),
+          value: expense.amount,
+          currency: expense.currency,
+        })
     }
   }
 
   return [...months.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([, { name, value }]) => ({ name, value, color: TREND_COLOR }))
+    .map(([, { name, value, currency }]) => ({ name, value, color: TREND_COLOR, currency }))
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Expense } from '@/lib/insforge'
 import { formatCurrency } from '@/lib/utils'
 import { buildExpenseTrend } from './expenseTrend'
@@ -75,22 +75,18 @@ const CustomTooltip = ({ active, payload, currency }: any) => {
 export default function ExpenseChart({ 
   expenses, 
   type = 'category', 
-  title = 'Gastos por categoría', 
+  title = 'Gastos por categoría',
   height = 320,
   currency = 'USD'
 }: ExpenseChartProps) {
-  const [data, setData] = useState<ChartData[]>([])
+  const data = useMemo<ChartData[]>(() => {
+    const currencyExpenses = (expenses ?? []).filter((expense) => expense.currency === currency)
+    if (currencyExpenses.length === 0) return []
 
-  useEffect(() => {
-    if (!expenses || expenses.length === 0) {
-      setData([])
-      return
-    }
-
-    const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
+    const totalAmount = currencyExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 
     if (type === 'category') {
-      const categoryTotals = expenses.reduce((acc, expense) => {
+      const categoryTotals = currencyExpenses.reduce((acc, expense) => {
         const cat = expense.category || 'other'
         acc[cat] = (acc[cat] || 0) + expense.amount
         return acc
@@ -105,11 +101,12 @@ export default function ExpenseChart({
         }))
         .sort((a, b) => b.value - a.value)
 
-      setData(processedData)
-    } else if (type === 'timeline') {
-      setData(buildExpenseTrend(expenses))
+      return processedData
     }
-  }, [expenses, type])
+
+    if (type === 'timeline') return buildExpenseTrend(currencyExpenses)
+    return []
+  }, [expenses, type, currency])
 
   if (data.length === 0) {
     return (
@@ -120,7 +117,7 @@ export default function ExpenseChart({
   }
 
   return (
-    <div className="w-full h-full min-h-[320px]">
+    <div role="img" aria-label={title} className="w-full h-full min-h-[320px]">
       <ResponsiveContainer width="100%" height={height}>
         {type === 'category' ? (
           <PieChart>
@@ -143,7 +140,7 @@ export default function ExpenseChart({
               align="right"
               layout="vertical"
               iconType="circle"
-              formatter={(value, entry: any) => (
+              formatter={(value) => (
                 <span className="text-sm text-muted ml-2">
                   {value}
                 </span>
@@ -164,7 +161,7 @@ export default function ExpenseChart({
               axisLine={false} 
               tickLine={false} 
               tick={{ fill: '#6B7280', fontSize: 12 }}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => formatCurrency(value, currency)}
             />
             <Tooltip 
               cursor={{ fill: 'transparent' }}

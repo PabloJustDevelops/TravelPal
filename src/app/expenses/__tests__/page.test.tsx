@@ -344,6 +344,70 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     ).toBeInTheDocument();
   });
 
+  it("muestra importes y presupuestos separados por moneda sin convertirlos", async () => {
+    const multiCurrencyExpenses = [
+      { ...expenses[0], id: "usd-food-1", amount: 100, currency: "USD", category: "food", date: "2026-05-02" },
+      { ...expenses[0], id: "usd-food-2", amount: 10, currency: "USD", category: "food", date: "2026-05-03" },
+      { ...expenses[0], id: "eur-transport", amount: 1000, currency: "EUR", category: "transport", date: "2026-05-04" },
+    ];
+    const multiCurrencyBudgets = [
+      { ...budgets[0], id: "budget-usd", total_amount: 500, currency: "USD" },
+      { ...budgets[0], id: "budget-eur", total_amount: 1200, currency: "EUR" },
+    ];
+    mount({
+      expensesResult: { data: multiCurrencyExpenses, error: null },
+      budgetsResult: { data: multiCurrencyBudgets, error: null },
+    });
+
+    render(<ExpensesPage />);
+    await screen.findByText("Mis Gastos");
+
+    const totalCard = screen.getByText("Total Gastado").parentElement;
+    expect(totalCard).toHaveTextContent(flat(formatCurrency(110, "USD")));
+    expect(totalCard).toHaveTextContent(flat(formatCurrency(1000, "EUR")));
+    expect(totalCard).not.toHaveTextContent(flat(formatCurrency(1093.5, "EUR")));
+
+    const averageCard = screen.getByText("Promedio por Gasto").parentElement;
+    expect(averageCard).toHaveTextContent(flat(formatCurrency(55, "USD")));
+    expect(averageCard).toHaveTextContent(flat(formatCurrency(1000, "EUR")));
+
+    const mostFrequentCard = screen.getByText("Categoría más frecuente").parentElement;
+    expect(mostFrequentCard).toHaveTextContent("Comida");
+    expect(mostFrequentCard).toHaveTextContent("2 gastos");
+
+    const plannedCard = screen.getByText("Presupuesto total").parentElement;
+    expect(plannedCard).toHaveTextContent(flat(formatCurrency(500, "USD")));
+    expect(plannedCard).toHaveTextContent(flat(formatCurrency(1200, "EUR")));
+    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+    expect(screen.getByRole("progressbar", { name: "Real sobre previsto en USD" })).toHaveAttribute("aria-valuenow", "22");
+    expect(screen.getByRole("progressbar", { name: "Real sobre previsto en EUR" })).toHaveAttribute("aria-valuenow", "83");
+
+    const chartCurrency = screen.getByRole("combobox", { name: "Moneda para las gráficas" });
+    fireEvent.change(chartCurrency, { target: { value: "EUR" } });
+    expect(screen.getByRole("region", { name: "Gastos por categoría en EUR" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tendencia de gastos en EUR" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Gastos por categoría en EUR" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Tendencia de gastos en EUR" })).toBeInTheDocument();
+  });
+
+  it("limita el valor accesible del progreso y anuncia el porcentaje real si se supera", async () => {
+    mount({
+      expensesResult: { data: [expenses[0]], error: null },
+      budgetsResult: {
+        data: [{ ...budgets[0], total_amount: 500 }],
+        error: null,
+      },
+    });
+
+    render(<ExpensesPage />);
+    await screen.findByText("Mis Gastos");
+
+    const progress = screen.getByRole("progressbar", { name: "Real sobre previsto en USD" });
+    expect(progress).toHaveAttribute("aria-valuemax", "100");
+    expect(progress).toHaveAttribute("aria-valuenow", "100");
+    expect(progress).toHaveAttribute("aria-valuetext", "180.0% del presupuesto usado");
+  });
+
   it("usa el mismo bloque de filtros para gastos y presupuestos", async () => {
     mount();
 

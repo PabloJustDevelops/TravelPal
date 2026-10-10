@@ -118,6 +118,7 @@ export default function ExpensesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [tripFilter, setTripFilter] = useState<string>("all");
+  const [chartCurrency, setChartCurrency] = useState("USD");
 
   // Alta/edicion/borrado de presupuesto: el mismo CRUD que vivia en /budget.
   const [showBudgetModal, setShowBudgetModal] = useState(false);
@@ -326,33 +327,36 @@ export default function ExpensesPage() {
     ((!authLoading && !!user) && expensesData === null && !error);
 
   const getExpenseStats = () => {
-    const totalAmount = expenses.reduce((sum, expense) => {
-      // Convert to EUR for calculation (simplified)
-      const amount =
-        expense.currency === "EUR" ? expense.amount : expense.amount * 0.85;
-      return sum + amount;
-    }, 0);
-
-    const categoryTotals = expenses.reduce(
+    const totals = expenses.reduce<Record<string, { total: number; count: number }>>(
       (acc, expense) => {
-        const amount =
-          expense.currency === "EUR" ? expense.amount : expense.amount * 0.85;
-        acc[expense.category] = (acc[expense.category] || 0) + amount;
+        const current = acc[expense.currency] ?? { total: 0, count: 0 };
+        current.total += expense.amount;
+        current.count += 1;
+        acc[expense.currency] = current;
         return acc;
       },
-      {} as Record<string, number>,
+      {},
     );
-
-    const topCategory = Object.entries(categoryTotals).sort(
-      ([, a], [, b]) => b - a,
+    const categoryCounts = expenses.reduce<Record<string, number>>((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] ?? 0) + 1;
+      return acc;
+    }, {});
+    const topCategory = Object.entries(categoryCounts).sort(
+      ([categoryA, countA], [categoryB, countB]) => countB - countA || categoryA.localeCompare(categoryB),
     )[0];
+    const totalsByCurrency = Object.entries(totals)
+      .sort(([currencyA], [currencyB]) => currencyA.localeCompare(currencyB))
+      .map(([currency, values]) => ({ currency, total: values.total }));
+    const averagesByCurrency = Object.entries(totals)
+      .sort(([currencyA], [currencyB]) => currencyA.localeCompare(currencyB))
+      .map(([currency, values]) => ({ currency, average: values.total / values.count }));
 
     return {
-      total: totalAmount,
       count: expenses.length,
-      topCategory: topCategory ? topCategory[0] : null,
-      topCategoryAmount: topCategory ? topCategory[1] : 0,
-      avgPerExpense: expenses.length > 0 ? totalAmount / expenses.length : 0,
+      totalsByCurrency,
+      averagesByCurrency,
+      topCategory: topCategory?.[0] ?? null,
+      topCategoryCount: topCategory?.[1] ?? 0,
     };
   };
 
@@ -372,16 +376,30 @@ export default function ExpensesPage() {
 
   const stats = getExpenseStats();
 
+  const expenseCurrencies = [...new Set(expenses.map((expense) => expense.currency))].sort();
+  const selectedChartCurrency = expenseCurrencies.includes(chartCurrency)
+    ? chartCurrency
+    : expenseCurrencies[0] ?? "USD";
+  const chartExpenses = expenses.filter((expense) => expense.currency === selectedChartCurrency);
+
   // Contadores de "previsto frente a real" (sobre todos los presupuestos,
   // igual que los totales de gastos, para que no bailen con los filtros).
-  const totalBudgetAmount = budgets.reduce(
-    (sum, budget) => sum + budget.total_amount,
-    0,
-  );
-  const totalSpentAmount = budgets.reduce(
-    (sum, budget) => sum + budget.spent_amount,
-    0,
-  );
+  const budgetCurrencyTotals = Object.values(
+    budgets.reduce<Record<string, { currency: string; planned: number; spent: number }>>(
+      (totals, budget) => {
+        const current = totals[budget.currency] ?? {
+          currency: budget.currency,
+          planned: 0,
+          spent: 0,
+        };
+        current.planned += budget.total_amount;
+        current.spent += budget.spent_amount;
+        totals[budget.currency] = current;
+        return totals;
+      },
+      {},
+    ),
+  ).sort((a, b) => a.currency.localeCompare(b.currency));
   const overBudgetCount = budgets.filter(
     (budget) => budget.spent_amount > budget.total_amount,
   ).length;
@@ -393,20 +411,27 @@ export default function ExpensesPage() {
     return percentage >= 80 && budget.spent_amount <= budget.total_amount;
   }).length;
 
-  const displayCurrency = budgets.length > 0 ? budgets[0].currency : "USD";
-  const overallPercentage =
-    totalBudgetAmount > 0 ? (totalSpentAmount / totalBudgetAmount) * 100 : 0;
-
-  const budgetSummary = [
+  const budgetSummary: {
+    label: string;
+    tone: string;
+    values?: { currency: string; amount: number }[];
+    value?: string;
+  }[] = [
     {
       label: "Presupuesto total",
-      value: formatCurrency(totalBudgetAmount, displayCurrency),
       tone: "text-ink",
+      values: budgetCurrencyTotals.map(({ currency, planned }) => ({
+        currency,
+        amount: planned,
+      })),
     },
     {
       label: "Gastado",
-      value: formatCurrency(totalSpentAmount, displayCurrency),
       tone: "text-ink",
+      values: budgetCurrencyTotals.map(({ currency, spent }) => ({
+        currency,
+        amount: spent,
+      })),
     },
     {
       label: "Superados",
@@ -650,8 +675,10 @@ export default function ExpensesPage() {
                   <div className="text-sm font-medium text-muted">
                     Total Gastado
                   </div>
-                  <div className="text-2xl font-bold text-ink">
-                    {formatCurrency(stats.total, "EUR")}
+                  <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
+                    {stats.totalsByCurrency.length > 0 ? stats.totalsByCurrency.map(({ currency, total }) => (
+                      <p key={currency}>{formatCurrency(total, currency)}</p>
+                    )) : <p>Sin gastos</p>}
                   </div>
                 </div>
               </div>
@@ -686,8 +713,10 @@ export default function ExpensesPage() {
                   <div className="text-sm font-medium text-muted">
                     Promedio por Gasto
                   </div>
-                  <div className="text-2xl font-bold text-ink">
-                    {formatCurrency(stats.avgPerExpense, "EUR")}
+                  <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
+                    {stats.averagesByCurrency.length > 0 ? stats.averagesByCurrency.map(({ currency, average }) => (
+                      <p key={currency}>{formatCurrency(average, currency)}</p>
+                    )) : <p>Sin gastos</p>}
                   </div>
                 </div>
               </div>
@@ -702,11 +731,11 @@ export default function ExpensesPage() {
                 </div>
                 <div className="ml-4">
                   <div className="text-sm font-medium text-muted">
-                    Categoría Principal
+                    Categoría más frecuente
                   </div>
                   <div className="text-lg font-bold text-ink">
                     {stats.topCategory
-                      ? getCategoryName(stats.topCategory)
+                      ? `${getCategoryName(stats.topCategory)} · ${stats.topCategoryCount} ${stats.topCategoryCount === 1 ? "gasto" : "gastos"}`
                       : "N/A"}
                   </div>
                 </div>
@@ -715,34 +744,62 @@ export default function ExpensesPage() {
           </Card>
         </div>
 
-        {/* Las graficas del dinero viven en gastos, junto a sus cifras */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold text-ink mb-6">
-                Gastos por Categoría
-              </h2>
-              <ExpenseChart
-                expenses={expenses}
-                type="category"
-                currency={displayCurrency}
-                height={320}
-              />
-            </CardContent>
-          </Card>
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold text-ink mb-6">
-                Tendencia de Gastos
-              </h2>
-              <ExpenseChart
-                expenses={expenses}
-                type="timeline"
-                currency={displayCurrency}
-                height={320}
-              />
-            </CardContent>
-          </Card>
+        {/* Las gráficas muestran una moneda cada vez para no comparar importes incompatibles. */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">Filtra ambas gráficas por una moneda</p>
+            <div className="w-full sm:w-auto sm:min-w-48">
+              <label htmlFor="expense-chart-currency" className="sr-only">
+                Moneda para las gráficas
+              </label>
+              <select
+                id="expense-chart-currency"
+                aria-label="Moneda para las gráficas"
+                value={selectedChartCurrency}
+                onChange={(event) => setChartCurrency(event.target.value)}
+                disabled={expenseCurrencies.length === 0}
+                className={selectClassName}
+              >
+                {(expenseCurrencies.length > 0 ? expenseCurrencies : ["USD"]).map((currency) => (
+                  <option key={currency} value={currency}>{currency}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <section aria-label={`Gastos por categoría en ${selectedChartCurrency}`} className="min-w-0">
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-semibold text-ink mb-6">
+                    Gastos por Categoría · {selectedChartCurrency}
+                  </h2>
+                  <ExpenseChart
+                    expenses={chartExpenses}
+                    type="category"
+                    title={`Gastos por categoría en ${selectedChartCurrency}`}
+                    currency={selectedChartCurrency}
+                    height={320}
+                  />
+                </CardContent>
+              </Card>
+            </section>
+            <section aria-label={`Tendencia de gastos en ${selectedChartCurrency}`} className="min-w-0">
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-semibold text-ink mb-6">
+                    Tendencia de Gastos · {selectedChartCurrency}
+                  </h2>
+                  <ExpenseChart
+                    expenses={chartExpenses}
+                    type="timeline"
+                    title={`Tendencia de gastos en ${selectedChartCurrency}`}
+                    currency={selectedChartCurrency}
+                    height={320}
+                  />
+                </CardContent>
+              </Card>
+            </section>
+          </div>
         </div>
 
         {/* Filters: un unico bloque para gastos y presupuestos */}
@@ -826,33 +883,57 @@ export default function ExpensesPage() {
                     <p className="text-sm font-medium text-muted">
                       {item.label}
                     </p>
-                    <p className={`mt-1 text-2xl font-bold ${item.tone}`}>
-                      {item.value}
-                    </p>
+                    {item.values ? (
+                      <div className={`mt-1 space-y-1 font-bold ${item.tone}`}>
+                        {item.values.length > 0 ? item.values.map(({ currency, amount }) => (
+                          <p key={currency} className="text-sm sm:text-base">
+                            <span className="mr-1 text-xs font-medium text-muted">{currency}</span>
+                            {formatCurrency(amount, currency)}
+                          </p>
+                        )) : <p className="text-sm font-medium text-muted">Sin presupuestos</p>}
+                      </div>
+                    ) : (
+                      <p className={`mt-1 text-2xl font-bold ${item.tone}`}>
+                        {item.value}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
 
               {budgets.length > 0 && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between text-xs text-muted">
-                    <span>Real sobre previsto</span>
-                    <span>{overallPercentage.toFixed(1)}%</span>
-                  </div>
-                  <div className="mt-2 w-full bg-surface-strong rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        overallPercentage > 100
-                          ? "bg-danger"
-                          : overallPercentage >= 80
-                            ? "bg-warning"
-                            : "bg-success"
-                      }`}
-                      style={{
-                        width: `${Math.min(overallPercentage, 100)}%`,
-                      }}
-                    />
-                  </div>
+                <div className="mt-6 space-y-4">
+                  {budgetCurrencyTotals.map(({ currency, planned, spent }) => {
+                    const percentage = planned > 0 ? (spent / planned) * 100 : 0;
+                    return (
+                      <div key={currency}>
+                        <div className="flex items-center justify-between text-xs text-muted">
+                          <span>Real sobre previsto · {currency}</span>
+                          <span>{percentage.toFixed(1)}%</span>
+                        </div>
+                        <div
+                          role="progressbar"
+                          aria-label={`Real sobre previsto en ${currency}`}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={Math.min(100, Math.max(0, Math.round(percentage)))}
+                          aria-valuetext={`${percentage.toFixed(1)}% del presupuesto usado`}
+                          className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-strong"
+                        >
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              percentage > 100
+                                ? "bg-danger"
+                                : percentage >= 80
+                                  ? "bg-warning"
+                                  : "bg-success"
+                            }`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
