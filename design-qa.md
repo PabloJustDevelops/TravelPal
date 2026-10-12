@@ -37,4 +37,8 @@ El módulo de detalle e itinerario pasó QA funcional y visual en claro/oscuro a
 
 La lista y el alta conservan filtros, autenticación, validación de fechas y presupuesto parcial; los E2E autenticados del PR pasaron antes de esta etapa de planificación. Planning conserva sus consultas y mutaciones; calendario, tarjetas y formularios tienen historias y pruebas. La historia de reserva comprueba acciones dentro de un viewport de 390 × 844. Evidencia de esta etapa: `docs/audits/2026-10-11-atlas-planificacion.md`. Falta ejecutar el E2E autenticado sobre el estado final del módulo y completar el gate visual global.
 
+## Acceso público
+
+El formulario de inicio de sesión se capturó en producción local a 1440 × 900 y 390 × 900; axe no reportó infracciones y ambas vistas no desbordan horizontalmente. Se corrigieron la región principal, el nivel del encabezado y el nombre accesible del botón de visibilidad de contraseña. Informe y capturas: `docs/audits/2026-10-12-signin-accessibility.md`. Esto solo cubre el flujo no autenticado; sigue pendiente el dashboard autenticado y poblado.
+
 final result: blocked

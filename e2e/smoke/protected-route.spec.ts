@@ -11,6 +11,13 @@ test('una ruta protegida sin sesion acaba en el formulario de acceso', async ({
   await expect(
     page.getByRole('heading', { name: 'Inicia sesión en tu cuenta' }),
   ).toBeVisible()
+  await expect(page.getByRole('main')).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: 'Inicia sesión en tu cuenta',
+      level: 1,
+    }),
+  ).toBeVisible()
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible()
 
   // El destino que se pedia se conserva para volver a el tras acceder.

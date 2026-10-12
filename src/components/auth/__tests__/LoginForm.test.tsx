@@ -71,6 +71,20 @@ describe('LoginForm', () => {
     })
   })
 
+  it('nombra el control de visibilidad y actualiza el nombre al mostrar la contraseña', async () => {
+    render(<LoginForm />)
+
+    const showPasswordButton = await screen.findByRole('button', {
+      name: 'Mostrar contraseña',
+    })
+    fireEvent.click(showPasswordButton)
+
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'text')
+    expect(
+      screen.getByRole('button', { name: 'Ocultar contraseña' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('avisa de que hay que verificar el email y ofrece reenviar el codigo', async () => {
     mockSignIn.mockResolvedValue({
       ok: false,

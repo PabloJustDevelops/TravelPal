@@ -178,9 +178,9 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Inicia sesión en tu cuenta
-        </h2>
+        </h1>
         <p className="mt-2 text-center text-sm text-gray-600">
           O{" "}
           <Link
@@ -268,6 +268,8 @@ export default function LoginForm() {
                 {isClient && (
                   <button
                     type="button"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-pressed={showPassword}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
                   >
