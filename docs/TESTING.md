@@ -54,6 +54,9 @@ E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:e2e   # lo des
 - `/signin` con el usuario dedicado: dashboard **con contenido** (titulo y
   navegacion reales), no solo la URL correcta.
 - `/dashboard` sin sesion: acaba en `/signin`, sin bucle y sin pantalla vacia.
+- `/signin` sin sesión: rellena el formulario con datos sintéticos usando el mismo
+  helper que el login real, sin enviarlo. Comprueba mostrar y volver a ocultar la
+  contraseña, sin confundir el input con el botón de visibilidad.
 
 ## Que cubre la etapa 1 (flujos con datos)
 
@@ -108,6 +111,13 @@ usuarios), asi que queda uno por corrida.
 
 `trace: on-first-retry` y `retries: 2` en CI: la traza de un fallo queda en
 `test-results/` y el job la sube como artefacto (`playwright-trace`).
+
+Los casos de accesibilidad de dashboard y detalle generan capturas en ambos
+temas a 1440 y 390 px. El job conserva las PNG de `/tmp/travelpal-atlas-*.png` y
+`/tmp/travelpal-trip-*.png` durante 7 días como `atlas-qa-codigo` o
+`atlas-qa-produccion`, también cuando la suite pasa. Representan el estado de la
+cuenta dedicada en esa ejecución; no sustituyen una revisión visual ni aseguran
+que el dashboard tenga un viaje poblado.
 
 ## Tester Army
 

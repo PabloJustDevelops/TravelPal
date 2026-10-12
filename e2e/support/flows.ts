@@ -19,10 +19,18 @@ export function acceptDialogs(page: Page): void {
   page.on('dialog', (dialog) => dialog.accept())
 }
 
+export async function fillSignInForm(
+  page: Page,
+  emailValue: string,
+  passwordValue: string,
+): Promise<void> {
+  await page.getByLabel('Email', { exact: true }).fill(emailValue)
+  await page.getByLabel('Contraseña', { exact: true }).fill(passwordValue)
+}
+
 export async function signIn(page: Page): Promise<void> {
   await page.goto('/signin')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Contraseña').fill(password)
+  await fillSignInForm(page, email, password)
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await expect(page).toHaveURL(/\/dashboard/)
 }
