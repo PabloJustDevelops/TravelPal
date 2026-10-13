@@ -291,7 +291,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="hidden text-right sm:block">
                       <p className="text-sm text-muted">
-                        {dayItinerary.activities.length} actividades
+                        {dayItinerary.activities.length} {dayItinerary.activities.length === 1 ? 'actividad' : 'actividades'}
                       </p>
                       {dayCosts.length > 0 && (
                         <ul aria-label="Costes de actividades por moneda" className="text-sm font-medium text-ink">
@@ -353,7 +353,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
                                     <div className="flex min-w-0 flex-wrap items-center gap-x-1">
                                       <ClockIcon className="h-4 w-4" />
-                                      <span>{activity.startTime} - {activity.endTime}</span>
+                                      <span>{activity.startTime.slice(0, 5)} - {activity.endTime.slice(0, 5)}</span>
                                     </div>
                                     {activity.location && (
                                       <div className="flex min-w-0 flex-wrap items-center gap-x-1 break-words">

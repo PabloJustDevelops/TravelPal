@@ -35,10 +35,16 @@ El módulo de detalle e itinerario pasó QA funcional y visual en claro/oscuro a
 
 ## Lista/alta y planificación
 
-La lista y el alta conservan filtros, autenticación, validación de fechas y presupuesto parcial; los E2E autenticados del PR pasaron antes de esta etapa de planificación. Planning conserva sus consultas y mutaciones; calendario, tarjetas y formularios tienen historias y pruebas. La historia de reserva comprueba acciones dentro de un viewport de 390 × 844. Evidencia de esta etapa: `docs/audits/2026-10-11-atlas-planificacion.md`. Falta ejecutar el E2E autenticado sobre el estado final del módulo y completar el gate visual global.
+La lista y el alta conservan filtros, autenticación, validación de fechas y presupuesto parcial. Planning conserva sus consultas y mutaciones; calendario, tarjetas y formularios tienen historias y pruebas. La historia de reserva comprueba acciones dentro de un viewport de 390 × 844. Evidencia de esta etapa: `docs/audits/2026-10-11-atlas-planificacion.md`. El CI 38283748961 ejecutó los E2E autenticados del estado actual: 22 pruebas aprobadas. Sigue pendiente el gate visual global.
 
 ## Acceso público
 
-El formulario de inicio de sesión se capturó en producción local a 1440 × 900 y 390 × 900; axe no reportó infracciones y ambas vistas no desbordan horizontalmente. Se corrigieron la región principal, el nivel del encabezado y el nombre accesible del botón de visibilidad de contraseña. Informe y capturas: `docs/audits/2026-10-12-signin-accessibility.md`. Esto solo cubre el flujo no autenticado; sigue pendiente el dashboard autenticado y poblado.
+El formulario de inicio de sesión se capturó en producción local a 1440 × 900 y 390 × 900; axe no reportó infracciones y ambas vistas no desbordan horizontalmente. Se corrigieron la región principal, el nivel del encabezado y el nombre accesible del botón de visibilidad de contraseña. Informe y capturas: `docs/audits/2026-10-12-signin-accessibility.md`. Esto solo cubre el flujo no autenticado; el estado del dashboard autenticado se documenta en la sección siguiente.
+
+## Capturas autenticadas del estado actual
+
+El CI 38283748961 generó ocho capturas nuevas del dashboard vacío y del detalle con actividad en claro/oscuro a 390/1440 px. Se descargaron e inspeccionaron: `docs/audits/2026-10-12-atlas-authenticated.md`. Confirman el alcance funcional actual y documentan oportunidades de compactación y ajustes de texto. El dashboard poblado comparable con la referencia sigue pendiente, junto con las capturas de las demás superficies. La falta de credenciales locales ya no impide obtener evidencia de la cuenta dedicada mediante CI.
+
+Los ajustes de singular y horas del itinerario se corrigieron el 13 de octubre con una regresión que primero falló. Verificación local: 61 suites y 446 pruebas aprobadas, lint de los archivos cambiados, TypeScript y build correctos. Las ocho capturas conservan el estado previo al arreglo; el informe detalla ambos estados y sus límites.
 
 final result: blocked
