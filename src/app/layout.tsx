@@ -20,10 +20,10 @@ const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', dis
 const themeInitScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})()`
 
 export const metadata: Metadata = {
-  title: 'Gestión de Viajes',
-  description: 'Aplicación completa para la gestión de viajes, gastos y planificación',
+  title: 'TravelPal | Tu compañero de viaje',
+  description: 'Planifica itinerarios, tareas y gastos de viaje en un solo lugar.',
   keywords: 'viajes, gastos, planificación, presupuesto, itinerario',
-  authors: [{ name: 'Travel Management App' }],
+  authors: [{ name: 'TravelPal' }],
   robots: 'index, follow',
 }
 

@@ -77,28 +77,30 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   return (
     <div className="relative h-full flex flex-col">
       {/* Trash Zone - Visible only when dragging */}
-      <div 
-        className={`
-          absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50
-          transition-all duration-300 ease-in-out
-          ${isDragging ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}
-        `}
-        onDragOver={handleTrashDragOver}
-        onDragLeave={handleTrashDragLeave}
-        onDrop={handleTrashDrop}
-      >
-        <div className={`
-          flex items-center gap-3 px-8 py-4 rounded-full shadow-lg border-2
-          backdrop-blur-sm transition-colors
-          ${dragOverTrash 
-            ? 'bg-danger/10 border-danger text-danger scale-110' 
-            : 'bg-surface/90 border-danger/40 text-muted hover:border-danger hover:text-danger'
-          }
-        `}>
-          <TrashIcon className={`w-8 h-8 ${dragOverTrash ? 'animate-bounce' : ''}`} />
-          <span className="font-medium text-lg">Soltar para eliminar</span>
+      {tasks.length > 0 && (
+        <div
+          className={`
+            absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50
+            transition-all duration-300 ease-in-out
+            ${isDragging ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}
+          `}
+          onDragOver={handleTrashDragOver}
+          onDragLeave={handleTrashDragLeave}
+          onDrop={handleTrashDrop}
+        >
+          <div className={`
+            flex items-center gap-3 px-8 py-4 rounded-full shadow-lg border-2
+            backdrop-blur-sm transition-colors
+            ${dragOverTrash
+              ? 'bg-danger/10 border-danger text-danger scale-110'
+              : 'bg-surface/90 border-danger/40 text-muted hover:border-danger hover:text-danger'
+            }
+          `}>
+            <TrashIcon className={`w-8 h-8 ${dragOverTrash ? 'animate-bounce' : ''}`} />
+            <span className="font-medium text-lg">Soltar para eliminar</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mb-4 md:hidden">
         <label htmlFor="task-board-status" className="mb-1.5 block text-sm font-medium text-ink">
@@ -120,7 +122,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         </select>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 md:grid-cols-3 md:gap-6">
+      <div className={`grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 md:grid-cols-3 md:gap-6 ${tasks.length === 0 ? 'md:items-start' : ''}`}>
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.id);
           const isMobileSelected = mobileStatus === col.id;
@@ -165,8 +167,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   </div>
                 ))}
                 {colTasks.length === 0 && (
-                  <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-line/50 text-muted">
-                    <span className="text-sm">Vacío</span>
+                  <div className="flex min-h-20 flex-col items-center justify-center rounded-lg border border-dashed border-line/70 px-3 text-muted">
+                    <span className="text-sm">Sin tareas</span>
                   </div>
                 )}
               </div>

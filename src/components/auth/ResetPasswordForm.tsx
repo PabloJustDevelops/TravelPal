@@ -108,6 +108,7 @@ export default function ResetPasswordForm() {
           </label>
           <div className="relative">
             <input
+              id="password"
               {...register("password")}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
@@ -118,6 +119,8 @@ export default function ResetPasswordForm() {
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-pressed={showPassword}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
@@ -140,6 +143,7 @@ export default function ResetPasswordForm() {
           </label>
           <div className="relative">
             <input
+              id="confirmPassword"
               {...register("confirmPassword")}
               type={showConfirmPassword ? "text" : "password"}
               autoComplete="new-password"
@@ -150,6 +154,8 @@ export default function ResetPasswordForm() {
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showConfirmPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+              aria-pressed={showConfirmPassword}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
@@ -214,7 +220,7 @@ export default function ResetPasswordForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h2 className="text-sm font-medium text-red-800">Error</h2>
               <div className="mt-1 text-sm text-red-700">
                 <p>{error}</p>
               </div>

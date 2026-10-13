@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex bg-white">
+    <main className="min-h-screen flex bg-white">
       {/* Sección Izquierda - Imagen (Visible en desktop) */}
       <div className="hidden lg:block relative w-0 flex-1">
         <div className="absolute inset-0 h-full w-full bg-gray-900">
@@ -45,11 +45,11 @@ export default function SignUpPage() {
           
           <div className="mt-8 pt-6 border-t border-gray-100 text-center">
              <p className="text-xs text-gray-500">
-               © {new Date().getFullYear()} Gestión de Viajes. Todos los derechos reservados.
+               © {new Date().getFullYear()} TravelPal. Todos los derechos reservados.
              </p>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

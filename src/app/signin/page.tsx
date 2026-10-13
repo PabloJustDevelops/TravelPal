@@ -36,7 +36,7 @@ export default function SignInPage() {
           
           <div className="mt-8 pt-6 border-t border-gray-100 text-center">
              <p className="text-xs text-gray-500">
-               © {new Date().getFullYear()} Gestión de Viajes. Todos los derechos reservados.
+               © {new Date().getFullYear()} TravelPal. Todos los derechos reservados.
              </p>
           </div>
         </div>

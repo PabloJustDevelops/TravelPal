@@ -197,6 +197,8 @@ export default function RegisterForm() {
                 {isClient && (
                   <button
                     type="button"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={showPassword}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
                   >
@@ -258,6 +260,8 @@ export default function RegisterForm() {
                 {isClient && (
                   <button
                     type="button"
+                    aria-label={showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
+                    aria-pressed={showConfirmPassword}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >

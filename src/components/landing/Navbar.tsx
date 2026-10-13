@@ -2,18 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { accentLinkClassName } from '@/components/ui/actionStyles';
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 50);
-  });
 
   const navLinks = [
     { name: 'Características', href: '#features' },
@@ -21,13 +15,9 @@ export default function Navbar() {
     { name: 'Testimonios', href: '#testimonials' },
   ];
 
-  const solid = isScrolled || mobileMenuOpen;
-
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-        solid ? 'border-b border-line bg-paper/90 backdrop-blur' : 'bg-transparent'
-      }`}
+      className="fixed inset-x-0 top-0 z-50 border-b border-line bg-paper/90 backdrop-blur"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -36,10 +26,10 @@ export default function Navbar() {
         <div className="flex lg:flex-1">
           <Link href="/" className="flex items-center gap-2">
             <span className="sr-only">TravelPal</span>
-            <svg className={`h-8 w-8 ${solid ? 'text-accent' : 'text-paper'}`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <svg className="h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
             </svg>
-            <span className={`font-serif text-xl ${solid ? 'text-ink' : 'text-paper'}`}>
+            <span className="font-sans text-xl font-semibold text-ink">
               TravelPal
             </span>
           </Link>
@@ -47,7 +37,9 @@ export default function Navbar() {
         <div className="flex lg:hidden">
           <button
             type="button"
-            className={`-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 ${solid ? 'text-ink' : 'text-paper'}`}
+            className="-m-2.5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2.5 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
             onClick={() => setMobileMenuOpen(true)}
           >
             <span className="sr-only">Abrir menú</span>
@@ -59,7 +51,7 @@ export default function Navbar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`text-sm font-medium leading-6 ${solid ? 'text-ink hover:text-accent' : 'text-paper/90 hover:text-paper'}`}
+              className="text-sm font-medium leading-6 text-ink hover:text-accent"
             >
               {item.name}
             </Link>
@@ -68,7 +60,7 @@ export default function Navbar() {
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-6">
           <Link
             href="/signin"
-            className={`text-sm font-medium leading-6 ${solid ? 'text-ink hover:text-accent' : 'text-paper/90 hover:text-paper'}`}
+            className="text-sm font-medium leading-6 text-ink hover:text-accent"
           >
             Iniciar Sesión
           </Link>
@@ -83,7 +75,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-paper px-6 py-6 sm:max-w-sm sm:border-r sm:border-line">
+        <div id="mobile-navigation" className="lg:hidden fixed inset-0 z-50 bg-paper px-6 py-6 sm:max-w-sm sm:border-r sm:border-line">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <span className="sr-only">TravelPal</span>
@@ -95,6 +87,8 @@ export default function Navbar() {
             <button
               type="button"
               className="-m-2.5 rounded-md p-2.5 text-ink"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
               onClick={() => setMobileMenuOpen(false)}
             >
               <span className="sr-only">Cerrar menú</span>

@@ -255,6 +255,24 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("prioriza crear el primer gasto o presupuesto y no muestra análisis vacíos", async () => {
+    mount({
+      expensesResult: { data: [], error: null },
+      tripsResult: { data: [], error: null },
+      budgetsResult: { data: [], error: null },
+    });
+
+    render(<ExpensesPage />);
+
+    await screen.findByText("Mis Gastos");
+
+    expect(screen.queryByLabelText("Buscar gastos y presupuestos")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Moneda para las gráficas")).not.toBeInTheDocument();
+    expect(screen.queryByText("Previsto frente a real")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Registrar Primer Gasto/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Crear Presupuesto/i })).toBeInTheDocument();
+  });
+
   it("pide los select, filtros y orders de los handlers borrados", async () => {
     mount();
 

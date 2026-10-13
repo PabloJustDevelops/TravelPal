@@ -33,6 +33,19 @@ const tasks: Task[] = [
 ];
 
 describe("TaskBoard", () => {
+  it("no muestra la zona de borrado cuando no hay tareas que arrastrar", () => {
+    render(
+      <TaskBoard
+        tasks={[]}
+        onEditTask={jest.fn()}
+        onDeleteTask={jest.fn()}
+        onStatusChange={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Soltar para eliminar")).not.toBeInTheDocument();
+  });
+
   it("ofrece una selección accesible de estado para recorrer el tablero en móvil", () => {
     render(
       <TaskBoard

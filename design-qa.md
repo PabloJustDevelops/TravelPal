@@ -43,8 +43,8 @@ El formulario de inicio de sesión se capturó en producción local a 1440 × 90
 
 ## Capturas autenticadas del estado actual
 
-El CI 38283748961 generó ocho capturas nuevas del dashboard vacío y del detalle con actividad en claro/oscuro a 390/1440 px. Se descargaron e inspeccionaron: `docs/audits/2026-10-12-atlas-authenticated.md`. Confirman el alcance funcional actual y documentan oportunidades de compactación y ajustes de texto. El dashboard poblado comparable con la referencia sigue pendiente, junto con las capturas de las demás superficies. La falta de credenciales locales ya no impide obtener evidencia de la cuenta dedicada mediante CI.
+El CI 38283748961 generó ocho capturas nuevas del dashboard vacío y del detalle con actividad en claro/oscuro a 390/1440 px. Se descargaron e inspeccionaron: `docs/audits/2026-10-12-atlas-authenticated.md`. Confirman el alcance funcional actual y documentan oportunidades de compactación y ajustes de texto. La tarjeta vacía de itinerario ya se compactó; el dashboard poblado comparable con la referencia sigue pendiente, junto con las capturas de las demás superficies. La falta de credenciales locales ya no impide obtener evidencia de la cuenta dedicada mediante CI.
 
-Los ajustes de singular y horas del itinerario se corrigieron el 13 de octubre con una regresión que primero falló. Verificación local: 61 suites y 446 pruebas aprobadas, lint de los archivos cambiados, TypeScript y build correctos. Las ocho capturas conservan el estado previo al arreglo; el informe detalla ambos estados y sus límites.
+Los ajustes de singular y horas del itinerario se corrigieron el 13 de octubre con una regresión que primero falló. La tarjeta de itinerario vacía medía 398 px en Storybook; ahora mide 139 px en escritorio y 151 px en móvil, con una prueba que exige menos de 220 px. Evidencia: `docs/audits/2026-10-12-atlas-authenticated.md` y `docs/qa/audits/2026-10-13-global-ui-ux.md`. Verificación reciente: 61 suites/450 pruebas Jest, 8 ficheros/32 pruebas Storybook, 3 E2E públicos, type-check, lint y build aprobados. El dashboard poblado y la comparación con referencia continúan pendientes.
 
-final result: blocked
+Estado QA global: pendiente de captura autenticada poblada y comparación visual con la referencia.

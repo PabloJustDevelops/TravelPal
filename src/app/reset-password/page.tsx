@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 function ResetPasswordContent() {
   return (
-    <div className="min-h-screen flex bg-white">
+    <main className="min-h-screen flex bg-white">
       {/* Sección Izquierda - Imagen (Visible en desktop) */}
       <div className="hidden lg:block relative w-0 flex-1">
         <div className="absolute inset-0 h-full w-full bg-gray-900">
@@ -31,9 +31,9 @@ function ResetPasswordContent() {
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div className="mb-8">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            <h1 className="mt-6 text-3xl font-extrabold text-gray-900">
               Restablecer contraseña
-            </h2>
+            </h1>
             <p className="mt-2 text-sm text-gray-600">
               Ingresa tu nueva contraseña para recuperar el acceso
             </p>
@@ -43,12 +43,12 @@ function ResetPasswordContent() {
           
           <div className="mt-8 pt-6 border-t border-gray-100 text-center">
              <p className="text-xs text-gray-500">
-               © {new Date().getFullYear()} Gestión de Viajes. Todos los derechos reservados.
+               © {new Date().getFullYear()} TravelPal. Todos los derechos reservados.
              </p>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 

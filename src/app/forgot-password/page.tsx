@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function ForgotPasswordPage(): React.JSX.Element {
   return (
-    <div className="min-h-screen flex bg-white">
+    <main className="min-h-screen flex bg-white">
       {/* Sección Izquierda - Imagen (Visible en desktop) */}
       <div className="hidden lg:block relative w-0 flex-1">
         <div className="absolute inset-0 h-full w-full bg-gray-900">
@@ -32,9 +32,9 @@ export default function ForgotPasswordPage(): React.JSX.Element {
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div className="mb-8">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            <h1 className="mt-6 text-3xl font-extrabold text-gray-900">
               Recuperar contraseña
-            </h2>
+            </h1>
             <p className="mt-2 text-sm text-gray-600">
               ¿Ya te acordaste?{' '}
               <Link href="/signin" className="font-medium text-blue-600 hover:text-blue-500">
@@ -49,11 +49,11 @@ export default function ForgotPasswordPage(): React.JSX.Element {
           
           <div className="mt-8 pt-6 border-t border-gray-100 text-center">
              <p className="text-xs text-gray-500">
-               © {new Date().getFullYear()} Gestión de Viajes. Todos los derechos reservados.
+               © {new Date().getFullYear()} TravelPal. Todos los derechos reservados.
              </p>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

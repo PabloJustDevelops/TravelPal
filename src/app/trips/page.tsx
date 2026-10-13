@@ -22,6 +22,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import { logger } from "@/lib/logger";
 import { getErrorMessage, getLoadErrorMessage } from "@/lib/utils";
@@ -168,52 +169,54 @@ export default function TripsPage() {
           title="Mis Viajes"
           subtitle="Gestiona tus itinerarios y reservas"
           action={
-            <Link
-              href="/trips/new"
-              className={`${accentLinkClassName} min-h-11 gap-2`}
-            >
-              <PlusIcon aria-hidden="true" className="h-4 w-4" />
-              Nuevo viaje
-            </Link>
+            trips.length > 0 ? (
+              <Link
+                href="/trips/new"
+                className={`${accentLinkClassName} min-h-11 gap-2`}
+              >
+                <PlusIcon aria-hidden="true" className="h-4 w-4" />
+                Nuevo viaje
+              </Link>
+            ) : undefined
           }
         />
 
         {/* Filters */}
-        <section
-          aria-label="Filtros de viajes"
-          className="rounded-xl border border-line bg-paper p-4 sm:p-5"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            {/* Search */}
-            <div className="min-w-0 flex-1">
-              <Input
-                label="Buscar viajes"
-                type="search"
-                placeholder="Destino, origen, título o vuelo"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="min-h-11"
-              />
-            </div>
+        {trips.length > 0 && (
+          <section
+            aria-label="Filtros de viajes"
+            className="rounded-xl border border-line bg-paper p-4 sm:p-5"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Input
+                  label="Buscar viajes"
+                  type="search"
+                  placeholder="Destino, origen, título o vuelo"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="min-h-11"
+                />
+              </div>
 
-            {/* Status Filter */}
-            <div className="sm:w-56">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                aria-label="Filtrar por estado"
-                className={`${selectClassName} min-h-11`}
-              >
-                <option value="all">Todos los estados</option>
-                <option value="planned">Planificado</option>
-                <option value="confirmed">Confirmado</option>
-                <option value="completed">Completado</option>
-                <option value="cancelled">Cancelado</option>
-                <option value="upcoming">Próximos</option>
-              </select>
+              <div className="sm:w-56">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  aria-label="Filtrar por estado"
+                  className={`${selectClassName} min-h-11`}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="planned">Planificado</option>
+                  <option value="confirmed">Confirmado</option>
+                  <option value="completed">Completado</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="upcoming">Próximos</option>
+                </select>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Error State */}
         {error ? (
@@ -308,18 +311,20 @@ export default function TripsPage() {
             </Button>
           </section>
         ) : (
-          <section className="rounded-xl border border-dashed border-line bg-paper px-5 py-14 text-center" aria-live="polite">
-            <MapIcon aria-hidden="true" className="mx-auto h-10 w-10 text-accent" />
-            <h2 className="mt-4 text-xl font-semibold tracking-tight text-ink">No tienes viajes registrados</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Crea tu primer viaje para empezar a organizar fechas, actividades y reservas en un solo lugar.</p>
-            <Link
-              href="/trips/new"
-              className={`${accentLinkClassName} mt-6 min-h-11 gap-2`}
-            >
-              <PlusIcon aria-hidden="true" className="h-4 w-4" />
-              Crear primer viaje
-            </Link>
-          </section>
+          <EmptyState
+            icon={<MapIcon className="h-7 w-7" />}
+            title="No tienes viajes registrados"
+            description="Crea tu primer viaje para empezar a organizar fechas, actividades y reservas en un solo lugar."
+            action={(
+              <Link
+                href="/trips/new"
+                className={`${accentLinkClassName} min-h-11 gap-2`}
+              >
+                <PlusIcon aria-hidden="true" className="h-4 w-4" />
+                Crear primer viaje
+              </Link>
+            )}
+          />
         )}
       </div>
     </DashboardLayout>
