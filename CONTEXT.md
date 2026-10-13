@@ -15,14 +15,14 @@ presupuestos, notas, tareas, reservas, alertas y analíticas.
 ## Commands
 
 ```bash
-npm run dev          # Next dev
-npm run lint         # ESLint
-npm run type-check   # tsc --noEmit
-npm run test:ci      # Jest (CI)
-npm run test:e2e     # Playwright E2E (ver docs/TESTING.md)
-npm run build        # next build
-npm run preview      # OpenNext build + wrangler dev
-npm run deploy       # OpenNext build + wrangler deploy
+pnpm run dev          # Next dev
+pnpm run lint         # ESLint
+pnpm run type-check   # tsc --noEmit
+pnpm run test:ci      # Jest (CI)
+pnpm run test:e2e     # Playwright E2E (ver docs/TESTING.md)
+pnpm run build        # next build
+pnpm run preview      # OpenNext build + wrangler dev
+pnpm run deploy       # OpenNext build + wrangler deploy
 ```
 
 ## Data model — single source of truth

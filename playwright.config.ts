@@ -53,7 +53,7 @@ export default defineConfig({
   // Contra produccion no se arranca nada: se prueba lo desplegado.
   webServer: isLocalTarget
     ? {
-        command: 'npm run dev',
+        command: 'pnpm run dev',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
