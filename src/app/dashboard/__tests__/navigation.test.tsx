@@ -25,8 +25,10 @@ type QueryResult = { data?: unknown; error?: unknown };
 interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
+  neq: jest.Mock;
   order: jest.Mock;
   gte: jest.Mock;
+  limit: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
@@ -36,8 +38,10 @@ function makeChain(result: QueryResult): DbChain {
   const chain = {} as DbChain;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
+  chain.neq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
   chain.gte = jest.fn(() => chain);
+  chain.limit = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
@@ -92,10 +96,13 @@ describe('DashboardPage Navigation', () => {
     const tripsChain = makeChain({ data: [trip], error: null });
     const expensesChain = makeChain({ data: [expense], error: null });
     const budgetsChain = makeChain({ data: [budget], error: null });
+    const tasksChain = makeChain({ data: [], error: null });
     const from = jest.fn((table: string) => {
       if (table === 'trips') return tripsChain;
       if (table === 'expenses') return expensesChain;
-      return budgetsChain;
+      if (table === 'budgets') return budgetsChain;
+      if (table === 'tasks') return tasksChain;
+      return makeChain({ data: [], error: null });
     });
     mockedClient.mockReturnValue({ database: { from } });
   });

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import {
   PlusIcon,
   ClockIcon,
@@ -21,6 +22,7 @@ import {
   cn,
   CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
+  formatCurrency,
 } from '../../lib/utils';
 import { queryErrorKind } from '../../lib/insforge-query';
 import { logger } from '@/lib/logger';
@@ -75,6 +77,7 @@ interface ItineraryPlannerProps {
   onUpdateActivity: (activityId: string, activity: PlannerActivityDraft) => Promise<void>;
   onDeleteActivity: (activityId: string) => Promise<void>;
   className?: string;
+  headingLevel?: 2 | 3;
 }
 
 interface SaveOperation {
@@ -89,7 +92,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   onCreateActivity,
   onUpdateActivity,
   onDeleteActivity,
-  className = ''
+  className = '',
+  headingLevel = 2,
 }) => {
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [isAddingActivity, setIsAddingActivity] = useState(false);
@@ -211,20 +215,27 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
     return ACTIVITY_CATEGORIES.find(cat => cat.value === category) || ACTIVITY_CATEGORIES[5];
   };
 
-  // Calcular costo total del día
-  const getDayTotalCost = (activities: PlannerActivity[]) => {
-    return activities.reduce((total, activity) => total + (activity.cost || 0), 0);
+  // Los costos se agrupan por moneda; no hay una conversión definida para sumarlos.
+  const getDayCostsByCurrency = (activities: PlannerActivity[]) => {
+    const totals = new Map<string, number>();
+    for (const activity of activities) {
+      if (typeof activity.cost !== 'number' || !Number.isFinite(activity.cost)) continue;
+      const currency = activity.currency || 'EUR';
+      totals.set(currency, (totals.get(currency) ?? 0) + activity.cost);
+    }
+    return [...totals.entries()];
   };
 
   const isSaving = saving !== null;
   const isActivityModalOpen = isAddingActivity || editingActivity !== null;
+  const PlannerHeading = headingLevel === 3 ? 'h3' : 'h2';
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Planificador de Itinerario</h2>
-        <p className="text-gray-600">
+        <PlannerHeading className="text-xl font-semibold text-ink">Planificador de Itinerario</PlannerHeading>
+        <p className="text-muted">
           {formatDate(new Date(startDate))} - {formatDate(new Date(endDate))}
         </p>
       </div>
@@ -242,43 +253,52 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
           const isExpanded = expandedDays.has(date);
           const dayDate = parseISO(date);
           const dayName = dayDate.toLocaleDateString('es-ES', { weekday: 'long' });
-          const totalCost = getDayTotalCost(dayItinerary.activities);
+          const dayCosts = getDayCostsByCurrency(dayItinerary.activities);
 
           return (
             <Card key={date} className="overflow-hidden">
               {/* Header del día */}
-              <div
-                className="p-4 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => toggleDayExpanded(date)}
-              >
+              <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
+                  <h3 className="min-w-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      aria-expanded={isExpanded}
+                      aria-controls={`itinerary-day-${date}`}
+                      onClick={() => toggleDayExpanded(date)}
+                      className="h-auto min-h-11 items-center gap-2 px-0 py-0 text-left"
+                    >
                       {isExpanded ? (
-                        <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                        <ChevronUpIcon className="h-5 w-5 shrink-0 text-muted" aria-hidden="true" />
                       ) : (
-                        <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                        <ChevronDownIcon className="h-5 w-5 shrink-0 text-muted" aria-hidden="true" />
                       )}
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
+                      <span>
+                        <span className="block font-semibold text-ink">
                           Día {index + 1} - {dayName}
-                        </h3>
-                        <p className="text-sm text-gray-600">
+                        </span>
+                        <span className="block text-sm font-normal text-muted">
                           {formatDate(dayDate)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                        </span>
+                      </span>
+                    </Button>
+                  </h3>
 
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">
-                        {dayItinerary.activities.length} actividades
+                </div>
+
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div className="hidden text-right sm:block">
+                      <p className="text-sm text-muted">
+                        {dayItinerary.activities.length} {dayItinerary.activities.length === 1 ? 'actividad' : 'actividades'}
                       </p>
-                      {totalCost > 0 && (
-                        <p className="text-sm font-medium text-gray-900">
-                          ${totalCost.toFixed(2)}
-                        </p>
+                      {dayCosts.length > 0 && (
+                        <ul aria-label="Costes de actividades por moneda" className="text-sm font-medium text-ink">
+                          {dayCosts.map(([currency, total]) => (
+                            <li key={currency}>{formatCurrency(total, currency)}</li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                     <Button
@@ -295,12 +315,11 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                       Agregar
                     </Button>
                   </div>
-                </div>
               </div>
 
               {/* Contenido del día */}
               {isExpanded && (
-                <div className="p-4 space-y-4">
+                <div id={`itinerary-day-${date}`} className="space-y-4 p-4">
                   {/* Actividades */}
                   {dayItinerary.activities.length > 0 ? (
                     <div className="space-y-3">
@@ -310,67 +329,68 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                         return (
                           <div
                             key={activity.id}
-                            className="flex items-start space-x-3 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                            className="flex items-start space-x-3 rounded-lg border border-line bg-surface p-3 transition-shadow hover:shadow-sm"
                           >
                             <div className="flex-shrink-0">
                               <CategoryIcon
                                 category={category.value}
-                                className="h-5 w-5 text-gray-600"
+                                className="h-5 w-5 text-muted"
                               />
                             </div>
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-medium text-gray-900">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="break-words font-medium text-ink">
                                     {activity.title}
                                   </h4>
                                   {activity.description && (
-                                    <p className="text-sm text-gray-600 mt-1">
+                                    <p className="mt-1 text-sm text-muted">
                                       {activity.description}
                                     </p>
                                   )}
 
-                                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                    <div className="flex items-center space-x-1">
+                                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-x-1">
                                       <ClockIcon className="h-4 w-4" />
-                                      <span>{activity.startTime} - {activity.endTime}</span>
+                                      <span>{activity.startTime.slice(0, 5)} - {activity.endTime.slice(0, 5)}</span>
                                     </div>
                                     {activity.location && (
-                                      <div className="flex items-center space-x-1">
+                                      <div className="flex min-w-0 flex-wrap items-center gap-x-1 break-words">
                                         <MapPinIcon className="h-4 w-4" />
                                         <span>{activity.location}</span>
                                       </div>
                                     )}
-                                    {activity.cost && (
-                                      <span className="font-medium text-gray-900">
-                                        ${activity.cost}
+                                    {typeof activity.cost === 'number' && (
+                                      <span className="font-medium text-ink">
+                                        {formatCurrency(activity.cost, activity.currency || 'EUR')}
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div className="flex items-center space-x-2 ml-4">
-                                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${category.color}`}>
+                                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:ml-4 sm:shrink-0 sm:flex-nowrap">
+                                  <span className={`max-w-full break-words rounded-full px-2 py-1 text-xs font-medium ${category.color}`}>
                                     {category.label}
                                   </span>
                                   <Button
                                     variant="ghost"
-                                    size="sm"
+                                    size="md"
                                     aria-label={`Editar ${activity.title}`}
                                     disabled={isSaving}
                                     onClick={() => setEditingActivity(activity)}
+                                    className="min-h-11 min-w-11 shrink-0 p-0"
                                   >
                                     <PencilIcon className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
-                                    size="sm"
+                                    size="md"
                                     aria-label={`Eliminar ${activity.title}`}
                                     disabled={isSaving}
                                     loading={saving?.kind === 'delete' && saving.activityId === activity.id}
                                     onClick={() => handleActivityDelete(activity)}
-                                    className="text-red-600 hover:text-red-700"
+                                    className="min-h-11 min-w-11 shrink-0 p-0 text-red-600 hover:text-red-700"
                                   >
                                     <TrashIcon className="h-4 w-4" />
                                   </Button>
@@ -382,7 +402,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                       })}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="py-8 text-center text-muted">
                       <p>No hay actividades planificadas para este día</p>
                       <Button
                         variant="outline"
@@ -437,6 +457,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
   saving = false,
   error = ''
 }) => {
+  const id = useId();
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: activity?.title || '',
     description: activity?.description || '',
@@ -469,19 +491,24 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <Dialog open onClose={onCancel} className="relative z-50">
+      <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <DialogPanel className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-paper p-6 text-ink shadow-xl">
+          <DialogTitle as="h2" className="mb-4 font-sans text-xl font-semibold text-ink">
             {activity ? 'Editar Actividad' : 'Nueva Actividad'}
-          </h3>
+          </DialogTitle>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${id}-title`} className="mb-1 block text-sm font-medium text-ink">
                 Título *
               </label>
               <Input
+                id={`${id}-title`}
+                ref={titleInputRef}
+                autoFocus
                 value={formData.title}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Nombre de la actividad"
@@ -490,10 +517,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${id}-description`} className="mb-1 block text-sm font-medium text-ink">
                 Descripción
               </label>
               <textarea
+                id={`${id}-description`}
                 value={formData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Descripción opcional"
@@ -504,20 +532,22 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`${id}-start-time`} className="mb-1 block text-sm font-medium text-ink">
                   Hora inicio
                 </label>
                 <Input
+                  id={`${id}-start-time`}
                   type="time"
                   value={formData.startTime}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`${id}-end-time`} className="mb-1 block text-sm font-medium text-ink">
                   Hora fin
                 </label>
                 <Input
+                  id={`${id}-end-time`}
                   type="time"
                   value={formData.endTime}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
@@ -526,10 +556,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${id}-location`} className="mb-1 block text-sm font-medium text-ink">
                 Ubicación
               </label>
               <Input
+                id={`${id}-location`}
                 value={formData.location}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                 placeholder="Dirección o lugar"
@@ -537,10 +568,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${id}-category`} className="mb-1 block text-sm font-medium text-ink">
                 Categoría
               </label>
               <select
+                id={`${id}-category`}
                 value={formData.category}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(prev => ({ ...prev, category: toPlannerCategory(e.target.value) }))}
                 className={selectClassName}
@@ -555,10 +587,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`${id}-cost`} className="mb-1 block text-sm font-medium text-ink">
                   Costo
                 </label>
                 <Input
+                  id={`${id}-cost`}
                   type="number"
                   step="0.01"
                   value={formData.cost}
@@ -567,10 +600,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`${id}-currency`} className="mb-1 block text-sm font-medium text-ink">
                   Moneda
                 </label>
                 <select
+                  id={`${id}-currency`}
                   value={formData.currency}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
                   className={selectClassName}
@@ -605,8 +639,9 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               </Button>
             </div>
           </form>
+          </DialogPanel>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 };

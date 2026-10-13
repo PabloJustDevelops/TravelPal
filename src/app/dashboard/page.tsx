@@ -3,13 +3,24 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { createInsforgeClient, Trip, Expense } from "@/lib/insforge";
+import {
+  createInsforgeClient,
+  type Expense,
+  type Trip,
+} from "@/lib/insforge";
 import {
   queryErrorKind,
   withQueryTimeout,
   type QueryErrorKind,
 } from "@/lib/insforge-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import NextTrip, {
+  localToday,
+  selectNextTrip,
+  type DashboardActivity,
+  type DashboardExpense,
+  type DashboardTask,
+} from "@/components/dashboard/NextTrip";
 import TripChart from "@/components/charts/TripChart";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -38,7 +49,7 @@ import { motion } from "framer-motion";
 
 // Skeleton Component
 const DashboardSkeleton = () => (
-  <div className="space-y-6 animate-pulse">
+  <div role="status" aria-label="Cargando dashboard" aria-busy="true" className="space-y-6 animate-pulse">
     <div className="h-8 bg-surface-strong rounded w-1/3"></div>
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {[...Array(4)].map((_, i) => (
@@ -69,11 +80,14 @@ const DashboardSkeleton = () => (
 
 interface Budget {
   id: string;
+  trip_id?: string;
   name: string;
   total_amount: number;
   spent_amount: number;
   currency: string;
   category: string;
+  start_date: string;
+  end_date: string;
 }
 
 const dateRanges = [
@@ -107,14 +121,16 @@ export default function DashboardPage() {
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  // Las tres lecturas del GET borrado llegan del SDK, tabla a tabla: ya no hay
-  // ningun fetch en la pagina. El rango solo acota viajes (por salida) y gastos
-  // (por fecha); los presupuestos se leen completos porque no tienen fecha de
-  // referencia util para el panel.
+  // Las lecturas llegan del SDK, tabla a tabla. El rango acota viajes y gastos
+  // del informe; las tareas son generales y las actividades se cargan solo
+  // para el próximo viaje real cuando existe.
   const [data, setData] = useState<{
     trips: Trip[];
     expenses: Expense[];
+    budgetExpenses: DashboardExpense[];
     budgets: Budget[];
+    tasks: DashboardTask[];
+    activities: DashboardActivity[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{
@@ -169,26 +185,68 @@ export default function DashboardPage() {
           .order("date", { ascending: false });
         if (startISO) expensesQuery = expensesQuery.gte("date", startISO);
 
+        // El informe conserva su rango; los presupuestos deben contrastarse
+        // con todos los gastos del usuario, igual que en /expenses.
+        const budgetExpensesQuery = startISO
+          ? insforge
+              .database.from("expenses")
+              .select("id, trip_id, date, amount, currency, category")
+              .eq("user_id", userId)
+              .order("date", { ascending: false })
+          : Promise.resolve(null);
+
         const budgetsQuery = insforge
           .database.from("budgets")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: false });
 
-        const [tripsRes, expensesRes, budgetsRes] = await withQueryTimeout(
-          Promise.all([tripsQuery, expensesQuery, budgetsQuery]),
+        const tasksQuery = insforge
+          .database.from("tasks")
+          .select("id, title, status, due_date")
+          .eq("user_id", userId)
+          .neq("status", "completed")
+          .order("due_date", { ascending: true })
+          .limit(6);
+
+        const [tripsRes, expensesRes, budgetsRes, tasksRes, budgetExpensesRes] = await withQueryTimeout(
+          Promise.all([tripsQuery, expensesQuery, budgetsQuery, tasksQuery, budgetExpensesQuery]),
           { label: "dashboard" },
         );
 
         if (tripsRes.error) throw tripsRes.error;
         if (expensesRes.error) throw expensesRes.error;
         if (budgetsRes.error) throw budgetsRes.error;
+        if (tasksRes.error) throw tasksRes.error;
+        if (budgetExpensesRes?.error) throw budgetExpensesRes.error;
+
+        const tripsData = (tripsRes.data as Trip[]) ?? [];
+        const nextTrip = selectNextTrip(tripsData, localToday());
+        let activitiesData: DashboardActivity[] = [];
+        if (nextTrip) {
+          const activitiesRes = await withQueryTimeout(
+            insforge
+              .database.from("itinerary_activities")
+              .select("id, trip_id, date, title, description, start_time, location, completed")
+              .eq("user_id", userId)
+              .eq("trip_id", nextTrip.id)
+              .order("date", { ascending: true })
+              .order("order_index", { ascending: true })
+              .limit(3),
+            { label: "dashboard:itinerary" },
+          );
+          if (activitiesRes.error) throw activitiesRes.error;
+          activitiesData = (activitiesRes.data as DashboardActivity[]) ?? [];
+        }
 
         if (!active) return;
         setData({
-          trips: (tripsRes.data as Trip[]) ?? [],
+          trips: tripsData,
           expenses: (expensesRes.data as Expense[]) ?? [],
+          budgetExpenses: ((budgetExpensesRes?.data ?? expensesRes.data) as DashboardExpense[]) ?? [],
           budgets: (budgetsRes.data as Budget[]) ?? [],
+          tasks: (tasksRes.data as DashboardTask[]) ?? [],
+          activities: activitiesData,
         });
       } catch (err) {
         if (!active) return;
@@ -357,11 +415,13 @@ export default function DashboardPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <ErrorState
-          message={error}
-          onRetry={() => refetch()}
-          title="Error al cargar el dashboard"
-        />
+        <div role="alert">
+          <ErrorState
+            message={error}
+            onRetry={() => refetch()}
+            title="Error al cargar el dashboard"
+          />
+        </div>
       </DashboardLayout>
     );
   }
@@ -370,15 +430,15 @@ export default function DashboardPage() {
     <DashboardLayout>
       <motion.div
         ref={reportRef}
-        className="space-y-6"
+        className="space-y-6 font-sans"
         variants={container}
-        initial="hidden"
+        initial={false}
         animate="show"
       >
         {/* Cabecera: bienvenida y menu de exportacion */}
         <PageTitle
           title={`Bienvenido, ${user?.full_name?.split(" ")[0] || "Viajero"}`}
-          subtitle="Resumen de tus viajes. Filtra y exporta el informe."
+          subtitle="Tus viajes, planes y recuerdos, en un solo lugar."
           action={
             <Menu
               as="div"
@@ -447,6 +507,14 @@ export default function DashboardPage() {
           }
         />
 
+        <NextTrip
+          trips={trips}
+          activities={data?.activities ?? []}
+          tasks={data?.tasks ?? []}
+          budgets={data?.budgets ?? []}
+          expenses={data?.budgetExpenses ?? []}
+        />
+
         {/* Filtros: moneda y rango de fechas */}
         <div
           className="bg-surface p-4 rounded-lg shadow-sm border border-line"
@@ -455,10 +523,9 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
               <FunnelIcon className="h-5 w-5 text-muted" />
-              <span className="text-sm text-muted">
-                Moneda:
-              </span>
+              <label htmlFor="dashboard-currency" className="text-sm text-muted">Moneda:</label>
               <select
+                id="dashboard-currency"
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value)}
                 className={cn(fieldClassName, "h-auto w-auto")}
@@ -471,10 +538,9 @@ export default function DashboardPage() {
               </select>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted">
-                Rango de fechas:
-              </span>
+              <label htmlFor="dashboard-range" className="text-sm text-muted">Rango de fechas:</label>
               <select
+                id="dashboard-range"
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
                 className={cn(fieldClassName, "h-auto w-auto")}

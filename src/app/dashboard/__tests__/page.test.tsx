@@ -33,8 +33,10 @@ type QueryResult = { data?: unknown; error?: unknown };
 interface DbChain {
   select: jest.Mock;
   eq: jest.Mock;
+  neq: jest.Mock;
   order: jest.Mock;
   gte: jest.Mock;
+  limit: jest.Mock;
   then: (resolve: (value: QueryResult) => unknown) => Promise<unknown>;
 }
 
@@ -44,8 +46,10 @@ function makeChain(result: QueryResult): DbChain {
   const chain = {} as DbChain;
   chain.select = jest.fn(() => chain);
   chain.eq = jest.fn(() => chain);
+  chain.neq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
   chain.gte = jest.fn(() => chain);
+  chain.limit = jest.fn(() => chain);
   chain.then = (resolve) => Promise.resolve(result).then(resolve);
   return chain;
 }
@@ -78,11 +82,41 @@ const expense = {
 
 const budget = {
   id: "budget-1",
+  trip_id: "trip-1",
   name: "Presupuesto Roma",
   total_amount: 1500,
   spent_amount: 420,
   currency: "USD",
   category: "travel",
+  start_date: "2026-05-01",
+  end_date: "2026-05-07",
+};
+
+const itineraryActivity = {
+  id: "activity-1",
+  user_id: "user-123",
+  trip_id: "trip-1",
+  title: "Paseo por Trastevere",
+  description: "Recorrido a pie",
+  date: "2099-05-02",
+  start_time: "09:30",
+  order_index: 0,
+  completed: false,
+};
+
+const pendingTask = {
+  id: "task-1",
+  user_id: "user-123",
+  title: "Confirmar alojamiento",
+  status: "pending",
+  priority: "high",
+  due_date: "2099-05-03T09:00:00.000Z",
+};
+
+const futureTrip = {
+  ...trip,
+  departure_date: "2099-05-01",
+  return_date: "2099-05-07",
 };
 
 const mockedClient = createInsforgeClient as jest.Mock;
@@ -90,7 +124,10 @@ const mockedClient = createInsforgeClient as jest.Mock;
 describe("DashboardPage con el SDK en el navegador", () => {
   let tripsChain: DbChain;
   let expensesChain: DbChain;
+  let expensesChains: DbChain[];
   let budgetsChain: DbChain;
+  let tasksChain: DbChain;
+  let activitiesChain: DbChain;
   let fetchMock: jest.Mock;
 
   // Las tres lecturas del GET borrado llegan del SDK, tabla a tabla: ya no hay
@@ -98,19 +135,36 @@ describe("DashboardPage con el SDK en el navegador", () => {
   function mount({
     tripsResult = { data: [trip], error: null },
     expensesResult = { data: [expense], error: null },
+    budgetExpensesResult = { data: [expense], error: null },
     budgetsResult = { data: [budget], error: null },
+    tasksResult = { data: [pendingTask], error: null },
+    activitiesResult = { data: [itineraryActivity], error: null },
   }: {
     tripsResult?: QueryResult;
     expensesResult?: QueryResult;
+    budgetExpensesResult?: QueryResult;
     budgetsResult?: QueryResult;
+    tasksResult?: QueryResult;
+    activitiesResult?: QueryResult;
   } = {}) {
     tripsChain = makeChain(tripsResult);
     expensesChain = makeChain(expensesResult);
+    expensesChains = [expensesChain];
     budgetsChain = makeChain(budgetsResult);
+    tasksChain = makeChain(tasksResult);
+    activitiesChain = makeChain(activitiesResult);
+    let expenseQueryIndex = 0;
     const from = jest.fn((table: string) => {
       if (table === "trips") return tripsChain;
-      if (table === "expenses") return expensesChain;
-      return budgetsChain;
+      if (table === "expenses") {
+        if (expenseQueryIndex++ === 0) return expensesChain;
+        const chain = makeChain(budgetExpensesResult);
+        expensesChains.push(chain);
+        return chain;
+      }
+      if (table === "budgets") return budgetsChain;
+      if (table === "tasks") return tasksChain;
+      return activitiesChain;
     });
     mockedClient.mockReturnValue({ database: { from } });
     return { from };
@@ -144,6 +198,33 @@ describe("DashboardPage con el SDK en el navegador", () => {
     expect(from).toHaveBeenCalledWith("budgets");
     // Y ni una llamada al BFF: el camino migrado ya no pasa por fetch.
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("integra el itinerario del próximo viaje, tareas generales y presupuestos vinculados", async () => {
+    const { from } = mount({ tripsResult: { data: [futureTrip], error: null } });
+
+    render(<DashboardPage />);
+
+    expect(await screen.findByRole("heading", { name: "Itinerario" })).toBeInTheDocument();
+    expect(screen.getByText("Paseo por Trastevere")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tareas pendientes" })).toBeInTheDocument();
+    expect(screen.getByText("Confirmar alojamiento")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Presupuesto del viaje" })).toBeInTheDocument();
+    expect(screen.getByText("Presupuesto Roma")).toBeInTheDocument();
+
+    expect(from).toHaveBeenCalledWith("tasks");
+    expect(from).toHaveBeenCalledWith("itinerary_activities");
+    expect(tasksChain.select).toHaveBeenCalledWith("id, title, status, due_date");
+    expect(tasksChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(tasksChain.neq).toHaveBeenCalledWith("status", "completed");
+    expect(tasksChain.order).toHaveBeenCalledWith("due_date", { ascending: true });
+    expect(tasksChain.limit).toHaveBeenCalledWith(6);
+    expect(activitiesChain.select).toHaveBeenCalledWith(
+      "id, trip_id, date, title, description, start_time, location, completed",
+    );
+    expect(activitiesChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(activitiesChain.eq).toHaveBeenCalledWith("trip_id", "trip-1");
+    expect(activitiesChain.limit).toHaveBeenCalledWith(3);
   });
 
   it("pide el select, el filtro por usuario y el order de las tres consultas", async () => {
@@ -198,9 +279,30 @@ describe("DashboardPage con el SDK en el navegador", () => {
         expect.any(String),
       );
     });
-    expect(expensesChain.gte).toHaveBeenCalledWith("date", expect.any(String));
+    expect(expensesChains.some((chain) =>
+      chain.gte.mock.calls.some(([column]) => column === "date"),
+    )).toBe(true);
     expect(budgetsChain.gte).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("mantiene el rango del informe y carga gastos completos para el gasto real de presupuestos", async () => {
+    mount();
+
+    render(<DashboardPage />);
+    await screen.findByText("Escapada a Roma");
+    fireEvent.change(screen.getByDisplayValue("Todo el tiempo"), {
+      target: { value: "30" },
+    });
+
+    await waitFor(() => expect(expensesChains).toHaveLength(3));
+
+    expect(expensesChains[1].gte).toHaveBeenCalledWith("date", expect.any(String));
+    expect(expensesChains[2].select).toHaveBeenCalledWith(
+      "id, trip_id, date, amount, currency, category",
+    );
+    expect(expensesChains[2].eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(expensesChains[2].gte).not.toHaveBeenCalled();
   });
 
   it("no se traga el error del SDK y ofrece reintentar por el SDK", async () => {
@@ -213,6 +315,7 @@ describe("DashboardPage con el SDK en el navegador", () => {
         "Error al cargar los datos. Por favor, intenta recargar.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Error al cargar el dashboard");
 
     fireEvent.click(screen.getByText("Reintentar"));
 

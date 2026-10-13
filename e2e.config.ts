@@ -17,6 +17,7 @@ const app = {
         NEXT_PUBLIC_INSFORGE_ANON_KEY: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY,
         INSFORGE_API_KEY: process.env.INSFORGE_API_KEY,
         NEXT_PUBLIC_LOG_LEVEL: 'warn',
+        E2E_DISABLE_DEV_INDICATORS: '1',
       }).filter((entry): entry is [string, string] => entry[1] !== undefined)),
     },
   } : {}),

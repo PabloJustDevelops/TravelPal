@@ -18,9 +18,9 @@ import {
   isToday,
   addWeeks,
   subWeeks,
-  parseISO
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Button from '../ui/Button';
 import { 
   DndContext, 
   useDraggable, 
@@ -78,7 +78,7 @@ const DraggableEvent = ({
   event: CalendarEvent;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onContextMenu?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onOpenMenu?: (event: CalendarEvent, x: number, y: number) => void;
+  onOpenMenu?: (event: CalendarEvent, x: number, y: number, returnFocusTo?: HTMLElement) => void;
   isDragging?: boolean;
 }) => {
   const { attributes, listeners, setNodeRef } = useDraggable({
@@ -110,7 +110,7 @@ const DraggableEvent = ({
       e.preventDefault();
       e.stopPropagation();
       const rect = nodeRef.current?.getBoundingClientRect();
-      if (rect) onOpenMenu?.(event, rect.left, rect.bottom);
+      if (rect) onOpenMenu?.(event, rect.left, rect.bottom, nodeRef.current ?? undefined);
     }
   };
 
@@ -118,7 +118,7 @@ const DraggableEvent = ({
     const { clientX, clientY } = e.touches[0];
     longPressTimer.current = setTimeout(() => {
       longPressAt.current = Date.now();
-      onOpenMenu?.(event, clientX, clientY);
+      onOpenMenu?.(event, clientX, clientY, nodeRef.current ?? undefined);
     }, LONG_PRESS_MS);
   };
 
@@ -143,25 +143,26 @@ const DraggableEvent = ({
       onTouchEnd={cancelLongPress}
       onTouchMove={cancelLongPress}
       onTouchCancel={cancelLongPress}
+      aria-label={`${event.title}${event.time ? `, ${event.time.substring(0, 5)}` : ''}${event.description ? `, ${event.description}` : ''}`}
       className={`
-        group flex items-center gap-1 p-1 rounded cursor-grab active:cursor-grabbing
-        hover:opacity-90 transition-all shadow-sm mb-1
-        ${event.color} border-l-2 border-white/20 relative
+        group flex min-h-11 min-w-0 items-center gap-1 rounded-md border border-ink/10 px-1.5 py-1
+        cursor-grab shadow-sm transition-colors hover:brightness-95 active:cursor-grabbing
+        ${event.color} relative
         ${isDragging ? 'opacity-30' : ''}
       `}
       title={`${event.title}${event.time ? ` - ${event.time}` : ''}\n${event.description || ''}`}
     >
       {event.icon && (
-        <span className="text-white/90 flex-shrink-0 w-3 h-3">
+        <span className="flex-shrink-0 text-current/90">
           {event.icon}
         </span>
       )}
       {event.time && (
-        <span className="text-[10px] font-medium opacity-90 whitespace-nowrap bg-black/10 px-1 rounded">
+        <span className="hidden whitespace-nowrap text-xs font-semibold text-current sm:inline">
           {event.time.substring(0, 5)}
         </span>
       )}
-      <span className="text-xs font-medium truncate flex-1 text-white">
+      <span className="min-w-0 flex-1 truncate text-xs font-medium text-current">
         {event.title}
       </span>
     </div>
@@ -179,16 +180,16 @@ const EventOverlay = ({ event }: { event: CalendarEvent }) => {
       `}
     >
       {event.icon && (
-        <span className="text-white/90 flex-shrink-0 w-3 h-3">
+        <span className="flex-shrink-0 text-current/90">
           {event.icon}
         </span>
       )}
       {event.time && (
-        <span className="text-[10px] font-medium opacity-90 whitespace-nowrap bg-black/10 px-1 rounded">
+        <span className="whitespace-nowrap text-xs font-semibold text-current">
           {event.time.substring(0, 5)}
         </span>
       )}
-      <span className="text-xs font-medium truncate flex-1 text-white">
+      <span className="min-w-0 flex-1 truncate text-xs font-medium text-current">
         {event.title}
       </span>
     </div>
@@ -240,6 +241,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, event: CalendarEvent } | null>(null);
   const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const contextReturnRef = useRef<HTMLElement | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -266,7 +268,8 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   // El menu se coloca con coordenadas del puntero. A 360px un clic cerca del borde derecho o
   // inferior lo dejaba fuera de la pantalla, asi que se limita al viewport.
-  const openEventMenu = (event: CalendarEvent, x: number, y: number) => {
+  const openEventMenu = (event: CalendarEvent, x: number, y: number, returnFocusTo?: HTMLElement) => {
+    contextReturnRef.current = returnFocusTo ?? null;
     const menu = { width: 160, height: 44 };
     setContextMenu({
       x: Math.max(8, Math.min(x, window.innerWidth - menu.width - 8)),
@@ -278,7 +281,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const handleContextMenu = (e: React.MouseEvent, event: CalendarEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    openEventMenu(event, e.clientX, e.clientY);
+    openEventMenu(event, e.clientX, e.clientY, e.currentTarget as HTMLElement);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -359,9 +362,11 @@ export const Calendar: React.FC<CalendarProps> = ({
     return normalizedEvents.filter(event => event.date === dayStr);
   };
 
+  const hasEventsInPeriod = days.some((day) => getEventsForDay(day).length > 0);
+
   const renderMonthView = () => (
-    <div className="grid grid-cols-7 border-l border-t border-line bg-surface">
-      {days.map((day, idx) => {
+    <div className="grid grid-cols-1 border-l border-t border-line bg-surface sm:grid-cols-7">
+      {days.map((day) => {
         const dayEvents = getEventsForDay(day);
         const isSelected = selectedDate && isSameDay(day, selectedDate);
         const isTodayDay = isToday(day);
@@ -372,8 +377,8 @@ export const Calendar: React.FC<CalendarProps> = ({
             key={day.toISOString()}
             day={day}
             className={`
-              min-h-[120px] p-2 border-r border-b border-line cursor-pointer 
-              transition-colors relative hover:bg-surface-strong
+              relative grid min-h-[4.5rem] grid-cols-[5rem_minmax(0,1fr)] gap-2 border-r border-b border-line p-2
+              transition-colors hover:bg-surface-strong sm:block sm:min-h-[120px]
               ${!isCurrentMonth ? 'bg-surface-strong/50 text-muted' : 'text-ink'}
               ${isSelected ? 'bg-accent-soft/50' : ''}
             `}
@@ -383,18 +388,29 @@ export const Calendar: React.FC<CalendarProps> = ({
               onAddEvent?.(day);
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span
+            <div className="flex items-start gap-1 sm:mb-2 sm:justify-between">
+              <span className="sm:hidden text-xs font-medium capitalize">
+                {format(day, 'EEE', { locale: es })}
+              </span>
+              <button
+                type="button"
+                aria-label={`Seleccionar el ${format(day, "EEEE d 'de' MMMM yyyy", { locale: es })}`}
+                aria-pressed={Boolean(isSelected)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDateSelect?.(day);
+                }}
                 className={`
-                  text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
+                  inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-sm font-medium
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1
                   ${isTodayDay ? 'bg-accent text-on-accent shadow-sm' : ''}
                 `}
               >
                 {format(day, 'd')}
-              </span>
+              </button>
             </div>
             
-            <div className="space-y-1 overflow-y-auto max-h-[90px] custom-scrollbar">
+            <div className="min-w-0 space-y-1 sm:max-h-[90px] sm:overflow-y-auto">
               {dayEvents.map(event => (
                 <DraggableEvent
                   key={event.id}
@@ -416,7 +432,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   );
 
   const renderWeekView = () => (
-    <div className="grid grid-cols-7 border-l border-t border-line bg-surface h-[600px]">
+    <div className="grid grid-cols-1 border-l border-t border-line bg-surface sm:grid-cols-7">
       {days.map((day) => {
         const dayEvents = getEventsForDay(day);
         const isTodayDay = isToday(day);
@@ -426,7 +442,8 @@ export const Calendar: React.FC<CalendarProps> = ({
             key={day.toISOString()}
             day={day}
             className={`
-              border-r border-b border-line p-2 overflow-y-auto
+              relative grid min-h-[4.5rem] grid-cols-[5rem_minmax(0,1fr)] gap-2 border-r border-b border-line p-2
+              sm:block sm:min-h-[300px] sm:overflow-y-auto
               ${isTodayDay ? 'bg-accent-soft/30' : ''}
             `}
             onClick={() => onDateSelect?.(day)}
@@ -435,16 +452,24 @@ export const Calendar: React.FC<CalendarProps> = ({
               onAddEvent?.(day);
             }}
           >
-             <div className="text-center mb-4 sticky top-0 bg-inherit pb-2 border-b border-line">
-               <span className="text-xs text-muted uppercase block mb-1">
+             <div className="flex items-center gap-1 border-b border-line pb-1 sm:sticky sm:top-0 sm:mb-4 sm:justify-center sm:bg-inherit sm:pb-2">
+               <span className="text-xs text-muted uppercase sm:mb-1 sm:block">
                  {format(day, 'EEE', { locale: es })}
                </span>
-               <span className={`
-                 inline-flex items-center justify-center w-8 h-8 rounded-full text-lg font-semibold
-                 ${isTodayDay ? 'bg-accent text-on-accent' : 'text-ink'}
-               `}>
+               <button
+                 type="button"
+                 aria-label={`Seleccionar el ${format(day, "EEEE d 'de' MMMM yyyy", { locale: es })}`}
+                 aria-pressed={Boolean(selectedDate && isSameDay(day, selectedDate))}
+                 onClick={(event) => {
+                   event.stopPropagation();
+                   onDateSelect?.(day);
+                 }}
+                 className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-lg font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                   isTodayDay ? 'bg-accent text-on-accent' : 'text-ink'
+                 }`}
+               >
                  {format(day, 'd')}
-               </span>
+               </button>
              </div>
              
              <div className="space-y-2">
@@ -476,53 +501,63 @@ export const Calendar: React.FC<CalendarProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className={`bg-surface rounded-xl shadow-sm border border-line overflow-hidden ${className}`}>
+      <section aria-label="Calendario de viajes" className={`overflow-hidden rounded-xl border border-line bg-paper font-sans shadow-sm ${className}`}>
         {/* Header */}
         <div className="flex flex-col gap-3 p-4 border-b border-line sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <h2 className="text-lg font-bold text-ink capitalize sm:text-xl sm:min-w-[200px]">
+            <h2 className="min-w-0 flex-1 font-sans text-lg font-bold capitalize text-ink sm:text-xl">
               {format(currentDate, 'MMMM yyyy', { locale: es })}
             </h2>
-            <div className="flex items-center rounded-md border border-line bg-surface shadow-sm">
+            <div className="flex shrink-0 items-center rounded-md border border-line bg-paper">
               <button
+                type="button"
+                aria-label="Mes anterior"
                 onClick={prev}
-                className="p-1.5 hover:bg-surface-strong text-muted border-r border-line"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center border-r border-line text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                <ChevronLeftIcon className="h-5 w-5" />
+                <ChevronLeftIcon aria-hidden="true" className="h-5 w-5" />
               </button>
               <button
+                type="button"
+                aria-label="Ir al día de hoy"
                 onClick={goToToday}
-                className="px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-strong"
+                className="min-h-11 px-3 text-sm font-medium text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 Hoy
               </button>
               <button
+                type="button"
+                aria-label="Mes siguiente"
                 onClick={next}
-                className="p-1.5 hover:bg-surface-strong text-muted border-l border-line"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center border-l border-line text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                <ChevronRightIcon className="h-5 w-5" />
+                <ChevronRightIcon aria-hidden="true" className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex rounded-lg border border-line p-1 bg-surface-strong">
+          <div className="grid grid-cols-2 rounded-lg border border-line bg-surface p-1 sm:w-fit">
             <button
+              type="button"
+              aria-pressed={viewMode === 'month'}
               onClick={() => setViewMode('month')}
               className={`
-                flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all
+                min-h-11 rounded-md px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 ${viewMode === 'month' 
-                  ? 'bg-surface text-accent shadow-sm' 
+                  ? 'bg-accent-soft text-accent'
                   : 'text-muted hover:text-ink'}
               `}
             >
               Mes
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'week'}
               onClick={() => setViewMode('week')}
               className={`
-                flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all
+                min-h-11 rounded-md px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                 ${viewMode === 'week' 
-                  ? 'bg-surface text-accent shadow-sm' 
+                  ? 'bg-accent-soft text-accent'
                   : 'text-muted hover:text-ink'}
               `}
             >
@@ -531,13 +566,26 @@ export const Calendar: React.FC<CalendarProps> = ({
           </div>
         </div>
 
-        {/* A 360px, siete columnas de 1fr dan 51px por dia y el titulo del evento no cabe. Se
-            conserva la rejilla de 7 y se permite desplazar en horizontal, con una columna minima
-            de 91px. En escritorio el ancho disponible supera el minimo y no hay desplazamiento. */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
+        {onAddEvent && (
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted">
+              Día seleccionado: <span className="font-medium text-ink">{format(selectedDate ?? new Date(), "d 'de' MMMM yyyy", { locale: es })}</span>
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 w-full sm:w-auto"
+              onClick={() => onAddEvent(selectedDate ?? new Date())}
+            >
+              <span aria-hidden="true" className="mr-2 text-lg leading-none">+</span>
+              Añadir evento al día seleccionado
+            </Button>
+          </div>
+        )}
+
+        <div>
             {/* Días de la semana (Header) */}
-            <div className="grid grid-cols-7 border-b border-line bg-surface-strong/50">
+            <div className="hidden grid-cols-7 border-b border-line bg-surface-strong/50 sm:grid">
               {weekDays.map(day => (
                 <div
                   key={day}
@@ -548,22 +596,26 @@ export const Calendar: React.FC<CalendarProps> = ({
               ))}
             </div>
 
+            {!hasEventsInPeriod && (
+              <p role="status" className="border-b border-line bg-paper px-4 py-3 text-sm text-muted">
+                No hay eventos en este periodo. Selecciona un día para añadir uno.
+              </p>
+            )}
+
             {/* Vistas */}
             {viewMode === 'month' ? renderMonthView() : renderWeekView()}
-          </div>
         </div>
         
         {/* Footer Leyenda */}
-        <div className="px-6 py-4 border-t border-line bg-surface-strong/30 flex flex-wrap gap-6 text-xs">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line bg-surface px-4 py-4 text-xs sm:gap-6 sm:px-6">
           {[
-            { label: 'Viajes', color: 'bg-blue-500' },
-            { label: 'Reservas', color: 'bg-green-500' },
-            { label: 'Pendiente', color: 'bg-orange-500' },
-            { label: 'Actividades', color: 'bg-purple-500' },
-            { label: 'Tareas', color: 'bg-emerald-500' },
+            { label: 'Viajes', color: 'bg-accent' },
+            { label: 'Reservas confirmadas', color: 'bg-success' },
+            { label: 'Reservas pendientes', color: 'bg-warning' },
+            { label: 'Actividades', color: 'bg-accent-soft' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
-              <span className={`w-3 h-3 rounded-full ${item.color} ring-2 ring-surface shadow-sm`} />
+              <span className={`h-3 w-3 rounded-full ${item.color} ring-2 ring-paper`} />
               <span className="font-medium text-muted">{item.label}</span>
             </div>
           ))}
@@ -574,19 +626,20 @@ export const Calendar: React.FC<CalendarProps> = ({
           <div
             role="menu"
             aria-label={`Acciones de ${contextMenu.event.title}`}
-            className="fixed w-40 bg-surface border border-line shadow-lg rounded-md py-1 z-50"
+            className="fixed z-50 w-40 rounded-md border border-line bg-paper py-1 text-ink shadow-lg"
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 e.stopPropagation();
                 setContextMenu(null);
+                contextReturnRef.current?.focus();
               }
             }}
           >
             <button
               ref={menuButtonRef}
               role="menuitem"
-              className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger/10 flex items-center gap-2"
+              className="flex min-h-11 w-full items-center gap-2 px-4 text-left text-sm text-danger hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteEvent?.(contextMenu.event);
@@ -603,7 +656,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         <DragOverlay>
           {activeEvent ? <EventOverlay event={activeEvent} /> : null}
         </DragOverlay>
-      </div>
+      </section>
     </DndContext>
   );
 };

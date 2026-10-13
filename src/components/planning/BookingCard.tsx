@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -28,36 +28,36 @@ interface BookingCardProps {
 }
 
 const BOOKING_TYPES = {
-  flight: { label: "Vuelo", category: "flight", color: "bg-blue-100 text-blue-800" },
-  hotel: { label: "Hotel", category: "hotel", color: "bg-purple-100 text-purple-800" },
-  car: { label: "Auto", category: "car", color: "bg-green-100 text-green-800" },
+  flight: { label: "Vuelo", category: "flight", color: "bg-accent-soft text-accent" },
+  hotel: { label: "Hotel", category: "hotel", color: "bg-surface-strong text-ink" },
+  car: { label: "Auto", category: "car", color: "bg-success/10 text-success" },
   activity: {
     label: "Actividad",
     category: "activity",
-    color: "bg-orange-100 text-orange-800",
+    color: "bg-warning/10 text-warning",
   },
   restaurant: {
     label: "Restaurante",
     category: "restaurant",
-    color: "bg-red-100 text-red-800",
+    color: "bg-danger/10 text-danger",
   },
-  other: { label: "Otro", category: "other", color: "bg-gray-100 text-gray-800" },
+  other: { label: "Otro", category: "other", color: "bg-surface-strong text-muted" },
 };
 
 const STATUS_CONFIG = {
   confirmed: {
     label: "Confirmado",
-    color: "bg-green-100 text-green-800",
+    color: "bg-success/10 text-success",
     icon: CheckCircleIcon,
   },
   pending: {
     label: "Pendiente",
-    color: "bg-orange-100 text-orange-800",
+    color: "bg-warning/10 text-warning",
     icon: ClockIcon,
   },
   cancelled: {
     label: "Cancelado",
-    color: "bg-red-100 text-red-800",
+    color: "bg-danger/10 text-danger",
     icon: ExclamationTriangleIcon,
   },
 };
@@ -70,6 +70,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   className = "",
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const detailsId = useId();
 
   const bookingType = BOOKING_TYPES[booking.type] || BOOKING_TYPES.other;
   const statusConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.pending;
@@ -94,91 +95,98 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
   return (
     <Card
-      className={`overflow-hidden hover:shadow-md transition-shadow ${className}`}
+      className={`overflow-hidden rounded-xl border border-line bg-paper font-sans transition-colors hover:border-accent/40 ${className}`}
     >
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="shrink-0">
               <CategoryIcon
                 category={bookingType.category}
-                className="h-6 w-6 text-gray-600"
+                className="h-6 w-6 text-muted"
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
-                <h3 className="font-semibold text-gray-900 truncate">
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+                <h3 className="min-w-0 flex-1 truncate font-sans font-semibold text-ink">
                   {booking.title}
                 </h3>
                 <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${bookingType.color}`}
+                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${bookingType.color}`}
                 >
                   {bookingType.label}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="mb-2 text-sm text-muted">
                 Confirmación:{" "}
                 <span className="font-mono font-medium">
                   {booking.confirmation_number || "N/A"}
                 </span>
               </p>
               {booking.description && (
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="mb-2 text-sm text-muted">
                   {booking.description}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto sm:shrink-0 sm:justify-end">
             <div
-              className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusConfig.color}`}
             >
-              <StatusIcon className="h-3 w-3" />
+              <StatusIcon aria-hidden="true" className="h-3 w-3" />
               <span>{statusConfig.label}</span>
             </div>
             {onEdit && (
-              <Button variant="ghost" size="sm" onClick={() => onEdit(booking)}>
-                <PencilIcon className="h-4 w-4" />
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label={`Editar reserva ${booking.title}`}
+                onClick={() => onEdit(booking)}
+                className="min-h-11 min-w-11 p-0"
+              >
+                <PencilIcon aria-hidden="true" className="h-4 w-4" />
               </Button>
             )}
             {onDelete && (
               <Button
                 variant="ghost"
-                size="sm"
+                type="button"
+                aria-label={`Eliminar reserva ${booking.title}`}
                 onClick={() => onDelete(booking.id)}
-                className="text-red-600 hover:text-red-700"
+                className="min-h-11 min-w-11 p-0 text-danger hover:bg-danger/10 hover:text-danger"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon aria-hidden="true" className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
 
         {/* Información básica */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+        <div className="mb-4 grid grid-cols-1 gap-3 text-sm text-muted sm:grid-cols-2">
+          <div className="flex items-center gap-2">
+            <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
             <span>{formatDateRange()}</span>
           </div>
 
           {formatTimeRange() && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <ClockIcon className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span>{formatTimeRange()}</span>
             </div>
           )}
 
           {booking.location && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <MapPinIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span>{booking.location}</span>
             </div>
           )}
 
           {booking.cost && (
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-medium text-ink">
               {booking.cost} {booking.currency || "USD"}
             </div>
           )}
@@ -187,31 +195,33 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         {/* Botón para expandir detalles */}
         <div className="flex items-center justify-between">
           <Button
+            type="button"
             variant="ghost"
-            size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-blue-600 hover:text-blue-700"
+            aria-expanded={isExpanded}
+            aria-controls={detailsId}
+            className="min-h-11 px-3 text-accent hover:bg-accent-soft hover:text-accent"
           >
             {isExpanded ? "Ocultar detalles" : "Ver detalles"}
           </Button>
 
           {onStatusChange && booking.status !== "confirmed" && (
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {booking.status === "pending" && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  type="button"
                   onClick={() => onStatusChange(booking.id, "confirmed")}
-                  className="text-green-600 border-green-300 hover:bg-green-50"
+                  className="min-h-11 border-success text-success hover:bg-success/10"
                 >
                   Confirmar
                 </Button>
               )}
               <Button
                 variant="outline"
-                size="sm"
+                type="button"
                 onClick={() => onStatusChange(booking.id, "cancelled")}
-                className="text-red-600 border-red-300 hover:bg-red-50"
+                className="min-h-11 border-danger text-danger hover:bg-danger/10"
               >
                 Cancelar
               </Button>
@@ -221,14 +231,14 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
         {/* Detalles expandidos */}
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+          <div id={detailsId} role="region" aria-label={`Detalles de ${booking.title}`} className="mt-4 space-y-4 border-t border-line pt-4">
             {/* Dirección */}
             {booking.address && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">
+                <h4 className="mb-1 font-sans text-sm font-semibold text-ink">
                   Dirección
                 </h4>
-                <p className="text-sm text-gray-600">{booking.address}</p>
+                <p className="text-sm text-muted">{booking.address}</p>
               </div>
             )}
 
@@ -237,33 +247,33 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               booking.contact_phone ||
               booking.contact_email) && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                <h4 className="mb-2 font-sans text-sm font-semibold text-ink">
                   Contacto
                 </h4>
                 <div className="space-y-1">
                   {booking.contact_name && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <UserIcon className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-sm text-muted">
+                      <UserIcon aria-hidden="true" className="h-4 w-4" />
                       <span>{booking.contact_name}</span>
                     </div>
                   )}
                   {booking.contact_phone && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <PhoneIcon className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-sm text-muted">
+                      <PhoneIcon aria-hidden="true" className="h-4 w-4" />
                       <a
                         href={`tel:${booking.contact_phone}`}
-                        className="text-blue-600 hover:text-blue-700"
+                        className="inline-flex min-h-11 items-center text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         {booking.contact_phone}
                       </a>
                     </div>
                   )}
                   {booking.contact_email && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <EnvelopeIcon className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-sm text-muted">
+                      <EnvelopeIcon aria-hidden="true" className="h-4 w-4" />
                       <a
                         href={`mailto:${booking.contact_email}`}
-                        className="text-blue-600 hover:text-blue-700"
+                        className="inline-flex min-h-11 items-center text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         {booking.contact_email}
                       </a>
@@ -276,10 +286,10 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             {/* Notas */}
             {booking.notes && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">
+                <h4 className="mb-1 font-sans text-sm font-semibold text-ink">
                   Notas
                 </h4>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                <p className="whitespace-pre-wrap text-sm text-muted">
                   {booking.notes}
                 </p>
               </div>
@@ -288,14 +298,14 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             {/* Documentos */}
             {booking.documents && booking.documents.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                <h4 className="mb-2 font-sans text-sm font-semibold text-ink">
                   Documentos
                 </h4>
                 <div className="space-y-1">
                   {booking.documents.map((doc, index) => (
                     <div
                       key={index}
-                      className="text-sm text-blue-600 hover:text-blue-700"
+                      className="text-sm text-accent hover:underline"
                     >
                       <a href={doc} target="_blank" rel="noopener noreferrer">
                         Documento {index + 1}

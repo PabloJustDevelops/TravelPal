@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Calendar } from '../Calendar';
 import { format } from 'date-fns';
 
@@ -35,6 +36,27 @@ describe('Calendar Component', () => {
     expect(screen.getByTestId('event-icon')).toBeInTheDocument();
   });
 
+  it('announces when the displayed period has no events', () => {
+    render(<Calendar events={[]} />);
+
+    expect(screen.getByText(/No hay eventos en este periodo/)).toHaveAttribute('role', 'status');
+  });
+
+  it('allows selecting a day by keyboard and does not require horizontal scrolling', async () => {
+    const user = userEvent.setup();
+    const onDateSelect = jest.fn();
+    const { container } = render(
+      <Calendar events={mockEvents} onDateSelect={onDateSelect} />,
+    );
+
+    const dayButton = screen.getAllByRole('button', { name: /Seleccionar el / })[0];
+    dayButton.focus();
+    await user.keyboard('{Enter}');
+
+    expect(onDateSelect).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.overflow-x-auto')).toBeNull();
+  });
+
   it('calls onEventClick when an event is clicked', () => {
     const handleEventClick = jest.fn();
     render(<Calendar events={mockEvents} onEventClick={handleEventClick} />);
@@ -59,6 +81,20 @@ describe('Calendar Component', () => {
     fireEvent.click(deleteButton);
     expect(handleDeleteEvent).toHaveBeenCalledTimes(1);
     expect(handleDeleteEvent).toHaveBeenCalledWith(mockEvents[0]);
+  });
+
+  it('returns focus to the event after dismissing its context menu with Escape', () => {
+    render(<Calendar events={mockEvents} onDeleteEvent={jest.fn()} />);
+
+    const eventElement = screen.getByText(/Test Event/i).closest('div');
+    fireEvent.contextMenu(eventElement!);
+
+    const menuItem = screen.getByRole('menuitem', { name: 'Eliminar' });
+    expect(menuItem).toHaveFocus();
+    fireEvent.keyDown(menuItem, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(eventElement).toHaveFocus();
   });
   
   it('calls onAddEvent on double click in month view', () => {

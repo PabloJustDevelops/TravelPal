@@ -53,6 +53,16 @@ jobs:
         run: pnpm run test:tester
       - name: Probar componentes y accesibilidad en Chromium
         run: pnpm run test:storybook
+      - name: Conservar capturas de QA del usuario dedicado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-qa-${{ inputs.base-url == '' && 'codigo' || 'produccion' }}
+          path: |
+            /tmp/travelpal-atlas-*.png
+            /tmp/travelpal-trip-*.png
+          retention-days: 7
+          if-no-files-found: ignore
       # La traza solo se genera en el primer reintento (trace: on-first-retry).
       - name: Subir la traza del fallo
         if: failure()

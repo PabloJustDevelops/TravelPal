@@ -130,6 +130,24 @@ describe("TripsPage con el SDK en el navegador", () => {
     ).toBeInTheDocument();
   });
 
+  it("distingue los filtros sin resultados y permite volver a ver los viajes", async () => {
+    mount();
+
+    render(<TripsPage />);
+    expect(await screen.findByText("Escapada a Roma")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar viajes" }), {
+      target: { value: "Tokio" },
+    });
+
+    expect(
+      screen.getByText("No hay viajes que coincidan con tu búsqueda"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+
+    expect(screen.getByText("Escapada a Roma")).toBeInTheDocument();
+  });
+
   it("no se traga el error del SDK y lo muestra al usuario", async () => {
     mount({ error: { message: "boom" } });
 

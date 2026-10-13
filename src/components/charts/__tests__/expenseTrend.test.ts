@@ -1,6 +1,6 @@
 import { buildExpenseTrend } from '../expenseTrend'
 
-const expense = (date: string, amount: number) => ({ date, amount })
+const expense = (date: string, amount: number, currency = "USD") => ({ date, amount, currency })
 
 describe('buildExpenseTrend', () => {
   it('ordena los meses cronologicamente aunque los gastos lleguen desordenados', () => {
@@ -39,5 +39,18 @@ describe('buildExpenseTrend', () => {
 
     expect(trend).toHaveLength(1)
     expect(trend[0].value).toBe(15)
+  })
+
+  it('mantiene separados los importes del mismo mes en monedas distintas', () => {
+    const trend = buildExpenseTrend([
+      { date: '2025-03-02', amount: 120, currency: 'USD' },
+      { date: '2025-03-28', amount: 80, currency: 'EUR' },
+    ])
+
+    expect(trend).toHaveLength(2)
+    expect(trend).toMatchObject([
+      { currency: 'EUR', value: 80 },
+      { currency: 'USD', value: 120 },
+    ])
   })
 })
