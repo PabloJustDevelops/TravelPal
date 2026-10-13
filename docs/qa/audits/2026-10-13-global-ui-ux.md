@@ -12,7 +12,7 @@ Revisión visual de portada, acceso y registro a 1440 × 900 y 390 × 844 px; re
 | 2 | Portada: funciones y secciones inferiores | Tarjetas se apilan en móvil; bloques altos con bastante espacio vertical. |
 | 3 | Inicio de sesión | Formulario se adapta a móvil ocultando la foto lateral; axe sin infracciones. |
 | 4 | Registro | Formulario largo; marca alineada y controles de contraseña con nombre y estado accesibles. |
-| 5 | Dashboard vacío | Próximo viaje, tareas y presupuesto con estados vacíos; se compactó la tarjeta de itinerario vacía. |
+| 5 | Dashboard vacío y poblado | Próximo viaje, tareas y presupuesto; se compactó la tarjeta de itinerario vacía. CI validó un dashboard poblado en móvil/escritorio y tema claro/oscuro. |
 | 6 | Mis viajes vacío | Estado vacío compartido, sin búsqueda/filtros irrelevantes ni acción duplicada. |
 | 7 | Nuevo viaje | Los campos opcionales de vuelo quedan dentro de una divulgación cerrada inicialmente. |
 | 8 | Tareas y diálogo de nueva tarea | Instrucción para borrar solo se monta con tareas; las columnas vacías se compactan. El diálogo estaba correctamente centrado. |
@@ -38,7 +38,7 @@ Dirección acordada: interfaz clara, azul/verde y centrada en el viaje, con itin
 
 La pasada E2E analiza con axe `/`, `/signin`, `/signup`, `/forgot-password` y `/reset-password`; no reporta infracciones. También verifica tema oscuro en el hero, el menú móvil expandible y el ancho del documento. En esta pasada se corrigieron además los encabezados de recuperación/restablecimiento y los nombres de los controles de visibilidad de contraseña en restablecimiento. Esto no acredita cumplimiento WCAG completo.
 
-Las rutas autenticadas se inspeccionaron visualmente en la sesión de navegador, pero sus capturas no se exportaron: la sesión mostraba información de cuenta. No se almacenaron ni incluyeron esos datos. No se creó ni modificó información de usuario. No se pudo revisar el detalle de un viaje con datos porque no había uno disponible y se evitó crear datos en producción.
+El dashboard poblado se probó en CI con un usuario E2E dedicado. El flujo sembró viaje, actividad, tarea y presupuesto con valores sintéticos, comprobó limpieza al terminar y generó capturas en los cuatro casos de viewport y tema. No se usó una cuenta real ni se crearon datos de producción.
 
 Las capturas 09 y 10 muestran el hero actualizado a 1440 × 900 y 390 × 844. Las capturas no prueban el orden completo de foco, lectores de pantalla, zoom ni contraste en todos los estados. La auditoría no es una certificación WCAG.
 
@@ -59,10 +59,14 @@ Las capturas 01–08 muestran la línea base anterior. Las capturas 09–10 mues
 - La regresión de tema oscuro se valida por estilos calculados y axe; no se adjunta captura adicional.
 - `assets/11-dashboard-vacio-compacto-escritorio.png`
 - `assets/12-dashboard-vacio-compacto-movil.png`
+- `assets/13-dashboard-poblado-claro-escritorio.png`
+- `assets/14-dashboard-poblado-claro-movil.png`
+- `assets/15-dashboard-poblado-oscuro-escritorio.png`
+- `assets/16-dashboard-poblado-oscuro-movil.png`
 
 ## Pendiente de la fase de fidelidad visual global
 
-La portada y algunos estados internos ya usan Atlas claro. Quedan la composición global de autenticación, coherencia tipográfica entre secciones, unificación de estados vacíos y comparación del dashboard poblado frente a la referencia. Las nuevas capturas de dashboard son del estado vacío del componente Storybook, no del flujo autenticado completo; no se dará por equivalente ese estado al viaje poblado.
+La portada y algunos estados internos ya usan Atlas claro. Quedan la composición global de autenticación, coherencia tipográfica entre secciones y unificación de estados vacíos. El dashboard poblado mantiene axe sin infracciones y no desborda horizontalmente en 390 px; la pila móvil dedica mucha altura a las gráficas de resumen, por lo que conviene compactar esos paneles durante la siguiente pasada de fidelidad global.
 
 ## Verificación ejecutada
 
@@ -72,4 +76,5 @@ La portada y algunos estados internos ya usan Atlas claro. Quedan la composició
 - `NEXT_PUBLIC_INSFORGE_URL=https://example.invalid NEXT_PUBLIC_INSFORGE_ANON_KEY=test-anon-key INSFORGE_API_KEY=test-api-key pnpm run build` — build de Next.js y generación de rutas completados, código 0. Se usaron valores ficticios locales; no se accedió al backend.
 - `NEXT_PUBLIC_INSFORGE_URL=https://example.invalid NEXT_PUBLIC_INSFORGE_ANON_KEY=test-anon-key INSFORGE_API_KEY=test-api-key pnpm exec playwright test e2e/smoke/signup-accessibility.spec.ts --project=smoke` — 4 pruebas aprobadas, código 0. Incluye regresión de contraste del hero oscuro. Las variables son valores ficticios locales para arrancar la app; no se accedió al backend.
 - `NEXT_PUBLIC_INSFORGE_URL=https://example.invalid NEXT_PUBLIC_INSFORGE_ANON_KEY=test-anon-key INSFORGE_API_KEY=test-api-key pnpm run test:storybook` — 8 ficheros y 32 pruebas aprobados, código 0. Vitest imprimió un aviso de cierre tardío de proceso tras cerrar correctamente las pruebas.
+- `gh run view 38431437151 --json status,conclusion,jobs` — `CI` completado con `success`; build, build de worker y job E2E pasaron. La suite E2E autenticada verificó cuatro combinaciones dashboard/tema/viewport, axe y limpieza; Tester Army reportó 6 pruebas públicas aprobadas para escritorio y viewport estrecho. El check separado `lint-commits` del PR falló por formato del mensaje del commit.
 - Storybook midió la tarjeta de itinerario vacía en 139 px (1440 px) y 151 px (390 px); antes del cambio medía 398 px en escritorio y el límite de 220 px fallaba. Las capturas 11–12 corresponden al componente aislado, sin sesión ni datos de cuenta.
