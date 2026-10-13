@@ -54,6 +54,12 @@ for (const width of [1440, 390]) {
         const result = await new AxeBuilder({ page }).include('nav').include('main').analyze()
         expect(result.violations).toEqual([])
         await page.screenshot({ path: `/tmp/travelpal-atlas-populated-${theme}-${width}.png` })
+        if (width === 390) {
+          await page.screenshot({
+            path: `/tmp/travelpal-atlas-populated-${theme}-${width}-full.png`,
+            fullPage: true,
+          })
+        }
       } finally {
         await deleteDashboardFixture(fixture.tripTitle, fixture.taskTitle)
       }

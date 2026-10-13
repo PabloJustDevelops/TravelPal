@@ -117,7 +117,8 @@ temas a 1440 y 390 px. El dashboard tiene una captura del estado de la cuenta y
 otra con un viaje de QA, actividad, tarea y presupuesto con gasto. El escenario
 poblado crea un viaje con la UI e inserta los datos auxiliares con el SDK bajo la
 sesión E2E; al terminar, elimina la tarea, el presupuesto, el gasto, la actividad
-y el viaje asociados a sus nombres únicos.
+y el viaje asociados a sus nombres únicos. Para revisar el contenido bajo el
+primer pliegue, también guarda capturas completas del dashboard móvil poblado.
 
 El job conserva las PNG de `/tmp/travelpal-atlas-*.png` y
 `/tmp/travelpal-trip-*.png` durante 7 días como `atlas-qa-codigo` o
