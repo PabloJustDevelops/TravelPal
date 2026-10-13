@@ -112,12 +112,18 @@ usuarios), asi que queda uno por corrida.
 `trace: on-first-retry` y `retries: 2` en CI: la traza de un fallo queda en
 `test-results/` y el job la sube como artefacto (`playwright-trace`).
 
-Los casos de accesibilidad de dashboard y detalle generan capturas en ambos
-temas a 1440 y 390 px. El job conserva las PNG de `/tmp/travelpal-atlas-*.png` y
+Los casos de accesibilidad del dashboard y del detalle generan capturas en ambos
+temas a 1440 y 390 px. El dashboard tiene una captura del estado de la cuenta y
+otra con un viaje de QA, actividad, tarea y presupuesto con gasto. El escenario
+poblado crea un viaje con la UI e inserta los datos auxiliares con el SDK bajo la
+sesión E2E; al terminar, elimina la tarea, el presupuesto, el gasto, la actividad
+y el viaje asociados a sus nombres únicos.
+
+El job conserva las PNG de `/tmp/travelpal-atlas-*.png` y
 `/tmp/travelpal-trip-*.png` durante 7 días como `atlas-qa-codigo` o
-`atlas-qa-produccion`, también cuando la suite pasa. Representan el estado de la
-cuenta dedicada en esa ejecución; no sustituyen una revisión visual ni aseguran
-que el dashboard tenga un viaje poblado.
+`atlas-qa-produccion`, también cuando la suite pasa. Las capturas sirven para
+revisar el estado vacío y poblado de esa ejecución; no sustituyen una revisión
+visual ni una comparación de fidelidad global.
 
 ## Tester Army
 
