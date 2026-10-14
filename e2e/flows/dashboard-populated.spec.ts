@@ -9,7 +9,6 @@ import {
   createTrip,
   hasCredentials,
   signIn,
-  uniqueName,
 } from '../support/flows'
 
 for (const width of [1440, 390]) {
@@ -20,12 +19,12 @@ for (const width of [1440, 390]) {
       await page.addInitScript(value => localStorage.setItem('theme', value), theme)
       await signIn(page)
 
-      const token = uniqueName(`dashboard-${theme}-${width}`)
+      const token = `${width}-${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`
       const fixture = {
-        tripTitle: `${token}-viaje`,
-        activityTitle: `${token}-actividad`,
-        taskTitle: `${token}-tarea`,
-        budgetName: `${token}-presupuesto`,
+        tripTitle: `Lisboa QA ${token}`,
+        activityTitle: `Paseo en Lisboa ${token}`,
+        taskTitle: `Preparar documentos ${token}`,
+        budgetName: `Presupuesto ${token}`,
       }
       const { departure, returnDate } = await dashboardFixtureDates()
       const date = departure.slice(0, 10)
@@ -50,6 +49,17 @@ for (const width of [1440, 390]) {
         await expect(budget.getByRole('progressbar', { name: `Uso del presupuesto ${fixture.budgetName}` }))
           .toHaveAttribute('aria-valuenow', '17')
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+
+        const charts = page.getByTestId('trip-chart')
+        await expect(charts).toHaveCount(2)
+        const chartHeights = await charts.evaluateAll(elements =>
+          elements.map(element => Math.round(element.getBoundingClientRect().height)),
+        )
+        if (width === 390) {
+          expect(Math.max(...chartHeights)).toBeLessThanOrEqual(260)
+        } else {
+          expect(chartHeights).toEqual([350, 300])
+        }
 
         const result = await new AxeBuilder({ page }).include('nav').include('main').analyze()
         expect(result.violations).toEqual([])

@@ -48,15 +48,15 @@ test('registro tiene marca coherente y controles accesibles', async ({ page }) =
   })
 })
 
-test('rutas públicas de autenticación no introducen violaciones axe', async ({ page }) => {
+test('rutas públicas de autenticación no introducen violaciones axe', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   for (const route of ['/', '/signin', '/forgot-password', '/reset-password']) {
     await page.goto(route)
     if (route === '/') {
-      await expect(page.locator('#home-heading').locator('..')).toHaveCSS('opacity', '1')
-      await expect(page.locator('section[aria-labelledby="home-heading"] > div > div').nth(1)).toHaveCSS('opacity', '1')
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
       await page.screenshot({
-        path: 'docs/qa/audits/assets/09-portada-redisenada-escritorio.png',
+        path: testInfo.outputPath('portada-escritorio.png'),
       })
     }
     const results = await new AxeBuilder({ page }).analyze()
@@ -71,17 +71,17 @@ test('rutas públicas de autenticación no introducen violaciones axe', async ({
   }
 })
 
-test('portada mantiene su composición de viaje y no desborda en móvil', async ({ page }) => {
+test('portada mantiene su composición de viaje y no desborda en móvil', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Planifica tu próxima aventura' })).toBeVisible()
-  await expect(page.locator('#home-heading').locator('..')).toHaveCSS('opacity', '1')
-  await expect(page.locator('section[aria-labelledby="home-heading"] > div > div').nth(1)).toHaveCSS('opacity', '1')
-  await expect(page.getByRole('img', { name: 'Paisaje de montaña junto a un lago' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Tu viaje, de principio a fin.' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
   await page.screenshot({
-    path: 'docs/qa/audits/assets/10-portada-redisenada-movil.png',
+    path: testInfo.outputPath('portada-movil.png'),
   })
 
   const menuButton = page.getByRole('button', { name: 'Abrir menú' })
@@ -100,14 +100,13 @@ test('portada mantiene su composición de viaje y no desborda en móvil', async 
   expect(results.violations.map(({ id, impact }) => `${id} [${impact}]`)).toEqual([])
 })
 
-test('tarjeta de portada conserva contraste con el tema oscuro', async ({ page }) => {
+test('portada conserva contraste con el tema oscuro', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('theme', 'dark'))
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await expect(page.locator('html')).toHaveClass(/dark/)
-  await expect(page.locator('section[aria-labelledby="home-heading"] > div > div').nth(1)).toHaveCSS('opacity', '1')
-  const card = page.getByText('A un plan de distancia')
-  await expect(card.locator('..')).toHaveCSS('background-color', 'rgb(16, 24, 39)')
+  await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
+  await expect(page.getByRole('main')).toHaveCSS('background-color', 'rgb(16, 24, 39)')
 
   const results = await new AxeBuilder({ page }).include('section[aria-labelledby="home-heading"]').analyze()
   expect(

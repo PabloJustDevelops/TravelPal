@@ -134,12 +134,12 @@ export default function VerifyEmailStep({ email }: { email: string }) {
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink">
           Verifica tu email
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           Hemos enviado un código de 6 dígitos a{' '}
-          <span className="font-medium text-gray-900">{email}</span>. Escríbelo
+          <span className="font-medium text-ink">{email}</span>. Escríbelo
           aquí para activar tu cuenta.
         </p>
       </div>
@@ -160,7 +160,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
         <div>
           <label
             htmlFor="verify-code-1"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-ink"
           >
             Código de verificación
           </label>
@@ -214,11 +214,11 @@ export default function VerifyEmailStep({ email }: { email: string }) {
           </Button>
         </div>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-muted">
           ¿Ya tienes cuenta?{' '}
           <Link
             href="/signin"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-accent hover:text-accent-hover"
           >
             Inicia sesión
           </Link>

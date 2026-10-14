@@ -178,14 +178,14 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
-        <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink">
           Inicia sesión en tu cuenta
         </h1>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           O{" "}
           <Link
             href="/signup"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-accent hover:text-accent-hover"
           >
             crea una nueva cuenta
           </Link>
@@ -230,7 +230,7 @@ export default function LoginForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-ink"
               >
                 Email
               </label>
@@ -252,7 +252,7 @@ export default function LoginForm() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-ink"
               >
                 Contraseña
               </label>
@@ -274,9 +274,9 @@ export default function LoginForm() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      <EyeSlashIcon className="h-5 w-5 text-muted" />
                     ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                      <EyeIcon className="h-5 w-5 text-muted" />
                     )}
                   </button>
                 )}
@@ -292,7 +292,7 @@ export default function LoginForm() {
           <div className="flex items-center justify-between">
             <Link
               href="/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-500"
+              className="text-sm text-accent hover:text-accent-hover"
             >
               ¿Olvidaste tu contraseña?
             </Link>

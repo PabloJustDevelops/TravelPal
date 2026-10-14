@@ -49,8 +49,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   return (
     <div
       className={`
-        bg-surface p-4 rounded-xl shadow-sm border border-line 
-        hover:shadow-md transition-all duration-200 group relative
+        bg-paper p-4 rounded-lg border border-line
+        transition-colors duration-150 group relative
         ${className}
       `}
     >
@@ -97,7 +97,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </p>
       )}
       
-      <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-line">
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-auto pt-2 border-t border-line">
         {task.due_date ? (
           <div className="flex items-center text-xs font-medium text-muted">
             <CalendarIcon className="w-4 h-4 mr-1.5 text-muted" aria-hidden="true" />
@@ -114,7 +114,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           onChange={(e) => handleStatusChange(e.target.value)}
           draggable={false}
           aria-label={`Mover la tarea ${task.title}`}
-          className={cn(selectClassName, 'h-7 w-auto px-2 py-0 text-xs')}
+          className={cn(selectClassName, 'min-h-11 w-auto max-w-full px-2 py-0 text-xs')}
         >
           {statusOptions.map((option) => (
             <option key={option.value} value={option.value}>

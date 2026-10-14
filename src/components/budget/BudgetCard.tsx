@@ -114,10 +114,10 @@ export default function BudgetCard({
   const daysRemaining = getDaysRemaining()
 
   return (
-    <div className="bg-surface rounded-lg shadow-sm border border-line hover:shadow-md transition-shadow relative group">
+    <div className="bg-paper rounded-xl border border-line relative">
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
               <div className="w-10 h-10 bg-accent-soft rounded-lg flex items-center justify-center text-accent">
@@ -152,6 +152,8 @@ export default function BudgetCard({
                   <Button
                     variant="ghost"
                     size="sm"
+                    aria-label={`Editar presupuesto ${budget.name}`}
+                    className="h-11 w-11 p-0"
                     onClick={() => onEdit(budget)}
                   >
                     <PencilSquareIcon className="h-4 w-4" />
@@ -161,8 +163,9 @@ export default function BudgetCard({
                   <Button
                     variant="ghost"
                     size="sm"
+                    aria-label={`Eliminar presupuesto ${budget.name}`}
                     onClick={() => onDelete(budget.id)}
-                    className="text-danger hover:text-danger hover:bg-danger/10"
+                    className="h-11 w-11 p-0 text-danger hover:text-danger hover:bg-danger/10"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
@@ -190,7 +193,7 @@ export default function BudgetCard({
             />
           </div>
           
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
             <span className="text-sm text-muted">
               Presupuesto: {formatCurrency(budget.total_amount, budget.currency)}
             </span>
@@ -202,7 +205,7 @@ export default function BudgetCard({
         </div>
 
         {/* Period and Status */}
-        <div className="flex items-center justify-between text-sm text-muted mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted mb-4">
           <span>
             {formatDate(budget.start_date)} - {formatDate(budget.end_date)}
           </span>

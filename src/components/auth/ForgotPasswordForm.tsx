@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
 import { fieldClassName } from '@/components/ui/fieldStyles'
+import { accentLinkClassName } from '@/components/ui/actionStyles'
 import { cn } from '@/lib/utils'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
 
@@ -71,12 +72,9 @@ export default function ForgotPasswordForm() {
           Por favor, revisa tu bandeja de entrada (y spam) y sigue las instrucciones.
         </p>
         <div className="space-y-3">
-          <Button
-            onClick={() => window.location.href = '/signin'}
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-          >
+          <Link href="/signin" className={`${accentLinkClassName} w-full`}>
             Volver al inicio de sesión
-          </Button>
+          </Link>
           <button
             type="button"
             onClick={() => setIsSuccess(false)}
@@ -93,12 +91,12 @@ export default function ForgotPasswordForm() {
     <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-ink mb-1">
             Correo electrónico
           </label>
           <div className="relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <EnvelopeIcon className="h-5 w-5 text-muted" aria-hidden="true" />
             </div>
             <input
               {...register('email')}

@@ -103,7 +103,7 @@ export default function ResetPasswordForm() {
     <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-4">
         <div>
-          <label htmlFor="password" className="sr-only">
+          <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink">
             Nueva contraseña
           </label>
           <div className="relative">
@@ -124,9 +124,9 @@ export default function ResetPasswordForm() {
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                <EyeSlashIcon className="h-5 w-5 text-muted" />
               ) : (
-                <EyeIcon className="h-5 w-5 text-gray-400" />
+                <EyeIcon className="h-5 w-5 text-muted" />
               )}
             </button>
           </div>
@@ -138,7 +138,7 @@ export default function ResetPasswordForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="sr-only">
+          <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-ink">
             Confirmar contraseña
           </label>
           <div className="relative">
@@ -160,7 +160,7 @@ export default function ResetPasswordForm() {
             >
               {showConfirmPassword ? (
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5 text-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -174,7 +174,7 @@ export default function ResetPasswordForm() {
                 </svg>
               ) : (
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5 text-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -243,7 +243,7 @@ export default function ResetPasswordForm() {
       <div className="text-center">
         <Link
           href="/signin"
-          className="font-medium text-blue-600 hover:text-blue-500"
+          className="font-medium text-accent hover:text-accent-hover"
         >
           Volver al inicio de sesión
         </Link>

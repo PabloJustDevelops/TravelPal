@@ -12,9 +12,9 @@ interface TaskBoardProps {
 }
 
 const columns: { id: Task['status']; title: string; color: string; bg: string }[] = [
-  { id: 'pending', title: 'Pendiente', color: 'border-line', bg: 'bg-surface-strong' },
-  { id: 'in_progress', title: 'En Progreso', color: 'border-accent', bg: 'bg-accent-soft' },
-  { id: 'completed', title: 'Completada', color: 'border-success', bg: 'bg-success/10' },
+  { id: 'pending', title: 'Pendiente', color: 'border-line', bg: 'bg-transparent' },
+  { id: 'in_progress', title: 'En Progreso', color: 'border-accent', bg: 'bg-transparent' },
+  { id: 'completed', title: 'Completada', color: 'border-success', bg: 'bg-transparent' },
 ];
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -132,7 +132,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               key={col.id}
               id={`task-column-${col.id}`}
               aria-labelledby={`task-column-title-${col.id}`}
-              className={`${isMobileSelected ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col rounded-xl border ${col.color} ${col.bg} p-4 transition-colors md:flex`}
+              className={`${isMobileSelected ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col border-t-2 ${col.color} ${col.bg} pt-4 transition-colors md:flex`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.id)}
             >
@@ -144,19 +144,19 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   }`} />
                   <h3 id={`task-column-title-${col.id}`} className="font-semibold text-ink">{col.title}</h3>
                 </div>
-                <span className="bg-surface px-2.5 py-0.5 rounded-full text-xs font-medium text-muted shadow-sm border border-line">
+                <span className="bg-surface px-2.5 py-0.5 rounded-md text-xs font-medium text-muted">
                   {colTasks.length}
                 </span>
               </div>
               
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="min-h-0 flex-1 space-y-3 md:overflow-y-auto md:pr-2 custom-scrollbar">
                 {colTasks.map((task) => (
                   <div
                     key={task.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, task.id)}
                     onDragEnd={handleDragEnd}
-                    className="cursor-move transform transition-transform active:scale-[1.02] active:rotate-1"
+                    className="cursor-move"
                   >
                     <TaskCard
                       task={task}
@@ -167,7 +167,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   </div>
                 ))}
                 {colTasks.length === 0 && (
-                  <div className="flex min-h-20 flex-col items-center justify-center rounded-lg border border-dashed border-line/70 px-3 text-muted">
+                  <div className="flex min-h-20 flex-col items-center justify-center rounded-lg bg-paper/50 px-3 text-muted">
                     <span className="text-sm">Sin tareas</span>
                   </div>
                 )}

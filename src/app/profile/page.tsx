@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import PageTitle from "@/components/ui/PageTitle";
 import Input from "@/components/ui/Input";
 import { UserCircleIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/ui/Toast";
@@ -93,11 +94,11 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
+        <PageTitle title="Mi perfil" subtitle="Tu información personal y la foto de tu cuenta." />
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle headingLevel={2} className="flex items-center gap-2">
               <UserCircleIcon className="h-6 w-6" />
               Información Personal
             </CardTitle>
@@ -109,19 +110,21 @@ export default function ProfilePage() {
                   <img
                     src={formData.avatarUrl}
                     alt={formData.fullName || "Usuario"}
-                    className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
+                    className="h-24 w-24 rounded-full object-cover border border-line"
                   />
                 ) : (
-                  <UserCircleIcon className="h-32 w-32 text-gray-400" />
+                  <UserCircleIcon className="h-24 w-24 text-muted" />
                 )}
                 {isEditing && (
-                  <button 
+                  <Button
+                    variant="ghost"
+                    aria-label="Cambiar foto de perfil"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    className="absolute inset-0 flex h-full w-full items-center justify-center bg-ink/60 rounded-full opacity-0 group-hover:opacity-100 hover:!bg-ink/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-opacity cursor-pointer"
                   >
-                    <PhotoIcon className="h-8 w-8 text-white" />
-                  </button>
+                    <PhotoIcon className="h-8 w-8 text-paper" />
+                  </Button>
                 )}
                 <input
                   type="file"
@@ -134,10 +137,10 @@ export default function ProfilePage() {
               </div>
               
               <div className="flex-1 text-center md:text-left space-y-2">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-ink">
                   {formData.fullName || "Usuario"}
                 </h2>
-                <p className="text-gray-500">{formData.email}</p>
+                <p className="text-muted">{formData.email}</p>
                 {isEditing && (
                   <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <Button 
@@ -153,12 +156,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-line">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="profile-name" className="block text-sm font-medium text-ink">
                   Nombre Completo
                 </label>
                 <Input
+                  id="profile-name"
                   value={formData.fullName}
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
@@ -169,23 +173,25 @@ export default function ProfilePage() {
               </div>
               
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="profile-email" className="block text-sm font-medium text-ink">
                   Email
                 </label>
                 <Input
+                  id="profile-email"
                   value={formData.email}
                   disabled
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-surface cursor-not-allowed"
                 />
               </div>
 
               {isEditing && (
                 <div className="md:col-span-2 space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="profile-avatar" className="block text-sm font-medium text-ink">
                     URL del Avatar (Opcional)
                   </label>
                   <div className="flex gap-2">
                     <Input
+                      id="profile-avatar"
                       value={formData.avatarUrl}
                       onChange={(e) =>
                         setFormData({ ...formData, avatarUrl: e.target.value })
@@ -194,14 +200,14 @@ export default function ProfilePage() {
                       className="flex-1"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     Puedes subir una foto o pegar una URL directa a una imagen.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end pt-4 border-t gap-3">
+            <div className="flex justify-end pt-4 border-t border-line gap-3">
               {isEditing ? (
                 <>
                   <Button

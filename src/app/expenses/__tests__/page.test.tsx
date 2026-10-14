@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ExpensesPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
@@ -506,9 +506,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     await screen.findByText("Mis Gastos");
 
-    const card = screen.getByText("Presupuesto Roma").closest(".group");
-    expect(card).not.toBeNull();
-    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);
 
     fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
@@ -557,12 +555,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     await screen.findByText("Mis Gastos");
 
-    const card = screen.getByText("Presupuesto Roma").closest(".group");
-    expect(card).not.toBeNull();
-
-    const deleteButton = within(card as HTMLElement)
-      .getAllByRole("button")
-      .find((button) => button.className.includes("text-danger"));
+    const deleteButton = screen.getByRole("button", { name: "Eliminar presupuesto Presupuesto Roma" });
     expect(deleteButton).toBeDefined();
 
     fireEvent.click(deleteButton as HTMLElement);
@@ -586,8 +579,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     await screen.findByText("Mis Gastos");
 
-    const card = screen.getByText("Presupuesto Roma").closest(".group");
-    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);
 
     fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {
@@ -618,10 +610,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     await screen.findByText("Mis Gastos");
 
-    const card = screen.getByText("Presupuesto Roma").closest(".group");
-    const deleteButton = within(card as HTMLElement)
-      .getAllByRole("button")
-      .find((button) => button.className.includes("text-danger"));
+    const deleteButton = screen.getByRole("button", { name: "Eliminar presupuesto Presupuesto Roma" });
     fireEvent.click(deleteButton as HTMLElement);
 
     await waitFor(() => {
@@ -642,8 +631,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     await screen.findByText("Mis Gastos");
 
-    const card = screen.getByText("Presupuesto Roma").closest(".group");
-    const [editButton] = within(card as HTMLElement).getAllByRole("button");
+    const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);
 
     fireEvent.change(screen.getByLabelText("Nombre del Presupuesto"), {

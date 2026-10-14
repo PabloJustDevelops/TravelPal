@@ -273,9 +273,9 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-100px)]">
+      <div className="flex min-h-[calc(100vh-100px)] flex-col md:h-[calc(100vh-100px)] md:min-h-0">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between">
           <PageTitle
             title="Mis Tareas"
             subtitle="Gestiona tus pendientes y proyectos"
@@ -319,18 +319,21 @@ export default function TasksPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="md:flex-1 md:overflow-hidden">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <LoadingSpinner />
             </div>
           ) : viewMode === "board" ? (
-            <TaskBoard
-              tasks={tasks}
-              onEditTask={handleEditTask}
-              onDeleteTask={handleDeleteTask}
-              onStatusChange={handleStatusChange}
-            />
+            <>
+              <h2 className="sr-only">Tablero de tareas</h2>
+              <TaskBoard
+                tasks={tasks}
+                onEditTask={handleEditTask}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            </>
           ) : (
             <TaskCalendarView
               tasks={tasks}

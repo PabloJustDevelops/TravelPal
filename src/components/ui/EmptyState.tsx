@@ -16,21 +16,21 @@ export default function EmptyState({
   return (
     <section
       aria-live="polite"
-      className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-paper px-5 py-10 text-center sm:px-8 sm:py-12"
+      className="flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10"
     >
       {icon && (
         <div
           aria-hidden="true"
-          className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-accent"
+          className="mb-5 text-muted [&>svg]:h-7 [&>svg]:w-7"
         >
           {icon}
         </div>
       )}
-      <h3 className="font-sans text-lg font-semibold leading-snug text-ink">
+      <h2 className="font-sans text-lg font-semibold leading-snug text-ink">
         {title}
-      </h3>
+      </h2>
       {description && (
-        <p className="mt-2 max-w-md text-sm leading-reading text-muted">
+        <p className="mt-2 max-w-lg text-sm leading-reading text-muted">
           {description}
         </p>
       )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Trip } from '@/lib/insforge'
 import { 
   PieChart, 
@@ -67,6 +67,12 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function TripChart({ trips, type = 'status', title = 'Estado de Viajes', height = 320 }: TripChartProps) {
   const [data, setData] = useState<ChartData[]>([])
+  const mobileHeight = Math.min(280, Math.max(220, data.length * 36 + 80))
+  const chartStyle = {
+    '--chart-mobile-height': `${mobileHeight}px`,
+    '--chart-height': `${height}px`,
+  } as CSSProperties
+  const chartClassName = 'h-[var(--chart-mobile-height)] min-h-0 w-full lg:h-[var(--chart-height)]'
 
   useEffect(() => {
     if (!trips || trips.length === 0) {
@@ -111,15 +117,19 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
 
   if (data.length === 0) {
     return (
-      <div className="h-[320px] flex items-center justify-center bg-surface-strong rounded-lg border border-dashed border-line">
+      <div
+        data-testid="trip-chart"
+        className={`${chartClassName} flex items-center justify-center rounded-lg border border-dashed border-line bg-surface-strong`}
+        style={chartStyle}
+      >
         <p className="text-muted text-sm">No hay datos suficientes</p>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-full min-h-[320px]">
-      <ResponsiveContainer width="100%" height={height}>
+    <div data-testid="trip-chart" className={chartClassName} style={chartStyle}>
+      <ResponsiveContainer width="100%" height="100%">
         {type === 'status' ? (
           <PieChart>
             <Pie

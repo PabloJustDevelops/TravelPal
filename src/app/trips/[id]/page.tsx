@@ -213,10 +213,10 @@ export default function TripDetailsPage({
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Tu viaje</p>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   trip.status === "confirmed" || trip.status === "completed"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-success/10 text-success"
                     : trip.status === "cancelled"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-blue-100 text-blue-800"
+                      ? "bg-danger/10 text-danger"
+                      : "bg-accent-soft text-accent"
                 }`}>
                   {TRIP_STATUS_LABELS[trip.status]}
                 </span>

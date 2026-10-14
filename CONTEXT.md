@@ -55,6 +55,7 @@ Reglas: `text + CHECK` en vez de enums; FKs solo si una consulta las usa; RLS de
 
 ## Where to look
 
+- `DESIGN.md`: dirección Atlas vigente, herramientas UI reales, estado por módulo y continuidad para otros chats.
 - `AGENTS.md`: reglas para agentes (issue tracker, triage labels, skills, hosting).
 - `docs/ARCHITECTURE.md`: vision tecnica y flujo de datos.
 - `docs/DECISIONS/`: ADRs (000 plantilla; 001 obsoleto; 002 InsForge; 003 Cloudflare; 004 esquema).

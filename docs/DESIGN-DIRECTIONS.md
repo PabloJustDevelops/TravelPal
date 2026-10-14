@@ -1,8 +1,9 @@
 # 🎨 Rumbos visuales
 
-> Tres direcciones para la piel de TravelPal. **Documento histórico: la dirección elegida es la A,
-> Cuaderno de viaje, y vive en [ADR-007](DECISIONS/ADR-007-rumbo-cuaderno-de-viaje.md).**
-> El sistema de diseño (componentes y guardia) ya está cerrado; esto comparó hacia dónde moverse.
+> Comparación histórica anterior a Atlas. ADR-007 fue sustituido por
+> [ADR-008](DECISIONS/ADR-008-atlas-claro.md). Las descripciones de tokens y pantallas
+> de este documento reflejan aquel punto de partida, no el código actual.
+> La guía vigente para continuar el diseño está en [DESIGN.md](../DESIGN.md).
 
 ## De dónde partimos
 
