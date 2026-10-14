@@ -12,9 +12,9 @@ interface TaskBoardProps {
 }
 
 const columns: { id: Task['status']; title: string; color: string; bg: string }[] = [
-  { id: 'pending', title: 'Pendiente', color: 'border-line', bg: 'bg-surface-strong' },
-  { id: 'in_progress', title: 'En Progreso', color: 'border-accent', bg: 'bg-accent-soft' },
-  { id: 'completed', title: 'Completada', color: 'border-success', bg: 'bg-success/10' },
+  { id: 'pending', title: 'Pendiente', color: 'border-line', bg: 'bg-transparent' },
+  { id: 'in_progress', title: 'En Progreso', color: 'border-accent', bg: 'bg-transparent' },
+  { id: 'completed', title: 'Completada', color: 'border-success', bg: 'bg-transparent' },
 ];
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -77,28 +77,30 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   return (
     <div className="relative h-full flex flex-col">
       {/* Trash Zone - Visible only when dragging */}
-      <div 
-        className={`
-          absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50
-          transition-all duration-300 ease-in-out
-          ${isDragging ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}
-        `}
-        onDragOver={handleTrashDragOver}
-        onDragLeave={handleTrashDragLeave}
-        onDrop={handleTrashDrop}
-      >
-        <div className={`
-          flex items-center gap-3 px-8 py-4 rounded-full shadow-lg border-2
-          backdrop-blur-sm transition-colors
-          ${dragOverTrash 
-            ? 'bg-danger/10 border-danger text-danger scale-110' 
-            : 'bg-surface/90 border-danger/40 text-muted hover:border-danger hover:text-danger'
-          }
-        `}>
-          <TrashIcon className={`w-8 h-8 ${dragOverTrash ? 'animate-bounce' : ''}`} />
-          <span className="font-medium text-lg">Soltar para eliminar</span>
+      {tasks.length > 0 && (
+        <div
+          className={`
+            absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50
+            transition-all duration-300 ease-in-out
+            ${isDragging ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}
+          `}
+          onDragOver={handleTrashDragOver}
+          onDragLeave={handleTrashDragLeave}
+          onDrop={handleTrashDrop}
+        >
+          <div className={`
+            flex items-center gap-3 px-8 py-4 rounded-full shadow-lg border-2
+            backdrop-blur-sm transition-colors
+            ${dragOverTrash
+              ? 'bg-danger/10 border-danger text-danger scale-110'
+              : 'bg-surface/90 border-danger/40 text-muted hover:border-danger hover:text-danger'
+            }
+          `}>
+            <TrashIcon className={`w-8 h-8 ${dragOverTrash ? 'animate-bounce' : ''}`} />
+            <span className="font-medium text-lg">Soltar para eliminar</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mb-4 md:hidden">
         <label htmlFor="task-board-status" className="mb-1.5 block text-sm font-medium text-ink">
@@ -120,7 +122,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         </select>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 md:grid-cols-3 md:gap-6">
+      <div className={`grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 md:grid-cols-3 md:gap-6 ${tasks.length === 0 ? 'md:items-start' : ''}`}>
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.id);
           const isMobileSelected = mobileStatus === col.id;
@@ -130,7 +132,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               key={col.id}
               id={`task-column-${col.id}`}
               aria-labelledby={`task-column-title-${col.id}`}
-              className={`${isMobileSelected ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col rounded-xl border ${col.color} ${col.bg} p-4 transition-colors md:flex`}
+              className={`${isMobileSelected ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col border-t-2 ${col.color} ${col.bg} pt-4 transition-colors md:flex`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.id)}
             >
@@ -142,19 +144,19 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   }`} />
                   <h3 id={`task-column-title-${col.id}`} className="font-semibold text-ink">{col.title}</h3>
                 </div>
-                <span className="bg-surface px-2.5 py-0.5 rounded-full text-xs font-medium text-muted shadow-sm border border-line">
+                <span className="bg-surface px-2.5 py-0.5 rounded-md text-xs font-medium text-muted">
                   {colTasks.length}
                 </span>
               </div>
               
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="min-h-0 flex-1 space-y-3 md:overflow-y-auto md:pr-2 custom-scrollbar">
                 {colTasks.map((task) => (
                   <div
                     key={task.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, task.id)}
                     onDragEnd={handleDragEnd}
-                    className="cursor-move transform transition-transform active:scale-[1.02] active:rotate-1"
+                    className="cursor-move"
                   >
                     <TaskCard
                       task={task}
@@ -165,8 +167,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   </div>
                 ))}
                 {colTasks.length === 0 && (
-                  <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-line/50 text-muted">
-                    <span className="text-sm">Vacío</span>
+                  <div className="flex min-h-20 flex-col items-center justify-center rounded-lg bg-paper/50 px-3 text-muted">
+                    <span className="text-sm">Sin tareas</span>
                   </div>
                 )}
               </div>

@@ -28,7 +28,14 @@ const plannedData = {
 
 export const Planned: Story = { args: { ...plannedData } };
 export const Dark: Story = { args: { ...plannedData }, globals: { theme: 'dark' } };
-export const Empty: Story = { args: { trips: [], activities: [], tasks: [], budgets: [] } };
+export const Empty: Story = {
+  args: { trips: [], activities: [], tasks: [], budgets: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const itinerary = canvas.getByRole('region', { name: 'Itinerario' });
+    await expect(itinerary.getBoundingClientRect().height).toBeLessThan(220);
+  },
+};
 export const Mobile390: Story = {
   args: { ...plannedData },
   parameters: {

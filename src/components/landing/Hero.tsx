@@ -1,56 +1,41 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { accentLinkClassName } from '@/components/ui/actionStyles';
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { accentLinkClassName } from '@/components/ui/actionStyles'
+import styles from './landing.module.css'
+import { cn } from '@/lib/utils'
 
 export default function Hero() {
   return (
-    <div className="relative isolate flex min-h-[85vh] items-center overflow-hidden bg-ink">
-      <Image
-        src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-        alt=""
-        fill
-        className="absolute inset-0 -z-10 h-full w-full object-cover"
-        priority
-      />
-
-      {/* Velo plano, no degradado: la portada sangra de borde a borde y el texto se apoya en tinta. */}
-      <div className="absolute inset-0 -z-10 bg-ink/55" />
-
-      <div className="mx-auto w-full max-w-7xl px-6 py-section-lg lg:px-8">
-        <motion.div
-          className="max-w-3xl"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-paper/70">
-            Editorial de viajes
-          </p>
-          <h1 className="mt-4 font-serif text-4xl leading-tight text-paper sm:text-6xl">
-            Tu compañero de viaje perfecto
-          </h1>
-          <p className="mt-6 max-w-prose text-lg leading-reading text-paper/80">
-            Planifica, organiza y disfruta tus aventuras sin estrés. Desde el itinerario hasta el presupuesto, TravelPal tiene todo lo que necesitas en un solo lugar.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <Link
-              href="/signup"
-              className={`${accentLinkClassName} focus-visible:outline-paper`}
-            >
-              Comenzar gratis
-            </Link>
-            <Link
-              href="#features"
-              className="text-sm font-semibold leading-6 text-paper hover:opacity-80"
-            >
-              Saber más <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </motion.div>
+    <section aria-labelledby="home-heading" className={styles.hero}>
+      <div className={styles.copy}>
+        <h1 id="home-heading" className={styles.title}>
+          <span>Tu viaje,</span>{' '}
+          <span>de principio a fin.</span>
+        </h1>
+        <p className={styles.subtitle}>Itinerario, reservas y gastos. En un mismo lugar.</p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <Link href="/signup" className={cn(accentLinkClassName, 'min-h-14 gap-3 px-6 text-lg')}>
+            Crear mi viaje <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
+          </Link>
+          <Link href="#example" className="inline-flex min-h-12 items-center gap-3 rounded-sm text-lg font-medium text-accent hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+            Ver un ejemplo <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
-    </div>
-  );
+      <div className={styles.caption} aria-hidden="true">
+        <span className={styles.captionTitle}>Costa mediterránea</span>
+        <p>Un plan, muchos momentos<br />por descubrir.</p>
+      </div>
+      <Image
+        src="/images/atlas/coastal-panorama.webp"
+        alt="Ilustración de un viajero siguiendo un sendero hacia un pueblo costero, con montañas y un velero al fondo"
+        width={1774}
+        height={887}
+        preload
+        sizes="(max-width: 640px) 200vw, 100vw"
+        className={styles.scene}
+      />
+    </section>
+  )
 }

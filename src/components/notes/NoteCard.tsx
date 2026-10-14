@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatDate } from '@/lib/utils'
 import {
   CalendarIcon,
-  TagIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline'
 import Button from '@/components/ui/Button'
@@ -47,53 +46,31 @@ export default function NoteCard({ note, showTripTitle = false, onEdit }: NoteCa
     }
   }
 
-  const getCategoryColor = (category: Note['category']) => {
-    switch (category) {
-      case 'itinerary':
-        return 'bg-blue-100 text-blue-800'
-      case 'accommodation':
-        return 'bg-purple-100 text-purple-800'
-      case 'transport':
-        return 'bg-green-100 text-green-800'
-      case 'restaurant':
-        return 'bg-orange-100 text-orange-800'
-      case 'activity':
-        return 'bg-pink-100 text-pink-800'
-      case 'shopping':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'emergency':
-        return 'bg-red-100 text-red-800'
-      case 'contact':
-        return 'bg-indigo-100 text-indigo-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   const truncateContent = (content: string, maxLength: number = 150) => {
     if (content.length <= maxLength) return content
     return content.substring(0, maxLength) + '...'
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow relative group">
-      <CardHeader className="pb-3">
+    <Card className="relative h-full">
+      <CardHeader className="border-b-0 pb-0">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg flex items-center space-x-2">
+          <CardTitle headingLevel={2} className="min-w-0 text-lg flex items-center gap-2">
             <CategoryIcon
               category={note.category}
               className="h-5 w-5 text-muted"
             />
-            <span className="line-clamp-1">{note.title}</span>
+            <span className="break-words">{note.title}</span>
           </CardTitle>
           {onEdit && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(note)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label={`Editar nota ${note.title}`}
+              className="h-11 w-11 shrink-0 p-0"
             >
-              <PencilSquareIcon className="h-4 w-4" />
+              <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
         </div>
@@ -104,21 +81,11 @@ export default function NoteCard({ note, showTripTitle = false, onEdit }: NoteCa
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Category */}
-        <div className="flex items-center space-x-2">
-          <TagIcon className="h-4 w-4 text-muted" />
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(
-              note.category
-            )}`}
-          >
-            {getCategoryName(note.category)}
-          </span>
-        </div>
+        <p className="text-xs font-medium text-muted">{getCategoryName(note.category)}</p>
 
         {/* Content Preview */}
         <div className="prose prose-sm max-w-none">
-          <div className="text-muted text-sm leading-relaxed">
+          <div className="text-ink text-sm leading-relaxed">
             {truncateContent(note.content)}
           </div>
         </div>

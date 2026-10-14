@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import NotesPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Note } from "@/lib/insforge";
@@ -143,8 +143,7 @@ async function openEditorAndSave() {
 
 // Abre el editor sobre la nota existente (no la creacion) y guarda.
 async function openExistingAndSave() {
-  const card = screen.getByText("Notas de Roma").closest(".group");
-  fireEvent.click(within(card as HTMLElement).getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: "Editar nota Notas de Roma" }));
   fireEvent.click(screen.getByText("Guardar Nota"));
 }
 

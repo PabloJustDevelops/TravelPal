@@ -109,7 +109,6 @@ describe("sistema de diseno: un solo boton primario", () => {
   const NATIVE_BUTTON_FILES = [
     "src/app/dashboard/page.tsx",
     "src/app/planning/page.tsx",
-    "src/app/profile/page.tsx",
     "src/app/settings/page.tsx",
     "src/app/tasks/page.tsx",
     "src/components/auth/ForgotPasswordForm.tsx",

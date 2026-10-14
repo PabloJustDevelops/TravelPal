@@ -2,14 +2,13 @@ import { HTMLAttributes, forwardRef } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * Lamina, no caja: sin borde ni sombra, sobre la superficie del papel. El unico filete es el
- * que separa la cabecera del contenido y el pie del cuerpo.
+ * Superficie Atlas compartida: borde discreto, sin sombra ni elevación al pasar el ratón.
  */
 const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded-md bg-surface text-ink', className)}
+      className={cn('rounded-xl border border-line bg-paper text-ink', className)}
       {...props}
     />
   )
@@ -27,14 +26,17 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 )
 CardHeader.displayName = 'CardHeader'
 
-const CardTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h3
-      ref={ref}
-      className={cn('font-serif text-heading leading-snug', className)}
-      {...props}
-    />
-  )
+const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement> & { headingLevel?: 2 | 3 | 4 }>(
+  ({ className, headingLevel = 3, ...props }, ref) => {
+    const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
+    return (
+      <Heading
+        ref={ref}
+        className={cn('font-sans text-lg font-semibold leading-snug tracking-tight', className)}
+        {...props}
+      />
+    )
+  }
 )
 CardTitle.displayName = 'CardTitle'
 

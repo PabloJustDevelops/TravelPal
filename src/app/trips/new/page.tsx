@@ -313,37 +313,43 @@ export default function NewTripPage() {
                 </div>
               </div>
 
-              {/* Flight Information */}
-              <div className="space-y-4">
-                <h2 className="font-sans text-lg font-semibold text-ink">
-                  Información de Vuelo
-                </h2>
+              {/* Optional flight details use native disclosure so essentials stay short. */}
+              <details className="rounded-xl border border-line bg-surface/50 p-4 sm:p-5">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-ink marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+                  <span>Añadir datos de vuelo (opcional)</span>
+                  <span aria-hidden="true" className="text-accent">＋</span>
+                </summary>
+                <div className="mt-4 space-y-4 border-t border-line pt-4">
+                  <h2 className="font-sans text-base font-semibold text-ink">
+                    Información de vuelo
+                  </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Aerolínea"
+                      name="airline"
+                      value={formData.airline}
+                      onChange={handleInputChange}
+                      placeholder="ej. Iberia"
+                    />
+                    <Input
+                      label="Número de Vuelo"
+                      name="flight_number"
+                      value={formData.flight_number}
+                      onChange={handleInputChange}
+                      placeholder="ej. IB3201"
+                    />
+                  </div>
+
                   <Input
-                    label="Aerolínea"
-                    name="airline"
-                    value={formData.airline}
+                    label="Código de Confirmación"
+                    name="confirmation_number"
+                    value={formData.confirmation_number}
                     onChange={handleInputChange}
-                    placeholder="ej. Iberia"
-                  />
-                  <Input
-                    label="Número de Vuelo"
-                    name="flight_number"
-                    value={formData.flight_number}
-                    onChange={handleInputChange}
-                    placeholder="ej. IB3201"
+                    placeholder="ej. ABC123"
                   />
                 </div>
-
-                <Input
-                  label="Código de Confirmación"
-                  name="confirmation_number"
-                  value={formData.confirmation_number}
-                  onChange={handleInputChange}
-                  placeholder="ej. ABC123"
-                />
-              </div>
+              </details>
 
               {/* Notes */}
               <div className="space-y-1">

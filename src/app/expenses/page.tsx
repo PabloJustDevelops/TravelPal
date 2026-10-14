@@ -375,6 +375,7 @@ export default function ExpensesPage() {
   };
 
   const stats = getExpenseStats();
+  const hasFinancialData = expenses.length > 0 || budgets.length > 0;
 
   const expenseCurrencies = [...new Set(expenses.map((expense) => expense.currency))].sort();
   const selectedChartCurrency = expenseCurrencies.includes(chartCurrency)
@@ -647,7 +648,7 @@ export default function ExpensesPage() {
         <PageTitle
           title="Mis Gastos"
           subtitle="Controla tus gastos y compáralos con lo previsto"
-          action={
+          action={hasFinancialData ? (
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="outline" onClick={handleCreateBudget}>
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -660,10 +661,32 @@ export default function ExpensesPage() {
                 </Button>
               </Link>
             </div>
-          }
+          ) : undefined}
         />
 
+        {!hasFinancialData && (
+          <EmptyState
+            icon={<CurrencyDollarIcon className="h-7 w-7" />}
+            title="Empieza a organizar tu dinero"
+            description="Registra un gasto o crea un presupuesto para seguir el coste del viaje desde el primer día."
+            action={(
+              <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                <Link href="/expenses/new">
+                  <Button className="w-full sm:w-auto">
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Registrar primer gasto
+                  </Button>
+                </Link>
+                <Button variant="outline" onClick={handleCreateBudget}>
+                  Crear presupuesto
+                </Button>
+              </div>
+            )}
+          />
+        )}
+
         {/* Stats Cards */}
+        {expenses.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
@@ -743,8 +766,10 @@ export default function ExpensesPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Las gráficas muestran una moneda cada vez para no comparar importes incompatibles. */}
+        {chartExpenses.length > 0 && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">Filtra ambas gráficas por una moneda</p>
@@ -801,8 +826,10 @@ export default function ExpensesPage() {
             </section>
           </div>
         </div>
+        )}
 
         {/* Filters: un unico bloque para gastos y presupuestos */}
+        {hasFinancialData && (
         <div className="bg-surface p-4 rounded-lg shadow-sm border border-line">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
@@ -860,8 +887,10 @@ export default function ExpensesPage() {
             {filteredBudgets.length} de {budgets.length} presupuestos
           </p>
         </div>
+        )}
 
         {/* Previsto frente a real */}
+        {budgets.length > 0 && (
         <section className="space-y-4">
           <Card>
             <CardContent className="p-6">
@@ -953,26 +982,12 @@ export default function ExpensesPage() {
           ) : (
             <EmptyState
               icon={<ChartBarIcon className="h-12 w-12" />}
-              title={
-                budgets.length === 0
-                  ? "No tienes presupuestos"
-                  : "No se encontraron presupuestos"
-              }
-              description={
-                budgets.length === 0
-                  ? "Crea tu primer presupuesto para comparar lo previsto con lo real"
-                  : "Intenta ajustar los filtros para encontrar lo que buscas"
-              }
-              action={
-                budgets.length === 0 ? (
-                  <Button onClick={handleCreateBudget}>
-                    Crear Presupuesto
-                  </Button>
-                ) : undefined
-              }
+              title="No se encontraron presupuestos"
+              description="Intenta ajustar los filtros para encontrar lo que buscas"
             />
           )}
         </section>
+        )}
 
         {/* Gastos */}
         {filteredExpenses.length > 0 ? (
@@ -981,7 +996,7 @@ export default function ExpensesPage() {
               <ExpenseCard key={expense.id} expense={expense} showTripTitle />
             ))}
           </div>
-        ) : (
+        ) : hasFinancialData && (
           <EmptyState
             icon={<CurrencyDollarIcon className="h-12 w-12" />}
             title={

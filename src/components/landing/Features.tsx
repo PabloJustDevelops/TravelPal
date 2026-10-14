@@ -1,74 +1,18 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { 
-  MapIcon, 
-  CurrencyDollarIcon, 
-  ClipboardDocumentListIcon, 
-  ChartBarIcon 
-} from '@heroicons/react/24/outline';
-
-const features = [
-  {
-    name: 'Planificación de Viajes',
-    description: 'Crea y gestiona tus viajes de forma sencilla. Organiza destinos, fechas y detalles importantes en un solo lugar.',
-    icon: MapIcon,
-  },
-  {
-    name: 'Gestión de Gastos',
-    description: 'Lleva un control detallado de tus gastos. Categoriza tus compras y mantén tu presupuesto bajo control.',
-    icon: CurrencyDollarIcon,
-  },
-  {
-    name: 'Itinerarios Detallados',
-    description: 'Planifica tu día a día con itinerarios flexibles. Agrega actividades, reservas y notas importantes.',
-    icon: ClipboardDocumentListIcon,
-  },
-  {
-    name: 'Análisis y Reportes',
-    description: 'Visualiza tus gastos con gráficos intuitivos. Entiende en qué estás gastando y optimiza tu presupuesto.',
-    icon: ChartBarIcon,
-  },
-];
+import Image from 'next/image'
 
 export default function Features() {
   return (
-    <div className="bg-background py-section-lg" id="features">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-            Todo en uno
-          </h2>
-          <p className="mt-3 font-serif text-title text-ink sm:text-display">
-            Todo lo que necesitas para tu próximo viaje
-          </p>
-          <p className="mt-6 max-w-prose text-lg leading-reading text-muted">
-            TravelPal simplifica la planificación y gestión de tus viajes para que puedas concentrarte en disfrutar la experiencia.
-          </p>
-        </div>
-        <div className="mt-16 max-w-2xl sm:mt-20 lg:max-w-none">
-          <dl className="grid grid-cols-1 gap-x-8 gap-y-12 lg:grid-cols-2 lg:gap-y-16">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.name}
-                className="border-t border-line pt-6"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <feature.icon className="h-6 w-6 text-accent" aria-hidden="true" />
-                <dt className="mt-4 font-serif text-heading leading-snug text-ink">
-                  {feature.name}
-                </dt>
-                <dd className="mt-2 max-w-prose leading-reading text-muted">
-                  {feature.description}
-                </dd>
-              </motion.div>
-            ))}
-          </dl>
-        </div>
+    <section id="features" className="grid overflow-hidden bg-surface lg:grid-cols-[1.1fr_1fr]">
+      <div className="px-5 py-12 sm:px-12 lg:py-16">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Organiza cada detalle.</h2>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">Itinerarios, reservas, gastos, tareas, notas y diario de viaje.</p>
+        <dl className="mt-8 max-w-xl divide-y divide-line">
+          <div className="py-5"><dt className="font-semibold">Un lugar para tus planes</dt><dd className="mt-2 text-sm leading-relaxed text-muted">Consulta las actividades y reservas de cada viaje sin buscar entre notas sueltas.</dd></div>
+          <div className="py-5"><dt className="font-semibold">Los gastos, al día</dt><dd className="mt-2 text-sm leading-relaxed text-muted">Registra lo que vas gastando y compáralo con el presupuesto del viaje.</dd></div>
+          <div className="py-5"><dt className="font-semibold">Los recuerdos también cuentan</dt><dd className="mt-2 text-sm leading-relaxed text-muted">Escribe en el diario y guarda las fotos que quieras conservar al volver.</dd></div>
+        </dl>
       </div>
-    </div>
-  );
+      <Image src="/images/atlas/coastal-journey.webp" alt="Detalle ilustrado del pueblo costero y el camino de un viajero" width={1536} height={1024} sizes="(min-width: 1024px) 50vw, 100vw" className="h-64 w-full object-cover object-left lg:h-full" />
+    </section>
+  )
 }

@@ -153,7 +153,7 @@ export default function NextTrip({
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(17rem,1fr)]">
-        <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 rounded-xl border border-line bg-paper p-5 sm:p-6">
+        <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 self-start rounded-xl border border-line bg-paper p-5 sm:p-6">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
             <h3 id="dashboard-itinerary-title" className="font-sans text-lg font-semibold text-ink">Itinerario</h3>
             {trip && <Link href={`/trips/${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -161,7 +161,7 @@ export default function NextTrip({
             </Link>}
           </div>
           {!trip ? (
-            <p className="py-6 text-sm text-muted">Tu itinerario aparecerá cuando tengas un viaje próximo.</p>
+            <p className="py-2 text-sm text-muted">Tu itinerario aparecerá cuando tengas un viaje próximo.</p>
           ) : tripActivities.length > 0 ? (
             <ol className="divide-y divide-line">
               {tripActivities.map((activity) => (

@@ -174,20 +174,20 @@ export default function NewExpensePage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Nuevo Gasto</h1>
-            <p className="text-sm text-gray-500">Registra un nuevo gasto de viaje</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-ink">Nuevo Gasto</h1>
+            <p className="text-sm text-muted">Registra un nuevo gasto de viaje</p>
           </div>
         </div>
 
         {/* Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Información del Gasto</CardTitle>
+            <CardTitle headingLevel={2}>Información del Gasto</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div role="alert" className="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-md">
                   {error}
                 </div>
               )}
@@ -216,10 +216,11 @@ export default function NewExpensePage() {
                     required
                   />
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="expense-currency" className="block text-sm font-medium text-ink">
                       Moneda *
                     </label>
                     <select
+                      id="expense-currency"
                       name="currency"
                       value={formData.currency}
                       onChange={handleInputChange}
@@ -235,18 +236,16 @@ export default function NewExpensePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Categoría *
-                  </label>
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium text-ink">Categoría *</legend>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {categories.map((category) => (
                       <label
                         key={category.value}
-                        className={`relative flex flex-col items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        className={`relative flex flex-col items-center p-3 border rounded-lg cursor-pointer transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-paper ${
                           formData.category === category.value
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-accent bg-accent-soft text-accent'
+                            : 'border-line bg-paper text-muted hover:border-accent'
                         }`}
                       >
                         <input
@@ -259,7 +258,7 @@ export default function NewExpensePage() {
                         />
                         <CategoryIcon
                           category={category.value}
-                          className="h-6 w-6 mb-1 text-gray-600"
+                          className="h-6 w-6 mb-1 text-muted"
                         />
                         <span className="text-xs text-center font-medium">
                           {category.label}
@@ -267,7 +266,7 @@ export default function NewExpensePage() {
                       </label>
                     ))}
                   </div>
-                </div>
+                </fieldset>
 
                 <Input
                   label="Fecha y Hora *"
@@ -279,10 +278,11 @@ export default function NewExpensePage() {
                 />
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="expense-trip_id" className="block text-sm font-medium text-ink">
                     Viaje Asociado
                   </label>
                   <select
+                    id="expense-trip_id"
                     name="trip_id"
                     value={formData.trip_id}
                     onChange={handleInputChange}
@@ -295,16 +295,17 @@ export default function NewExpensePage() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     Opcional: Asocia este gasto a un viaje específico
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="expense-notes" className="block text-sm font-medium text-ink">
                     Notas Adicionales
                   </label>
                   <textarea
+                    id="expense-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}

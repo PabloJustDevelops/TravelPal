@@ -125,14 +125,14 @@ export default function RegisterForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       <div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink">
           Crea tu cuenta
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           O{' '}
           <Link
             href="/signin"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-accent hover:text-accent-hover"
           >
             inicia sesión si ya tienes cuenta
           </Link>
@@ -148,7 +148,7 @@ export default function RegisterForm() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="fullName" className="block text-sm font-medium text-ink">
                 Nombre completo
               </label>
               <input
@@ -165,7 +165,7 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-ink">
                 Email
               </label>
               <input
@@ -182,7 +182,7 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-ink">
                 Contraseña
               </label>
               <div className="mt-1 relative">
@@ -197,13 +197,15 @@ export default function RegisterForm() {
                 {isClient && (
                   <button
                     type="button"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={showPassword}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      <EyeSlashIcon className="h-5 w-5 text-muted" />
                     ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                      <EyeIcon className="h-5 w-5 text-muted" />
                     )}
                   </button>
                 )}
@@ -216,7 +218,7 @@ export default function RegisterForm() {
               {password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex justify-between items-center mb-1">
-                    <div className="text-xs text-gray-600">Fortaleza de la contraseña:</div>
+                    <div className="text-xs text-muted">Fortaleza de la contraseña:</div>
                     <div className={`text-xs font-medium ${
                         strengthScore <= 1 ? 'text-red-500' : 
                         strengthScore === 2 ? 'text-yellow-500' : 
@@ -235,7 +237,7 @@ export default function RegisterForm() {
                       />
                     ))}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-muted mt-1">
                     Usa 8+ caracteres, mayúsculas, minúsculas y números.
                   </div>
                 </div>
@@ -243,7 +245,7 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink">
                 Confirmar contraseña
               </label>
               <div className="mt-1 relative">
@@ -258,13 +260,15 @@ export default function RegisterForm() {
                 {isClient && (
                   <button
                     type="button"
+                    aria-label={showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
+                    aria-pressed={showConfirmPassword}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      <EyeSlashIcon className="h-5 w-5 text-muted" />
                     ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                      <EyeIcon className="h-5 w-5 text-muted" />
                     )}
                   </button>
                 )}

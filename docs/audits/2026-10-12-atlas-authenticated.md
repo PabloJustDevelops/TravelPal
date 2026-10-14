@@ -84,4 +84,10 @@ La nueva prueba del planificador real reprodujo ambos fallos antes del cambio: `
 | `pnpm run type-check` | `tsc --noEmit`, sin diagnósticos | 0 |
 | `pnpm build` | Next.js 16.3.8, compilación y generación de rutas correctas | 0 |
 
-La revisión independiente del parche devolvió «Sin hallazgos». Los consumidores del planificador (`TripItinerary` y `/planning`) normalizan las horas ausentes a una cadena vacía. La captura del dashboard poblado, la compactación del vacío y la comparación global siguen pendientes.
+La revisión independiente del parche devolvió «Sin hallazgos». Los consumidores del planificador (`TripItinerary` y `/planning`) normalizan las horas ausentes a una cadena vacía. La captura del dashboard poblado y la comparación global siguen pendientes. La compactación del estado vacío quedó verificada el 13 de octubre (detalle abajo).
+
+## Compactación del dashboard vacío — 13 de octubre
+
+La tarjeta de itinerario se estiraba hasta la altura combinada de las tarjetas de tareas y presupuesto: Storybook midió 398 px en estado vacío. Se alinea ahora al inicio de la fila y reduce su espacio vertical. El test de la historia `Empty` verifica una altura menor de 220 px; el navegador midió 139 px a 1440 px de ancho y 151 px a 390 px. Capturas aisladas del componente: `../qa/audits/assets/11-dashboard-vacio-compacto-escritorio.png` y `../qa/audits/assets/12-dashboard-vacio-compacto-movil.png`.
+
+Esto resuelve la tarjeta vacía alta. No reemplaza la captura autenticada ni la comparación del dashboard poblado contra la referencia, que siguen pendientes.

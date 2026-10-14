@@ -5,12 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   CalendarIcon,
-  TagIcon,
   DocumentTextIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import Button from '@/components/ui/Button'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 
 interface ExpenseWithTrip extends Expense {
@@ -50,50 +48,19 @@ export default function ExpenseCard({ expense, showTripTitle = false }: ExpenseC
     }
   }
 
-  const getCategoryColor = (category: Expense['category']) => {
-    switch (category) {
-      case 'accommodation':
-        return 'bg-blue-100 text-blue-800'
-      case 'transport':
-        return 'bg-green-100 text-green-800'
-      case 'food':
-        return 'bg-orange-100 text-orange-800'
-      case 'entertainment':
-        return 'bg-purple-100 text-purple-800'
-      case 'shopping':
-        return 'bg-pink-100 text-pink-800'
-      case 'health':
-        return 'bg-red-100 text-red-800'
-      case 'insurance':
-        return 'bg-indigo-100 text-indigo-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   return (
-    <Card className="hover:shadow-md transition-shadow relative group">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg flex items-center space-x-2">
+    <Card className="relative">
+      <CardHeader className="border-b-0 pb-0">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <CardTitle headingLevel={2} className="min-w-0 text-base flex items-center gap-2">
             <CategoryIcon
               category={expense.category}
               className="h-5 w-5 text-muted"
             />
-            <span>{expense.title || expense.description}</span>
+            <span className="break-words">{expense.title || expense.description}</span>
           </CardTitle>
           <div className="text-right flex flex-col items-end">
-             <Link href={`/expenses/${expense.id}/edit`} aria-label="Editar gasto">
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 aria-label="Editar gasto"
-                 className="opacity-0 group-hover:opacity-100 transition-opacity mb-1"
-               >
-                 <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
-               </Button>
-             </Link>
-            <div className="text-lg font-bold text-ink">
+            <div className="text-xl font-semibold tabular-nums tracking-tight text-ink">
               {formatCurrency(expense.amount, expense.currency)}
             </div>
             {showTripTitle && (expense as ExpenseWithTrip).trip && (
@@ -105,18 +72,11 @@ export default function ExpenseCard({ expense, showTripTitle = false }: ExpenseC
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Category */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <TagIcon className="h-4 w-4 text-muted" />
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(
-                expense.category
-              )}`}
-            >
-              {getCategoryName(expense.category)}
-            </span>
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-muted">{getCategoryName(expense.category)}</span>
+          <Link href={`/expenses/${expense.id}/edit`} aria-label={`Editar gasto ${expense.title || expense.description}`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Date */}

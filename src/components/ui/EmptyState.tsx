@@ -14,17 +14,27 @@ export default function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      {icon && <div className="mb-4 text-muted">{icon}</div>}
-      <h3 className="font-serif text-heading leading-snug text-ink">
+    <section
+      aria-live="polite"
+      className="flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10"
+    >
+      {icon && (
+        <div
+          aria-hidden="true"
+          className="mb-5 text-muted [&>svg]:h-7 [&>svg]:w-7"
+        >
+          {icon}
+        </div>
+      )}
+      <h2 className="font-sans text-lg font-semibold leading-snug text-ink">
         {title}
-      </h3>
+      </h2>
       {description && (
-        <p className="mt-2 max-w-prose text-sm leading-reading text-muted">
+        <p className="mt-2 max-w-lg text-sm leading-reading text-muted">
           {description}
         </p>
       )}
-      {action && <div className="mt-6">{action}</div>}
-    </div>
+      {action && <div className="mt-5">{action}</div>}
+    </section>
   )
 }

@@ -62,7 +62,7 @@ export default function SettingsPage() {
         {/* Appearance Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle headingLevel={2} className="flex items-center gap-2">
               <Cog6ToothIcon className="h-6 w-6" />
               Apariencia
             </CardTitle>
@@ -95,7 +95,7 @@ export default function SettingsPage() {
         {/* Push Notifications */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle headingLevel={2} className="flex items-center gap-2">
               <BellIcon className="h-6 w-6" />
               Notificaciones
             </CardTitle>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
         {/* Security Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle headingLevel={2} className="flex items-center gap-2">
               <ShieldCheckIcon className="h-6 w-6" />
               Seguridad
             </CardTitle>

@@ -28,12 +28,12 @@ import { queryErrorKind } from '../../lib/insforge-query';
 import { logger } from '@/lib/logger';
 
 const ACTIVITY_CATEGORIES = [
-  { value: 'transport', label: 'Transporte', color: 'bg-blue-100 text-blue-800' },
-  { value: 'accommodation', label: 'Alojamiento', color: 'bg-purple-100 text-purple-800' },
-  { value: 'food', label: 'Comida', color: 'bg-orange-100 text-orange-800' },
-  { value: 'activity', label: 'Actividad', color: 'bg-green-100 text-green-800' },
-  { value: 'shopping', label: 'Compras', color: 'bg-pink-100 text-pink-800' },
-  { value: 'other', label: 'Otro', color: 'bg-gray-100 text-gray-800' }
+  { value: 'transport', label: 'Transporte', color: 'bg-surface text-muted' },
+  { value: 'accommodation', label: 'Alojamiento', color: 'bg-surface text-muted' },
+  { value: 'food', label: 'Comida', color: 'bg-surface text-muted' },
+  { value: 'activity', label: 'Actividad', color: 'bg-surface text-muted' },
+  { value: 'shopping', label: 'Compras', color: 'bg-surface text-muted' },
+  { value: 'other', label: 'Otro', color: 'bg-surface text-muted' }
 ] as const;
 
 export type PlannerCategory = (typeof ACTIVITY_CATEGORIES)[number]['value'];

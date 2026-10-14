@@ -103,11 +103,12 @@ export default function ResetPasswordForm() {
     <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-4">
         <div>
-          <label htmlFor="password" className="sr-only">
+          <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink">
             Nueva contraseña
           </label>
           <div className="relative">
             <input
+              id="password"
               {...register("password")}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
@@ -118,12 +119,14 @@ export default function ResetPasswordForm() {
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-pressed={showPassword}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                <EyeSlashIcon className="h-5 w-5 text-muted" />
               ) : (
-                <EyeIcon className="h-5 w-5 text-gray-400" />
+                <EyeIcon className="h-5 w-5 text-muted" />
               )}
             </button>
           </div>
@@ -135,11 +138,12 @@ export default function ResetPasswordForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="sr-only">
+          <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-ink">
             Confirmar contraseña
           </label>
           <div className="relative">
             <input
+              id="confirmPassword"
               {...register("confirmPassword")}
               type={showConfirmPassword ? "text" : "password"}
               autoComplete="new-password"
@@ -150,11 +154,13 @@ export default function ResetPasswordForm() {
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showConfirmPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+              aria-pressed={showConfirmPassword}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5 text-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -168,7 +174,7 @@ export default function ResetPasswordForm() {
                 </svg>
               ) : (
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5 text-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -214,7 +220,7 @@ export default function ResetPasswordForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h2 className="text-sm font-medium text-red-800">Error</h2>
               <div className="mt-1 text-sm text-red-700">
                 <p>{error}</p>
               </div>
@@ -237,7 +243,7 @@ export default function ResetPasswordForm() {
       <div className="text-center">
         <Link
           href="/signin"
-          className="font-medium text-blue-600 hover:text-blue-500"
+          className="font-medium text-accent hover:text-accent-hover"
         >
           Volver al inicio de sesión
         </Link>

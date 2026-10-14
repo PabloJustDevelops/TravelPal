@@ -130,6 +130,18 @@ describe("TripsPage con el SDK en el navegador", () => {
     ).toBeInTheDocument();
   });
 
+  it("prioriza el estado vacío y oculta filtros y acción duplicada", async () => {
+    mount({ data: [], error: null });
+
+    render(<TripsPage />);
+
+    await screen.findByText("No tienes viajes registrados");
+
+    expect(screen.queryByRole("region", { name: "Filtros de viajes" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Nuevo viaje")).not.toBeInTheDocument();
+    expect(screen.getByText("Crear primer viaje")).toBeInTheDocument();
+  });
+
   it("distingue los filtros sin resultados y permite volver a ver los viajes", async () => {
     mount();
 

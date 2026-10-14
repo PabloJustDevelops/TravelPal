@@ -280,7 +280,7 @@ export default function EditExpensePage() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <Link href="/expenses">
               <Button variant="ghost" size="sm">
@@ -289,11 +289,11 @@ export default function EditExpensePage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Editar Gasto</h1>
-              <p className="text-sm text-gray-500">Modifica los detalles del gasto</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-ink">Editar Gasto</h1>
+              <p className="text-sm text-muted">Modifica los detalles del gasto</p>
             </div>
           </div>
-          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
+          <Button variant="outline" className="text-danger border-danger/30 hover:bg-danger/10" onClick={handleDelete}>
             Eliminar
           </Button>
         </div>
@@ -301,12 +301,12 @@ export default function EditExpensePage() {
         {/* Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Información del Gasto</CardTitle>
+            <CardTitle headingLevel={2}>Información del Gasto</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div role="alert" className="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-md">
                   {error}
                 </div>
               )}
@@ -335,10 +335,11 @@ export default function EditExpensePage() {
                     required
                   />
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="expense-currency" className="block text-sm font-medium text-ink">
                       Moneda *
                     </label>
                     <select
+                      id="expense-currency"
                       name="currency"
                       value={formData.currency}
                       onChange={handleInputChange}
@@ -354,18 +355,16 @@ export default function EditExpensePage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Categoría *
-                  </label>
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium text-ink">Categoría *</legend>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {categories.map((category) => (
                       <label
                         key={category.value}
-                        className={`relative flex flex-col items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        className={`relative flex flex-col items-center p-3 border rounded-lg cursor-pointer transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-paper ${
                           formData.category === category.value
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-accent bg-accent-soft text-accent'
+                            : 'border-line bg-paper text-muted hover:border-accent'
                         }`}
                       >
                         <input
@@ -378,7 +377,7 @@ export default function EditExpensePage() {
                         />
                         <CategoryIcon
                           category={category.value}
-                          className="h-6 w-6 mb-1 text-gray-600"
+                          className="h-6 w-6 mb-1 text-muted"
                         />
                         <span className="text-xs text-center font-medium">
                           {category.label}
@@ -386,7 +385,7 @@ export default function EditExpensePage() {
                       </label>
                     ))}
                   </div>
-                </div>
+                </fieldset>
 
                 <Input
                   label="Fecha y Hora *"
@@ -398,10 +397,11 @@ export default function EditExpensePage() {
                 />
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="expense-trip_id" className="block text-sm font-medium text-ink">
                     Viaje Asociado
                   </label>
                   <select
+                    id="expense-trip_id"
                     name="trip_id"
                     value={formData.trip_id}
                     onChange={handleInputChange}
@@ -417,10 +417,11 @@ export default function EditExpensePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="expense-notes" className="block text-sm font-medium text-ink">
                     Notas Adicionales
                   </label>
                   <textarea
+                    id="expense-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}

@@ -89,6 +89,22 @@ describe("NewTripPage con el SDK en el navegador", () => {
     expect(screen.getByLabelText("Notas adicionales")).toBeInTheDocument();
   });
 
+  it("mantiene los datos de vuelo opcionales plegados hasta que se solicitan", () => {
+    mount();
+
+    render(<NewTripPage />);
+
+    const summary = screen.getByText("Añadir datos de vuelo (opcional)");
+    const disclosure = summary.closest("details");
+
+    expect(disclosure).not.toBeNull();
+    expect(disclosure).toHaveProperty("open", false);
+    fireEvent.click(summary);
+    expect(disclosure).toHaveProperty("open", true);
+    expect(screen.getByLabelText("Aerolínea")).toBeInTheDocument();
+    expect(screen.getByLabelText("Número de Vuelo")).toBeInTheDocument();
+  });
+
   function fillRequiredFields() {
     fireEvent.change(screen.getByLabelText(/Título del Viaje/i), {
       target: { value: "Test Trip" },
@@ -110,6 +126,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     render(<NewTripPage />);
 
     fillRequiredFields();
+    fireEvent.click(screen.getByText("Añadir datos de vuelo (opcional)"));
     fireEvent.change(screen.getByLabelText(/Código de Confirmación/i), {
       target: { value: "CONF123" },
     });

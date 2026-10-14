@@ -1,140 +1,24 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { accentLinkClassName } from '@/components/ui/actionStyles';
+import { useState } from 'react'
+import Link from 'next/link'
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import Brand from './Brand'
+import { accentLinkClassName } from '@/components/ui/actionStyles'
+
+const links = [{ name: 'Qué puedes organizar', href: '#features' }, { name: 'Cómo funciona', href: '#how-it-works' }]
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 50);
-  });
-
-  const navLinks = [
-    { name: 'Características', href: '#features' },
-    { name: 'Cómo funciona', href: '#how-it-works' },
-    { name: 'Testimonios', href: '#testimonials' },
-  ];
-
-  const solid = isScrolled || mobileMenuOpen;
-
+  const [open, setOpen] = useState(false)
   return (
-    <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-        solid ? 'border-b border-line bg-paper/90 backdrop-blur' : 'bg-transparent'
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8" aria-label="Global">
-        <div className="flex lg:flex-1">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="sr-only">TravelPal</span>
-            <svg className={`h-8 w-8 ${solid ? 'text-accent' : 'text-paper'}`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-            </svg>
-            <span className={`font-serif text-xl ${solid ? 'text-ink' : 'text-paper'}`}>
-              TravelPal
-            </span>
-          </Link>
-        </div>
-        <div className="flex lg:hidden">
-          <button
-            type="button"
-            className={`-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 ${solid ? 'text-ink' : 'text-paper'}`}
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <span className="sr-only">Abrir menú</span>
-            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="hidden lg:flex lg:gap-x-10">
-          {navLinks.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`text-sm font-medium leading-6 ${solid ? 'text-ink hover:text-accent' : 'text-paper/90 hover:text-paper'}`}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-6">
-          <Link
-            href="/signin"
-            className={`text-sm font-medium leading-6 ${solid ? 'text-ink hover:text-accent' : 'text-paper/90 hover:text-paper'}`}
-          >
-            Iniciar Sesión
-          </Link>
-          <Link
-            href="/signup"
-            className={`${accentLinkClassName} focus-visible:outline-accent`}
-          >
-            Registrarse
-          </Link>
-        </div>
+    <header className="relative z-20 bg-paper">
+      <nav aria-label="Principal" className="mx-auto flex max-w-[1600px] items-center justify-between gap-6 px-5 py-5 sm:px-12">
+        <Brand />
+        <div className="hidden items-center gap-8 lg:flex">{links.map(link => <Link key={link.href} href={link.href} className="text-sm font-medium text-muted hover:text-accent">{link.name}</Link>)}</div>
+        <div className="hidden items-center gap-6 lg:flex"><Link href="/signin" className="text-sm font-semibold text-accent hover:text-accent-hover">Entrar</Link></div>
+        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="landing-menu" aria-label={open ? 'Cerrar menú' : 'Abrir menú'} className="flex h-12 w-12 items-center justify-center rounded-lg border border-line lg:hidden">{open ? <XMarkIcon className="h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="h-6 w-6" aria-hidden="true" />}</button>
       </nav>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-paper px-6 py-6 sm:max-w-sm sm:border-r sm:border-line">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="sr-only">TravelPal</span>
-              <svg className="h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-              </svg>
-              <span className="font-serif text-xl text-ink">TravelPal</span>
-            </Link>
-            <button
-              type="button"
-              className="-m-2.5 rounded-md p-2.5 text-ink"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span className="sr-only">Cerrar menú</span>
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </div>
-          <div className="mt-6 flow-root">
-            <div className="-my-6 divide-y divide-line">
-              <div className="space-y-2 py-6">
-                {navLinks.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="-mx-3 block rounded-md px-3 py-2 text-base font-medium leading-7 text-ink hover:bg-surface"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-              <div className="py-6 flex flex-col gap-2">
-                <Link
-                  href="/signin"
-                  className="-mx-3 block rounded-md px-3 py-2.5 text-base font-medium leading-7 text-ink hover:bg-surface"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Iniciar Sesión
-                </Link>
-                <Link
-                  href="/signup"
-                  className={`${accentLinkClassName} mt-2 w-full`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Registrarse
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </motion.header>
-  );
+      {open && <nav id="landing-menu" aria-label="Menú móvil" className="border-t border-line px-5 pb-5 lg:hidden">{links.map(link => <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center font-medium">{link.name}</Link>)}<Link href="/signin" className="flex min-h-12 items-center font-medium">Entrar</Link><Link href="/signup" className={`${accentLinkClassName} mt-2 w-full min-h-12`}>Crear cuenta</Link></nav>}
+    </header>
+  )
 }
