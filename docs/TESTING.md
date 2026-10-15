@@ -29,21 +29,32 @@ pnpm run test:e2e
 Si prefieres no exportarlas en cada shell, dejarlas en `.env.local` (esta en
 `.gitignore`): el runner lo carga. Las credenciales no se versionan nunca.
 
-Playwright arranca el dev server por su cuenta (`webServer` con `pnpm run dev`) y
-reutiliza el que ya tengas levantado en el 3000. Para ver los pasos en el
-navegador, `pnpm exec playwright test --headed`; con `--debug`, paso a paso.
+Antes de correr E2E local, exporta la URL real y la clave anónima pública del
+proyecto InsForge que usará la prueba. El valor `example.invalid` solo sirve
+para verificar la compilación del export; provoca errores de DNS en flujos que
+contactan al backend. No hace falta `INSFORGE_API_KEY` para servir la app:
 
-La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`. Los
-flujos comparten el usuario dedicado y las mismas pantallas, asi que en
-paralelo no se aislaban: se hacian la zancadilla y caia un spec distinto en cada
-corrida local, siempre en el `toHaveURL` de `createTrip`.
+```bash
+export NEXT_PUBLIC_INSFORGE_URL="https://sjdq7zsn.eu-central.insforge.app"
+export NEXT_PUBLIC_INSFORGE_ANON_KEY="<clave anónima pública del proyecto>"
+pnpm run build
+pnpm run validate:static-export
+```
+
+Playwright arranca Wrangler para servir ese export en el puerto 3000 y reutiliza
+un servidor local existente. Para ver los pasos en el navegador,
+`pnpm exec playwright test --headed`; con `--debug`, paso a paso.
+
+La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`.
+Los flujos comparten el usuario dedicado y pueden consultar o borrar los datos
+que crean durante la corrida, así que se ejecutan de uno en uno.
 
 ## Las dos formas de la misma suite
 
 El destino lo elige `E2E_BASE_URL`, y por defecto es localhost:
 
 ```bash
-pnpm run test:e2e                      # codigo local (rama y PR)
+pnpm run test:e2e                      # export local servido por Wrangler
 E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:e2e   # lo desplegado
 ```
 
@@ -85,7 +96,7 @@ viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
 ## Correr solo los flujos que crean datos
 
 ```bash
-pnpm exec playwright test e2e/flows                 # local, contra el dev server
+pnpm exec playwright test e2e/flows                 # local, contra Wrangler y out/
 E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm exec playwright test e2e/flows
 ```
 
@@ -138,7 +149,8 @@ Ver [TESTER-ARMY.md](TESTER-ARMY.md) para configuración, límites y evolución.
 ## CI
 
 El trabajo `e2e` de `.github/workflows/ci.yml` llama a la suite reutilizable
-`.github/workflows/e2e.yml` tanto en PR como en push a `main`, contra el código local.
+`.github/workflows/e2e.yml` tanto en PR como en push a `main`, contra el artifact
+estático del build, servido localmente por Wrangler.
 `deploy` espera a `build`, `worker` y `e2e`. Tras publicar, `e2e-produccion` ejecuta
 las dos suites contra el Worker. CI fija Node 22.22.3.
 

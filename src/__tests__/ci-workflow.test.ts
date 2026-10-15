@@ -76,3 +76,13 @@ it('instala el mismo pnpm fijado en el proyecto y exige su lockfile en cada job'
     expect(job.steps.some((step: { run?: string }) => /\b(npm|npx)\b/.test(step.run || ''))).toBe(false)
   }
 })
+
+it('limita la cache immutable a los assets estaticos de Next', () => {
+  const headers = readFileSync(resolve('public/_headers'), 'utf8')
+  const generalHeaders = headers.split('/_next/static/*')[0]
+  const cacheControlRules = headers.match(/^\s*Cache-Control:/gm) ?? []
+
+  expect(generalHeaders).not.toMatch(/Cache-Control:/)
+  expect(headers).toMatch(/\/_next\/static\/\*[\s\S]*Cache-Control: public,max-age=31536000,immutable/)
+  expect(cacheControlRules).toHaveLength(1)
+})
