@@ -344,7 +344,7 @@ export default function PlanningPage() {
   const handleEventClick = (event: CalendarEvent) => {
     if (event.type === "trip" && event.tripId) {
       // Redirigir a la página de detalle del viaje
-      router.push(`/trips/${event.tripId}`);
+      router.push(`/trip?id=${encodeURIComponent(event.tripId)}`);
     } else if (event.type === "booking" && event.bookingId) {
       // Abrir el modal de edición de reserva
       const booking = bookings.find((b) => b.id === event.bookingId);
@@ -354,7 +354,7 @@ export default function PlanningPage() {
       }
     } else if (event.type === "activity" && event.tripId) {
       // Ir a la vista de itinerario del viaje
-      router.push(`/trips/${event.tripId}`);
+      router.push(`/trip?id=${encodeURIComponent(event.tripId)}`);
     }
   };
 
@@ -819,7 +819,7 @@ export default function PlanningPage() {
                     .map((trip) => (
                       <Link
                         key={trip.id}
-                        href={`/trips/${trip.id}`}
+                        href={`/trip?id=${encodeURIComponent(trip.id)}`}
                         className="block rounded-md border-l-4 border-accent p-3 pl-3 hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         <p className="font-medium text-sm text-ink">

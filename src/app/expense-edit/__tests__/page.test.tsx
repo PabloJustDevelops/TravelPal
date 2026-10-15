@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EditExpensePage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createInsforgeClient, type Trip } from "@/lib/insforge";
 
 jest.mock("@/contexts/AuthContext", () => ({
@@ -9,8 +9,8 @@ jest.mock("@/contexts/AuthContext", () => ({
 }));
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
-  useParams: () => ({ id: "e1" }),
-  usePathname: () => "/expenses/e1/edit",
+  useSearchParams: jest.fn(),
+  usePathname: () => "/expense-edit",
 }));
 jest.mock("next/link", () => {
   const MockLink = ({ children }: { children: React.ReactNode }) => children;
@@ -124,6 +124,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams("id=e1"));
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
       refresh: mockRefresh,
@@ -286,6 +287,24 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     expect(
       await screen.findByText("Error al cargar los datos del gasto"),
     ).toBeInTheDocument();
+  });
+
+  it("no consulta si falta el id y muestra un estado accesible", async () => {
+    (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());
+    const { from } = mount();
+
+    render(<EditExpensePage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/selecciona un gasto/i);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("muestra un estado no encontrado si el gasto no existe", async () => {
+    mount({ loadResult: { data: null, error: null } });
+
+    render(<EditExpensePage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/gasto no encontrado/i);
   });
 
   it("no se traga el error del SDK al actualizar y lo muestra", async () => {

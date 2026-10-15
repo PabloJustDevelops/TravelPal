@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,13 +55,8 @@ function tripTime(value: string) {
   }).format(new Date(value));
 }
 
-export default function TripDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  // Unwrap params using React.use()
-  const { id } = use(params);
+function TripDetailsContent() {
+  const id = useSearchParams().get("id")?.trim() ?? "";
 
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -70,6 +65,7 @@ export default function TripDetailsPage({
   const [loadError, setLoadError] = useState<{
     kind: QueryErrorKind;
   } | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
 
@@ -84,10 +80,17 @@ export default function TripDetailsPage({
         { label: "trips:detail" },
       );
 
-      if (error) throw error;
+      if (error) {
+        if ((error as { code?: string }).code === "PGRST116") {
+          setNotFound(true);
+          return;
+        }
+        throw error;
+      }
 
       if (!data) {
-        throw new Error("Viaje no encontrado");
+        setNotFound(true);
+        return;
       }
 
       setTrip(data);
@@ -101,6 +104,7 @@ export default function TripDetailsPage({
 
   useEffect(() => {
     if (authLoading) return;
+    if (!id) return;
 
     if (!user) {
       router.push("/signin");
@@ -116,6 +120,14 @@ export default function TripDetailsPage({
     request: "No se pudo cargar la información del viaje",
   });
 
+  if (!id) {
+    return (
+      <DashboardLayout>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un viaje para ver el detalle.</p>
+      </DashboardLayout>
+    );
+  }
+
   if (loading || authLoading) {
     return (
       <DashboardLayout>
@@ -127,6 +139,13 @@ export default function TripDetailsPage({
   }
 
   if (error || !trip) {
+    if (notFound) {
+      return (
+        <DashboardLayout>
+          <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Viaje no encontrado.</p>
+        </DashboardLayout>
+      );
+    }
     return (
       <DashboardLayout>
         <section className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center" aria-labelledby="trip-load-error">
@@ -135,6 +154,7 @@ export default function TripDetailsPage({
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               onClick={() => {
+                setNotFound(false);
                 setLoadError(null);
                 setLoading(true);
                 loadTrip();
@@ -306,5 +326,13 @@ export default function TripDetailsPage({
         />
       )}
     </DashboardLayout>
+  );
+}
+
+export default function TripPage() {
+  return (
+    <Suspense fallback={<div role="status" aria-label="Cargando viaje">Cargando viaje…</div>}>
+      <TripDetailsContent />
+    </Suspense>
   );
 }

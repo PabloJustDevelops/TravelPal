@@ -66,13 +66,13 @@ describe("service worker de push", () => {
 
     await dispatch(listeners.push, {
       data: {
-        json: () => ({ title: "Reserva proxima", body: "Empieza manana", url: "/trips/42" }),
+        json: () => ({ title: "Reserva proxima", body: "Empieza manana", url: "/trip?id=42" }),
       },
     });
 
     expect(showNotification).toHaveBeenCalledWith("Reserva proxima", {
       body: "Empieza manana",
-      data: { url: "/trips/42" },
+      data: { url: "/trip?id=42" },
     });
   });
 
@@ -107,18 +107,18 @@ describe("service worker de push", () => {
   it("al pulsar, cierra la notificacion y abre la url absoluta del aviso", async () => {
     const { listeners, openWindow } = loadWorker();
 
-    const notification = { close: jest.fn(), data: { url: "/trips/42" } };
+    const notification = { close: jest.fn(), data: { url: "/trip?id=42" } };
     await dispatch(listeners.notificationclick, { notification });
 
     expect(notification.close).toHaveBeenCalledTimes(1);
-    expect(openWindow).toHaveBeenCalledWith("https://app.example/trips/42");
+    expect(openWindow).toHaveBeenCalledWith("https://app.example/trip?id=42");
   });
 
   it("si ya hay una pestana con esa url la enfoca en vez de abrir otra", async () => {
-    const client = { url: "https://app.example/trips/42", focus: jest.fn() };
+    const client = { url: "https://app.example/trip?id=42", focus: jest.fn() };
     const { listeners, openWindow } = loadWorker([client]);
 
-    const notification = { close: jest.fn(), data: { url: "/trips/42" } };
+    const notification = { close: jest.fn(), data: { url: "/trip?id=42" } };
     await dispatch(listeners.notificationclick, { notification });
 
     expect(client.focus).toHaveBeenCalledTimes(1);

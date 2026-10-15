@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "export",
   // La burbuja de desarrollo no debe tapar controles durante los E2E.
   devIndicators: process.env.E2E_DISABLE_DEV_INDICATORS === "1" ? false : undefined,
   // Configuración para Turbopack (silencia advertencia de conflicto con webpack)
@@ -19,6 +20,8 @@ const nextConfig = {
 
   // Configuración de imágenes
   images: {
+    // El export estático no dispone del optimizador de imágenes del servidor.
+    unoptimized: true,
     // Formatos optimizados
     formats: ["image/webp", "image/avif"],
     // Tamaños de imagen responsivos
@@ -29,38 +32,6 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "via.placeholder.com" },
     ],
-  },
-
-  // Configuración de headers para optimización
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-        ],
-      },
-      {
-        source: "/static/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-    ];
   },
 
   // Configuración de webpack para optimizaciones adicionales
@@ -117,39 +88,6 @@ const nextConfig = {
   },
   */
 
-  // Configuración de redirects para SEO
-  async redirects() {
-    return [
-      // Redirect principal eliminado para permitir Landing Page
-      // Redirects de rutas legacy de autenticación
-      {
-        source: "/auth/login",
-        destination: "/signin",
-        permanent: true,
-      },
-      {
-        source: "/auth/register",
-        destination: "/signup",
-        permanent: true,
-      },
-      {
-        source: "/auth/reset-password",
-        destination: "/reset-password",
-        permanent: true,
-      },
-      {
-        source: "/auth/forgot-password",
-        destination: "/forgot-password",
-        permanent: true,
-      },
-      {
-        source: "/login",
-        destination: "/signin",
-        permanent: true,
-      },
-    ];
-  },
-
   // Configuración de variables de entorno públicas
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
@@ -171,10 +109,5 @@ const nextConfig = {
     },
   }),
 };
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { initOpenNextCloudflareForDev } = require("@opennextjs/cloudflare");
-
-initOpenNextCloudflareForDev();
 
 module.exports = nextConfig;

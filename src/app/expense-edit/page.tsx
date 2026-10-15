@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { Suspense, useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
@@ -23,11 +23,10 @@ import ErrorState from '@/components/ui/ErrorState'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { logger } from '@/lib/logger'
 
-export default function EditExpensePage() {
+function EditExpenseContent() {
   const { user } = useAuth()
   const router = useRouter()
-  const params = useParams()
-  const id = params?.id as string
+  const id = useSearchParams().get("id")?.trim() ?? ""
   
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
@@ -35,6 +34,7 @@ export default function EditExpensePage() {
   const [loadError, setLoadError] = useState<{
     kind: QueryErrorKind
   } | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [trips, setTrips] = useState<Trip[]>([])
 
   const [formData, setFormData] = useState({
@@ -54,6 +54,7 @@ export default function EditExpensePage() {
     try {
       setLoadingData(true)
       setLoadError(null)
+      setNotFound(false)
       
       // Cargar viajes para el selector
       try {
@@ -87,7 +88,18 @@ export default function EditExpensePage() {
         { label: 'expenses:detail' },
       )
 
-      if (error) throw error
+      if (error) {
+        if ((error as { code?: string }).code === 'PGRST116') {
+          setNotFound(true)
+          return
+        }
+        throw error
+      }
+
+      if (!data) {
+        setNotFound(true)
+        return
+      }
 
       const expense = data as Expense
       
@@ -254,6 +266,14 @@ export default function EditExpensePage() {
     request: 'Error al cargar los datos del gasto',
   })
 
+  if (!id) {
+    return (
+      <DashboardLayout>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un gasto para editar.</p>
+      </DashboardLayout>
+    )
+  }
+
   if (loadingData) {
     return (
       <DashboardLayout>
@@ -272,6 +292,14 @@ export default function EditExpensePage() {
           message={loadErrorMessage}
           onRetry={() => loadData()}
         />
+      </DashboardLayout>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <DashboardLayout>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Gasto no encontrado.</p>
       </DashboardLayout>
     )
   }
@@ -452,5 +480,12 @@ export default function EditExpensePage() {
         </Card>
       </div>
     </DashboardLayout>
+  )
+}
+export default function EditExpensePage() {
+  return (
+    <Suspense fallback={<div role="status" aria-label="Cargando gasto">Cargando gasto…</div>}>
+      <EditExpenseContent />
+    </Suspense>
   )
 }

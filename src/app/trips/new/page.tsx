@@ -155,7 +155,7 @@ export default function NewTripPage() {
       }
 
       // Navegación exitosa
-      router.push(`/trips/${data.id}`);
+      router.push(`/trip?id=${encodeURIComponent(data.id)}`);
     } catch (error: unknown) {
       logger.error("Excepción al crear viaje:", error);
 

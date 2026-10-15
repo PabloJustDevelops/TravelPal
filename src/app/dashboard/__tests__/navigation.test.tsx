@@ -125,6 +125,6 @@ describe('DashboardPage Navigation', () => {
     );
     expect(
       screen.getByRole('link', { name: /Escapada a Roma/ }),
-    ).toHaveAttribute('href', '/trips/trip-1');
+    ).toHaveAttribute('href', '/trip?id=trip-1');
   });
 });

@@ -19,9 +19,9 @@ export default function ProtectedRoute({
   const router = useRouter()
 
   useEffect(() => {
-    // Solo se redirige cuando el servidor ha confirmado que no hay sesión. Si la
-    // comprobación falló (sessionError) no se toca la URL: el middleware sí ve
-    // la cookie y devolvería /signin a /dashboard en bucle.
+    // Este guard controla la navegación del cliente. Si la comprobación de
+    // sesión falla, permite reintentar en vez de confundir el error con un
+    // usuario anónimo. La autorización de los datos depende de RLS.
     if (!loading && !user && !sessionError) {
       // Use replace instead of push to avoid back button issues
       router.replace(redirectTo)

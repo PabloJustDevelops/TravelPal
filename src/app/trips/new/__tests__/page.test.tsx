@@ -140,7 +140,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trips/new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
     });
 
     // El alta reproduce el objeto de insercion del handler borrado: el user_id
@@ -199,7 +199,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trips/new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
     });
 
     expect(tripsChain.insert).toHaveBeenCalled();
@@ -237,7 +237,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trips/new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
     });
 
     // El fallo del presupuesto no impide el alta del viaje ni la navegacion:

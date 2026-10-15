@@ -35,7 +35,7 @@ describe('proximo viaje', () => {
   });
   it('enlaza al detalle real y ofrece crear cuando no hay viaje', () => {
     const { rerender } = render(<NextTrip trips={[trip('viaje-1', '2026-10-18')]} today="2026-10-10" />);
-    expect(screen.getByRole('link', { name: /Continuar planificación/ })).toHaveAttribute('href', '/trips/viaje-1');
+    expect(screen.getByRole('link', { name: /Continuar planificación/ })).toHaveAttribute('href', '/trip?id=viaje-1');
     rerender(<NextTrip trips={[]} today="2026-10-10" />);
     expect(screen.getByRole('link', { name: /Organizar un viaje/ })).toHaveAttribute('href', '/trips');
   });

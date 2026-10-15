@@ -244,7 +244,7 @@ export default function TripsPage() {
                   <div className="min-w-0 pr-3">
                     <h2 className="truncate text-lg font-semibold tracking-tight text-ink">
                       <Link
-                        href={`/trips/${trip.id}`}
+                        href={`/trip?id=${encodeURIComponent(trip.id)}`}
                         className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         {trip.title}

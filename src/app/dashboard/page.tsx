@@ -689,7 +689,7 @@ export default function DashboardPage() {
               {trips.slice(0, 3).map((trip) => (
                 <li key={trip.id}>
                   <Link
-                    href={`/trips/${trip.id}`}
+                    href={`/trip?id=${encodeURIComponent(trip.id)}`}
                     className="block hover:bg-surface-strong transition-colors group"
                   >
                     <div className="px-6 py-4">

@@ -1,0 +1,9 @@
+/auth/login /signin 301
+/auth/register /signup 301
+/auth/reset-password /reset-password 301
+/auth/forgot-password /forgot-password 301
+/login /signin 301
+/budget /expenses 301
+/analytics /dashboard 301
+/alerts /dashboard 301
+/notes/* /notes 301
