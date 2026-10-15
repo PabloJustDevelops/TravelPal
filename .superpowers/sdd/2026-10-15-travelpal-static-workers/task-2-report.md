@@ -36,3 +36,15 @@ En `ResetPasswordForm`, tras resolver correctamente `resetPassword({ newPassword
 - Tipos: `pnpm run type-check` → código 0.
 
 No se realizó login real ni despliegue. La comprobación se limitó a mocks del SDK y al historial del navegador en Jest.
+
+## Ronda de arreglo 2/5
+
+Se corrigió la carrera en `AuthContext.signIn`: el provider cuenta los eventos `signedOut` recibidos durante el login y su relectura de sesión. Si la revisión cambia antes de completar, prevalece la desconexión y no se reutiliza `result.user`. Se añadió una prueba de contexto que emite `signedOut` mientras `getCurrentUser()` está pendiente y verifica que el estado final siga desconectado.
+
+- RED TDD: `pnpm exec jest src/contexts/__tests__/AuthContext.test.tsx --runInBand --coverage=false` → código 1; `Test Suites: 1 failed, 1 total`, `Tests: 1 failed, 16 passed, 17 total`; la prueba nueva recibió `{ "email": "ana@example.com", "id": "user-123" }` donde esperaba `null`.
+- GREEN: `pnpm exec jest src/contexts/__tests__/AuthContext.test.tsx --runInBand --coverage=false` → código 0; `Test Suites: 1 passed, 1 total`, `Tests: 17 passed, 17 total`.
+- ESLint: `pnpm exec eslint src/contexts/AuthContext.tsx src/contexts/__tests__/AuthContext.test.tsx` → código 0, sin salida.
+- Tipos: `pnpm run type-check` → código 0; salida `$ tsc --noEmit`.
+- Higiene: `git diff --check` → código 0, sin salida.
+
+El reset link y su limpieza de URL de la ronda anterior se conservaron sin cambios. No se realizó login real ni despliegue.

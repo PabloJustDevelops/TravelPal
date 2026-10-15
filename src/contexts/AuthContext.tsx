@@ -52,6 +52,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
   const authService = deps?.authService ?? defaultAuthService
   const logger = deps?.logger ?? defaultLogger
   const mountedRef = useRef(true)
+  const signedOutRevisionRef = useRef(0)
 
   useEffect(() => {
     mountedRef.current = true
@@ -108,6 +109,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     const unsubscribe = authService.onAuthStateChange((event) => {
       if (!mountedRef.current) return
       if (event === 'signedOut') {
+        signedOutRevisionRef.current += 1
         setUser(null)
         setSessionError(false)
         setLoading(false)
@@ -144,6 +146,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     password: string,
   ): Promise<SignInActionResult> => {
     logger.info('AuthContext: Iniciando signIn')
+    const signedOutRevision = signedOutRevisionRef.current
     setPending(true)
     try {
       const result = await authService.signIn(email, password)
@@ -163,7 +166,11 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
       // usuario: fijarlo evita una ventana sin usuario entre el login y la
       // relectura en la que el guardia podría redirigir.
       const current = await authService.getCurrentUser()
-      setUser(current ?? result.user)
+      setUser(
+        signedOutRevisionRef.current === signedOutRevision
+          ? current ?? result.user
+          : null,
+      )
       setSessionError(false)
       return result
     } catch (err: unknown) {

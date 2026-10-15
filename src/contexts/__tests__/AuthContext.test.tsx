@@ -309,6 +309,35 @@ describe('AuthContext: hidratacion frente a mutacion', () => {
     expect(readApi().user).toEqual(user)
   })
 
+  it('no recupera el usuario del resultado del login si el SDK emite signedOut durante la relectura', async () => {
+    const sessionRead = deferred<{ id: string; email: string } | null>()
+    const user = { id: 'user-123', email: 'ana@example.com' }
+    mockedSignIn.mockResolvedValue({ ok: true, user })
+
+    mount()
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    const readsAfterHydration = mockedGetCurrentUser.mock.calls.length
+    mockedGetCurrentUser.mockReturnValue(sessionRead.promise)
+
+    let inFlight: Promise<unknown> | undefined
+    act(() => {
+      inFlight = readApi().signIn('ana@example.com', 'Password1')
+    })
+    await waitFor(() =>
+      expect(mockedGetCurrentUser).toHaveBeenCalledTimes(readsAfterHydration + 1),
+    )
+
+    act(() => authStateListener?.('signedOut'))
+    sessionRead.resolve(null)
+    await act(async () => {
+      await inFlight
+    })
+
+    expect(readApi().user).toBeNull()
+    expect(readApi().sessionError).toBe(false)
+    expect(readApi().pending).toBe(false)
+  })
+
   it('deja el usuario quieto y no relee la sesion si el login falla', async () => {
     mockedSignIn.mockResolvedValue({
       ok: false,
