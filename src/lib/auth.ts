@@ -2,18 +2,10 @@ import { createInsforgeClient } from './insforge'
 import { logger } from '@/lib/logger'
 import { getErrorMessage } from '@/lib/utils'
 import {
-  getCurrentUserAction,
-  resetPasswordAction,
-  resendVerificationEmailAction,
-  sendResetPasswordEmailAction,
-  signInAction,
-  signOutAction,
-  signUpAction,
-  updateProfileAction,
-  verifyEmailAction,
-  type SignInActionResult,
-  type SignUpActionResult,
-} from './insforge/auth-actions'
+  classifySignInError,
+  classifySignUpError,
+  type AuthFailure,
+} from './insforge/auth-error-codes'
 
 export interface AuthUser {
   id: string
@@ -35,29 +27,51 @@ type ProfileFields = {
   website?: string
 }
 
+export type SignInActionResult =
+  | { ok: true; user: { id: string; email: string } }
+  | AuthFailure
+
+export type SignUpActionResult =
+  | {
+      ok: true
+      user: { id: string; email: string } | null
+      requireEmailVerification: boolean
+    }
+  | AuthFailure
+
 const PROFILE_FETCH_TIMEOUT_MS = 5000
 const UPDATE_PROFILE_TIMEOUT_MS = 20000
 const UPLOAD_TIMEOUT_MS = 30000
+const SESSION_EXPIRED_STATUS_CODES = new Set([401, 403])
+
+type SdkError = { message: string; statusCode?: number; error?: string }
+
+function throwSdkError(error: SdkError | null, fallback: string): void {
+  if (error) throw new Error(error.message || fallback)
+}
 
 export class AuthService {
   private insforge = createInsforgeClient()
 
-  async signUp(
-    email: string,
-    password: string,
-    fullName: string,
-  ): Promise<SignUpActionResult> {
+  async signUp(email: string, password: string, fullName: string): Promise<SignUpActionResult> {
     logger.info('AuthService: Iniciando signUp con email:', email)
-    const result = await signUpAction({ email, password, name: fullName })
-    if (!result.ok) {
-      logger.warn('AuthService: signUp rechazado', {
-        code: result.code,
-        statusCode: result.statusCode,
-      })
-      return result
+    const { data, error } = await this.insforge.auth.signUp({
+      email,
+      password,
+      name: fullName,
+    })
+    if (error) {
+      const failure = classifySignUpError(error)
+      logger.warn('AuthService: signUp rechazado', failure)
+      return failure
     }
-    // El flag viaja hasta el formulario: con verificación por código el alta no
-    // abre sesión, así que la UI tiene que decidir a dónde ir.
+
+    const user = data?.user
+    const result: SignUpActionResult = {
+      ok: true,
+      user: user ? { id: user.id, email: user.email } : null,
+      requireEmailVerification: data?.requireEmailVerification ?? false,
+    }
     logger.info('AuthService: signUp completado', {
       requireEmailVerification: result.requireEmailVerification,
     })
@@ -65,55 +79,54 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, otp: string) {
-    logger.info('AuthService: Verificando el email')
-    return verifyEmailAction({ email, otp })
+    const { data, error } = await this.insforge.auth.verifyEmail({ email, otp })
+    throwSdkError(error, 'No se pudo verificar el email')
+    if (!data?.user) throw new Error('No se pudo verificar el email')
+    return { user: { id: data.user.id, email: data.user.email } }
   }
 
   async resendVerificationEmail(email: string) {
-    logger.info('AuthService: Reenviando el código de verificación')
-    await resendVerificationEmailAction({ email })
+    const { error } = await this.insforge.auth.resendVerificationEmail({ email })
+    throwSdkError(error, 'No se pudo reenviar el código de verificación')
   }
 
   async signIn(email: string, password: string): Promise<SignInActionResult> {
     logger.info('AuthService: Iniciando signIn con email:', email)
-
-    const result = await signInAction({ email, password })
-
-    if (!result.ok) {
-      // Credenciales malas y email sin verificar son respuestas esperadas del
-      // backend: el código sube a la UI para que ponga el mensaje (y el reenvío)
-      // en vez de filtrar el texto que devuelva el servidor.
-      logger.warn('AuthService: signIn rechazado', {
-        code: result.code,
-        statusCode: result.statusCode,
-      })
-      return result
+    const { data, error } = await this.insforge.auth.signInWithPassword({ email, password })
+    if (error || !data?.user) {
+      const failure = classifySignInError(error)
+      logger.warn('AuthService: signIn rechazado', failure)
+      return failure
     }
-
     logger.info('AuthService: signIn completado exitosamente')
-    return result
+    return { ok: true, user: { id: data.user.id, email: data.user.email } }
+  }
+
+  async signInWithGoogle() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    if (!origin) throw new Error('El acceso con Google requiere un navegador')
+    const { error } = await this.insforge.auth.signInWithOAuth('google', {
+      redirectTo: `${origin}/auth/callback`,
+    })
+    throwSdkError(error, 'No se pudo iniciar el acceso con Google')
   }
 
   async signOut() {
-    await signOutAction()
+    const { error } = await this.insforge.auth.signOut()
+    throwSdkError(error, 'No se pudo cerrar la sesión')
   }
 
   async resetPassword(email: string) {
-    // Validar formato de email antes de enviar la solicitud
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      throw new Error('El formato del email no es válido')
-    }
-
-    // Normalizar el email (trim y lowercase)
+    if (!emailRegex.test(email)) throw new Error('El formato del email no es válido')
     const normalizedEmail = email.trim().toLowerCase()
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-
     try {
-      await sendResetPasswordEmailAction({
+      const { error } = await this.insforge.auth.sendResetPasswordEmail({
         email: normalizedEmail,
         redirectTo: `${origin}/reset-password`,
       })
+      throwSdkError(error, 'No se pudo enviar el email de recuperación')
     } catch (err) {
       logger.error('AuthService: Error en resetPassword:', { error: getErrorMessage(err) })
       throw new Error(`Error al enviar email de recuperación: ${getErrorMessage(err)}`)
@@ -121,66 +134,47 @@ export class AuthService {
   }
 
   async updatePassword(password: string, token: string) {
-    await resetPasswordAction({ newPassword: password, otp: token })
+    const { error } = await this.insforge.auth.resetPassword({ newPassword: password, otp: token })
+    throwSdkError(error, 'No se pudo actualizar la contraseña')
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {
-    logger.debug('AuthService: Getting current user...')
-
-    // La identidad la resuelve el servidor a partir de la cookie de sesión: es la
-    // única fuente que no depende de estado en memoria del SDK. Si la
-    // comprobación en sí falla, el error sube (el consumidor distingue "no hay
-    // sesión" de "no se pudo comprobar" para no redirigir en falso).
-    const sessionUser = await getCurrentUserAction()
-
-    if (!sessionUser?.id) {
-      return null
+    const { data, error } = await this.insforge.auth.getCurrentUser()
+    if (error) {
+      if (SESSION_EXPIRED_STATUS_CODES.has(error.statusCode ?? -1)) return null
+      logger.error('AuthService: No se pudo comprobar la sesión', {
+        error: error.message,
+        statusCode: error.statusCode,
+      })
+      throw new Error(error.message || 'No se pudo comprobar la sesión')
     }
 
-    // Datos adicionales del perfil en nuestra tabla `profiles`, a mejor esfuerzo:
-    // si la lectura falla seguimos con lo que ya dio la sesión.
-    // Timeout específico solo para la base de datos, no para toda la auth.
-    const dbTimeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error('DB profile fetch timed out')),
-        PROFILE_FETCH_TIMEOUT_MS,
-      ),
+    const sessionUser = data?.user
+    if (!sessionUser?.id) return null
+
+    const profileQuery = this.insforge.database
+      .from('profiles')
+      .select('*')
+      .eq('id', sessionUser.id)
+      .maybeSingle()
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('DB profile fetch timed out')), PROFILE_FETCH_TIMEOUT_MS),
     )
 
     let profile: Record<string, unknown> | null = null
     try {
-      const { data: profileData, error: dbError } = (await Promise.race([
-        this.insforge.database
-          .from('profiles')
-          .select('*')
-          .eq('id', sessionUser.id)
-          .maybeSingle(),
-        dbTimeoutPromise,
-      ])) as {
-        data: Record<string, unknown> | null
-        error: { message: string } | null
-      }
-
-      if (dbError) {
-        logger.warn('AuthService: Error obteniendo datos extra del usuario:', dbError.message)
-      } else {
-        profile = profileData
-      }
-    } catch (dbErr) {
-      logger.warn(
-        'AuthService: Timeout o error al obtener perfil, continuando con usuario básico:',
-        dbErr,
-      )
+      const { data: profileData, error: profileError } = await Promise.race([profileQuery, timeout])
+      if (profileError) logger.warn('AuthService: Error obteniendo datos extra del usuario:', profileError.message)
+      else profile = profileData
+    } catch (dbError) {
+      logger.warn('AuthService: Timeout o error al obtener perfil, continuando con usuario básico:', dbError)
     }
 
-    logger.debug('AuthService: User retrieved successfully', { id: sessionUser.id })
     return {
       id: sessionUser.id,
       email: sessionUser.email,
-      full_name:
-        (profile?.full_name as string | undefined) ?? sessionUser.full_name,
-      avatar_url:
-        (profile?.avatar_url as string | undefined) ?? sessionUser.avatar_url,
+      full_name: (profile?.full_name as string | undefined) ?? sessionUser.profile?.name,
+      avatar_url: (profile?.avatar_url as string | undefined) ?? sessionUser.profile?.avatar_url,
       bio: profile?.bio as string | undefined,
       phone: profile?.phone as string | undefined,
       location: profile?.location as string | undefined,
@@ -188,55 +182,36 @@ export class AuthService {
     }
   }
 
-  async updateProfile(updates: ProfileFields) {
-    logger.info('AuthService: Updating profile...', updates)
+  onAuthStateChange(callback: (event: string) => void) {
+    return this.insforge.auth.onAuthStateChange(callback)
+  }
 
-    let user
+  async updateProfile(updates: ProfileFields) {
+    let user: AuthUser | null
     try {
       user = await this.getCurrentUser()
-    } catch (e) {
-      logger.error('AuthService: Failed to get user for update', e)
+    } catch (error) {
+      logger.error('AuthService: Failed to get user for update', error)
       throw new Error('Could not verify current session')
     }
+    if (!user) throw new Error('No user logged in')
 
-    if (!user) {
-      logger.error('AuthService: Update failed - No user logged in')
-      throw new Error('No user logged in')
-    }
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Update profile timed out after 20s')),
-        UPDATE_PROFILE_TIMEOUT_MS,
-      ),
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Update profile timed out after 20s')), UPDATE_PROFILE_TIMEOUT_MS),
     )
-
     try {
-      // 1. Actualizar el perfil de auth (setProfile en servidor)
-      const updateAuthPromise = updateProfileAction({
+      const authProfile = this.insforge.auth.setProfile({
         name: updates.full_name,
         avatar_url: updates.avatar_url,
         ...updates,
-      })
-
-      // 2. Actualizar la tabla profiles
-      const updateDbPromise = this.insforge.database.from('profiles').upsert({
+      }).then(({ error }) => throwSdkError(error, 'Could not update auth profile'))
+      const dbProfile = this.insforge.database.from('profiles').upsert({
         id: user.id,
         updated_at: new Date().toISOString(),
         ...updates,
       })
-
-      const [, dbResult] = (await Promise.race([
-        Promise.all([updateAuthPromise, updateDbPromise]),
-        timeoutPromise,
-      ])) as [unknown, { error: { message: string } | null }]
-
-      if (dbResult?.error) {
-        logger.error('AuthService: Profile DB update failed', dbResult.error)
-        throw dbResult.error
-      }
-
-      logger.info('AuthService: Profile updated successfully')
+      const [, result] = await Promise.race([Promise.all([authProfile, dbProfile]), timeout])
+      if (result?.error) throw new Error(result.error.message)
     } catch (error) {
       logger.error('AuthService: Profile update exception', error)
       throw error
@@ -244,41 +219,18 @@ export class AuthService {
   }
 
   async uploadAvatar(file: File): Promise<string> {
-    logger.info('AuthService: Uploading avatar...', { fileName: file.name, size: file.size })
     const user = await this.getCurrentUser()
     if (!user) throw new Error('No user logged in')
-
     const fileExt = file.name.split('.').pop()
     const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Avatar upload timed out after 30s')),
-        UPLOAD_TIMEOUT_MS,
-      ),
+    const bucket = this.insforge.storage.from('avatars')
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Avatar upload timed out after 30s')), UPLOAD_TIMEOUT_MS),
     )
-
-    try {
-      const bucket = this.insforge.storage.from('avatars')
-
-      const { error: uploadError } = (await Promise.race([
-        bucket.upload(fileName, file),
-        timeoutPromise,
-      ])) as { error: { message: string } | null }
-
-      if (uploadError) {
-        logger.error('AuthService: Error uploading avatar:', uploadError)
-        throw uploadError
-      }
-
-      const { data } = bucket.getPublicUrl(fileName)
-
-      logger.info('AuthService: Avatar uploaded successfully', { publicUrl: data?.publicUrl })
-      return data?.publicUrl ?? ''
-    } catch (error) {
-      logger.error('AuthService: Avatar upload exception', error)
-      throw error
-    }
+    const { error } = await Promise.race([bucket.upload(fileName, file), timeout])
+    throwSdkError(error, 'No se pudo subir el avatar')
+    const { data } = bucket.getPublicUrl(fileName)
+    return data?.publicUrl ?? ''
   }
 }
 

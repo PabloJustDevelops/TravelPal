@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import GoogleButton from '../GoogleButton'
-import { initiateOAuthAction } from '@/lib/insforge/auth-actions'
+import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/lib/logger'
 
-jest.mock('@/lib/insforge/auth-actions', () => ({
-  initiateOAuthAction: jest.fn(),
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }))
 
 jest.mock('@/lib/logger', () => ({
@@ -16,12 +16,14 @@ jest.mock('@/lib/logger', () => ({
   },
 }))
 
-const initiateOAuthActionMock = initiateOAuthAction as jest.Mock
+const signInWithGoogleMock = jest.fn()
+const useAuthMock = useAuth as jest.Mock
 const loggerErrorMock = logger.error as jest.Mock
 
 describe('GoogleButton', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    useAuthMock.mockReturnValue({ signInWithGoogle: signInWithGoogleMock })
   })
 
   it('renderiza el botón de continuar con Google', () => {
@@ -30,11 +32,11 @@ describe('GoogleButton', () => {
     expect(
       screen.getByRole('button', { name: 'Continuar con Google' }),
     ).toBeInTheDocument()
-    expect(initiateOAuthActionMock).not.toHaveBeenCalled()
+    expect(signInWithGoogleMock).not.toHaveBeenCalled()
   })
 
-  it('llama a la acción del servidor con google al pulsarlo', async () => {
-    initiateOAuthActionMock.mockResolvedValue(undefined)
+  it('inicia el acceso con Google desde el servicio de auth al pulsarlo', async () => {
+    signInWithGoogleMock.mockResolvedValue(undefined)
 
     render(<GoogleButton />)
     fireEvent.click(
@@ -42,14 +44,13 @@ describe('GoogleButton', () => {
     )
 
     await waitFor(() => {
-      expect(initiateOAuthActionMock).toHaveBeenCalledTimes(1)
-      expect(initiateOAuthActionMock).toHaveBeenCalledWith('google')
+      expect(signInWithGoogleMock).toHaveBeenCalledTimes(1)
     })
   })
 
   it('queda deshabilitado mientras la acción está en curso', async () => {
     let resolveAction = () => {}
-    initiateOAuthActionMock.mockImplementation(
+    signInWithGoogleMock.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
           resolveAction = resolve
@@ -69,7 +70,7 @@ describe('GoogleButton', () => {
   })
 
   it('muestra el fallo y reactiva el botón si la acción no arranca', async () => {
-    initiateOAuthActionMock.mockRejectedValue(new Error('fallo del backend'))
+    signInWithGoogleMock.mockRejectedValue(new Error('fallo del backend'))
 
     render(<GoogleButton />)
     fireEvent.click(
@@ -90,33 +91,8 @@ describe('GoogleButton', () => {
     )
   })
 
-  it('no trata el error de redirección de Next como un fallo', async () => {
-    // redirect() de Next no devuelve: lanza un error de control de flujo con
-    // digest NEXT_REDIRECT mientras el router navega al proveedor. No es un
-    // fallo de la app, así que no debe registrarse ni mostrarse.
-    const redirectError = Object.assign(new Error('NEXT_REDIRECT'), {
-      digest: 'NEXT_REDIRECT;push;https://accounts.google.test/o/authorize;307;',
-    })
-    initiateOAuthActionMock.mockRejectedValue(redirectError)
-
-    render(<GoogleButton />)
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Continuar con Google' }),
-    )
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: 'Continuar con Google' }),
-      ).toBeEnabled()
-    })
-    expect(loggerErrorMock).not.toHaveBeenCalled()
-    expect(
-      screen.queryByText(/no se pudo conectar con google/i),
-    ).not.toBeInTheDocument()
-  })
-
   it('registra el mensaje del error, no "[object Error]"', async () => {
-    initiateOAuthActionMock.mockRejectedValue(new Error('fallo del backend'))
+    signInWithGoogleMock.mockRejectedValue(new Error('fallo del backend'))
 
     render(<GoogleButton />)
     fireEvent.click(

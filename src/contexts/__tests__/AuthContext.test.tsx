@@ -1,15 +1,23 @@
 import { act, render, waitFor } from '@testing-library/react'
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { authService } from '@/lib/auth'
-import type { SignUpActionResult } from '@/lib/insforge/auth-actions'
+import type { SignUpActionResult } from '@/lib/auth'
 
 // El setup global sustituye AuthContext por un mock fijo; aqui se ejercita el
 // provider real, asi que se pide el modulo autentico.
 jest.mock('@/contexts/AuthContext', () => jest.requireActual('@/contexts/AuthContext'))
 
-// El servicio real importa `@insforge/sdk/ssr` (ESM, no cargable bajo Jest) y
-// las server actions usan `next/headers`: se mockea el modulo entero.
+const mockReplace = jest.fn()
+
+jest.mock('next/navigation', () => ({
+  usePathname: jest.fn(() => '/dashboard'),
+  useRouter: jest.fn(() => ({ replace: mockReplace })),
+}))
+
+// Se mockea el servicio externo para probar los efectos observables del provider.
 jest.mock('@/lib/auth', () => ({
   authService: {
     signUp: jest.fn(),
@@ -21,6 +29,8 @@ jest.mock('@/lib/auth', () => ({
     verifyEmail: jest.fn(),
     resendVerificationEmail: jest.fn(),
     getCurrentUser: jest.fn(),
+    onAuthStateChange: jest.fn(),
+    signInWithGoogle: jest.fn(),
   },
 }))
 
@@ -37,15 +47,21 @@ const mockedSignUp = authService.signUp as jest.Mock
 const mockedSignIn = authService.signIn as jest.Mock
 const mockedSignOut = authService.signOut as jest.Mock
 const mockedGetCurrentUser = authService.getCurrentUser as jest.Mock
+const mockedUsePathname = usePathname as jest.Mock
+const mockedOnAuthStateChange = authService.onAuthStateChange as jest.Mock
+let authStateListener: ((event: string) => void) | undefined
+let unsubscribeAuthState = jest.fn()
 
 let api: ReturnType<typeof useAuth> | undefined
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((res) => {
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
     resolve = res
+    reject = rej
   })
-  return { promise, resolve }
+  return { promise, resolve, reject }
 }
 
 function Capture({
@@ -65,10 +81,31 @@ const readApi = () => {
   return api
 }
 
+function GuardedApp() {
+  const pathname = usePathname()
+  return (
+    <AuthProvider>
+      {pathname === '/' ? (
+        <span>landing</span>
+      ) : (
+        <ProtectedRoute><span>dashboard</span></ProtectedRoute>
+      )}
+      <Capture onReady={(value) => { api = value }} />
+    </AuthProvider>
+  )
+}
+
 describe('AuthContext: alta y verificacion', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockedUsePathname.mockReturnValue('/dashboard')
     mockedGetCurrentUser.mockResolvedValue(null)
+    authStateListener = undefined
+    unsubscribeAuthState = jest.fn()
+    mockedOnAuthStateChange.mockImplementation((listener) => {
+      authStateListener = listener
+      return unsubscribeAuthState
+    })
   });
 
   const mount = () =>
@@ -182,12 +219,58 @@ describe('AuthContext: alta y verificacion', () => {
     expect(readApi().user).toBeNull()
     expect(readApi().sessionError).toBe(false)
   })
+
+  it('no consulta la sesión al entrar en la landing pública', async () => {
+    mockedUsePathname.mockReturnValue('/')
+    mount()
+
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    expect(mockedGetCurrentUser).not.toHaveBeenCalled()
+    expect(readApi().user).toBeNull()
+  })
+
+  it('actualiza la sesión ante cambios del SDK y elimina la suscripción al desmontar', async () => {
+    const view = mount()
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    const user = { id: 'user-456', email: 'bea@example.com' }
+    mockedGetCurrentUser.mockResolvedValue(user)
+
+    await act(async () => {
+      authStateListener?.('tokenRefreshed')
+    })
+
+    await waitFor(() => expect(readApi().user).toEqual(user))
+    view.unmount()
+    expect(unsubscribeAuthState).toHaveBeenCalledTimes(1)
+  })
+
+  it('limpia al usuario al recibir signedOut del SDK', async () => {
+    const user = { id: 'user-456', email: 'bea@example.com' }
+    mockedGetCurrentUser.mockResolvedValue(user)
+    mount()
+    await waitFor(() => expect(readApi().user).toEqual(user))
+
+    await act(async () => {
+      authStateListener?.('signedOut')
+    })
+
+    expect(readApi().user).toBeNull()
+    expect(readApi().sessionError).toBe(false)
+  })
 })
 
 describe('AuthContext: hidratacion frente a mutacion', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockedUsePathname.mockReturnValue('/dashboard')
     mockedGetCurrentUser.mockResolvedValue(null)
+    authStateListener = undefined
+    unsubscribeAuthState = jest.fn()
+    mockedOnAuthStateChange.mockImplementation((listener) => {
+      authStateListener = listener
+      return unsubscribeAuthState
+    })
   });
 
   const mount = () =>
@@ -269,5 +352,70 @@ describe('AuthContext: hidratacion frente a mutacion', () => {
     expect(readApi().pending).toBe(false)
     expect(readApi().loading).toBe(false)
     expect(readApi().user).toBeNull()
+  })
+
+  it('no redirige al navegar de la landing a una ruta protegida mientras consulta la sesión', async () => {
+    const session = deferred<{ id: string; email: string } | null>()
+    mockedGetCurrentUser.mockReturnValue(session.promise)
+    mockedUsePathname.mockReturnValue('/')
+
+    const { rerender } = render(<GuardedApp />)
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    mockedUsePathname.mockReturnValue('/dashboard')
+    rerender(<GuardedApp />)
+
+    expect(readApi().loading).toBe(true)
+    expect(mockReplace).not.toHaveBeenCalled()
+
+    await act(async () => {
+      session.resolve({ id: 'user-123', email: 'ana@example.com' })
+      await session.promise
+    })
+
+    expect(readApi().user?.id).toBe('user-123')
+    expect(readApi().loading).toBe(false)
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it('redirige tras confirmar que no hay sesión al salir de la landing', async () => {
+    const session = deferred<{ id: string; email: string } | null>()
+    mockedGetCurrentUser.mockReturnValue(session.promise)
+    mockedUsePathname.mockReturnValue('/')
+    const { rerender } = render(<GuardedApp />)
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    mockedUsePathname.mockReturnValue('/dashboard')
+    rerender(<GuardedApp />)
+    expect(mockReplace).not.toHaveBeenCalled()
+
+    await act(async () => {
+      session.resolve(null)
+      await session.promise
+    })
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/signin'))
+    expect(readApi().sessionError).toBe(false)
+  })
+
+  it('no redirige al salir de la landing si falla la comprobación de sesión', async () => {
+    const session = deferred<{ id: string; email: string } | null>()
+    mockedGetCurrentUser.mockReturnValue(session.promise)
+    mockedUsePathname.mockReturnValue('/')
+    const { rerender } = render(<GuardedApp />)
+    await waitFor(() => expect(readApi().loading).toBe(false))
+
+    mockedUsePathname.mockReturnValue('/dashboard')
+    rerender(<GuardedApp />)
+    expect(mockReplace).not.toHaveBeenCalled()
+
+    await act(async () => {
+      session.reject(new Error('auth unavailable'))
+      await session.promise.catch(() => undefined)
+    })
+
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    expect(readApi().sessionError).toBe(true)
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 })

@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LoginForm from '../LoginForm'
 import { useAuth } from '@/contexts/AuthContext'
-import { initiateOAuthAction } from '@/lib/insforge/auth-actions'
 
 const mockPush = jest.fn()
 const mockReplace = jest.fn()
 const mockSignIn = jest.fn()
 const mockResendVerificationEmail = jest.fn()
+const mockSignInWithGoogle = jest.fn()
 
 let mockSearch = new URLSearchParams()
 
@@ -17,12 +17,6 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
-}))
-
-// El botón de Google llama a esta server action: mockeada para no cargar el
-// módulo del SDK (ESM) bajo jest.
-jest.mock('@/lib/insforge/auth-actions', () => ({
-  initiateOAuthAction: jest.fn(),
 }))
 
 jest.mock('@/lib/logger', () => ({
@@ -54,6 +48,7 @@ describe('LoginForm', () => {
     ;(useAuth as jest.Mock).mockReturnValue({
       signIn: mockSignIn,
       resendVerificationEmail: mockResendVerificationEmail,
+      signInWithGoogle: mockSignInWithGoogle,
     })
   })
 
@@ -229,7 +224,7 @@ describe('LoginForm', () => {
   })
 
   it('ofrece continuar con Google y arranca el OAuth al pulsarlo', async () => {
-    ;(initiateOAuthAction as jest.Mock).mockResolvedValue(undefined)
+    mockSignInWithGoogle.mockResolvedValue(undefined)
 
     render(<LoginForm />)
     fireEvent.click(
@@ -237,7 +232,7 @@ describe('LoginForm', () => {
     )
 
     await waitFor(() => {
-      expect(initiateOAuthAction).toHaveBeenCalledWith('google')
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1)
     })
   })
 })
