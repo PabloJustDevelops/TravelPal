@@ -61,10 +61,10 @@ export interface TripFixture {
   returnDate?: string
 }
 
-// Crea el viaje desde /trips/new. Al guardar la app navega al detalle, asi que
+// Crea el viaje desde /create-trip. Al guardar la app navega al detalle, asi que
 // el propio test comprueba que el alta llego a persistir y a pintarse.
 export async function createTrip(page: Page, trip: TripFixture): Promise<void> {
-  await page.goto('/trips/new')
+  await page.goto('/create-trip')
   await page.getByLabel('Título del Viaje *').fill(trip.title)
   await page.getByLabel('Origen *').fill(trip.origin)
   await page.getByLabel('Destino *').fill(trip.destination)

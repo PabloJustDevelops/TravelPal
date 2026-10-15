@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
@@ -69,11 +69,13 @@ function TripDetailsContent() {
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
+  const loadRequestId = useRef(0);
   const trip = tripResult?.id === id ? tripResult.trip : null;
   const loadError = loadErrorResult?.id === id ? loadErrorResult.error : null;
   const notFound = notFoundId === id;
 
   const loadTrip = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
     try {
       // Don't set loading to true here to avoid full page spinner on refresh
       // setLoading(true); 
@@ -86,6 +88,7 @@ function TripDetailsContent() {
 
       if (error) {
         if ((error as { code?: string }).code === "PGRST116") {
+          if (requestId !== loadRequestId.current) return;
           setNotFoundId(id);
           setLoadErrorResult((current) => current?.id === id ? null : current);
           return;
@@ -94,19 +97,22 @@ function TripDetailsContent() {
       }
 
       if (!data) {
+        if (requestId !== loadRequestId.current) return;
         setNotFoundId(id);
         setLoadErrorResult((current) => current?.id === id ? null : current);
         return;
       }
 
+      if (requestId !== loadRequestId.current) return;
       setTripResult({ id, trip: data });
       setNotFoundId((current) => current === id ? null : current);
       setLoadErrorResult((current) => current?.id === id ? null : current);
     } catch (err: unknown) {
+      if (requestId !== loadRequestId.current) return;
       logger.error("Error loading trip details:", err);
       setLoadErrorResult({ id, error: { kind: queryErrorKind(err) } });
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
   }, [id]);
 

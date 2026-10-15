@@ -890,7 +890,7 @@ export default function PlanningPage() {
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
                       Crea un viaje para organizar su itinerario y tener sus reservas junto a las fechas.
                     </p>
-                    <Link href="/trips/new" className={`${accentLinkClassName} mt-5 min-h-11`}>
+                    <Link href="/create-trip" className={`${accentLinkClassName} mt-5 min-h-11`}>
                       Crear un viaje
                     </Link>
                   </div>
@@ -1021,7 +1021,7 @@ export default function PlanningPage() {
                     </Button>
                   )}
                   {trips.length === 0 && !searchTerm && filterStatus === "all" ? (
-                    <Link href="/trips/new" className={`${accentLinkClassName} min-h-11`}>
+                    <Link href="/create-trip" className={`${accentLinkClassName} min-h-11`}>
                       Crear un viaje
                     </Link>
                   ) : (

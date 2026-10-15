@@ -6,6 +6,7 @@
 /budget /expenses 301
 /analytics /dashboard 301
 /alerts /dashboard 301
+/trips/new /create-trip 301
 /trips/:id /trip?id=:id 301
 /expenses/:id/edit /expense-edit?id=:id 301
 /notes/* /notes 301

@@ -64,7 +64,7 @@ Cinco specs con seis casos en `e2e/flows/`, cada uno con su limpieza y una compr
 accesibilidad con `@axe-core/playwright` (sin violaciones `critical` ni
 `serious` en las pantallas donde se llama al helper de axe):
 
-- `trips.spec.ts`: crear un viaje en `/trips/new`, verlo en el detalle y en la
+- `trips.spec.ts`: crear un viaje en `/create-trip`, verlo en el detalle y en la
   lista, buscandolo por su titulo. Axe en la lista de viajes.
 - `expenses.spec.ts`: con un viaje recien creado, registrar un gasto asociado,
   verlo en `/expenses` y comprobar que suma en el resumen del viaje. Axe en la

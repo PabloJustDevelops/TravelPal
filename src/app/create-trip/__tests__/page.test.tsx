@@ -20,7 +20,7 @@ jest.mock("@/lib/logger", () => ({
 }));
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
-  usePathname: () => "/trips/new",
+  usePathname: () => "/create-trip",
 }));
 
 type QueryResult = { data?: unknown; error?: unknown };

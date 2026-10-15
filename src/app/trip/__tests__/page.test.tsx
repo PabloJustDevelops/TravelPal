@@ -127,4 +127,53 @@ describe('ruta estática de detalle de viaje', () => {
     })
     expect(await screen.findByRole('alert')).toHaveTextContent(/viaje no encontrado/i)
   })
+
+  it('ignora una respuesta tardía de otro id después de cargar el viaje actual', async () => {
+    const searchParamsMock = useSearchParams as jest.Mock
+    const resolvers = new Map<string, (result: { data: typeof trip; error: null }) => void>()
+    let requestedId = ''
+    const chain: { select: jest.Mock; eq: jest.Mock; single: jest.Mock } = {} as {
+      select: jest.Mock; eq: jest.Mock; single: jest.Mock
+    }
+    chain.select = jest.fn(() => chain)
+    chain.eq = jest.fn((column: string, value: string) => {
+      if (column === 'id') requestedId = value
+      return chain
+    })
+    chain.single = jest.fn(() => new Promise((resolve) => {
+      resolvers.set(requestedId, resolve)
+    }))
+    ;(createInsforgeClient as jest.Mock).mockReturnValue({
+      database: { from: jest.fn(() => chain) },
+    })
+    ;(useAuth as jest.Mock).mockReturnValue({ user: { id: 'user-1' }, loading: false })
+    ;(useRouter as jest.Mock).mockReturnValue(mockRouter)
+    searchParamsMock.mockReturnValue(new URLSearchParams('id=trip-old'))
+
+    const { rerender } = render(<TripPage />)
+    await waitFor(() => expect(resolvers.has('trip-old')).toBe(true))
+
+    searchParamsMock.mockReturnValue(new URLSearchParams('id=trip-current'))
+    rerender(<TripPage />)
+    await waitFor(() => expect(resolvers.has('trip-current')).toBe(true))
+
+    await act(async () => {
+      resolvers.get('trip-current')?.({
+        data: { ...trip, id: 'trip-current', title: 'Viaje actual' },
+        error: null,
+      })
+    })
+    expect(await screen.findByRole('heading', { name: 'Viaje actual' })).toBeInTheDocument()
+
+    await act(async () => {
+      resolvers.get('trip-old')?.({
+        data: { ...trip, id: 'trip-old', title: 'Respuesta antigua' },
+        error: null,
+      })
+    })
+
+    expect(screen.getByRole('heading', { name: 'Viaje actual' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Respuesta antigua' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Cargando viaje' })).not.toBeInTheDocument()
+  })
 })
