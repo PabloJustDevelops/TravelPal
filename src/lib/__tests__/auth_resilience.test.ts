@@ -42,4 +42,22 @@ describe('AuthService session resilience', () => {
     auth.getCurrentUser.mockResolvedValue({ data: { user: null }, error: { message: 'network down', statusCode: 503 } })
     await expect(service.getCurrentUser()).rejects.toThrow('network down')
   })
+
+  it('devuelve null si la sesión expira mientras profiles dispara signedOut', async () => {
+    const cachedUser = { id: 'u1', email: 'a@b.com', profile: { name: 'Ana' } }
+    let currentSessionUser: typeof cachedUser | null = cachedUser
+    auth.getCurrentUser.mockImplementation(async () => ({
+      data: { user: currentSessionUser },
+      error: null,
+    }))
+    query.maybeSingle.mockImplementation(async () => {
+      // El SDK borra la sesión en memoria al fallar el refresh mientras
+      // profiles está en curso; la siguiente lectura debe reflejarlo.
+      currentSessionUser = null
+      return { data: null, error: { message: 'Unauthorized', statusCode: 401 } }
+    })
+
+    await expect(service.getCurrentUser()).resolves.toBeNull()
+    expect(auth.getCurrentUser).toHaveBeenCalledTimes(2)
+  })
 })

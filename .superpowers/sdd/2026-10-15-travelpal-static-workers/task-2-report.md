@@ -22,3 +22,17 @@ Se retiraron las Server Actions/cliente SSR de auth, las rutas API `/api/auth/ca
 No se probó un login real, persistencia, refresh ni callback contra InsForge/Google. Task 1 sigue bloqueada por falta de servidor PostgreSQL, Docker daemon y proyecto InsForge vinculado. La allowlist externa de redirect URIs de Google/InsForge tampoco está comprobada. No se cambió configuración remota ni se desplegó.
 
 La prueba de build usó valores públicos ficticios; valida compilación y prerenderizado local, no conectividad. El callback de Google depende de que el origen publicado esté permitido por la configuración externa.
+
+## Ronda de arreglo 1/5
+
+Se corrigió la sesión obsoleta que podía sobrevivir a un fallo al cargar `profiles`: después de un error o timeout de esa consulta, `AuthService` vuelve a consultar la sesión del SDK y devuelve `null` si el refresh invalidó la sesión o si la identidad cambió. Los fallos inesperados al confirmar la sesión siguen propagándose en vez de devolver el usuario cacheado.
+
+En `ResetPasswordForm`, tras resolver correctamente `resetPassword({ newPassword, otp })`, `window.history.replaceState` quita la query sensible antes de navegar a signin. Si el reset falla, el formulario mantiene el token en la URL para permitir reintentar.
+
+- RED sesión: `pnpm exec jest src/lib/__tests__/auth_resilience.test.ts --runInBand --coverage=false` → código 1; el caso nuevo recibió el usuario cacheado donde esperaba `null`.
+- RED URL: `pnpm exec jest src/components/auth/__tests__/ResetPasswordForm.test.tsx --runInBand --coverage=false` → código 1; tras un reset exitoso seguía `?token=secret-reset-token&insforge_status=ready`. El caso de error ya confirmaba que el token se conserva para reintento.
+- GREEN: `pnpm exec jest src/lib/__tests__/auth_resilience.test.ts src/components/auth/__tests__/ResetPasswordForm.test.tsx --runInBand --coverage=false` → código 0; 2 suites y 6 pruebas aprobadas.
+- ESLint: `pnpm exec eslint src/lib/auth.ts src/lib/__tests__/auth_resilience.test.ts src/components/auth/ResetPasswordForm.tsx src/components/auth/__tests__/ResetPasswordForm.test.tsx` → código 0, sin salida.
+- Tipos: `pnpm run type-check` → código 0.
+
+No se realizó login real ni despliegue. La comprobación se limitó a mocks del SDK y al historial del navegador en Jest.

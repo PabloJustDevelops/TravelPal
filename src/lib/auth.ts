@@ -162,12 +162,29 @@ export class AuthService {
     )
 
     let profile: Record<string, unknown> | null = null
+    let profileError: { message: string } | null = null
+    let profileLookupFailed = false
     try {
-      const { data: profileData, error: profileError } = await Promise.race([profileQuery, timeout])
-      if (profileError) logger.warn('AuthService: Error obteniendo datos extra del usuario:', profileError.message)
-      else profile = profileData
+      const result = await Promise.race([profileQuery, timeout])
+      profileError = result.error
+      profileLookupFailed = Boolean(profileError)
+      if (!profileLookupFailed) profile = result.data
     } catch (dbError) {
+      profileLookupFailed = true
       logger.warn('AuthService: Timeout o error al obtener perfil, continuando con usuario básico:', dbError)
+    }
+
+    if (profileError) logger.warn('AuthService: Error obteniendo datos extra del usuario:', profileError.message)
+    if (profileLookupFailed) {
+      // Una consulta de perfil puede intentar renovar un token caducado. El SDK
+      // limpia la sesión al recibir 401; vuelve a leerla para no devolver su
+      // usuario cacheado como si siguiera autenticado.
+      const { data: latestSession, error: sessionError } = await this.insforge.auth.getCurrentUser()
+      if (sessionError) {
+        if (SESSION_EXPIRED_STATUS_CODES.has(sessionError.statusCode ?? -1)) return null
+        throw new Error(sessionError.message || 'No se pudo comprobar la sesión')
+      }
+      if (!latestSession?.user?.id || latestSession.user.id !== sessionUser.id) return null
     }
 
     return {

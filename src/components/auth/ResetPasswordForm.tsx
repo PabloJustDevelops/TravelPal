@@ -85,6 +85,10 @@ export default function ResetPasswordForm() {
 
       await authService.updatePassword(data.password, resetToken);
 
+      // El token deja de ser necesario tras el éxito: retirarlo antes de
+      // navegar evita que quede en la URL si la transición del router tarda.
+      window.history.replaceState(window.history.state, "", window.location.pathname);
+
       // Redirigir al login con mensaje de éxito
       router.replace("/signin?message=password-updated");
     } catch (err) {
