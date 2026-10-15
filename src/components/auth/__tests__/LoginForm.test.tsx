@@ -66,6 +66,23 @@ describe('LoginForm', () => {
     })
   })
 
+  it('vuelve a la ruta protegida con sus filtros tras iniciar sesión', async () => {
+    mockSearch = new URLSearchParams(
+      'redirectTo=%2Fexpenses%3Fcategory%3Dtravel%26search%3Drome',
+    )
+    mockSignIn.mockResolvedValue({
+      ok: true,
+      user: { id: 'user-123', email: 'ana@example.com' },
+    })
+
+    render(<LoginForm />)
+    fillAndSubmit()
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/expenses?category=travel&search=rome')
+    })
+  })
+
   it('nombra el control de visibilidad y actualiza el nombre al mostrar la contraseña', async () => {
     render(<LoginForm />)
 

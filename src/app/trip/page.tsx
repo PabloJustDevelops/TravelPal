@@ -60,14 +60,18 @@ function TripDetailsContent() {
 
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [tripResult, setTripResult] = useState<{ id: string; trip: Trip } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<{
-    kind: QueryErrorKind;
+  const [loadErrorResult, setLoadErrorResult] = useState<{
+    id: string;
+    error: { kind: QueryErrorKind };
   } | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const [notFoundId, setNotFoundId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
+  const trip = tripResult?.id === id ? tripResult.trip : null;
+  const loadError = loadErrorResult?.id === id ? loadErrorResult.error : null;
+  const notFound = notFoundId === id;
 
   const loadTrip = useCallback(async () => {
     try {
@@ -82,21 +86,25 @@ function TripDetailsContent() {
 
       if (error) {
         if ((error as { code?: string }).code === "PGRST116") {
-          setNotFound(true);
+          setNotFoundId(id);
+          setLoadErrorResult((current) => current?.id === id ? null : current);
           return;
         }
         throw error;
       }
 
       if (!data) {
-        setNotFound(true);
+        setNotFoundId(id);
+        setLoadErrorResult((current) => current?.id === id ? null : current);
         return;
       }
 
-      setTrip(data);
+      setTripResult({ id, trip: data });
+      setNotFoundId((current) => current === id ? null : current);
+      setLoadErrorResult((current) => current?.id === id ? null : current);
     } catch (err: unknown) {
       logger.error("Error loading trip details:", err);
-      setLoadError({ kind: queryErrorKind(err) });
+      setLoadErrorResult({ id, error: { kind: queryErrorKind(err) } });
     } finally {
       setLoading(false);
     }
@@ -128,7 +136,7 @@ function TripDetailsContent() {
     );
   }
 
-  if (loading || authLoading) {
+  if (loading || authLoading || (!trip && !error && !notFound)) {
     return (
       <DashboardLayout>
         <div role="status" aria-label="Cargando viaje" className="flex min-h-[50vh] items-center justify-center">
@@ -154,8 +162,8 @@ function TripDetailsContent() {
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               onClick={() => {
-                setNotFound(false);
-                setLoadError(null);
+                setNotFoundId(null);
+                setLoadErrorResult(null);
                 setLoading(true);
                 loadTrip();
               }}

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import TripPage from '../page'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSearchParams } from 'next/navigation'
@@ -83,6 +83,48 @@ describe('ruta estática de detalle de viaje', () => {
     setup('missing-trip', null)
     render(<TripPage />)
 
+    expect(await screen.findByRole('alert')).toHaveTextContent(/viaje no encontrado/i)
+  })
+
+  it('oculta el viaje anterior mientras carga un nuevo id que no existe', async () => {
+    const searchParamsMock = useSearchParams as jest.Mock
+    let requestedId = ''
+    let resolveMissing: ((result: { data: null; error: null }) => void) | undefined
+    const missingResult = new Promise<{ data: null; error: null }>((resolve) => {
+      resolveMissing = resolve
+    })
+    const chain: { select: jest.Mock; eq: jest.Mock; single: jest.Mock } = {} as {
+      select: jest.Mock; eq: jest.Mock; single: jest.Mock
+    }
+    chain.select = jest.fn(() => chain)
+    chain.eq = jest.fn((column: string, value: string) => {
+      if (column === 'id') requestedId = value
+      return chain
+    })
+    chain.single = jest.fn(() =>
+      requestedId === 'trip-1'
+        ? Promise.resolve({ data: trip, error: null })
+        : missingResult,
+    )
+    ;(createInsforgeClient as jest.Mock).mockReturnValue({
+      database: { from: jest.fn(() => chain) },
+    })
+    ;(useAuth as jest.Mock).mockReturnValue({ user: { id: 'user-1' }, loading: false })
+    ;(useRouter as jest.Mock).mockReturnValue(mockRouter)
+    searchParamsMock.mockReturnValue(new URLSearchParams('id=trip-1'))
+
+    const { rerender } = render(<TripPage />)
+    expect(await screen.findByRole('heading', { name: 'Escapada a Roma' })).toBeInTheDocument()
+
+    searchParamsMock.mockReturnValue(new URLSearchParams('id=missing-trip'))
+    rerender(<TripPage />)
+
+    expect(screen.queryByRole('heading', { name: 'Escapada a Roma' })).not.toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando viaje' })).toBeInTheDocument()
+
+    await act(async () => {
+      resolveMissing?.({ data: null, error: null })
+    })
     expect(await screen.findByRole('alert')).toHaveTextContent(/viaje no encontrado/i)
   })
 })

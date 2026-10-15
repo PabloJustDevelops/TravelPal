@@ -423,7 +423,9 @@ describe('AuthContext: hidratacion frente a mutacion', () => {
       await session.promise
     })
 
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/signin'))
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/signin?redirectTo=%2F'),
+    )
     expect(readApi().sessionError).toBe(false)
   })
 

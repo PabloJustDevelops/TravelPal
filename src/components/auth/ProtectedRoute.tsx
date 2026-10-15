@@ -24,7 +24,11 @@ export default function ProtectedRoute({
     // usuario anónimo. La autorización de los datos depende de RLS.
     if (!loading && !user && !sessionError) {
       // Use replace instead of push to avoid back button issues
-      router.replace(redirectTo)
+      const currentPath = `${window.location.pathname}${window.location.search}`
+      const separator = redirectTo.includes('?') ? '&' : '?'
+      router.replace(
+        `${redirectTo}${separator}redirectTo=${encodeURIComponent(currentPath)}`,
+      )
     }
   }, [user, loading, sessionError, router, redirectTo])
 
