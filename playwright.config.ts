@@ -10,8 +10,8 @@ try {
   // Sin .env.local: las variables tienen que venir del entorno.
 }
 
-// Dos modos de la misma suite (issue 72): en el PR se prueba el codigo del PR
-// contra el dev server local y, tras el deploy de main, lo desplegado. El
+// Dos modos de la misma suite (issue 72): en el PR se prueba el export estatico
+// del codigo del PR servido por Wrangler y, tras el deploy de main, lo desplegado. El
 // destino lo elige E2E_BASE_URL y por defecto es localhost.
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000'
 const isLocalTarget = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(baseURL)
@@ -53,8 +53,7 @@ export default defineConfig({
   // Contra produccion no se arranca nada: se prueba lo desplegado.
   webServer: isLocalTarget
     ? {
-        command: 'pnpm run dev',
-        env: { E2E_DISABLE_DEV_INDICATORS: '1' },
+        command: 'env -u INSFORGE_API_KEY -u E2E_USER_EMAIL -u E2E_USER_PASSWORD pnpm exec wrangler dev --port 3000 --ip 127.0.0.1',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

@@ -16,14 +16,18 @@ Requiere Node 22.22.3+ en la rama 22 o Node 24.8+. CI fija 22.22.3.
 
 ```bash
 pnpm install --frozen-lockfile
+NEXT_PUBLIC_INSFORGE_URL=https://insforge.example.invalid NEXT_PUBLIC_INSFORGE_ANON_KEY=public-test-anon-key pnpm run build
+pnpm run validate:static-export
 pnpm exec e2e-web install chromium --with-deps
 pnpm run test:tester
 E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:tester
 ```
 
-Sin `E2E_BASE_URL`, el runner inicia o reutiliza Next en localhost:3000. Next carga su entorno
-habitual. En CI, las variables necesarias se pasan explícitamente al proceso de Next porque
-`app.command` no hereda todo el entorno del runner. Contra una URL remota no arranca servidor.
+Sin `E2E_BASE_URL`, el runner inicia o reutiliza Wrangler en localhost:3000 para servir `out/`;
+por eso la exportación estática debe existir antes de ejecutar la suite local. Los dos valores
+públicos de InsForge se pasan al proceso de Wrangler, que sirve los archivos ya construidos y no
+necesita una clave privada. En CI, el workflow descarga el artifact `out/` del build antes de
+iniciar las suites. Contra una URL remota no arranca servidor ni requiere un build local.
 
 Los informes viven en `.e2e/` (ignorado). `pnpm run test:tester` desactiva telemetría; CI conserva
 el informe siete días. El gate corre después de Playwright y forma parte del requisito previo
