@@ -8,8 +8,9 @@ presupuestos, notas, tareas, reservas, alertas y analíticas.
 ## Stack
 
 - **Framework**: Next.js 16.3.8 (App Router) + React 19 + TypeScript.
-- **Backend**: InsForge (Postgres + Auth + Storage) con `@insforge/sdk` y `@insforge/sdk/ssr`.
-- **Hosting**: Cloudflare Workers con `@opennextjs/cloudflare` (ver ADR-003).
+- **Backend**: InsForge (Postgres + Auth + Storage) con `@insforge/sdk` desde el navegador.
+- **Hosting**: export estático de Next.js (`out/`) servido por Cloudflare Workers Assets con Wrangler
+  (ver ADR-014; ADR-003 describe la etapa anterior con OpenNext).
 - **Tests**: Jest + Testing Library. **Lint**: ESLint. **Commits**: Conventional Commits.
 
 ## Commands
@@ -20,9 +21,9 @@ pnpm run lint         # ESLint
 pnpm run type-check   # tsc --noEmit
 pnpm run test:ci      # Jest (CI)
 pnpm run test:e2e     # Playwright E2E (ver docs/TESTING.md)
-pnpm run build        # next build
-pnpm run preview      # OpenNext build + wrangler dev
-pnpm run deploy       # OpenNext build + wrangler deploy
+pnpm run build        # next build genera el export estático en out/
+pnpm run preview      # wrangler dev; sirve el out/ ya generado
+pnpm run deploy       # rebuild, valida el export y lo publica con Wrangler
 ```
 
 ## Data model — single source of truth
@@ -58,7 +59,8 @@ Reglas: `text + CHECK` en vez de enums; FKs solo si una consulta las usa; RLS de
 - `DESIGN.md`: dirección Atlas vigente, herramientas UI reales, estado por módulo y continuidad para otros chats.
 - `AGENTS.md`: reglas para agentes (issue tracker, triage labels, skills, hosting).
 - `docs/ARCHITECTURE.md`: vision tecnica y flujo de datos.
-- `docs/DECISIONS/`: ADRs (000 plantilla; 001 obsoleto; 002 InsForge; 003 Cloudflare; 004 esquema).
+- `docs/DECISIONS/`: ADRs (000 plantilla; 001 obsoleto; 002 InsForge; 003 OpenNext retirado;
+  004 esquema; 014 Worker de assets estáticos).
 - `docs/agents/`: como consumir `CONTEXT.md`/ADRs, issue tracker y labels de triage.
 
 ## Rules

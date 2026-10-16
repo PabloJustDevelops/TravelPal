@@ -24,7 +24,8 @@
 
 TravelPal es una aplicación web para gestionar todo el ciclo de un viaje: itinerarios, control de
 gastos, presupuestos y analíticas. El backend es **InsForge** (Postgres + Auth + Storage) y el
-hosting es **Cloudflare Workers** con `@opennextjs/cloudflare`.
+hosting sirve el export estático de Next.js desde un Worker de assets de **Cloudflare**. La
+aplicación no ejecuta un servidor Next.js en producción.
 
 ## 🚀 Características
 
@@ -32,7 +33,7 @@ hosting es **Cloudflare Workers** con `@opennextjs/cloudflare`.
 - 💸 Control de gastos por viaje con categorías y métricas
 - 💼 Presupuestos y seguimiento financiero
 - 📊 Dashboard analítico con visualizaciones interactivas
-- 🔐 Autenticación con InsForge (server actions; refresh token httpOnly)
+- 🔐 Autenticación en el navegador con InsForge; RLS protege los datos del usuario
 - 🧩 Logger centralizado y notificaciones toast
 - 📱 Diseño responsive y accesible
 
@@ -43,7 +44,7 @@ hosting es **Cloudflare Workers** con `@opennextjs/cloudflare`.
 ```
 app-viajes/
 ├── src/
-│   ├── app/                 # Rutas, páginas y API routes (App Router)
+│   ├── app/                 # Páginas exportables (App Router)
 │   ├── components/          # UI y componentes por dominio
 │   ├── lib/                 # Clientes (insforge), auth, utilidades
 │   └── contexts/            # Contextos de React
@@ -61,7 +62,8 @@ app-viajes/
 ### Prerrequisitos
 - Node.js 22.22.3+ (o 24.8+)
 - pnpm 12.3.4 (versión fijada en `package.json`)
-- Un proyecto de InsForge (URL + anon key + API key)
+- Un proyecto de InsForge (URL + clave anónima pública); `pnpm run dev` también requiere la API key
+  por la validación de entorno en `src/instrumentation.ts`.
 
 ### Instalación
 ```bash
@@ -83,6 +85,8 @@ NEXT_PUBLIC_INSFORGE_URL=https://<appkey>.<region>.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<anon key>
 INSFORGE_API_KEY=<api key de proyecto, solo servidor>
 ```
+`INSFORGE_API_KEY` es necesaria para `pnpm run dev` porque el hook local de instrumentación valida
+el entorno de servidor. El build estático de producción y el Worker no la necesitan ni la reciben.
 
 ### Ejecución
 ```bash
@@ -99,10 +103,14 @@ pnpm run build        # next build
 
 ### Despliegue (Cloudflare Workers)
 ```bash
-pnpm run preview      # Build de OpenNext + wrangler dev local
-pnpm run deploy       # Build de OpenNext + deploy a Cloudflare
+pnpm run build                    # next build genera el export estático en out/
+pnpm run validate:static-export   # valida rutas, redirecciones y ausencia de claves privadas
+pnpm run preview                  # wrangler dev sirve el out/ existente en local
+pnpm run deploy                   # vuelve a compilar, valida out/ y publica con Wrangler
 ```
-`INSFORGE_API_KEY` es un secreto de runtime: se sube con `wrangler secret put INSFORGE_API_KEY`.
+`pnpm run preview` no compila: requiere ejecutar antes `pnpm run build` y el validador. El Worker
+publicado solo contiene assets estáticos y no recibe secretos de runtime. `pnpm run deploy` requiere
+autenticación de Wrangler; en CI se usa `CLOUDFLARE_API_TOKEN`.
 
 📖 **Documentación**
 
@@ -122,9 +130,11 @@ pnpm run deploy       # Build de OpenNext + deploy a Cloudflare
 - Frontend: Next.js 16 (App Router), React 19, TypeScript
 - Estilos: Tailwind CSS
 - Backend: InsForge (Postgres, Auth, Storage) vía `@insforge/sdk`
-- Hosting: Cloudflare Workers con `@opennextjs/cloudflare`
+- Hosting: export estático de Next.js en Cloudflare Workers Assets (Wrangler); `@opennextjs/cloudflare`
+  permanece como dependencia de desarrollo, pero no se usa para publicar producción
 - Testing: Jest + Testing Library, Playwright (flujos con datos) y Tester Army (acceso público)
-- CI/CD: GitHub Actions; build, Worker y E2E antes del deploy, y E2E contra producción después
+- CI/CD: GitHub Actions; export, validación, dry-run de Wrangler y E2E antes del deploy; E2E contra
+  producción después
 
 ## 📋 Roadmap
 - Internacionalización (i18n)
