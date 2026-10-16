@@ -99,8 +99,9 @@ es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqu
 ## Configuración y entorno
 
 - `src/lib/public-env.ts`: variables `NEXT_PUBLIC_*` (van al bundle del cliente).
-- `src/lib/env.ts` valida `INSFORGE_API_KEY` para utilidades administrativas locales; esa clave no
-  se incorpora al export ni se configura en el Worker estático.
+- `src/lib/env.ts` valida `INSFORGE_API_KEY`; `src/instrumentation.ts` la carga en `pnpm run dev`,
+  así que es necesaria para ese entorno local. No se incorpora al export ni se configura en el
+  Worker estático.
 - `NEXT_PUBLIC_INSFORGE_URL` y `NEXT_PUBLIC_INSFORGE_ANON_KEY` se incorporan al export durante el
   build. La autorización de datos la aplica RLS. Ver [ADR-014](DECISIONS/ADR-014-cloudflare-static-assets-worker.md).
 

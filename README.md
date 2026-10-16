@@ -62,7 +62,8 @@ app-viajes/
 ### Prerrequisitos
 - Node.js 22.22.3+ (o 24.8+)
 - pnpm 12.3.4 (versión fijada en `package.json`)
-- Un proyecto de InsForge (URL + clave anónima pública; API key opcional para utilidades locales)
+- Un proyecto de InsForge (URL + clave anónima pública); `pnpm run dev` también requiere la API key
+  por la validación de entorno en `src/instrumentation.ts`.
 
 ### Instalación
 ```bash
@@ -84,8 +85,8 @@ NEXT_PUBLIC_INSFORGE_URL=https://<appkey>.<region>.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<anon key>
 INSFORGE_API_KEY=<api key de proyecto, solo servidor>
 ```
-`INSFORGE_API_KEY` es opcional para utilidades administrativas locales; el export estático y el
-Worker de producción no la reciben.
+`INSFORGE_API_KEY` es necesaria para `pnpm run dev` porque el hook local de instrumentación valida
+el entorno de servidor. El build estático de producción y el Worker no la necesitan ni la reciben.
 
 ### Ejecución
 ```bash

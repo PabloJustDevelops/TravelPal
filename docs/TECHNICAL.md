@@ -75,7 +75,7 @@ Para una vista previa local, ejecuta `pnpm run build`, `pnpm run validate:static
 NEXT_PUBLIC_INSFORGE_URL=https://<appkey>.<region>.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<anon key>
 
-# Secreto para utilidades locales de administración; no se incluye en el export
+# Requerida por la validación de entorno de pnpm run dev; no se incluye en el export
 INSFORGE_API_KEY=<api key>
 
 # Logging (opcional): debug | info | warn | error
@@ -83,9 +83,10 @@ NEXT_PUBLIC_LOG_LEVEL=info
 
 ```
 
-`NEXT_PUBLIC_*` se incorporan al export durante el build. `INSFORGE_API_KEY` no se necesita para
-servir la aplicación y no se configura como secreto del Worker estático. La publicación de CI usa
-`CLOUDFLARE_API_TOKEN`; el build solo recibe las dos variables públicas de InsForge.
+`NEXT_PUBLIC_*` se incorporan al export durante el build. `pnpm run dev` carga `src/lib/env.ts` a
+través de `src/instrumentation.ts`, por lo que requiere `INSFORGE_API_KEY`; el build estático y el
+Worker no la necesitan ni la reciben. La publicación de CI usa `CLOUDFLARE_API_TOKEN`; el build
+solo recibe las dos variables públicas de InsForge.
 
 ---
 
