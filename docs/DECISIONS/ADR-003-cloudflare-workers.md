@@ -1,4 +1,4 @@
-# ADR-003: Hosting en Cloudflare Workers con OpenNext
+# ADR-003: Hosting en Cloudflare Workers con OpenNext (retirado)
 
 ## Contexto
 
@@ -26,4 +26,6 @@ adaptador oficial `@opennextjs/cloudflare`. La app usa Next.js 16; la vía antig
 
 ## Estado
 
-Aprobado
+Retirado y sustituido por [ADR-014](ADR-014-cloudflare-static-assets-worker.md). Este ADR se
+conserva como registro de la decisión anterior; sus instrucciones de build y deploy ya no describen
+la configuración vigente.

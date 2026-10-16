@@ -4,9 +4,9 @@
 
 ## Visión general
 
-App web Next.js (App Router) con backend InsForge y despliegue en Cloudflare Workers. El código se
-organiza por capas: UI (componentes/páginas), estado de cliente (contextos), API (route handlers y
-server actions de auth) y acceso a datos (SDK de InsForge).
+App web Next.js (App Router) exportada como archivos estáticos y servida por Cloudflare Workers
+Assets, con InsForge como backend. En producción no se ejecuta un servidor Next.js: la UI y la
+autenticación funcionan en el navegador y el SDK se conecta directamente a InsForge.
 
 ### Stack
 
@@ -16,25 +16,20 @@ server actions de auth) y acceso a datos (SDK de InsForge).
 | Lenguaje | TypeScript | Tipado estático |
 | Estilos | Tailwind CSS | Diseño responsive |
 | Backend | InsForge (`@insforge/sdk`) | Postgres + Auth + Storage |
-| Hosting | Cloudflare Workers (`@opennextjs/cloudflare`) | Runtime y deploy |
+| Hosting | Cloudflare Workers Assets + Wrangler | Servir el export estático de `out/` |
 
 ### Estructura
 
 ```
 src/
 ├── app/                  # App Router: páginas y API routes
-│   └── api/              # Route handlers (auth/refresh y auth/callback)
 ├── components/           # UI por dominio (trips, notes, planning, ...)
 ├── contexts/             # AuthContext, ThemeContext
 └── lib/
-    ├── insforge.ts       # Cliente de navegador (createInsforgeClient)
-    ├── insforge/
-    │   ├── server.ts     # createServerInsforgeClient()
-    │   ├── auth-actions.ts # Server actions de auth (createAuthActions)
-    │   └── __tests__/    # Tests del servidor
-    ├── auth.ts           # AuthService (usa las server actions)
+    ├── insforge.ts       # Cliente InsForge del navegador (createInsforgeClient)
+    ├── auth.ts           # AuthService; llamadas de auth desde el navegador
     ├── public-env.ts     # Validación de variables públicas (zod)
-    └── env.ts            # Validación de secretos de servidor (zod)
+    └── env.ts            # Validación de secreto para utilidades administrativas locales
 migrations/               # Esquema InsForge (fuente de verdad; ver ADR-004)
 public/                   # Assets estáticos y sw.js (service worker de push; ver ADR-013)
 ```
@@ -47,44 +42,40 @@ el SDK. El BFF de `/api/*` se retiró; el porqué y las pérdidas quedan en
 
 ```mermaid
 graph TB
-    A[Usuario] --> B[Next.js App Router]
-    B --> C[Componentes React]
-    C --> D[Contextos: AuthContext]
-    C --> E[SDK InsForge en el navegador]
-    D --> F[Server actions de auth]
-    E --> G[InsForge: Postgres + Auth]
-    F --> G
+    A[Usuario] --> B[Cloudflare Worker de assets]
+    B --> C[Export estático de Next.js en out/]
+    C --> D[Componentes React en el navegador]
+    D --> E[Contextos: AuthContext]
+    D --> F[SDK InsForge en el navegador]
+    E --> F
+    F --> G[InsForge: Postgres + Auth]
 ```
 
-En cliente, el acceso a datos va por `createInsforgeClient().database.from(...)`, autenticado con el
-access token que el servidor manda como `Authorization: Bearer`. La autorización la decide **RLS**
-(`auth.uid() = user_id`), no un handler: cada usuario ve y toca sólo sus filas aunque llame al SDK
-directamente. La agregación y el cálculo viven en las páginas, no en el servidor.
+En cliente, autenticación y acceso a datos van por `createInsforgeClient()` y el SDK de InsForge.
+La autorización la decide **RLS** (`auth.uid() = user_id`), no el Worker: cada usuario ve y toca
+sólo sus filas aunque llame al SDK directamente. La agregación y el cálculo viven en las páginas,
+no en un servidor de la aplicación.
 
 El **guardián** `scripts/check-data-paths.mjs` (con `scripts/data-paths-baseline.json`) es la valla
 que impide volver al BFF: cuenta los `fetch`/`useApiResource` a `/api/<dominio>` y falla el build si
 aparece uno nuevo, con literal o con la url en variable. Hoy está en `puntos bff: 0 / 0` y
 `sin dominio 0 / 0`.
 
-### Endpoints que quedan
+### Rutas y API
 
-Sólo sobrevive lo que no puede bajar al cliente:
-
-| Endpoint | Por qué vive en el servidor |
-|---|---|
-| `src/app/api/auth/callback/route.ts` | Intercambia el código OAuth de Google con PKCE y escribe las cookies httpOnly. |
-| `src/app/api/auth/refresh/route.ts` | El refresh token es httpOnly; `createRefreshAuthRouter()` lo rota y publica el nuevo access token en cookie. |
+No quedan Route Handlers ni endpoints de Next.js en producción. Las páginas de `src/app/` se
+exportan como archivos en `out/`; `/auth/callback` es una página cliente que deja que el SDK
+InsForge termine el intercambio OAuth. Las llamadas de datos y auth se hacen directamente desde el
+navegador a InsForge.
 
 ## Autenticación
 
-- El navegador usa `createBrowserClient()` (auth de solo lectura) y refresca vía `/api/auth/refresh`.
-- Las mutaciones (sign in/up/out, perfil, reset) corren en **server actions**
-  (`src/lib/insforge/auth-actions.ts`) con `createAuthActions`, de modo que el refresh token se
-  guarda como cookie httpOnly.
-- `src/proxy.ts` llama a `updateSession()` para refrescar antes de renderizar.
-- No hay verificación de sesión en route handlers de datos porque no existen (ver ADR-009).
-  `requireUser()` (`src/lib/insforge/server.ts`) se retiró en el
-  [ADR-012](DECISIONS/ADR-012-retirada-del-codigo-bff-y-public-users.md).
+- `AuthService` usa `createInsforgeClient()` del SDK en el navegador para registro, login, logout,
+  OAuth, restablecimiento y consulta de sesión.
+- `/auth/callback` es una ruta estática. El SDK cliente procesa los parámetros del callback y la
+  página envía al usuario al dashboard o al acceso según el resultado.
+- No hay proxy, Server Actions ni route handlers de auth en el despliegue estático. La sesión y los
+  datos privados quedan protegidos por InsForge y sus políticas RLS.
 
 ## Modelo de datos
 
@@ -108,19 +99,24 @@ es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqu
 ## Configuración y entorno
 
 - `src/lib/public-env.ts`: variables `NEXT_PUBLIC_*` (van al bundle del cliente).
-- `src/lib/env.ts`: secretos de servidor (`INSFORGE_API_KEY`), nunca expuestos al cliente.
-- En Cloudflare, `NEXT_PUBLIC_*` se inlinean en build y `INSFORGE_API_KEY` es un secreto de
-  runtime (`wrangler secret put`). Ver ADR-003.
+- `src/lib/env.ts` valida `INSFORGE_API_KEY` para utilidades administrativas locales; esa clave no
+  se incorpora al export ni se configura en el Worker estático.
+- `NEXT_PUBLIC_INSFORGE_URL` y `NEXT_PUBLIC_INSFORGE_ANON_KEY` se incorporan al export durante el
+  build. La autorización de datos la aplica RLS. Ver [ADR-014](DECISIONS/ADR-014-cloudflare-static-assets-worker.md).
 
 ## CI
 
-`.github/workflows/ci.yml` ejecuta en PR: `lint`, `type-check`, `test:ci`, `build` y un job
-`worker-build` (`pnpm exec opennextjs-cloudflare build`, sin deploy). `commitlint.yml` valida los
-mensajes de commit.
+`.github/workflows/ci.yml` ejecuta en PR: lint, type-check, Jest, prueba RLS, prueba de timezone,
+guardián de rutas de datos, export estático, validación del export y build de Storybook. `build`
+sube `out/` como artefacto; `worker` (mostrado como `worker-build`) lo descarga, lo valida y corre
+`pnpm exec wrangler deploy --dry-run --no-autoconfig`. No compila un Worker OpenNext. `commitlint.yml`
+valida los mensajes de commit.
 
-Los E2E de Playwright y Tester Army corren contra el código en PR y en push a `main`.
-`deploy` depende de `build`, `worker` y `e2e`; después se repiten contra producción.
-Los tests del usuario dedicado se serializan entre ramas. CI usa Node 22.22.3.
+Los E2E de Playwright, Tester Army y Storybook corren contra el export estático en PR y en push a
+`main`. En `main`, `deploy` depende de `build`, `worker` y `e2e`, descarga el artefacto y lo publica
+con Wrangler; `e2e-produccion` corre después contra el sitio desplegado. Los tests del usuario
+dedicado se serializan entre ramas. CI usa Node 22.22.3. GitHub Actions es la única vía automática;
+no hay triggers de Cloudflare Workers Builds.
 Ver [TESTING.md](TESTING.md) y [TESTER-ARMY.md](TESTER-ARMY.md).
 
 El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): cuenta las
@@ -136,7 +132,7 @@ borrar un endpoint.
 
 ## Decisiones
 
-Ver `docs/DECISIONS/`: 002 (InsForge), 003 (Cloudflare), 004 (esquema desde el modelo TS), 009
+Ver `docs/DECISIONS/`: 002 (InsForge), 003 (hosting OpenNext retirado), 004 (esquema desde el modelo TS), 009
 (camino único de datos por el SDK), 012 (retirada del código BFF y de `public.users`), 013 (push de
-navegador: cliente ya, envío bloqueado). El ADR-001 (adaptador de sesión sobre Supabase) queda como
-histórico.
+navegador: cliente ya, envío bloqueado), 014 (Worker de assets estáticos). El ADR-001 (adaptador de
+sesión sobre Supabase) queda como histórico.
