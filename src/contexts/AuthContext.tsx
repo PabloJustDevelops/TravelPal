@@ -116,11 +116,16 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
         return
       }
 
+      const signedOutRevision = signedOutRevisionRef.current
       void authService.getCurrentUser().then((current) => {
-        if (!mountedRef.current) return
+        if (
+          !mountedRef.current ||
+          signedOutRevisionRef.current !== signedOutRevision
+        ) return
         setUser(current)
         setSessionError(false)
       }).catch((error) => {
+        if (signedOutRevisionRef.current !== signedOutRevision) return
         logger.error('AuthContext: No se pudo restaurar la sesión tras un cambio', { error })
         if (mountedRef.current) setSessionError(true)
       })

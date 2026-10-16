@@ -245,6 +245,28 @@ describe('AuthContext: alta y verificacion', () => {
     expect(unsubscribeAuthState).toHaveBeenCalledTimes(1)
   })
 
+  it('ignora una lectura iniciada por signedIn si llega signedOut antes de resolverla', async () => {
+    const user = { id: 'user-456', email: 'bea@example.com' }
+    const pendingProfile = deferred<typeof user | null>()
+    mount()
+    await waitFor(() => expect(readApi().loading).toBe(false))
+    mockedGetCurrentUser.mockReturnValue(pendingProfile.promise)
+
+    act(() => authStateListener?.('signedIn'))
+    await waitFor(() => expect(mockedGetCurrentUser).toHaveBeenCalledTimes(2))
+
+    act(() => authStateListener?.('signedOut'))
+    expect(readApi().user).toBeNull()
+
+    await act(async () => {
+      pendingProfile.resolve(user)
+      await pendingProfile.promise
+    })
+
+    expect(readApi().user).toBeNull()
+    expect(readApi().sessionError).toBe(false)
+  })
+
   it('limpia al usuario al recibir signedOut del SDK', async () => {
     const user = { id: 'user-456', email: 'bea@example.com' }
     mockedGetCurrentUser.mockResolvedValue(user)
