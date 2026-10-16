@@ -1,17 +1,17 @@
-import { createBrowserClient } from "@insforge/sdk/ssr";
+import { createClient } from "@insforge/sdk";
 import { publicEnv } from "@/lib/public-env";
 
 const insforgeUrl = publicEnv.NEXT_PUBLIC_INSFORGE_URL;
 const insforgeAnonKey = publicEnv.NEXT_PUBLIC_INSFORGE_ANON_KEY;
 
-let insforgeClientInstance: ReturnType<typeof createBrowserClient> | null =
+let insforgeClientInstance: ReturnType<typeof createClient> | null =
   null;
 
 // Cliente InsForge para operaciones en navegador (patrón singleton).
 // El acceso a datos va por `client.database.from(...)`.
 export const createInsforgeClient = () => {
   if (!insforgeClientInstance) {
-    insforgeClientInstance = createBrowserClient({
+    insforgeClientInstance = createClient({
       baseUrl: insforgeUrl,
       anonKey: insforgeAnonKey,
     });

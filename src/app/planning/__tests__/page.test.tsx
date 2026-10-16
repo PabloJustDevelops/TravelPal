@@ -308,7 +308,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByRole("button", { name: "Itinerario" }));
 
     expect(await screen.findByRole("heading", { name: "Aún no tienes viajes para planificar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/trips/new");
+    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/create-trip");
   });
 
   it("no invita a crear reservas si todavía no existe un viaje asociado", async () => {
@@ -323,7 +323,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reservas" }));
 
     expect(await screen.findByRole("heading", { name: "Crea un viaje antes de añadir una reserva" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/trips/new");
+    expect(screen.getByRole("link", { name: "Crear un viaje" })).toHaveAttribute("href", "/create-trip");
     expect(screen.queryByRole("button", { name: "Nueva reserva" })).not.toBeInTheDocument();
   });
 

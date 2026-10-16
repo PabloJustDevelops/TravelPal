@@ -1,85 +1,63 @@
-import { authService } from '../auth';
-import { createInsforgeClient } from '../insforge';
-import { getCurrentUserAction } from '../insforge/auth-actions';
+import { AuthService } from '../auth'
+import { createInsforgeClient } from '../insforge'
 
-jest.mock('../insforge', () => ({
-  createInsforgeClient: jest.fn(),
-}));
+jest.mock('../insforge', () => ({ createInsforgeClient: jest.fn() }))
+jest.mock('../logger', () => ({ logger: { info: jest.fn(), error: jest.fn(), debug: jest.fn(), warn: jest.fn() } }))
 
-jest.mock('../insforge/auth-actions', () => ({
-  getCurrentUserAction: jest.fn(),
-  signInAction: jest.fn(),
-  signUpAction: jest.fn(),
-  signOutAction: jest.fn(),
-  sendResetPasswordEmailAction: jest.fn(),
-  resetPasswordAction: jest.fn(),
-  updateProfileAction: jest.fn(),
-  verifyEmailAction: jest.fn(),
-  resendVerificationEmailAction: jest.fn(),
-}));
-
-jest.mock('../logger', () => ({
-  logger: {
-    info: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-  },
-}));
-
-describe('AuthService Resilience', () => {
-  let mockClient: {
-    auth: { getCurrentUser: jest.Mock };
-    database: { from: jest.Mock };
-  };
+describe('AuthService session resilience', () => {
+  const auth = { getCurrentUser: jest.fn() }
+  const query = {
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn(),
+  }
+  const client = { auth, database: { from: jest.fn(() => query) }, storage: { from: jest.fn() } }
+  let service: AuthService
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks()
+    ;(createInsforgeClient as jest.Mock).mockReturnValue(client)
+    service = new AuthService()
+  })
 
-    mockClient = {
-      auth: { getCurrentUser: jest.fn() },
-      database: { from: jest.fn() },
-    };
+  it('mantiene el usuario básico si falla la consulta de profiles', async () => {
+    auth.getCurrentUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'a@b.com', profile: { name: 'Ana', avatar_url: '/ana.png' } } },
+      error: null,
+    })
+    query.maybeSingle.mockResolvedValue({ data: null, error: { message: 'DB unavailable' } })
+    await expect(service.getCurrentUser()).resolves.toEqual({
+      id: 'u1', email: 'a@b.com', full_name: 'Ana', avatar_url: '/ana.png',
+      bio: undefined, phone: undefined, location: undefined, website: undefined,
+    })
+  })
 
-    (createInsforgeClient as jest.Mock).mockReturnValue(mockClient);
-    (authService as unknown as { insforge: unknown }).insforge = mockClient;
-  });
+  it('devuelve null cuando no existe una sesión', async () => {
+    auth.getCurrentUser.mockResolvedValue({ data: { user: null }, error: null })
+    await expect(service.getCurrentUser()).resolves.toBeNull()
+    expect(client.database.from).not.toHaveBeenCalled()
+  })
 
-  it('getCurrentUser should return basic user if DB fetch fails', async () => {
-    // La identidad la resuelve el servidor a partir de la cookie de sesion.
-    (getCurrentUserAction as jest.Mock).mockResolvedValue({
-      id: 'user-123',
-      email: 'test@example.com',
-      full_name: 'Test',
-    });
+  it('propaga un fallo de red para distinguirlo de una sesión ausente', async () => {
+    auth.getCurrentUser.mockResolvedValue({ data: { user: null }, error: { message: 'network down', statusCode: 503 } })
+    await expect(service.getCurrentUser()).rejects.toThrow('network down')
+  })
 
-    const builder = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: { message: 'DB Error' } }),
-    };
-    mockClient.database.from.mockReturnValue(builder);
+  it('devuelve null si la sesión expira mientras profiles dispara signedOut', async () => {
+    const cachedUser = { id: 'u1', email: 'a@b.com', profile: { name: 'Ana' } }
+    let currentSessionUser: typeof cachedUser | null = cachedUser
+    auth.getCurrentUser.mockImplementation(async () => ({
+      data: { user: currentSessionUser },
+      error: null,
+    }))
+    query.maybeSingle.mockImplementation(async () => {
+      // El SDK borra la sesión en memoria al fallar el refresh mientras
+      // profiles está en curso; la siguiente lectura debe reflejarlo.
+      currentSessionUser = null
+      return { data: null, error: { message: 'Unauthorized', statusCode: 401 } }
+    })
 
-    const user = await authService.getCurrentUser();
-
-    expect(user).not.toBeNull();
-    expect(user?.id).toBe('user-123');
-    expect(user?.email).toBe('test@example.com');
-    // Sin fila en profiles, cae al nombre que ya traia la sesion
-    expect(user?.full_name).toBe('Test');
-  });
-
-  it('getCurrentUser should return null when there is no session', async () => {
-    (getCurrentUserAction as jest.Mock).mockResolvedValue(null);
-
-    const user = await authService.getCurrentUser();
-
-    expect(user).toBeNull();
-  });
-
-  it('getCurrentUser should propagate resolution failures so "no session" and "could not check" differ', async () => {
-    (getCurrentUserAction as jest.Mock).mockRejectedValue(new Error('network down'));
-
-    await expect(authService.getCurrentUser()).rejects.toThrow('network down');
-  });
-});
+    await expect(service.getCurrentUser()).resolves.toBeNull()
+    expect(auth.getCurrentUser).toHaveBeenCalledTimes(2)
+  })
+})

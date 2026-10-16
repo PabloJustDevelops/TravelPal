@@ -60,8 +60,18 @@ test.describe('flujo de gastos', () => {
       .fill(token)
     await expect(page.getByText(expenseTitle, { exact: true })).toBeVisible()
     await expect(page.getByText(/42,50\s*€/).first()).toBeVisible()
-
     await expectNoCriticalA11yViolations(page, 'lista de gastos')
+
+    const editLink = page.getByRole('link', { name: `Editar gasto ${expenseTitle}` })
+    const editHref = await editLink.getAttribute('href')
+    expect(editHref).toMatch(/^\/expense-edit\?id=[0-9a-f-]+$/i)
+    await page.goto(editHref!)
+    await expect(page.getByRole('heading', { name: 'Editar Gasto' })).toBeVisible()
+    await expect(page.getByLabel('Descripción *')).toHaveValue(expenseTitle)
+
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Editar Gasto' })).toBeVisible()
+    await expect(page.getByLabel('Descripción *')).toHaveValue(expenseTitle)
 
     // Y en el resumen del viaje, que agrega los gastos de ese `trip_id`.
     await page.goto(tripUrl)

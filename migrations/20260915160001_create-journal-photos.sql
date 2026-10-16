@@ -5,9 +5,9 @@
 -- auth.uid() = user_id, como el resto del esquema
 -- (ver migrations/20260913181842_create-app-schema.sql).
 --
--- El bucket `journal-photos` es publico, igual que `avatars`: el aislamiento
--- por propietario lo decide la RLS de esta tabla (nadie ve la url de una foto
--- que no es suya) y la key lleva un nombre aleatorio.
+-- El bucket `journal-photos` se configura como privado (ADR-011). Su visibilidad
+-- se administra en InsForge, no en esta migracion SQL. Las fotos se sirven con
+-- URLs firmadas; la RLS de esta tabla limita los metadatos al propietario.
 --
 -- Idempotente: se puede aplicar mas de una vez sin romper.
 

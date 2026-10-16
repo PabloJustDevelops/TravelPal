@@ -69,7 +69,7 @@ test.describe('flujo de borrado de viajes', () => {
 
     // El borrado se dispara desde el detalle, que es donde deja el alta.
     await page.getByRole('link', { name: title }).click()
-    await expect(page).toHaveURL(/\/trips\/[0-9a-f-]+$/)
+    await expect(page).toHaveURL(/\/trip\?id=[0-9a-f-]+$/)
     await page
       .getByRole('button', { name: `Eliminar el viaje ${title}` })
       .click()
@@ -113,7 +113,7 @@ test.describe('flujo de borrado de viajes', () => {
     await page.goto('/trips')
     await page.getByRole('searchbox', { name: 'Buscar viajes' }).fill(title)
     await page.getByRole('link', { name: title }).click()
-    await expect(page).toHaveURL(/\/trips\/[0-9a-f-]+$/)
+    await expect(page).toHaveURL(/\/trip\?id=[0-9a-f-]+$/)
     await page
       .getByRole('button', { name: `Eliminar el viaje ${title}` })
       .click()

@@ -8,16 +8,14 @@ const app = {
   ...(local ? {
     command: {
       executable: 'pnpm',
-      args: ['run', 'dev', '--port', new URL(url).port || '3000'],
+      args: ['exec', 'wrangler', 'dev', '--port', new URL(url).port || '3000', '--ip', '127.0.0.1'],
       reuseExisting: true,
       startupTimeout: 120_000,
-      // El runner no hereda el entorno del proceso padre. Pasar solo lo que usa Next.
+      // El runner no hereda el entorno del proceso padre. El export ya contiene el bundle público.
       env: Object.fromEntries(Object.entries({
         NEXT_PUBLIC_INSFORGE_URL: process.env.NEXT_PUBLIC_INSFORGE_URL,
         NEXT_PUBLIC_INSFORGE_ANON_KEY: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY,
-        INSFORGE_API_KEY: process.env.INSFORGE_API_KEY,
         NEXT_PUBLIC_LOG_LEVEL: 'warn',
-        E2E_DISABLE_DEV_INDICATORS: '1',
       }).filter((entry): entry is [string, string] => entry[1] !== undefined)),
     },
   } : {}),

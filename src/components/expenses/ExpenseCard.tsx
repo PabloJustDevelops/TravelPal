@@ -74,7 +74,7 @@ export default function ExpenseCard({ expense, showTripTitle = false }: ExpenseC
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-muted">{getCategoryName(expense.category)}</span>
-          <Link href={`/expenses/${expense.id}/edit`} aria-label={`Editar gasto ${expense.title || expense.description}`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <Link href={`/expense-edit?id=${encodeURIComponent(expense.id)}`} aria-label={`Editar gasto ${expense.title || expense.description}`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>

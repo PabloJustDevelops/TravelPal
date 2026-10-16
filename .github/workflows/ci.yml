@@ -18,13 +18,8 @@ jobs:
     env:
       NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
       NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
-      INSFORGE_API_KEY: ${{ secrets.INSFORGE_API_KEY }}
-      NEXT_PUBLIC_LOG_LEVEL: ${{ secrets.NEXT_PUBLIC_LOG_LEVEL }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set default NEXT_PUBLIC_LOG_LEVEL when secret is missing
-        run: |
-          echo "NEXT_PUBLIC_LOG_LEVEL=${NEXT_PUBLIC_LOG_LEVEL:-warn}" >> "$GITHUB_ENV"
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
@@ -34,14 +29,46 @@ jobs:
       - run: pnpm run lint
       - run: pnpm run type-check
       - run: pnpm run test:ci
+      - run: pnpm run test:trip-owner-rls
       - run: pnpm run test:timezone
       - name: Congelar los caminos de datos (issue 38, etapa 0)
         run: node scripts/check-data-paths.mjs
       - run: pnpm run build
+      - name: Validar export estático
+        run: pnpm run validate:static-export
       - run: pnpm run build-storybook
+      - name: Subir export estático
+        uses: actions/upload-artifact@v4
+        with:
+          name: travelpal-static-export
+          path: out/
+          if-no-files-found: error
+          retention-days: 1
 
-  # Probar el codigo en PR y main ANTES del deploy; repetir despues en produccion.
-  # La suite vive en .github/workflows/e2e.yml.
+  # Validar el empaquetado local antes de que el E2E y el deploy consuman el artefacto.
+  worker:
+    name: worker-build
+    needs: [build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Descargar export estático
+        uses: actions/download-artifact@v4
+        with:
+          name: travelpal-static-export
+          path: out/
+      - name: Validar contenido exportado
+        run: pnpm run validate:static-export
+      - name: Validar configuración y empaquetado de Wrangler
+        run: pnpm exec wrangler deploy --dry-run --no-autoconfig
+
+  # Probar el export del PR y main ANTES del deploy; repetir tras publicar en producción.
   e2e:
     needs: [build]
     uses: ./.github/workflows/e2e.yml
@@ -55,33 +82,6 @@ jobs:
       base-url: https://app-viajes.prg-dev.workers.dev
     secrets: inherit
 
-  worker:
-    name: worker-build
-    runs-on: ubuntu-24.04
-    env:
-      NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
-      NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
-      INSFORGE_API_KEY: ${{ secrets.INSFORGE_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.22.3'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      # OpenNext genera cloudflare/next-env.mjs leyendo los ficheros .env (NO process.env).
-      # Sin este fichero el worker arranca con next-env.mjs vacio y revienta (500 Server failed
-      # to respond). Los valores no se imprimen: van directos al fichero.
-      - name: Escribir .env.local para el build de OpenNext
-        run: |
-          printf 'NEXT_PUBLIC_INSFORGE_URL=%s\nNEXT_PUBLIC_INSFORGE_ANON_KEY=%s\nINSFORGE_API_KEY=%s\n' \
-            "${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}" \
-            "${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}" \
-            "${{ secrets.INSFORGE_API_KEY }}" > .env.local
-      - name: Build the Cloudflare Worker (no deploy)
-        run: pnpm exec opennextjs-cloudflare build
-
   deploy:
     needs: [build, worker, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -94,25 +94,13 @@ jobs:
           node-version: '22.22.3'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Escribir .env.local para el build de OpenNext
-        run: |
-          printf 'NEXT_PUBLIC_INSFORGE_URL=%s\nNEXT_PUBLIC_INSFORGE_ANON_KEY=%s\nINSFORGE_API_KEY=%s\n' \
-            "${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}" \
-            "${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}" \
-            "${{ secrets.INSFORGE_API_KEY }}" > .env.local
-      - name: Build the Cloudflare Worker
-        run: pnpm exec opennextjs-cloudflare build
+      - name: Descargar export validado
+        uses: actions/download-artifact@v4
+        with:
+          name: travelpal-static-export
+          path: out/
+      - name: Publicar assets-only Worker
+        run: pnpm exec wrangler deploy --no-autoconfig
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: c0fd3bd608ffa8d338164c60b7148c85
-          NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
-          NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
-          INSFORGE_API_KEY: ${{ secrets.INSFORGE_API_KEY }}
-      - name: Deploy the Cloudflare Worker
-        run: pnpm exec opennextjs-cloudflare deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: c0fd3bd608ffa8d338164c60b7148c85
-          NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
-          NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
-          INSFORGE_API_KEY: ${{ secrets.INSFORGE_API_KEY }}

@@ -146,7 +146,7 @@ export default function NextTrip({
               </div>
             ) : <p className="mt-3 leading-relaxed text-muted">Elige un destino y reúne tus fechas, planes y reservas en un solo lugar.</p>}
           </div>
-          <Link href={trip ? `/trips/${encodeURIComponent(trip.id)}` : '/trips'} className={`${accentLinkClassName} min-h-12 shrink-0 gap-3 self-start xl:self-auto`}>
+          <Link href={trip ? `/trip?id=${encodeURIComponent(trip.id)}` : '/trips'} className={`${accentLinkClassName} min-h-12 shrink-0 gap-3 self-start xl:self-auto`}>
             {trip ? 'Continuar planificación' : 'Organizar un viaje'}<ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
@@ -156,7 +156,7 @@ export default function NextTrip({
         <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 self-start rounded-xl border border-line bg-paper p-5 sm:p-6">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
             <h3 id="dashboard-itinerary-title" className="font-sans text-lg font-semibold text-ink">Itinerario</h3>
-            {trip && <Link href={`/trips/${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            {trip && <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
               Ver itinerario completo<ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
             </Link>}
           </div>
@@ -182,7 +182,7 @@ export default function NextTrip({
           ) : (
             <div className="py-6">
               <p className="text-sm text-muted">Aún no hay actividades para este viaje.</p>
-              <Link href={`/trips/${encodeURIComponent(trip.id)}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 Añadir actividades
               </Link>
             </div>
@@ -218,7 +218,7 @@ export default function NextTrip({
           <section aria-labelledby="dashboard-budget-title" className="min-w-0 rounded-xl border border-line bg-paper p-5 sm:p-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
               <h3 id="dashboard-budget-title" className="font-sans text-lg font-semibold text-ink">Presupuesto del viaje</h3>
-              <Link href="/budget" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              <Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 Ver presupuestos<ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>

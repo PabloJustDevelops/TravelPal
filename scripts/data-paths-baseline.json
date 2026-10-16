@@ -10,12 +10,17 @@
     "dashboard": 0
   },
   "files": {
+    "src/app/create-trip/page.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 3
+    },
     "src/app/dashboard/page.tsx": {
       "bff": 0,
       "bffUnknown": 0,
-      "sdk": 4
+      "sdk": 7
     },
-    "src/app/expenses/[id]/edit/page.tsx": {
+    "src/app/expense-edit/page.tsx": {
       "bff": 0,
       "bffUnknown": 0,
       "sdk": 8
@@ -38,19 +43,14 @@
     "src/app/planning/page.tsx": {
       "bff": 0,
       "bffUnknown": 0,
-      "sdk": 11
+      "sdk": 17
     },
     "src/app/tasks/page.tsx": {
       "bff": 0,
       "bffUnknown": 0,
       "sdk": 9
     },
-    "src/app/trips/[id]/page.tsx": {
-      "bff": 0,
-      "bffUnknown": 0,
-      "sdk": 3
-    },
-    "src/app/trips/new/page.tsx": {
+    "src/app/trip/page.tsx": {
       "bff": 0,
       "bffUnknown": 0,
       "sdk": 3
@@ -80,6 +80,11 @@
       "bffUnknown": 0,
       "sdk": 3
     },
+    "src/components/trips/TripItinerary.tsx": {
+      "bff": 0,
+      "bffUnknown": 0,
+      "sdk": 8
+    },
     "src/components/trips/TripJournal.tsx": {
       "bff": 0,
       "bffUnknown": 0,
@@ -94,6 +99,6 @@
   "totals": {
     "bff": 0,
     "bffUnknown": 0,
-    "sdk": 90
+    "sdk": 107
   }
 }

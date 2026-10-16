@@ -1,13 +1,12 @@
 name: E2E
 
-# Suite de Playwright reutilizable (issue 72). El destino lo elige quien la llama
-# con `base-url`: vacio corre contra el dev server local que arranca Playwright
-# (lo que prueba el codigo del PR) y con URL corre contra lo ya desplegado.
+# Suite de Playwright reutilizable (issue 72). Sin `base-url` prueba el export
+# estático subido por el job build; con URL corre contra lo ya desplegado.
 on:
   workflow_call:
     inputs:
       base-url:
-        description: URL contra la que corre la suite. Vacio = dev server local.
+        description: URL contra la que corre la suite. Vacio = export estático local.
         required: false
         type: string
         default: ''
@@ -24,7 +23,6 @@ jobs:
     env:
       NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
       NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
-      INSFORGE_API_KEY: ${{ secrets.INSFORGE_API_KEY }}
       E2E_BASE_URL: ${{ inputs.base-url }}
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
@@ -37,6 +35,12 @@ jobs:
           node-version: '22.22.3'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - name: Descargar export estático para el E2E predeploy
+        if: inputs.base-url == ''
+        uses: actions/download-artifact@v4
+        with:
+          name: travelpal-static-export
+          path: out/
       # Sin el usuario dedicado el caso de login se omite y el job quedaria verde
       # sin haber probado la sesion: mejor fallar aqui y decir que falta.
       - name: Exigir el usuario dedicado de e2e

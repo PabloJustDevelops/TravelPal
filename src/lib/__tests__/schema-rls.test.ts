@@ -76,6 +76,13 @@ const subqueryMigration = readFileSync(
   "utf8",
 );
 
+const tripOwnerMigrationName = readdirSync(MIGRATIONS_DIR).find((file) =>
+  file.endsWith("_enforce-trip-owner-rls.sql"),
+);
+const tripOwnerMigration = tripOwnerMigrationName
+  ? readFileSync(path.join(MIGRATIONS_DIR, tripOwnerMigrationName), "utf8")
+  : "";
+
 describe("bookings: RLS y politicas de propietario", () => {
   it("tiene RLS habilitada", () => {
     expect(baseSchema).toMatch(
@@ -446,5 +453,48 @@ describe("reescritura de policies RLS con subquery", () => {
     expect(visibleTo("user-b")).toEqual(["b1"]);
     // La clave del aislamiento: b no ve nada de a.
     expect(visibleTo("user-b")).not.toContain("a1");
+  });
+});
+
+describe("RLS: los viajes referenciados pertenecen al mismo usuario", () => {
+  const sql = tripOwnerMigration.replace(/--[^\n]*/g, "");
+  const nullableTables = [
+    "expenses",
+    "notes",
+    "bookings",
+    "itinerary_activities",
+    "alerts",
+    "budgets",
+  ];
+  const requiredTables = ["journal_entries", "journal_photos"];
+
+  function policySql(policyName: string): string {
+    const match = sql.match(new RegExp(`create policy ${policyName}[\\s\\S]*?;`));
+    return match?.[0] ?? "";
+  }
+
+  it("valida en insert y update que cada viaje relacionado sea propio", () => {
+    for (const table of [...nullableTables, ...requiredTables]) {
+      const insertPolicy = policySql(`${table}_insert_own`);
+      const updatePolicy = policySql(`${table}_update_own`);
+
+      for (const policy of [insertPolicy, updatePolicy]) {
+        expect(policy).toMatch(/\(select auth\.uid\(\)\) = user_id/);
+        expect(policy).toContain("parent_trip.id = trip_id");
+        expect(policy).toMatch(/parent_trip\.user_id = \(select auth\.uid\(\)\)/);
+      }
+      expect(updatePolicy).toMatch(/for update using/);
+    }
+  });
+
+  it("permite conservar referencias nulas solo en las seis tablas opcionales", () => {
+    for (const table of nullableTables) {
+      expect(policySql(`${table}_insert_own`)).toMatch(/trip_id is null[\s\S]*?or exists/i);
+      expect(policySql(`${table}_update_own`)).toMatch(/trip_id is null[\s\S]*?or exists/i);
+    }
+    for (const table of requiredTables) {
+      expect(policySql(`${table}_insert_own`)).not.toMatch(/trip_id is null/i);
+      expect(policySql(`${table}_update_own`)).not.toMatch(/trip_id is null/i);
+    }
   });
 });

@@ -1,12 +1,10 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { AuthUser, authService as defaultAuthService } from '@/lib/auth'
+import type { SignInActionResult, SignUpActionResult } from '@/lib/auth'
 import { logger as defaultLogger } from '@/lib/logger'
-import type {
-  SignInActionResult,
-  SignUpActionResult,
-} from '@/lib/insforge/auth-actions'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -28,6 +26,7 @@ interface AuthContextType {
     fullName: string,
   ) => Promise<SignUpActionResult>
   signOut: () => Promise<void>
+  signInWithGoogle: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   verifyEmail: (email: string, otp: string) => Promise<AuthUser | null>
   resendVerificationEmail: (email: string) => Promise<void>
@@ -44,13 +43,16 @@ type AuthProviderDeps = {
   logger?: typeof defaultLogger
 }
 export function AuthProvider({ children, deps }: { children: React.ReactNode; deps?: AuthProviderDeps }) {
+  const isLandingPage = usePathname() === '/'
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState(false)
   const [sessionError, setSessionError] = useState(false)
+  const sessionSkippedOnLandingRef = useRef(false)
   const authService = deps?.authService ?? defaultAuthService
   const logger = deps?.logger ?? defaultLogger
   const mountedRef = useRef(true)
+  const signedOutRevisionRef = useRef(0)
 
   useEffect(() => {
     mountedRef.current = true
@@ -60,6 +62,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
   }, [])
 
   const loadSession = useCallback(async () => {
+    sessionSkippedOnLandingRef.current = false
     logger.debug('AuthContext: Inicializando useEffect')
     setLoading(true)
     setSessionError(false)
@@ -93,11 +96,49 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
   }, [authService, logger])
 
   useEffect(() => {
+    if (isLandingPage) {
+      sessionSkippedOnLandingRef.current = true
+      setLoading(false)
+      setSessionError(false)
+      return
+    }
     void loadSession()
-  }, [loadSession])
+  }, [isLandingPage, loadSession])
 
-  // Las mutaciones de auth corren en el servidor; tras cada una releemos la
-  // sesión para reflejar el nuevo estado en la UI.
+  useEffect(() => {
+    const unsubscribe = authService.onAuthStateChange((event) => {
+      if (!mountedRef.current) return
+      if (event === 'signedOut') {
+        signedOutRevisionRef.current += 1
+        setUser(null)
+        setSessionError(false)
+        setLoading(false)
+        return
+      }
+
+      const signedOutRevision = signedOutRevisionRef.current
+      void authService.getCurrentUser().then((current) => {
+        if (
+          !mountedRef.current ||
+          signedOutRevisionRef.current !== signedOutRevision
+        ) return
+        setUser(current)
+        setSessionError(false)
+      }).catch((error) => {
+        if (signedOutRevisionRef.current !== signedOutRevision) return
+        logger.error('AuthContext: No se pudo restaurar la sesión tras un cambio', { error })
+        if (mountedRef.current) setSessionError(true)
+      })
+    })
+    return unsubscribe
+  }, [authService, logger])
+
+  // Al salir de la landing, el guardia debe esperar desde el primer render de
+  // la ruta privada, antes de que los efectos puedan iniciar la consulta.
+  const isWaitingToLoadSession =
+    !isLandingPage && sessionSkippedOnLandingRef.current
+
+  // Tras cada mutación releemos la sesión para reflejar el estado del SDK en la UI.
   const refreshUser = async () => {
     const current = await authService.getCurrentUser()
     setUser(current)
@@ -110,6 +151,7 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     password: string,
   ): Promise<SignInActionResult> => {
     logger.info('AuthContext: Iniciando signIn')
+    const signedOutRevision = signedOutRevisionRef.current
     setPending(true)
     try {
       const result = await authService.signIn(email, password)
@@ -129,7 +171,11 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
       // usuario: fijarlo evita una ventana sin usuario entre el login y la
       // relectura en la que el guardia podría redirigir.
       const current = await authService.getCurrentUser()
-      setUser(current ?? result.user)
+      setUser(
+        signedOutRevisionRef.current === signedOutRevision
+          ? current ?? result.user
+          : null,
+      )
       setSessionError(false)
       return result
     } catch (err: unknown) {
@@ -196,6 +242,10 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     }
   }
 
+  const signInWithGoogle = async () => {
+    await authService.signInWithGoogle()
+  }
+
   const resetPassword = async (email: string) => {
     await authService.resetPassword(email)
   }
@@ -211,13 +261,14 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
 
   const value = {
     user,
-    loading,
+    loading: loading || isWaitingToLoadSession,
     pending,
     sessionError,
     reloadSession: loadSession,
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     resetPassword,
     verifyEmail,
     resendVerificationEmail,

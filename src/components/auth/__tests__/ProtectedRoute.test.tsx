@@ -36,6 +36,7 @@ const authValue = (overrides: Record<string, unknown> = {}) => ({
 describe('ProtectedRoute', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    window.history.replaceState({}, '', '/')
     mockedUseRouter.mockReturnValue({ replace })
   })
 
@@ -55,7 +56,7 @@ describe('ProtectedRoute', () => {
     expect(replace).not.toHaveBeenCalled()
   })
 
-  it('redirige a /signin cuando el servidor confirma que no hay sesion', async () => {
+  it('redirige a /signin y conserva el destino por defecto', async () => {
     mockedUseAuth.mockReturnValue(authValue())
 
     render(
@@ -64,7 +65,27 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>,
     )
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/signin'))
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith('/signin?redirectTo=%2F'),
+    )
+  })
+
+  it('conserva la ruta y la query al pedir iniciar sesion', async () => {
+    window.history.replaceState({}, '', '/expenses?category=travel&search=rome')
+    mockedUseAuth.mockReturnValue(authValue())
+
+    render(
+      <ProtectedRoute>
+        <div>contenido privado</div>
+      </ProtectedRoute>,
+    )
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(
+        '/signin?redirectTo=%2Fexpenses%3Fcategory%3Dtravel%26search%3Drome',
+      ),
+    )
+    window.history.replaceState({}, '', '/')
   })
 
   it('pinta el contenido cuando hay usuario', () => {

@@ -44,6 +44,17 @@ test.describe('flujo de viajes', () => {
     await expect(page.getByText(trip.origin, { exact: true })).toBeVisible()
     await expect(page.getByText(trip.destination, { exact: true })).toBeVisible()
 
+    const tripUrl = page.url()
+    await page.goto(tripUrl)
+    await expect(page.getByRole('heading', { name: trip.title })).toBeVisible()
+    await expect(page.getByText(trip.origin, { exact: true })).toBeVisible()
+    await expect(page.getByText(trip.destination, { exact: true })).toBeVisible()
+
+    await page.reload()
+    await expect(page.getByRole('heading', { name: trip.title })).toBeVisible()
+    await expect(page.getByText(trip.origin, { exact: true })).toBeVisible()
+    await expect(page.getByText(trip.destination, { exact: true })).toBeVisible()
+
     // Y en la lista, buscandolo por su titulo (no por totales: la cuenta del
     // usuario dedicado puede tener viajes de corridas anteriores).
     await page.goto('/trips')

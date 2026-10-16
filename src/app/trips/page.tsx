@@ -171,7 +171,7 @@ export default function TripsPage() {
           action={
             trips.length > 0 ? (
               <Link
-                href="/trips/new"
+                href="/create-trip"
                 className={`${accentLinkClassName} min-h-11 gap-2`}
               >
                 <PlusIcon aria-hidden="true" className="h-4 w-4" />
@@ -244,7 +244,7 @@ export default function TripsPage() {
                   <div className="min-w-0 pr-3">
                     <h2 className="truncate text-lg font-semibold tracking-tight text-ink">
                       <Link
-                        href={`/trips/${trip.id}`}
+                        href={`/trip?id=${encodeURIComponent(trip.id)}`}
                         className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         {trip.title}
@@ -317,7 +317,7 @@ export default function TripsPage() {
             description="Crea tu primer viaje para empezar a organizar fechas, actividades y reservas en un solo lugar."
             action={(
               <Link
-                href="/trips/new"
+                href="/create-trip"
                 className={`${accentLinkClassName} min-h-11 gap-2`}
               >
                 <PlusIcon aria-hidden="true" className="h-4 w-4" />
