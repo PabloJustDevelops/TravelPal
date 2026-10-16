@@ -35,24 +35,35 @@ Key patterns:
 
 ## Hosting
 
-La app corre en Cloudflare Workers con `@opennextjs/cloudflare` (build, preview y deploy via
-`opennextjs-cloudflare`). Vercel queda retirado del repo y ya esta desconectado de este
-repositorio: no hay ninguna integracion de Vercel pendiente.
+La producción es un export estático de Next.js (`output: "export"`) en `out/`, servido como
+assets-only Worker de Wrangler según `wrangler.jsonc`. Cloudflare no ejecuta un servidor Next.js
+ni un entrypoint de aplicación. `@opennextjs/cloudflare` sigue declarado como dependencia de
+desarrollo, pero no participa en la compilación ni publicación de producción. Vercel queda retirado
+del repo y ya está desconectado de este repositorio: no hay ninguna integración de Vercel pendiente.
 
 Los triggers de Cloudflare Workers Builds se retiraron a proposito: el unico camino de deploy es
 el trabajo `deploy` de `.github/workflows/ci.yml`, no los vuelvas a crear.
 
 ### Despliegue automatico (GitHub Actions)
 
-El despliegue lo hace el trabajo `deploy` de `.github/workflows/ci.yml`: al empujar a `main` corre
-`pnpm install --frozen-lockfile`, `pnpm exec opennextjs-cloudflare build` y `pnpm exec opennextjs-cloudflare deploy` con Node 22.22.3.
-El trabajo depende de `build`, `worker` y `e2e`, y solo se ejecuta en push a `main` (nunca en pull requests).
+El despliegue lo hace el trabajo `deploy` de `.github/workflows/ci.yml`, solo al empujar a `main`
+(nunca en pull requests), con Node 22.22.3. `build` ejecuta lint, type-check, Jest, la prueba RLS,
+timezone, el guardián de rutas de datos, `pnpm run build` (que genera `out/`), el validador del
+export y Storybook; luego sube `out/` como artefacto. `worker` descarga ese mismo artefacto, lo
+valida y ejecuta `pnpm exec wrangler deploy --dry-run --no-autoconfig`. `e2e` prueba el artefacto
+antes del despliegue. `deploy` depende de esos tres trabajos, descarga el artefacto validado y lo
+publica con `pnpm exec wrangler deploy --no-autoconfig`; después, `e2e-produccion` vuelve a probar
+la URL desplegada.
 
-Usa el secreto `CLOUDFLARE_API_TOKEN`, mas `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`
-e `INSFORGE_API_KEY`. El `CLOUDFLARE_ACCOUNT_ID` va literal en el workflow, no es un secreto.
+El build usa `NEXT_PUBLIC_INSFORGE_URL` y `NEXT_PUBLIC_INSFORGE_ANON_KEY`. La publicación usa el
+secreto `CLOUDFLARE_API_TOKEN`; `CLOUDFLARE_ACCOUNT_ID` va literal en el workflow, no es un
+secreto. El Worker estático no recibe `INSFORGE_API_KEY` ni secretos de runtime.
 
-No hace falta configurar Workers Builds a mano en el dashboard: GitHub Actions es la unica via de deploy.
-Manual, si hiciera falta: `pnpm run deploy` (build de OpenNext + deploy) con `wrangler login`.
+No hace falta configurar Workers Builds a mano en el dashboard: GitHub Actions es la única vía
+automática de deploy. Para probar localmente, ejecuta `pnpm run build`,
+`pnpm run validate:static-export` y después `pnpm run preview`; `preview` solo ejecuta
+`wrangler dev` y requiere que `out/` ya exista. Manual, si hiciera falta, `pnpm run deploy`
+reconstruye el export, lo valida y ejecuta `wrangler deploy --no-autoconfig` con Wrangler autenticado.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

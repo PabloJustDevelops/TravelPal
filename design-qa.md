@@ -73,4 +73,14 @@ Salida 0: `[]`. Detector oficial ejecutado desde copia temporal; no se instalaro
 - Recursos con alt, crédito y procedencia en `public/images/atlas/README.md`.
 - No hay commit, push, merge ni deploy en esta entrega.
 
-final result: passed
+Resultado de esta entrega: `passed` para landing; no representa el gate visual global.
+
+## Lista/alta y planificación
+
+La lista y el alta conservan filtros, autenticación, validación de fechas y presupuesto parcial; los E2E autenticados del PR pasaron antes de esta etapa de planificación. Planning conserva sus consultas y mutaciones; calendario, tarjetas y formularios tienen historias y pruebas. La historia de reserva comprueba acciones dentro de un viewport de 390 × 844. Evidencia de esta etapa: `docs/audits/2026-10-11-atlas-planificacion.md`. Falta ejecutar el E2E autenticado sobre el estado final del módulo y completar el gate visual global.
+
+final result: blocked
+
+El E2E autenticado de la página completa queda pendiente sobre el estado integrado y el gate visual global sigue bloqueado.
+
+Resultado global: `blocked` hasta completar ambos gates.
