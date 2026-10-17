@@ -30,7 +30,7 @@ const querySchema = z.object({
   origin: z.string().regex(IATA),
   month: z.string().regex(MONTH),
   journey: z.enum(["round-trip", "one-way"]),
-  maxPrice: z.number().finite().positive().optional(),
+  maxPrice: z.number().finite().positive().max(100_000).optional(),
 }).strict();
 
 function monthStart(month: string): Date | undefined {
@@ -76,10 +76,9 @@ export function parseInspirationQuery(
 const providerRowSchema = z.object({
   origin: z.string().regex(IATA),
   destination: z.string().regex(IATA),
-  departure_at: z.string(),
-  return_at: z.string().optional().nullable(),
-  price: z.number().finite().positive(),
-  currency: z.literal("EUR"),
+  depart_date: z.string(),
+  return_date: z.string().optional().nullable(),
+  value: z.number().finite().positive(),
   found_at: z.string(),
   actual: z.literal(true),
   show_to_affiliates: z.literal(true),
@@ -94,34 +93,33 @@ function validInstant(value: string): Date | undefined {
 }
 
 function datePart(value: string): string | undefined {
-  const parsed = validInstant(value);
-  if (!parsed) return undefined;
-  const part = value.slice(0, 10);
-  if (!DAY.test(part) || parsed.toISOString().slice(0, 10) !== part) return undefined;
-  return part;
+  if (!DAY.test(value)) return undefined;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return undefined;
+  return value;
 }
 
 function toIdea(value: unknown, query: InspirationQuery, now: Date): FlightIdea | undefined {
   const parsed = providerRowSchema.safeParse(value);
   if (!parsed.success) return undefined;
   const row = parsed.data;
-  const departureDate = datePart(row.departure_at);
-  const departure = validInstant(row.departure_at);
+  const departureDate = datePart(row.depart_date);
   const found = validInstant(row.found_at);
-  const returnDate = row.return_at ? datePart(row.return_at) : undefined;
-  const returnInstant = row.return_at ? validInstant(row.return_at) : undefined;
-  if (!departureDate || !departure || departure <= now || !found || found > now || now.getTime() - found.getTime() >= MAX_AGE_MS) return undefined;
+  const returnValue = row.return_date ?? "";
+  const returnDate = returnValue ? datePart(returnValue) : undefined;
+  if (!departureDate || departureDate <= now.toISOString().slice(0, 10) || !found || found > now || now.getTime() - found.getTime() >= MAX_AGE_MS) return undefined;
   if (row.origin !== query.origin || row.destination === row.origin || !departureDate.startsWith(query.month)) return undefined;
-  if (query.maxPrice !== undefined && row.price > query.maxPrice) return undefined;
-  if (query.journey === "round-trip" && (!returnDate || !returnInstant || returnInstant <= departure)) return undefined;
-  if (query.journey === "one-way" && row.return_at) return undefined;
-  if (returnDate && (!returnInstant || returnInstant <= departure)) return undefined;
+  if (query.maxPrice !== undefined && row.value > query.maxPrice) return undefined;
+  if (query.journey === "round-trip" && (!returnDate || returnDate <= departureDate)) return undefined;
+  if (query.journey === "one-way" && returnValue !== "") return undefined;
+  if (returnDate && returnDate <= departureDate) return undefined;
   return {
     origin: row.origin,
     destination: row.destination,
     departureDate,
     ...(returnDate ? { returnDate } : {}),
-    price: row.price,
+    price: row.value,
     currency: "EUR",
     foundAt: found.toISOString(),
     validUntil: new Date(found.getTime() + MAX_AGE_MS).toISOString(),
@@ -139,7 +137,8 @@ export function parseFlightIdeas(payload: unknown, query: InspirationQuery, now:
 
 export function isFlightIdeaCurrent(idea: FlightIdea, now: Date = new Date()): boolean {
   const expiry = validInstant(idea.validUntil);
-  return Boolean(expiry && expiry > now);
+  const departureDate = datePart(idea.departureDate);
+  return Boolean(expiry && expiry > now && departureDate && departureDate > now.toISOString().slice(0, 10));
 }
 
 export function filterFlightIdeas(input: FlightIdea[], query: InspirationQuery, now: Date = new Date()): FlightIdea[] {
