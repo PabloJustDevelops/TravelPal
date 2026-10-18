@@ -26,6 +26,19 @@ jobs:
           node-version: '22.22.3'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '2.9.7'
+      - name: Configurar imports Deno de la función
+        env:
+          ZOD_SPECIFIER: npm:zod@4.1.12
+        run: 'printf ''{"imports":{"zod":"%s"},"compilerOptions":{"lib":["deno.window","deno.ns","dom"],"strict":true}}'' "$ZOD_SPECIFIER" > "$RUNNER_TEMP/travel-inspiration-deno.json"'
+      - name: Probar función de inspiración
+        run: deno test --config "$RUNNER_TEMP/travel-inspiration-deno.json" --no-lock --allow-env --allow-net insforge/functions/travel-inspiration/index_test.ts
+      - name: Empaquetar función de inspiración
+        env:
+          INSFORGE_SDK_SPECIFIER: npm:@insforge/sdk
+        run: deno bundle --config "$RUNNER_TEMP/travel-inspiration-deno.json" --no-lock --platform deno --packages bundle --output "$RUNNER_TEMP/travel-inspiration.js" --external="$INSFORGE_SDK_SPECIFIER" insforge/functions/travel-inspiration/index.ts
       - run: pnpm run lint
       - run: pnpm run type-check
       - run: pnpm run test:ci

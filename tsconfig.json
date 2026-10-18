@@ -43,6 +43,7 @@
   ],
   "exclude": [
     "node_modules",
-    "cloudflare-env.d.ts"
+    "cloudflare-env.d.ts",
+    "insforge/functions"
   ]
 }
