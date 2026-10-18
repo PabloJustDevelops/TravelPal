@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
@@ -35,6 +35,42 @@ export default function NewTripPage() {
     travelers: 1,
     budget: 0,
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const keys = ["source", "origin", "destination", "departure", "return"];
+    if ([...params.keys()].some((key) => !keys.includes(key))) return;
+    if (keys.some((key) => params.getAll(key).length > 1)) return;
+    if (params.get("source") !== "inspiration") return;
+
+    const origin = params.get("origin") ?? "";
+    const destination = params.get("destination") ?? "";
+    const departure = params.get("departure") ?? "";
+    const returnDate = params.get("return") ?? "";
+    const validDay = (value: string) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const date = new Date(`${value}T00:00:00.000Z`);
+      return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+    };
+    const today = new Date().toISOString().slice(0, 10);
+    if (
+      !/^[A-Z]{3}$/.test(origin) ||
+      !/^[A-Z]{3}$/.test(destination) ||
+      origin === destination ||
+      !validDay(departure) ||
+      departure <= today ||
+      (returnDate && (!validDay(returnDate) || returnDate <= departure))
+    ) return;
+
+    setFormData((previous) => ({
+      ...previous,
+      title: `Viaje a ${destination}`,
+      origin,
+      destination,
+      departure_date: `${departure}T09:00`,
+      return_date: returnDate ? `${returnDate}T09:00` : "",
+    }));
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<

@@ -89,6 +89,41 @@ describe("NewTripPage con el SDK en el navegador", () => {
     expect(screen.getByLabelText("Notas adicionales")).toBeInTheDocument();
   });
 
+  it("prefill datos de inspiración y no crea el viaje hasta el envío explícito", async () => {
+    mount();
+    window.history.replaceState(
+      {},
+      "",
+      "/create-trip?source=inspiration&origin=MAD&destination=LON&departure=2026-11-12&return=2026-11-19",
+    );
+
+    render(<NewTripPage />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Título del Viaje/i)).toHaveValue("Viaje a LON"));
+    expect(screen.getByLabelText(/Origen/i)).toHaveValue("MAD");
+    expect(screen.getByLabelText(/Destino/i)).toHaveValue("LON");
+    expect(screen.getByLabelText(/Fecha de Salida/i)).toHaveValue("2026-11-12T09:00");
+    expect(screen.getByLabelText(/Fecha de Regreso/i)).toHaveValue("2026-11-19T09:00");
+    expect(tripsChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("ignora parámetros de inspiración malformados", async () => {
+    mount();
+    window.history.replaceState(
+      {},
+      "",
+      "/create-trip?source=inspiration&origin=bad&destination=LON&departure=ayer&return=2026-11-19",
+    );
+
+    render(<NewTripPage />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Título del Viaje/i)).toHaveValue(""));
+    expect(screen.getByLabelText(/Origen/i)).toHaveValue("");
+    expect(screen.getByLabelText(/Destino/i)).toHaveValue("");
+    expect(screen.getByLabelText(/Fecha de Salida/i)).toHaveValue("");
+    expect(tripsChain.insert).not.toHaveBeenCalled();
+  });
+
   it("mantiene los datos de vuelo opcionales plegados hasta que se solicitan", () => {
     mount();
 
