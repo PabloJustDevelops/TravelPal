@@ -1,0 +1,92 @@
+[
+  {
+    "file": "01-dashboard.png",
+    "section": "Dashboard",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-394ea1da-a6f4-4b6d-9d8b-2e589e34eaf0.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "9caee03b2762d17f46960ccfa831a375d1a3e795e9f7ef2b24f8cbef693819b4",
+    "description": "Próximo viaje, primeros planes, preparativos y presupuesto antes de estadísticas."
+  },
+  {
+    "file": "02-viajes.png",
+    "section": "Viajes",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-90cc291a-14be-4092-877b-90b0c7dd6e3a.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "71cad7bf7c61662be1394f0cddb5f1ed15d1d89b078186a83b2f8d7ffada5327",
+    "description": "Próximo viaje destacado y viajes pasados en filas; búsqueda y filtros discretos."
+  },
+  {
+    "file": "03-crear-viaje.png",
+    "section": "Crear viaje",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-5aad1deb-7e62-4df5-ace2-8e75feb520ca.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "0c3453b47d8abaabecd84a54b403622fc215b87bb058d9b3eb936879206fce1b",
+    "description": "Formulario en una página con campos agrupados y resumen lateral."
+  },
+  {
+    "file": "04-planificacion.png",
+    "section": "Planificación",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-6e7ff72d-df63-467a-b771-ad9b909d88c5.png",
+    "width": 1486,
+    "height": 1059,
+    "sha256": "cdec69462a655eaca530d06669547b20b98abcc6a0b1deec4b69760db584eec8",
+    "description": "Día seleccionado, agenda horaria, calendario compacto y reservas del viaje."
+  },
+  {
+    "file": "05-tareas.png",
+    "section": "Tareas",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-6223857a-1295-48b8-948c-50d541b94556.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "4d3a064125ac3e7449000c55ef5d9f6c6be4003f59a4ee41aa917e6a3719b67e",
+    "description": "Lista por estado, prioridades y fechas; cambio de estado sin arrastrar."
+  },
+  {
+    "file": "06-gastos.png",
+    "section": "Gastos y presupuestos",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-1d13b238-3cdd-4484-ad2e-8b5c31428403.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "a09cf35ed3b70236e85b6fa793d156d97166f0fc2e5b195928f2b4e72ae94b2f",
+    "description": "Libro de movimientos con importes alineados y presupuesto contextual en EUR."
+  },
+  {
+    "file": "07-anadir-gasto.png",
+    "section": "Añadir gasto",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-2c14d1a3-c747-4ea2-904f-26b920b88c02.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "f99766ba39010f4c68296d5b83d5fc87c49e50d1cca978ffbb71819bda82b4b6",
+    "description": "Importe y moneda primero, categorías compactas, fecha, viaje y notas."
+  },
+  {
+    "file": "08-notas.png",
+    "section": "Notas",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-08c89acc-a618-462c-9cb8-56bfc6af48af.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "6daa3a546bda2f0a2a6850578d0430fc85c9cb0d75b04c9eeba6dbc1c23a5294",
+    "description": "Lista y editor en dos paneles, filtros, favoritos y vista previa Markdown."
+  },
+  {
+    "file": "09-perfil.png",
+    "section": "Perfil",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-9b7a9910-4c6d-4fd3-84cb-9de787fc3dda.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "842efd30e089ffbc7caf10240d25e7b842dacbb7953f3b8e7a0df6650da2db01",
+    "description": "Foto, nombre y email; estado de edición con acciones claras."
+  },
+  {
+    "file": "10-ajustes.png",
+    "section": "Ajustes",
+    "source": "/home/pablorg/.codex/generated_images/01a13653-cd22-7a03-8e49-b851571efb43/exec-8becefe4-a5fd-4f37-9c1a-a94ef97ac496.png",
+    "width": 1487,
+    "height": 1058,
+    "sha256": "c46fea8bb5e20e86695f6b525d942a73575e38ee4b20a9357daf65ae5ba26359",
+    "description": "Tema claro/oscuro/sistema, disponibilidad de notificaciones y recuperación de contraseña."
+  }
+]
