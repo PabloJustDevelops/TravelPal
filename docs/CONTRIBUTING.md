@@ -229,9 +229,9 @@ Todos los contribuidores son reconocidos en:
 
 ### 🆘 **Recursos de Apoyo**
 
-- 📧 **Email**: [pablo@example.com](mailto:pablo@example.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/PabloJustDevelops/colaboracion-alejandro-app-viajes/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/PabloJustDevelops/colaboracion-alejandro-app-viajes/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/PabloJustDevelops/TravelPal/issues)
+- 💬 **Pull requests**: [Pull Requests](https://github.com/PabloJustDevelops/TravelPal/pulls)
+- 👤 **Mantenedor**: [@PabloJustDevelops](https://github.com/PabloJustDevelops)
 
 ### 🚀 **Para Nuevos Contribuidores**
 

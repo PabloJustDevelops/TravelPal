@@ -1,6 +1,6 @@
 # 🛠️ Documentación Técnica
 
-> Guía técnica y configuración de TravelPal (repo `app-viajes`).
+> Guía técnica y configuración de TravelPal (repo `PabloJustDevelops/TravelPal`).
 
 Para el contexto de dominio y el modelo de datos, ver [CONTEXT.md](../CONTEXT.md). Para la
 arquitectura, [ARCHITECTURE.md](./ARCHITECTURE.md). Para las decisiones, [DECISIONS/](./DECISIONS/).

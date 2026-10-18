@@ -1,6 +1,6 @@
 # 🏗️ Arquitectura del Sistema
 
-> Diseño y patrones de TravelPal (repo `app-viajes`).
+> Diseño y patrones de TravelPal (repo `PabloJustDevelops/TravelPal`).
 
 ## Visión general
 
