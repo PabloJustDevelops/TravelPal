@@ -136,6 +136,38 @@ describe("FlightInspiration", () => {
     }
   });
 
+  it("renueva una idea al comenzar su fecha de salida", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-11T23:59:59.000Z"));
+    try {
+      invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
+      render(<FlightInspiration />);
+      await act(async () => { await Promise.resolve(); });
+      fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
+      invoke.mockResolvedValueOnce({
+        data: { status: "ready", ideas: [{
+          origin: "MAD", destination: "LON", departureDate: "2026-11-12", returnDate: "2026-11-19",
+          price: 125, currency: "EUR", foundAt: "2026-11-11T12:00:00.000Z",
+          validUntil: "2026-11-13T12:00:00.000Z", changes: 0,
+        }] },
+        error: null,
+      });
+      fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
+      await act(async () => { await Promise.resolve(); });
+      expect(screen.getByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
+
+      invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [] }, error: null });
+      await act(async () => {
+        jest.advanceTimersByTime(1_001);
+        await Promise.resolve();
+      });
+
+      expect(invoke).toHaveBeenCalledTimes(3);
+      expect(await screen.findByText(/no encontramos ideas/i)).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("refresca automáticamente al caducar un resultado", async () => {
     invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
     render(<FlightInspiration />);

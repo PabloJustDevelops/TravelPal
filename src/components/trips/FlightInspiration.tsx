@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
-import { FlightIdea, ideaToTripHref, parseInspirationQuery } from "@/lib/travel-inspiration";
+import { FlightIdea, ideaToTripHref, isFlightIdeaCurrent, parseInspirationQuery } from "@/lib/travel-inspiration";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -33,6 +33,12 @@ function aviasalesHref(idea: FlightIdea): string {
     : "";
   const route = `${idea.origin}${departure}${idea.destination}${returning}1`;
   return `https://www.aviasales.com/search/${encodeURIComponent(route)}`;
+}
+
+function ideaExpiresAt(idea: FlightIdea): number {
+  const dataExpiry = new Date(idea.validUntil).getTime();
+  const departureExpiry = new Date(`${idea.departureDate}T00:00:00.000Z`).getTime();
+  return Math.min(dataExpiry, departureExpiry);
 }
 
 export default function FlightInspiration() {
@@ -99,7 +105,7 @@ export default function FlightInspiration() {
       setStatus(response.status ?? "unavailable");
       if (!automatic) setCooldownUntil(Date.now() + COOLDOWN_MS);
       if (expiryTimer.current) clearTimeout(expiryTimer.current);
-      const nearestExpiry = nextIdeas.map((idea) => new Date(idea.validUntil).getTime()).filter(Number.isFinite).sort((a, b) => a - b)[0];
+      const nearestExpiry = nextIdeas.map(ideaExpiresAt).filter(Number.isFinite).sort((a, b) => a - b)[0];
       if (nearestExpiry && nearestExpiry > Date.now()) {
         expiryTimer.current = setTimeout(() => {
           const activeQuery = latestQuery.current;
@@ -109,11 +115,11 @@ export default function FlightInspiration() {
     } catch {
       if (automatic) {
         const now = Date.now();
-        const remainingIdeas = currentIdeas.current.filter((idea) => new Date(idea.validUntil).getTime() > now);
+        const remainingIdeas = currentIdeas.current.filter((idea) => isFlightIdeaCurrent(idea, new Date(now)));
         currentIdeas.current = remainingIdeas;
         setIdeas(remainingIdeas);
         const nearestExpiry = remainingIdeas
-          .map((idea) => new Date(idea.validUntil).getTime())
+          .map(ideaExpiresAt)
           .filter(Number.isFinite)
           .sort((a, b) => a - b)[0];
         if (expiryTimer.current) clearTimeout(expiryTimer.current);
