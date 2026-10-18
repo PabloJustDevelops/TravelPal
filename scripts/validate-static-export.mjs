@@ -10,6 +10,7 @@ const criticalRoutes = [
   '/reset-password',
   '/forgot-password',
   '/create-trip',
+  '/travel-inspiration',
   '/dashboard',
   '/trips',
   '/trip',

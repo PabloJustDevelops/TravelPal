@@ -3,12 +3,13 @@
 import React from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import Navbar from './Navbar'
-import { HomeIcon, MapPinIcon, CurrencyDollarIcon, DocumentTextIcon, CalendarIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline'
+import { HomeIcon, MapPinIcon, CurrencyDollarIcon, DocumentTextIcon, CalendarIcon, ClipboardDocumentListIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Tareas', href: '/tasks', icon: ClipboardDocumentListIcon },
   { name: 'Viajes', href: '/trips', icon: MapPinIcon },
+  { name: 'Inspiración de vuelos', href: '/travel-inspiration', icon: SparklesIcon },
   { name: 'Planificación', href: '/planning', icon: CalendarIcon },
   { name: 'Gastos', href: '/expenses', icon: CurrencyDollarIcon },
   { name: 'Notas', href: '/notes', icon: DocumentTextIcon },
