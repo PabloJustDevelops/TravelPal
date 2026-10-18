@@ -2,7 +2,7 @@
 
 ## What this is
 
-TravelPal (repo "app-viajes"): app web para planificar viajes — itinerarios, gastos,
+TravelPal (repo `PabloJustDevelops/TravelPal`): app web para planificar viajes — itinerarios, gastos,
 presupuestos, notas, tareas, reservas, alertas y analíticas.
 
 ## Stack
