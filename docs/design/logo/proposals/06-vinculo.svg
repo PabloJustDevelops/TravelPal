@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 64" width="244" height="64" role="img" aria-labelledby="title">
+  <title id="title">TravelPal · Vínculo</title>
+  <style>
+    :root { color: #101828; }
+    #mark { color: #0759d3; }
+    @media (prefers-color-scheme: dark) {
+      :root { color: #edf3fb; }
+      #mark { color: #8dbaff; }
+    }
+  </style>
+  <g id="mark" fill="currentColor">
+    <path d="M26 34C30 38 36 38 40 34L48 26C52 22 52 16 48 12C44 8 38 8 34 12L30 16 M38 30C34 26 28 26 24 30L16 38C12 42 12 48 16 52C20 56 26 56 30 52L34 48" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="80" y="44" dx="0 -1.2 -0.3 -0.5 -0.2 -0.2 -0.5 -0.6 -0.2" font-family="Inter, system-ui, sans-serif" font-size="36" font-weight="600" letter-spacing="-0.7" font-kerning="none" font-variant-ligatures="none" fill="currentColor">TravelPal</text>
+</svg>

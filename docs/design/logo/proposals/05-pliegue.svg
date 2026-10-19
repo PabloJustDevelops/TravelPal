@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 64" width="244" height="64" role="img" aria-labelledby="title">
+  <title id="title">TravelPal · Pliegue</title>
+  <style>
+    :root { color: #101828; }
+    #mark { color: #0759d3; }
+    @media (prefers-color-scheme: dark) {
+      :root { color: #edf3fb; }
+      #mark { color: #8dbaff; }
+    }
+  </style>
+  <g id="mark" fill="currentColor">
+    <path d="M8 20L24 12L40 20L56 12V44L40 52L24 44L8 52Z M24 12V44 M40 20V52" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="80" y="44" dx="0 -1.2 -0.3 -0.5 -0.2 -0.2 -0.5 -0.6 -0.2" font-family="Inter, system-ui, sans-serif" font-size="36" font-weight="600" letter-spacing="-0.7" font-kerning="none" font-variant-ligatures="none" fill="currentColor">TravelPal</text>
+</svg>
