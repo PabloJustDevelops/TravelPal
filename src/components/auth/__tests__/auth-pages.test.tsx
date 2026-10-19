@@ -10,13 +10,23 @@ jest.mock('../ForgotPasswordForm', () => ({ __esModule: true, default: () => <fo
 jest.mock('../ResetPasswordForm', () => ({ __esModule: true, default: () => <form aria-label="Nueva contraseña" /> }))
 
 it.each([SignInPage, SignUpPage, ForgotPasswordPage, ResetPasswordPage])(
-  'ofrece volver a TravelPal y usa la ilustración local en cada flujo',
+  'ofrece volver a TravelPal en cada flujo',
   (Page) => {
     render(<Page />)
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /TravelPal/ })).toHaveAttribute('href', '/')
-    const artwork = screen.getByRole('img', { name: /Ilustración.*costa/ })
-    expect(artwork.getAttribute('src')).not.toContain('https://')
-    expect(screen.getByText(/Tu próximo viaje empieza aquí/)).toBeInTheDocument()
   },
 )
+
+it.each([SignInPage, SignUpPage])('usa la mesa de viaje en acceso y registro', Page => {
+  render(<Page />)
+  expect(screen.getByText(/El viaje empieza mucho antes de salir/)).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: /cuaderno/ })).toHaveAttribute('src', expect.stringContaining('auth-travel-notebook'))
+  expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/')
+})
+
+it.each([ForgotPasswordPage, ResetPasswordPage])('mantiene la composición de recuperación', Page => {
+  render(<Page />)
+  expect(screen.getByText(/Tu próximo viaje empieza aquí/)).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: /Ilustración.*costa/ }).getAttribute('src')).not.toContain('https://')
+})

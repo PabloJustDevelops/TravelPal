@@ -33,7 +33,7 @@ export default function DeleteTripButton({
         size={size}
         onClick={() => setIsOpen(true)}
         aria-label={`Eliminar el viaje ${trip.title}`}
-        className={cn("border-danger text-danger hover:bg-danger/10", className)}
+        className={cn("min-h-11 border-danger text-danger hover:bg-danger/10", className)}
       >
         <TrashIcon className="h-4 w-4 mr-1" aria-hidden="true" />
         Eliminar

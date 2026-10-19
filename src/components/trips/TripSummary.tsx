@@ -75,11 +75,11 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="rounded-none border-0 bg-transparent">
         <CardContent
           role="status"
           aria-label="Cargando el resumen del viaje"
-          className="flex justify-center py-8"
+          className="flex justify-center border-t border-line px-0 py-8"
         >
           <LoadingSpinner />
         </CardContent>
@@ -89,8 +89,8 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
 
   if (loadErrorMessage) {
     return (
-      <Card>
-        <CardContent className="py-2">
+      <Card className="rounded-none border-0 bg-transparent">
+        <CardContent className="border-t border-line px-0 py-5">
           <div role="alert" className="py-8 text-center">
             <h3 className="font-sans text-lg font-semibold text-ink">Resumen temporalmente no disponible</h3>
             <p className="mt-2 text-sm leading-reading text-muted">{loadErrorMessage}</p>
@@ -106,14 +106,14 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
   const isEmpty = summary.expenseCount === 0 && summary.bookingCount === 0;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="rounded-none border-0 bg-transparent">
+      <CardHeader className="border-b border-line px-0 pt-0 pb-4">
         <CardTitle className="flex items-center gap-2 font-sans text-lg font-semibold">
           <TicketIcon className="h-5 w-5 text-muted" aria-hidden="true" />
           Resumen del viaje
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 py-5">
         {isEmpty ? (
           <div className="py-8 text-center">
             <h3 className="font-sans text-lg font-semibold text-ink">Sin gastos ni reservas todavia</h3>

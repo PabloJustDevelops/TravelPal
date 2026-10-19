@@ -10,6 +10,7 @@ for (const width of [1440, 390]) {
       await page.addInitScript(value => localStorage.setItem('theme', value), theme);
       await signIn(page);
       await expect(page.getByRole('heading', { name: /Bienvenido,/ })).toBeVisible();
+      await page.getByText('Actividad y estadísticas', {exact:false}).click();
       await expect(page.getByLabel('Moneda:', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Rango de fechas:', { exact: true })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

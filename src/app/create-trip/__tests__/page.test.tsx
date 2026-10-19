@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import NewTripPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -101,7 +101,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
 
     await waitFor(() => expect(screen.getByLabelText(/Título del Viaje/i)).toHaveValue("Viaje a LON"));
     expect(screen.getByLabelText(/Origen/i)).toHaveValue("MAD");
-    expect(screen.getByLabelText(/Destino/i)).toHaveValue("LON");
+    expect(screen.getByRole("textbox", { name: "Destino *" })).toHaveValue("LON");
     expect(screen.getByLabelText(/Fecha de Salida/i)).toHaveValue("2026-11-12T09:00");
     expect(screen.getByLabelText(/Fecha de Regreso/i)).toHaveValue("2026-11-19T09:00");
     expect(tripsChain.insert).not.toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
 
     await waitFor(() => expect(screen.getByLabelText(/Título del Viaje/i)).toHaveValue(""));
     expect(screen.getByLabelText(/Origen/i)).toHaveValue("");
-    expect(screen.getByLabelText(/Destino/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Destino *" })).toHaveValue("");
     expect(screen.getByLabelText(/Fecha de Salida/i)).toHaveValue("");
     expect(tripsChain.insert).not.toHaveBeenCalled();
   });
@@ -140,6 +140,36 @@ describe("NewTripPage con el SDK en el navegador", () => {
     expect(screen.getByLabelText("Número de Vuelo")).toBeInTheDocument();
   });
 
+  it("actualiza el resumen mientras se completan los campos", () => {
+    mount();
+
+    render(<NewTripPage />);
+
+    fireEvent.change(screen.getByLabelText(/Título del Viaje/i), {
+      target: { value: "Lisboa, a tu ritmo" },
+    });
+    fireEvent.change(screen.getByLabelText(/Origen/i), {
+      target: { value: "Madrid" },
+    });
+    fireEvent.change(screen.getByLabelText("Destino *"), {
+      target: { value: "Lisboa" },
+    });
+    fireEvent.change(screen.getByLabelText(/Número de Personas/i), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText(/Presupuesto Estimado/i), {
+      target: { value: "900" },
+    });
+
+    const summary = screen.getByRole("complementary", { name: "Resumen del viaje" });
+    expect(within(summary).getByRole("heading", { name: "Así empieza tu viaje" })).toBeInTheDocument();
+    expect(within(summary).getByText("Lisboa, a tu ritmo")).toBeInTheDocument();
+    const route = summary.querySelector("dd");
+    expect(route).toHaveTextContent("Madrid → Lisboa");
+    expect(within(summary).getByText("2 personas")).toBeInTheDocument();
+    expect(within(summary).getByText(/900,00/)).toBeInTheDocument();
+  });
+
   function fillRequiredFields() {
     fireEvent.change(screen.getByLabelText(/Título del Viaje/i), {
       target: { value: "Test Trip" },
@@ -147,7 +177,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.change(screen.getByLabelText(/Origen/i), {
       target: { value: "Madrid" },
     });
-    fireEvent.change(screen.getByLabelText(/Destino/i), {
+    fireEvent.change(screen.getByLabelText("Destino *"), {
       target: { value: "Paris" },
     });
     fireEvent.change(screen.getByLabelText(/Fecha de Salida/i), {

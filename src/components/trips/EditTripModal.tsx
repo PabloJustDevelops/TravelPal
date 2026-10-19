@@ -39,10 +39,13 @@ export default function EditTripModal({
     confirmation_number: "",
     notes: "",
     status: "planned",
+    travelers: 1,
   });
 
   useEffect(() => {
     if (trip) {
+      const savedNotes = trip.notes || "";
+      const travelersMatch = savedNotes.match(/(?:\n\n)?Viajeros:\s*(\d+)\s*$/);
       setFormData({
         title: trip.title || "",
         origin: trip.origin || "",
@@ -52,8 +55,11 @@ export default function EditTripModal({
         airline: trip.airline || "",
         flight_number: trip.flight_number || "",
         confirmation_number: trip.confirmation_number || "",
-        notes: trip.notes || "",
+        notes: travelersMatch
+          ? savedNotes.replace(/(?:\n\n)?Viajeros:\s*\d+\s*$/, "").trimEnd()
+          : savedNotes,
         status: trip.status || "planned",
+        travelers: travelersMatch ? Number(travelersMatch[1]) : 1,
       });
     }
   }, [trip]);
@@ -66,7 +72,7 @@ export default function EditTripModal({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "travelers" ? Number(value) : value,
     }));
   };
 
@@ -109,7 +115,9 @@ export default function EditTripModal({
         airline: formData.airline || null,
         flight_number: formData.flight_number || null,
         confirmation_number: formData.confirmation_number || null,
-        notes: formData.notes,
+        notes: formData.notes.trim()
+          ? `${formData.notes.trim()}\n\nViajeros: ${formData.travelers}`
+          : `Viajeros: ${formData.travelers}`,
         status: formData.status,
       };
 
@@ -144,15 +152,15 @@ export default function EditTripModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Editar Viaje" size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+          <div role="alert" className="rounded-md border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
             {error}
           </div>
         )}
 
         {/* Basic Information */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-900 border-b pb-2">
-            Información Básica
+          <h3 className="border-b border-line pb-2 text-base font-semibold text-ink">
+            Destino y fechas
           </h3>
 
           <Input
@@ -161,6 +169,7 @@ export default function EditTripModal({
             value={formData.title}
             onChange={handleInputChange}
             placeholder="ej. Vacaciones en París"
+            className="min-h-11"
             required
           />
 
@@ -171,6 +180,7 @@ export default function EditTripModal({
               value={formData.origin}
               onChange={handleInputChange}
               placeholder="ej. Madrid"
+              className="min-h-11"
               required
             />
             <Input
@@ -179,6 +189,7 @@ export default function EditTripModal({
               value={formData.destination}
               onChange={handleInputChange}
               placeholder="ej. París"
+              className="min-h-11"
               required
             />
           </div>
@@ -191,6 +202,7 @@ export default function EditTripModal({
               value={formData.departure_date}
               onChange={handleInputChange}
               required
+              className="min-h-11"
             />
             <Input
               label="Fecha de Regreso"
@@ -198,32 +210,48 @@ export default function EditTripModal({
               type="datetime-local"
               value={formData.return_date}
               onChange={handleInputChange}
+              className="min-h-11"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Estado del Viaje
-            </label>
-            <select
-              name="status"
-              value={formData.status}
+        </div>
+
+        <div className="space-y-4 border-t border-line pt-5">
+          <h3 className="text-base font-semibold text-ink">Un par de detalles</h3>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Número de personas"
+              name="travelers"
+              type="number"
+              min="1"
+              value={formData.travelers}
               onChange={handleInputChange}
-              className={selectClassName}
-            >
-              <option value="planned">Planeado</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="completed">Completado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
+              className="min-h-11"
+            />
+            <div className="space-y-1">
+              <label htmlFor="edit-trip-status" className="block text-sm font-medium text-ink">
+                Estado del viaje
+              </label>
+              <select
+                id="edit-trip-status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className={`${selectClassName} min-h-11`}
+              >
+                <option value="planned">Planeado</option>
+                <option value="confirmed">Confirmado</option>
+                <option value="completed">Completado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Flight Information */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-900 border-b pb-2">
-            Información de Vuelo
-          </h3>
+        <div className="space-y-4 border-t border-line pt-5">
+          <h3 className="text-base font-semibold text-ink">Información de vuelo</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
@@ -232,6 +260,7 @@ export default function EditTripModal({
               value={formData.airline}
               onChange={handleInputChange}
               placeholder="ej. Iberia"
+              className="min-h-11"
             />
             <Input
               label="Número de Vuelo"
@@ -239,6 +268,7 @@ export default function EditTripModal({
               value={formData.flight_number}
               onChange={handleInputChange}
               placeholder="ej. IB3201"
+              className="min-h-11"
             />
           </div>
 
@@ -248,15 +278,17 @@ export default function EditTripModal({
             value={formData.confirmation_number}
             onChange={handleInputChange}
             placeholder="ej. ABC123"
+            className="min-h-11"
           />
         </div>
 
         {/* Notes */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="edit-trip-notes" className="block text-sm font-medium text-ink">
             Notas Adicionales
           </label>
           <textarea
+            id="edit-trip-notes"
             name="notes"
             value={formData.notes}
             onChange={handleInputChange}
@@ -267,11 +299,11 @@ export default function EditTripModal({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-line">
           <Button
             type="submit"
             disabled={loading}
-            className="flex-1 sm:flex-none"
+            className="min-h-11 flex-1 sm:flex-none"
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
           </Button>
@@ -279,7 +311,7 @@ export default function EditTripModal({
             variant="outline" 
             type="button" 
             onClick={onClose}
-            className="flex-1 sm:flex-none"
+            className="min-h-11 flex-1 sm:flex-none"
           >
             Cancelar
           </Button>

@@ -15,6 +15,9 @@ import {
   TicketIcon,
   TagIcon,
 } from "@heroicons/react/24/outline";
+import styles from "./planning.module.css";
+import MonthCalendar from "react-calendar";
+import { selectNextTrip, localToday } from "@/components/dashboard/NextTrip";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
   Calendar,
@@ -38,7 +41,12 @@ import Modal from "../../components/ui/Modal";
 
 import NewBookingForm from "../../components/planning/NewBookingForm";
 import { useAuth } from "../../contexts/AuthContext";
-import { createInsforgeClient, Booking } from "../../lib/insforge";
+import {
+  createInsforgeClient,
+  Booking,
+  type Trip,
+  type ItineraryActivity,
+} from "../../lib/insforge";
 import {
   assertRowsAffected,
   queryErrorKind,
@@ -56,32 +64,7 @@ import { logger } from "@/lib/logger";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 import { accentLinkClassName } from "@/components/ui/actionStyles";
 
-import { format } from 'date-fns';
-
-interface Trip {
-  id: string;
-  title: string;
-  destination: string;
-  departure_date: string;
-  return_date?: string;
-  status: string;
-}
-
-interface ItineraryActivity {
-  id: string;
-  trip_id: string;
-  title: string;
-  date: string;
-  start_time?: string;
-  end_time?: string;
-  category?: string;
-  description?: string;
-  location?: string;
-  cost?: number;
-  currency?: string;
-  notes?: string;
-  completed?: boolean;
-}
+import { format } from "date-fns";
 
 export default function PlanningPage() {
   const { user, loading: authLoading } = useAuth();
@@ -160,18 +143,18 @@ export default function PlanningPage() {
         const client = createInsforgeClient();
         const [tripsRes, bookingsRes, activitiesRes] = await withQueryTimeout(
           Promise.all([
-            client
-              .database.from("trips")
+            client.database
+              .from("trips")
               .select("*")
               .eq("user_id", userId)
               .order("departure_date", { ascending: true }),
-            client
-              .database.from("bookings")
+            client.database
+              .from("bookings")
               .select("*")
               .eq("user_id", userId)
               .order("start_date", { ascending: true }),
-            client
-              .database.from("itinerary_activities")
+            client.database
+              .from("itinerary_activities")
               .select("*")
               .eq("user_id", userId),
           ]),
@@ -183,7 +166,15 @@ export default function PlanningPage() {
         if (activitiesRes.error) throw activitiesRes.error;
 
         if (!active) return;
-        setTrips((tripsRes.data as Trip[]) ?? []);
+        const loadedTrips = (tripsRes.data as Trip[]) ?? [];
+        setTrips(loadedTrips);
+        setSelectedTrip(
+          (current) =>
+            loadedTrips.find((trip) => trip.id === current?.id) ||
+            selectNextTrip(loadedTrips, localToday()) ||
+            loadedTrips[0] ||
+            null,
+        );
         setBookings((bookingsRes.data as Booking[]) ?? []);
         setActivities((activitiesRes.data as ItineraryActivity[]) ?? []);
       } catch (err) {
@@ -206,7 +197,8 @@ export default function PlanningPage() {
   }, [authLoading, user?.id, reloadToken]);
 
   const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
+    timeout:
+      "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
     request: "Error al cargar la planificación. Por favor, inténtalo de nuevo.",
   });
 
@@ -285,7 +277,14 @@ export default function PlanningPage() {
   // Transformar actividades para el planificador de itinerarios
   const getTripItinerary = useCallback(
     (tripId: string): DayItinerary[] => {
-      const tripActivities = activities.filter((a) => a.trip_id === tripId);
+      const tripActivities = activities
+        .filter((a) => a.trip_id === tripId)
+        .sort(
+          (a, b) =>
+            a.date.localeCompare(b.date) ||
+            a.order_index - b.order_index ||
+            (a.start_time || "").localeCompare(b.start_time || ""),
+        );
       const itineraryMap = new Map<string, PlannerActivity[]>();
 
       tripActivities.forEach((a) => {
@@ -373,8 +372,8 @@ export default function PlanningPage() {
       try {
         if (event.type === "booking" && event.bookingId) {
           const { data: deletedRows, error } = await withQueryTimeout(
-            insforge
-              .database.from("bookings")
+            insforge.database
+              .from("bookings")
               .delete()
               .eq("id", event.bookingId)
               .select(),
@@ -385,8 +384,8 @@ export default function PlanningPage() {
           assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "activity" && event.activityId) {
           const { data: deletedRows, error } = await withQueryTimeout(
-            insforge
-              .database.from("itinerary_activities")
+            insforge.database
+              .from("itinerary_activities")
               .delete()
               .eq("id", event.activityId)
               .select(),
@@ -397,8 +396,8 @@ export default function PlanningPage() {
           assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
         } else if (event.type === "trip" && event.tripId) {
           const { data: deletedRows, error } = await withQueryTimeout(
-            insforge
-              .database.from("trips")
+            insforge.database
+              .from("trips")
               .delete()
               .eq("id", event.tripId)
               .select(),
@@ -450,59 +449,61 @@ export default function PlanningPage() {
     try {
       // Use date-fns format to get the date string in 'YYYY-MM-DD' format using local time
       // This avoids timezone issues that occur with toISOString()
-      const formattedDate = format(newDate, 'yyyy-MM-dd');
-      
+      const formattedDate = format(newDate, "yyyy-MM-dd");
+
       // Update local state optimistically
-      setEvents(prev => prev.map(e => 
-        e.id === event.id ? { ...e, date: formattedDate } : e
-      ));
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === event.id ? { ...e, date: formattedDate } : e,
+        ),
+      );
 
       // Update in DB based on event type
-      if (event.type === 'booking' && event.bookingId) {
+      if (event.type === "booking" && event.bookingId) {
         const { data: updatedRows, error } = await withQueryTimeout(
-          insforge
-            .database.from('bookings')
+          insforge.database
+            .from("bookings")
             .update({ start_date: formattedDate })
-            .eq('id', event.bookingId)
+            .eq("id", event.bookingId)
             .select(),
-          { label: 'bookings:move' },
+          { label: "bookings:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
-      } else if (event.type === 'activity' && event.activityId) {
+        assertRowsAffected(updatedRows, "No se pudo mover el evento");
+      } else if (event.type === "activity" && event.activityId) {
         const { data: updatedRows, error } = await withQueryTimeout(
-          insforge
-            .database.from('itinerary_activities')
+          insforge.database
+            .from("itinerary_activities")
             .update({ date: formattedDate })
-            .eq('id', event.activityId)
+            .eq("id", event.activityId)
             .select(),
-          { label: 'activities:move' },
+          { label: "activities:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
-      } else if (event.type === 'trip' && event.tripId) {
+        assertRowsAffected(updatedRows, "No se pudo mover el evento");
+      } else if (event.type === "trip" && event.tripId) {
         // For trips, we might need to handle end date logic, but for simple move:
         const { data: updatedRows, error } = await withQueryTimeout(
-          insforge
-            .database.from('trips')
+          insforge.database
+            .from("trips")
             .update({ departure_date: formattedDate })
-            .eq('id', event.tripId)
+            .eq("id", event.tripId)
             .select(),
-          { label: 'trips:move' },
+          { label: "trips:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, 'No se pudo mover el evento');
+        assertRowsAffected(updatedRows, "No se pudo mover el evento");
       }
 
       // Reload data to ensure consistency, but silently (without loading spinner)
       setSilentReload(true);
       refetch();
     } catch (error) {
-      console.error('Error updating event date:', error);
+      console.error("Error updating event date:", error);
       alert(
-        queryErrorKind(error) === 'timeout'
+        queryErrorKind(error) === "timeout"
           ? CONNECTION_TIMEOUT_MESSAGE
-          : 'Error al mover el evento',
+          : "Error al mover el evento",
       );
       setSilentReload(true); // Revert on error
       refetch();
@@ -527,8 +528,8 @@ export default function PlanningPage() {
 
       const insforge = createInsforgeClient();
       const { data: insertedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("itinerary_activities")
+        insforge.database
+          .from("itinerary_activities")
           .insert([
             {
               user_id: userId,
@@ -562,8 +563,8 @@ export default function PlanningPage() {
     async (activityId: string, activity: PlannerActivityDraft) => {
       const insforge = createInsforgeClient();
       const { data: updatedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("itinerary_activities")
+        insforge.database
+          .from("itinerary_activities")
           .update({
             title: activity.title,
             description: activity.description || null,
@@ -589,12 +590,69 @@ export default function PlanningPage() {
     [refetch],
   );
 
+  const handleMoveActivity = async (activityId: string, direction: -1 | 1) => {
+    const current = activities.find((activity) => activity.id === activityId);
+    if (!current || !user)
+      throw new Error("No se pudo identificar la actividad");
+    const day = activities
+      .filter(
+        (activity) =>
+          activity.trip_id === current.trip_id &&
+          activity.date === current.date,
+      )
+      .sort(
+        (a, b) =>
+          a.order_index - b.order_index ||
+          (a.start_time || "").localeCompare(b.start_time || ""),
+      );
+    const index = day.findIndex((activity) => activity.id === activityId);
+    const target = day[index + direction];
+    if (!target) return;
+    // Solo se escribe el orden. Las condiciones evitan pisar otro reordenado o recrear filas borradas.
+    [day[index], day[index + direction]] = [day[index + direction], day[index]];
+    const client = createInsforgeClient();
+    const written: {id:string; before:number; after:number}[] = [];
+    try {
+      for (const [order, activity] of day.entries()) {
+        if (order === activity.order_index) continue;
+        const result = await withQueryTimeout(
+          client.database.from("itinerary_activities")
+            .update({order_index:order})
+            .eq("id",activity.id).eq("user_id",user.id)
+            .eq("trip_id",current.trip_id).eq("date",current.date)
+            .eq("order_index",activity.order_index).select(),
+          {label:"activities:reorder"},
+        );
+        if (result.error) throw result.error;
+        assertRowsAffected(result.data,"La actividad ha cambiado. Se ha recargado el itinerario.");
+        written.push({id:activity.id,before:activity.order_index,after:order});
+      }
+    } catch (error) {
+      for (const row of written.reverse()) {
+        try {
+          const rollback = await withQueryTimeout(
+            client.database.from("itinerary_activities").update({order_index:row.before})
+              .eq("id",row.id).eq("user_id",user.id).eq("order_index",row.after).select(),
+            {label:"activities:restore-order"},
+          );
+          if (rollback.error) throw rollback.error;
+        } catch (rollbackError) {
+          logger.error("PlanningPage: no se pudo restaurar el orden", {error:getErrorMessage(rollbackError,"Revisa el orden del itinerario")});
+        }
+      }
+      throw error;
+    } finally {
+      setSilentReload(true);
+      refetch();
+    }
+  };
+
   const handleDeleteActivity = useCallback(
     async (activityId: string) => {
       const insforge = createInsforgeClient();
       const { data: deletedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("itinerary_activities")
+        insforge.database
+          .from("itinerary_activities")
           .delete()
           .eq("id", activityId)
           .select(),
@@ -635,134 +693,80 @@ export default function PlanningPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <PageTitle
-            title="Planificación de Viajes"
-            subtitle="Organiza tus viajes, itinerarios y reservas en un solo lugar"
+            title="Planificación"
+            subtitle="Un día cada vez, a tu manera."
           />
 
-          <div role="group" aria-label="Vistas de planificación" className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-paper p-1">
-              <button
-                type="button"
-                aria-pressed={viewMode === "calendar"}
-                onClick={() => setViewMode("calendar")}
-                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
-                  viewMode === "calendar"
-                    ? "bg-accent-soft text-accent"
-                    : "text-muted hover:bg-surface"
-                }`}
-              >
-                <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                Calendario
-              </button>
-              <button
-                type="button"
-                aria-pressed={viewMode === "itinerary"}
-                onClick={() => setViewMode("itinerary")}
-                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
-                  viewMode === "itinerary"
-                    ? "bg-accent-soft text-accent"
-                    : "text-muted hover:bg-surface"
-                }`}
-              >
-                <MapIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                Itinerario
-              </button>
-              <button
-                type="button"
-                aria-pressed={viewMode === "bookings"}
-                onClick={() => setViewMode("bookings")}
-                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
-                  viewMode === "bookings"
-                    ? "bg-accent-soft text-accent"
-                    : "text-muted hover:bg-surface"
-                }`}
-              >
-                <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                Reservas
-              </button>
+          <div
+            role="group"
+            aria-label="Vistas de planificación"
+            className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-paper p-1"
+          >
+            <button
+              type="button"
+              aria-pressed={viewMode === "calendar"}
+              onClick={() => setViewMode("calendar")}
+              className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
+                viewMode === "calendar"
+                  ? "bg-accent-soft text-accent"
+                  : "text-muted hover:bg-surface"
+              }`}
+            >
+              <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+              Calendario
+            </button>
+            <button
+              type="button"
+              aria-pressed={viewMode === "itinerary"}
+              onClick={() => setViewMode("itinerary")}
+              className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
+                viewMode === "itinerary"
+                  ? "bg-accent-soft text-accent"
+                  : "text-muted hover:bg-surface"
+              }`}
+            >
+              <MapIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+              Itinerario
+            </button>
+            <button
+              type="button"
+              aria-pressed={viewMode === "bookings"}
+              onClick={() => setViewMode("bookings")}
+              className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:gap-2 sm:px-4 sm:text-sm ${
+                viewMode === "bookings"
+                  ? "bg-accent-soft text-accent"
+                  : "text-muted hover:bg-surface"
+              }`}
+            >
+              <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+              Reservas
+            </button>
           </div>
         </div>
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="rounded-xl border border-line bg-paper p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CalendarIcon className="h-8 w-8 text-accent" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted">
-                  Viajes Activos
-                </p>
-                <p className="text-2xl font-bold text-ink">
-                  {
-                    trips.filter(
-                      (t) =>
-                        t.status === "confirmed" || t.status === "in_progress",
-                    ).length
-                  }
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="rounded-xl border border-line bg-paper p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ClockIcon className="h-8 w-8 text-success" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted">
-                  Reservas Confirmadas
-                </p>
-                <p className="text-2xl font-bold text-ink">
-                  {bookings.filter((b) => b.status === "confirmed").length}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="rounded-xl border border-line bg-paper p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <MapIcon className="h-8 w-8 text-accent" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted">
-                  Próximas Reservas
-                </p>
-                <p className="text-2xl font-bold text-ink">
-                  {upcomingBookings.length}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="rounded-xl border border-line bg-paper p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <PlusIcon className="h-8 w-8 text-accent" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted">
-                  Eventos Este Mes
-                </p>
-                <p className="text-2xl font-bold text-ink">
-                  {
-                    events.filter((e) => {
-                      const eventDate = new Date(e.date);
-                      const now = new Date();
-                      return (
-                        eventDate.getMonth() === now.getMonth() &&
-                        eventDate.getFullYear() === now.getFullYear()
-                      );
-                    }).length
-                  }
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
+        {viewMode === "itinerary" && trips.length > 0 && (
+          <div className="max-w-xl">
+            <label htmlFor="planning-trip" className="sr-only">
+              Viaje para planificar
+            </label>
+            <select
+              id="planning-trip"
+              value={selectedTrip?.id || ""}
+              className={fieldClassName}
+              onChange={(event) =>
+                setSelectedTrip(
+                  trips.find((trip) => trip.id === event.target.value) || null,
+                )
+              }
+            >
+              {trips.map((trip) => (
+                <option key={trip.id} value={trip.id}>
+                  {trip.title} · {trip.destination}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {/* Contenido principal */}
         {viewMode === "calendar" && (
           <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6">
@@ -807,15 +811,10 @@ export default function PlanningPage() {
               </Card>
 
               <Card className="rounded-xl border border-line bg-paper p-4">
-                <h3 className="font-semibold text-ink mb-3">
-                  Viajes Activos
-                </h3>
+                <h3 className="font-semibold text-ink mb-3">Viajes Activos</h3>
                 <div className="space-y-3">
                   {trips
-                    .filter(
-                      (t) =>
-                        t.status === "confirmed" || t.status === "in_progress",
-                    )
+                    .filter((t) => t.status === "confirmed")
                     .map((trip) => (
                       <Link
                         key={trip.id}
@@ -825,9 +824,7 @@ export default function PlanningPage() {
                         <p className="font-medium text-sm text-ink">
                           {trip.title}
                         </p>
-                        <p className="text-xs text-muted">
-                          {trip.destination}
-                        </p>
+                        <p className="text-xs text-muted">{trip.destination}</p>
                         <p className="text-xs text-muted">
                           {formatDate(new Date(trip.departure_date))} -{" "}
                           {trip.return_date
@@ -836,13 +833,9 @@ export default function PlanningPage() {
                         </p>
                       </Link>
                     ))}
-                  {trips.filter(
-                    (t) =>
-                      t.status === "confirmed" || t.status === "in_progress",
-                  ).length === 0 && (
-                    <p className="text-sm text-muted">
-                      No hay viajes activos
-                    </p>
+                  {trips.filter((t) => t.status === "confirmed").length ===
+                    0 && (
+                    <p className="text-sm text-muted">No hay viajes activos</p>
                   )}
                 </div>
               </Card>
@@ -853,76 +846,168 @@ export default function PlanningPage() {
         {viewMode === "itinerary" && (
           <div>
             {selectedTrip ? (
-              <div>
-                <div className="mb-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setViewMode("calendar")}
-                    className="mb-4 min-h-11"
-                  >
-                    Volver al calendario
-                  </Button>
-                  <h2 className="font-sans text-xl font-semibold text-ink">
-                    Itinerario: {selectedTrip.title}
-                  </h2>
-                  <p className="text-muted">{selectedTrip.destination}</p>
-                </div>
+              <div className="grid gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
+                <div className="min-w-0">
+                  <div className="sr-only">
+                    <h2 className="font-sans text-xl font-semibold text-ink">
+                      Itinerario: {selectedTrip.title}
+                    </h2>
+                    <p className="text-muted">{selectedTrip.destination}</p>
+                  </div>
 
-                <ItineraryPlanner
-                  startDate={selectedTrip.departure_date}
-                  endDate={
-                    selectedTrip.return_date || selectedTrip.departure_date
-                  }
-                  itinerary={getTripItinerary(selectedTrip.id)}
-                  onCreateActivity={handleCreateActivity}
-                  onUpdateActivity={handleUpdateActivity}
-                  onDeleteActivity={handleDeleteActivity}
-                />
+                  <ItineraryPlanner
+                    showHeading={false}
+                    startDate={selectedTrip.departure_date}
+                    endDate={
+                      selectedTrip.return_date || selectedTrip.departure_date
+                    }
+                    itinerary={getTripItinerary(selectedTrip.id)}
+                    activeDate={format(selectedDate, "yyyy-MM-dd")}
+                    onSelectDay={(date) =>
+                      setSelectedDate(new Date(`${date}T12:00:00`))
+                    }
+                    onCreateActivity={handleCreateActivity}
+                    onUpdateActivity={handleUpdateActivity}
+                    onDeleteActivity={handleDeleteActivity}
+                    onMoveActivity={handleMoveActivity}
+                  />
+                </div>
+                <aside className="space-y-7 xl:mt-28 xl:border-l xl:border-line xl:pl-7">
+                  <MonthCalendar
+                    className={styles.month}
+                    locale="es-ES"
+                    calendarType="iso8601"
+                    showNeighboringMonth={false}
+                    prev2Label={null}
+                    next2Label={null}
+                    prevAriaLabel="Mes anterior"
+                    nextAriaLabel="Mes siguiente"
+                    tileClassName={({ date }) => {
+                      const day = format(date, "yyyy-MM-dd");
+                      return day >= selectedTrip.departure_date.slice(0, 10) &&
+                        day <=
+                          (
+                            selectedTrip.return_date ||
+                            selectedTrip.departure_date
+                          ).slice(0, 10)
+                        ? styles.tripDate
+                        : undefined;
+                    }}
+                    value={selectedDate}
+                    onChange={(value) => {
+                      if (value instanceof Date) setSelectedDate(value);
+                    }}
+                  />
+                  <section>
+                    <h2 className="mb-4 text-xl font-bold text-ink">
+                      Reservas de este viaje
+                    </h2>
+                    <div className="space-y-3">
+                      {bookings
+                        .filter(
+                          (booking) => booking.trip_id === selectedTrip.id,
+                        )
+                        .map((booking) => (
+                          <BookingCard
+                            key={booking.id}
+                            booking={booking}
+                            onEdit={() => {
+                              setSelectedBooking(booking);
+                              setShowBookingModal(true);
+                            }}
+                            onDelete={(id) =>
+                              setBookings((prev) =>
+                                prev.filter((b) => b.id !== id),
+                              )
+                            }
+                            onStatusChange={(id, status) =>
+                              setBookings((prev) =>
+                                prev.map((b) =>
+                                  b.id === id ? { ...b, status } : b,
+                                ),
+                              )
+                            }
+                          />
+                        ))}
+                      {!bookings.some(
+                        (booking) => booking.trip_id === selectedTrip.id,
+                      ) && (
+                        <p className="text-sm text-muted">
+                          Aún no hay reservas para este viaje.
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => {
+                        setSelectedBooking(null);
+                        setShowBookingModal(true);
+                      }}
+                    >
+                      Añadir reserva
+                    </Button>
+                  </section>
+                </aside>
               </div>
             ) : (
-                <div className="rounded-xl border border-line bg-paper px-5 py-10 text-center">
+              <div className="rounded-xl border border-line bg-paper px-5 py-10 text-center">
                 {trips.length === 0 ? (
                   <div role="status" aria-live="polite">
-                    <MapIcon aria-hidden="true" className="mx-auto mb-4 h-12 w-12 text-accent" />
+                    <MapIcon
+                      aria-hidden="true"
+                      className="mx-auto mb-4 h-12 w-12 text-accent"
+                    />
                     <h3 className="font-sans text-lg font-semibold text-ink">
                       Aún no tienes viajes para planificar
                     </h3>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-                      Crea un viaje para organizar su itinerario y tener sus reservas junto a las fechas.
+                      Crea un viaje para organizar su itinerario y tener sus
+                      reservas junto a las fechas.
                     </p>
-                    <Link href="/create-trip" className={`${accentLinkClassName} mt-5 min-h-11`}>
+                    <Link
+                      href="/create-trip"
+                      className={`${accentLinkClassName} mt-5 min-h-11`}
+                    >
                       Crear un viaje
                     </Link>
                   </div>
                 ) : (
                   <>
-                <MapIcon className="h-12 w-12 text-muted mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-ink mb-2">
-                  Selecciona un viaje
-                </h3>
-                <p className="text-muted mb-4">
-                  Elige un viaje para planificar su itinerario detallado
-                </p>
-                <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {trips.map((trip) => (
-                    <Card key={trip.id} className="rounded-xl border border-line bg-paper">
-                      <button
-                        type="button"
-                        className="min-h-11 w-full rounded-xl p-4 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-                        onClick={() => setSelectedTrip(trip)}
-                      >
-                        <span className="block font-semibold text-ink">{trip.title}</span>
-                        <span className="mt-1 block text-sm text-muted">{trip.destination}</span>
-                        <span className="mt-2 block text-xs text-muted">
-                          {formatDate(new Date(trip.departure_date))} -{" "}
-                          {trip.return_date
-                            ? formatDate(new Date(trip.return_date))
-                            : "Sin fecha de regreso"}
-                        </span>
-                      </button>
-                    </Card>
-                  ))}
-                </div>
+                    <MapIcon className="h-12 w-12 text-muted mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-ink mb-2">
+                      Selecciona un viaje
+                    </h3>
+                    <p className="text-muted mb-4">
+                      Elige un viaje para planificar su itinerario detallado
+                    </p>
+                    <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {trips.map((trip) => (
+                        <Card
+                          key={trip.id}
+                          className="rounded-xl border border-line bg-paper"
+                        >
+                          <button
+                            type="button"
+                            className="min-h-11 w-full rounded-xl p-4 text-left hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                            onClick={() => setSelectedTrip(trip)}
+                          >
+                            <span className="block font-semibold text-ink">
+                              {trip.title}
+                            </span>
+                            <span className="mt-1 block text-sm text-muted">
+                              {trip.destination}
+                            </span>
+                            <span className="mt-2 block text-xs text-muted">
+                              {formatDate(new Date(trip.departure_date))} -{" "}
+                              {trip.return_date
+                                ? formatDate(new Date(trip.return_date))
+                                : "Sin fecha de regreso"}
+                            </span>
+                          </button>
+                        </Card>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
@@ -933,37 +1018,43 @@ export default function PlanningPage() {
         {viewMode === "bookings" && (
           <div className="space-y-6">
             {/* Filtros y búsqueda */}
-            <section aria-label="Filtros de reservas" className="rounded-xl border border-line bg-paper p-4 sm:p-5">
+            <section
+              aria-label="Filtros de reservas"
+              className="rounded-xl border border-line bg-paper p-4 sm:p-5"
+            >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-              <div className="min-w-0 flex-1">
-                <Input
-                  label="Buscar reservas"
-                  type="search"
-                  placeholder="Título o código de confirmación"
-                  value={searchTerm}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setSearchTerm(e.target.value)
-                  }
-                  className="min-h-11"
-                />
-              </div>
+                <div className="min-w-0 flex-1">
+                  <Input
+                    label="Buscar reservas"
+                    type="search"
+                    placeholder="Título o código de confirmación"
+                    value={searchTerm}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSearchTerm(e.target.value)
+                    }
+                    className="min-h-11"
+                  />
+                </div>
 
-              <div className="flex items-center gap-2 sm:w-56">
-                <FunnelIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
-                <select
-                  value={filterStatus}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setFilterStatus(e.target.value)
-                  }
-                  aria-label="Filtrar por estado"
-                  className={cn(fieldClassName, 'min-h-11 min-w-0 flex-1')}
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value="confirmed">Confirmado</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="cancelled">Cancelado</option>
-                </select>
-              </div>
+                <div className="flex items-center gap-2 sm:w-56">
+                  <FunnelIcon
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 text-muted"
+                  />
+                  <select
+                    value={filterStatus}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      setFilterStatus(e.target.value)
+                    }
+                    aria-label="Filtrar por estado"
+                    className={cn(fieldClassName, "min-h-11 min-w-0 flex-1")}
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="confirmed">Confirmado</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="cancelled">Cancelado</option>
+                  </select>
+                </div>
               </div>
             </section>
 
@@ -990,8 +1081,15 @@ export default function PlanningPage() {
             </div>
 
             {filteredBookings.length === 0 && (
-              <div role="status" aria-live="polite" className="rounded-xl border border-dashed border-line bg-paper px-5 py-12 text-center">
-                <ClockIcon aria-hidden="true" className="h-12 w-12 text-muted mx-auto mb-4" />
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-xl border border-dashed border-line bg-paper px-5 py-12 text-center"
+              >
+                <ClockIcon
+                  aria-hidden="true"
+                  className="h-12 w-12 text-muted mx-auto mb-4"
+                />
                 <h3 className="font-sans text-lg font-semibold text-ink mb-2">
                   {searchTerm || filterStatus !== "all"
                     ? "No hay reservas que coincidan con los filtros"
@@ -1020,8 +1118,13 @@ export default function PlanningPage() {
                       Limpiar filtros
                     </Button>
                   )}
-                  {trips.length === 0 && !searchTerm && filterStatus === "all" ? (
-                    <Link href="/create-trip" className={`${accentLinkClassName} min-h-11`}>
+                  {trips.length === 0 &&
+                  !searchTerm &&
+                  filterStatus === "all" ? (
+                    <Link
+                      href="/create-trip"
+                      className={`${accentLinkClassName} min-h-11`}
+                    >
                       Crear un viaje
                     </Link>
                   ) : (
@@ -1062,6 +1165,9 @@ export default function PlanningPage() {
                 }}
                 initialData={selectedBooking}
                 defaultDate={selectedDate}
+                defaultTripId={
+                  viewMode === "itinerary" ? selectedTrip?.id : undefined
+                }
               />
             </div>
           </Modal>

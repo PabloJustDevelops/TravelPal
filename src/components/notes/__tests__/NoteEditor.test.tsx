@@ -28,7 +28,7 @@ describe("NoteEditor con una nota sin viaje", () => {
     expect(screen.getByDisplayValue("Diario suelto")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Notas del viaje borrado")).toBeInTheDocument();
 
-    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    const select = screen.getByLabelText("Asociar a Viaje (Opcional)") as HTMLSelectElement;
     expect(select.value).toBe("");
   });
 
@@ -39,7 +39,7 @@ describe("NoteEditor con una nota sin viaje", () => {
       <NoteEditor note={orphanNote} trips={trips} onSave={onSave} onCancel={jest.fn()} />,
     );
 
-    fireEvent.change(screen.getByRole("combobox"), {
+    fireEvent.change(screen.getByLabelText("Asociar a Viaje (Opcional)"), {
       target: { value: "trip-9" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Actualizar Nota" }));
@@ -57,4 +57,22 @@ it('expone etiquetas, grupo de categorías y ayuda para lectores de pantalla', (
   expect(screen.getByLabelText('Asociar a Viaje (Opcional)')).toBeInTheDocument()
   expect(screen.getByRole('group', { name: 'Categoría *' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Cerrar editor de nota' })).toBeInTheDocument()
+})
+
+it('avisa del borrador pendiente y conserva el texto si falla el guardado', async () => {
+  const onDirtyChange = jest.fn()
+  render(<NoteEditor note={orphanNote} onSave={jest.fn().mockRejectedValue(new Error('Sin conexión'))} onCancel={jest.fn()} onDirtyChange={onDirtyChange} />)
+  fireEvent.change(screen.getByLabelText('Contenido *'), {target:{value:'Borrador pendiente'}})
+  expect(onDirtyChange).toHaveBeenLastCalledWith(true)
+  fireEvent.click(screen.getByRole('button',{name:'Actualizar Nota'}))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Sin conexión')
+  expect(screen.getByDisplayValue('Borrador pendiente')).toBeInTheDocument()
+})
+
+it('la vista previa muestra HTML como texto y mantiene un único h1 de página', () => {
+  render(<NoteEditor note={{...orphanNote,content:'<img src=x onerror=alert(1)>\n# Encabezado'}} onSave={jest.fn()} onCancel={jest.fn()} />)
+  fireEvent.click(screen.getByRole('button',{name:'Vista Previa'}))
+  expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading',{level:1})).not.toBeInTheDocument()
+  expect(screen.getByText(/<img/)).toBeInTheDocument()
 })

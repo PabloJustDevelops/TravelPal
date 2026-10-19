@@ -76,12 +76,16 @@ interface ItineraryPlannerProps {
   onCreateActivity: (date: string, activity: PlannerActivityDraft) => Promise<void>;
   onUpdateActivity: (activityId: string, activity: PlannerActivityDraft) => Promise<void>;
   onDeleteActivity: (activityId: string) => Promise<void>;
+  onMoveActivity?: (activityId: string, direction: -1 | 1) => Promise<void>;
   className?: string;
   headingLevel?: 2 | 3;
+  showHeading?: boolean;
+  activeDate?: string;
+  onSelectDay?: (date: string) => void;
 }
 
 interface SaveOperation {
-  kind: 'create' | 'update' | 'delete';
+  kind: 'create' | 'update' | 'delete' | 'move';
   activityId: string;
 }
 
@@ -92,8 +96,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   onCreateActivity,
   onUpdateActivity,
   onDeleteActivity,
+  onMoveActivity,
   className = '',
   headingLevel = 2,
+  showHeading = true,
+  activeDate,
+  onSelectDay,
 }) => {
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [isAddingActivity, setIsAddingActivity] = useState(false);
@@ -233,32 +241,37 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div>
+      {showHeading && <div>
         <PlannerHeading className="text-xl font-semibold text-ink">Planificador de Itinerario</PlannerHeading>
         <p className="text-muted">
           {formatDate(new Date(startDate))} - {formatDate(new Date(endDate))}
         </p>
       </div>
 
+      }
       {saveError && !isActivityModalOpen && (
         <div role="alert" className="text-danger text-sm bg-danger/10 p-2 rounded">
           {saveError}
         </div>
       )}
 
+      <div role="group" aria-label="Días del viaje" className="grid grid-cols-3 gap-2 border-b border-line pb-5 sm:grid-cols-6">
+        {tripDays.map((date, index) => <Button key={date} variant="outline" aria-pressed={activeDate ? date === (tripDays.includes(activeDate) ? activeDate : tripDays[0]) : expandedDays.has(date)} onClick={() => { setExpandedDays(new Set([date])); onSelectDay?.(date); }} aria-label={`Ver día ${index+1}, ${formatDate(parseISO(date))}`} className={`min-h-14 px-2 text-sm transition-none ${expandedDays.has(date) || date === activeDate ? "border-accent bg-accent-soft text-accent" : ""}`}><span>{parseISO(date).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'})}</span></Button>)}
+      </div>
       {/* Días del viaje */}
       <div className="space-y-4">
         {tripDays.map((date, index) => {
+          if (activeDate && date !== (tripDays.includes(activeDate) ? activeDate : tripDays[0])) return null;
           const dayItinerary = getDayItinerary(date);
-          const isExpanded = expandedDays.has(date);
+          const isExpanded = !!activeDate || expandedDays.has(date);
           const dayDate = parseISO(date);
           const dayName = dayDate.toLocaleDateString('es-ES', { weekday: 'long' });
           const dayCosts = getDayCostsByCurrency(dayItinerary.activities);
 
           return (
-            <Card key={date} className="overflow-hidden">
+            <Card key={date} className="overflow-hidden rounded-none border-x-0 border-t-0 bg-transparent">
               {/* Header del día */}
-              <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
+              <div className="flex items-center justify-between gap-3 border-b border-line bg-transparent px-0 py-3">
                 <div className="flex items-center justify-between">
                   <h3 className="min-w-0">
                     <Button
@@ -319,17 +332,17 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
               {/* Contenido del día */}
               {isExpanded && (
-                <div id={`itinerary-day-${date}`} className="space-y-4 p-4">
+                <div id={`itinerary-day-${date}`} className="space-y-4 py-4">
                   {/* Actividades */}
                   {dayItinerary.activities.length > 0 ? (
                     <div className="space-y-3">
-                      {dayItinerary.activities.map(activity => {
+                      {dayItinerary.activities.map((activity, activityIndex) => {
                         const category = getActivityCategory(activity.category);
 
                         return (
                           <div
                             key={activity.id}
-                            className="flex items-start space-x-3 rounded-lg border border-line bg-surface p-3 transition-shadow hover:shadow-sm"
+                            className="flex items-start space-x-3 border-b border-line bg-transparent py-5"
                           >
                             <div className="flex-shrink-0">
                               <CategoryIcon
@@ -373,6 +386,10 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                   <span className={`max-w-full break-words rounded-full px-2 py-1 text-xs font-medium ${category.color}`}>
                                     {category.label}
                                   </span>
+                                  {onMoveActivity && <div className="flex items-center">
+                                    <Button variant="ghost" aria-label={`Subir ${activity.title}`} disabled={isSaving || activityIndex === 0} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,-1))}><ChevronUpIcon className="h-4 w-4" aria-hidden="true" /></Button>
+                                    <Button variant="ghost" aria-label={`Bajar ${activity.title}`} disabled={isSaving || activityIndex === dayItinerary.activities.length-1} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,1))}><ChevronDownIcon className="h-4 w-4" aria-hidden="true" /></Button>
+                                  </div>}
                                   <Button
                                     variant="ghost"
                                     size="md"

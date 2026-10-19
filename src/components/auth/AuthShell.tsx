@@ -1,8 +1,47 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Brand from '@/components/landing/Brand'
+import Link from 'next/link'
+import styles from './authStyles.module.css'
 
-export default function AuthShell({ children }: { children: ReactNode }) {
+export default function AuthShell({ children, mode }: { children: ReactNode; mode?: 'signup' | 'signin' }) {
+  if (mode) {
+    const isSignup = mode === 'signup'
+    return (
+      <div className={styles.shell}>
+        <header className={styles.header}>
+          <Brand />
+          <p className={styles.accountPrompt}>
+            {isSignup ? '¿Ya tienes cuenta?' : '¿Aún no tienes cuenta?'}{' '}
+            <Link href={isSignup ? '/signin' : '/signup'}>{isSignup ? 'Inicia sesión' : 'Crea tu cuenta'}</Link>
+          </p>
+        </header>
+        <main className={styles.layout}>
+          <aside className={styles.story} aria-label="Prepara tu próximo viaje">
+            <h2>El viaje empieza{' '}<br />mucho antes{' '}<br />de salir.</h2>
+            <p>Guarda tus planes. Deja sitio a lo inesperado.</p>
+            <Image
+              src="/images/atlas/auth-travel-notebook.webp"
+              alt="Ilustración de un cuaderno abierto con una postal de la costa mediterránea, café y una rama de olivo"
+              width={1448}
+              height={1086}
+              loading="eager"
+              sizes="(min-width: 1487px) 800px, (min-width: 1024px) 56vw, 1px"
+              className={styles.artwork}
+            />
+          </aside>
+          <section className={styles.formColumn} aria-label={isSignup ? 'Registro' : 'Inicio de sesión'}>
+            {children}
+          </section>
+        </main>
+        <footer className={styles.footer}>
+          <p>©{new Date().getFullYear()} TravelPal</p>
+          <Link href="/">Volver al inicio</Link>
+        </footer>
+      </div>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-paper text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-2">

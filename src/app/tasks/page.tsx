@@ -12,6 +12,8 @@ import {
   withQueryTimeout,
   type QueryErrorKind,
 } from "@/lib/insforge-query";
+import { TaskList } from "@/components/tasks/TaskList";
+import Input from "@/components/ui/Input";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
 import { TaskModal } from "@/components/tasks/TaskModal";
@@ -33,7 +35,22 @@ import { logger } from "@/lib/logger";
 export default function TasksPage() {
   const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<"board" | "calendar">("board");
+  const [viewMode, setViewMode] = useState<"list" | "board" | "calendar">(
+    "list",
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const filteredTasks = tasks.filter(
+    (task) =>
+      (!searchTerm ||
+        `${task.title} ${task.description || ""}`
+          .toLocaleLowerCase()
+          .includes(searchTerm.toLocaleLowerCase())) &&
+      (statusFilter === "all" ||
+        (statusFilter === "pending"
+          ? task.status !== "completed"
+          : task.status === "completed")),
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
@@ -64,8 +81,8 @@ export default function TasksPage() {
       try {
         const insforge = createInsforgeClient();
         const { data, error } = await withQueryTimeout(
-          insforge
-            .database.from("tasks")
+          insforge.database
+            .from("tasks")
             .select("*")
             .eq("user_id", userId)
             .order("created_at", { ascending: false }),
@@ -116,8 +133,8 @@ export default function TasksPage() {
 
       if (editingTask) {
         const { data: updatedRows, error } = await withQueryTimeout(
-          insforge
-            .database.from("tasks")
+          insforge.database
+            .from("tasks")
             .update(data)
             .eq("id", editingTask.id)
             .eq("user_id", user.id)
@@ -129,8 +146,8 @@ export default function TasksPage() {
         assertRowsAffected(updatedRows, "No se pudo actualizar la tarea");
       } else {
         const { error } = await withQueryTimeout(
-          insforge
-            .database.from("tasks")
+          insforge.database
+            .from("tasks")
             .insert([
               {
                 user_id: user.id,
@@ -178,8 +195,8 @@ export default function TasksPage() {
     try {
       const insforge = createInsforgeClient();
       const { data: deletedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("tasks")
+        insforge.database
+          .from("tasks")
           .delete()
           .eq("id", task.id)
           .eq("user_id", user.id)
@@ -221,8 +238,8 @@ export default function TasksPage() {
     try {
       const insforge = createInsforgeClient();
       const { data: updatedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("tasks")
+        insforge.database
+          .from("tasks")
           .update({ status: newStatus })
           .eq("id", taskId)
           .eq("user_id", user.id)
@@ -273,19 +290,29 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex min-h-[calc(100vh-100px)] flex-col md:h-[calc(100vh-100px)] md:min-h-0">
+      <div className="flex min-h-[calc(100vh-100px)] flex-col">
         {/* Header */}
         <div className="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between">
           <PageTitle
-            title="Mis Tareas"
-            subtitle="Gestiona tus pendientes y proyectos"
+            title="Lo importante, antes de salir."
+            subtitle="Tus pendientes, sin perder el hilo."
           />
 
-          <div className="flex items-center gap-3">
-            <div className="bg-surface rounded-lg border border-line p-1 flex">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-paper rounded-lg border border-line p-1 flex flex-wrap">
+              <Button
+                variant={viewMode === "list" ? "primary" : "ghost"}
+                className="min-h-11"
+                aria-pressed={viewMode === "list"}
+                onClick={() => setViewMode("list")}
+              >
+                Lista
+              </Button>
               <button
+                aria-label="Vista Tablero"
+                aria-pressed={viewMode === "board"}
                 onClick={() => setViewMode("board")}
-                className={`p-2 rounded-md transition-colors ${
+                className={`min-h-11 min-w-11 p-2 rounded-md transition-colors ${
                   viewMode === "board"
                     ? "bg-accent-soft text-accent"
                     : "text-muted hover:bg-surface-strong"
@@ -296,12 +323,14 @@ export default function TasksPage() {
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`p-2 rounded-md transition-colors ${
+                className={`min-h-11 min-w-11 p-2 rounded-md transition-colors ${
                   viewMode === "calendar"
                     ? "bg-accent-soft text-accent"
                     : "text-muted hover:bg-surface-strong"
                 }`}
                 title="Vista Calendario"
+                aria-label="Vista Calendario"
+                aria-pressed={viewMode === "calendar"}
               >
                 <CalendarIcon className="w-5 h-5" />
               </button>
@@ -318,17 +347,56 @@ export default function TasksPage() {
           </div>
         </div>
 
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div
+            role="group"
+            aria-label="Filtrar tareas por estado"
+            className="flex flex-wrap gap-1"
+          >
+            {[
+              { id: "all", label: "Todas" },
+              { id: "pending", label: "Pendientes" },
+              { id: "completed", label: "Completadas" },
+            ].map((filter) => (
+              <Button
+                key={filter.id}
+                variant={statusFilter === filter.id ? "primary" : "ghost"}
+                aria-pressed={statusFilter === filter.id}
+                className="min-h-11"
+                onClick={() => setStatusFilter(filter.id)}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+          <div className="w-full sm:max-w-xs">
+            <Input
+              aria-label="Buscar tareas"
+              placeholder="Buscar tareas..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="min-h-11"
+            />
+          </div>
+        </div>
         {/* Content */}
-        <div className="md:flex-1 md:overflow-hidden">
+        <div className="min-w-0">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <LoadingSpinner />
             </div>
+          ) : viewMode === "list" ? (
+            <TaskList
+              tasks={filteredTasks}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onStatusChange={handleStatusChange}
+            />
           ) : viewMode === "board" ? (
             <>
               <h2 className="sr-only">Tablero de tareas</h2>
               <TaskBoard
-                tasks={tasks}
+                tasks={filteredTasks}
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
@@ -336,7 +404,7 @@ export default function TasksPage() {
             </>
           ) : (
             <TaskCalendarView
-              tasks={tasks}
+              tasks={filteredTasks}
               onTaskClick={handleEditTask}
               onDateSelect={() => {
                 // Optional: open modal with pre-selected date

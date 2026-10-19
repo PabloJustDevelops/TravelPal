@@ -38,3 +38,14 @@ it('presenta las horas persistidas sin segundos', async () => {
   expect(screen.getByText('09:15 - 10:30')).toBeInTheDocument()
   expect(screen.queryByText('09:15:00 - 10:30:00')).not.toBeInTheDocument()
 })
+
+it('permite reordenar sin arrastrar y desactiva los límites del día', async () => {
+  const onMoveActivity = jest.fn().mockResolvedValue(undefined)
+  render(<ItineraryPlanner startDate="2026-10-18" endDate="2026-10-18"
+    itinerary={[{date:'2026-10-18', activities:[activity, {...activity,id:'second',title:'Comer'}]}]}
+    onCreateActivity={jest.fn()} onUpdateActivity={jest.fn()} onDeleteActivity={jest.fn()} onMoveActivity={onMoveActivity} />)
+  await userEvent.setup().click(screen.getByRole('button', {name:/Día 1/}))
+  expect(screen.getByRole('button', {name:'Subir Paseo por Lisboa'})).toBeDisabled()
+  await userEvent.setup().click(screen.getByRole('button', {name:'Bajar Paseo por Lisboa'}))
+  expect(onMoveActivity).toHaveBeenCalledWith('activity-1', 1)
+})

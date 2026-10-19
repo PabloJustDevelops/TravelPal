@@ -17,6 +17,7 @@ interface NewBookingFormProps {
   onCancel: () => void;
   initialData?: Booking | null;
   defaultDate?: Date;
+  defaultTripId?: string;
 }
 
 export default function NewBookingForm({
@@ -24,6 +25,7 @@ export default function NewBookingForm({
   onCancel,
   initialData,
   defaultDate,
+  defaultTripId,
 }: NewBookingFormProps) {
   const { user } = useAuth();
   const tripSelectId = useId();
@@ -58,7 +60,7 @@ export default function NewBookingForm({
               setTrips(tripsData);
               // Preseleccionar el primer viaje si existe
               if (tripsData.length > 0) {
-                  setFormData(prev => ({ ...prev, trip_id: tripsData[0].id }));
+                  setFormData(prev => ({ ...prev, trip_id: tripsData.find(trip=>trip.id === defaultTripId)?.id || tripsData[0].id }));
               }
           } catch (e) {
               logger.error("Error fetching trips for selector", e);
@@ -69,7 +71,7 @@ export default function NewBookingForm({
       return () => {
           active = false;
       };
-  }, [initialData, user?.id]);
+  }, [initialData, user?.id, defaultTripId]);
 
   const [formData, setFormData] = useState({
     title: "",

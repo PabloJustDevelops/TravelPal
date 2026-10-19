@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import {
   Bars3Icon,
+  ChevronRightIcon,
   XMarkIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
@@ -44,17 +45,31 @@ export default function Navbar({ navigation }: NavbarProps) {
       if (mobileMenuOpen) { setMobileMenuOpen(false); mobileToggleRef.current?.focus(); }
     }} className="bg-paper sticky top-0 z-[100] border-b border-line lg:fixed lg:inset-y-0 lg:left-0 lg:w-60 lg:border-b-0 lg:border-r">
       <div className="px-4 sm:px-6 lg:h-full lg:px-4">
-        <div className="flex h-16 items-center justify-between gap-4 lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:py-8">
+        <div className="flex h-16 items-center justify-between gap-4 lg:h-full lg:flex-col lg:items-stretch lg:justify-start lg:py-6">
           <div className="flex-shrink-0 flex items-center">
             <Link
               href="/dashboard"
-              className="font-sans text-2xl font-bold tracking-tight text-ink hover:text-accent transition-colors"
+              className="inline-flex min-h-11 items-center gap-3 rounded-md font-sans text-2xl font-bold tracking-tight text-ink focus-visible:outline-2 focus-visible:outline-accent"
             >
+              <span
+                aria-hidden="true"
+                className="h-10 w-10 shrink-0 bg-current"
+                style={{
+                  maskImage: 'url("/brand/travelpal-mark.svg")',
+                  maskPosition: 'center',
+                  maskRepeat: 'no-repeat',
+                  maskSize: 'contain',
+                  WebkitMaskImage: 'url("/brand/travelpal-mark.svg")',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskSize: 'contain',
+                }}
+              />
               TravelPal
             </Link>
           </div>
 
-          <div className="hidden lg:flex flex-1 items-start pt-8">
+          <div className="hidden lg:flex flex-1 items-start pt-10">
             <div className="flex w-full flex-col gap-2">
               {navigation.map((item) => {
                 const isActive =
@@ -65,9 +80,9 @@ export default function Navbar({ navigation }: NavbarProps) {
                     key={item.name}
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
-                    className={`inline-flex min-h-12 items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+                    className={`inline-flex min-h-12 items-center gap-3 border-l-4 border-transparent rounded-lg px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
                       isActive
-                        ? "bg-accent-soft text-accent"
+                        ? "border-l-accent bg-accent-soft text-accent"
                         : "text-muted hover:bg-surface hover:text-ink"
                     }`}
                   >
@@ -79,21 +94,18 @@ export default function Navbar({ navigation }: NavbarProps) {
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2 shrink-0 border-t border-line pt-5">
+          <div className="hidden lg:flex flex-col items-stretch gap-2 shrink-0 border-t border-line pt-4">
             <NotificationSystem className="shrink-0" panelPlacement="top-start" />
-            <div className="relative shrink-0">
+            <div className="relative min-w-0">
               <button
                 ref={profileToggleRef}
                 id="user-menu-button"
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="flex items-center gap-2 rounded-md p-1 pl-2 hover:bg-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex min-h-12 w-full items-center gap-2 rounded-md p-2 hover:bg-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-label="Abrir menú de perfil"
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
               >
-                <span className="text-sm font-medium text-ink max-w-[110px] truncate">
-                  {user?.full_name?.split(" ")[0] || "Usuario"}
-                </span>
                 {user?.avatar_url && !avatarError ? (
                   <img
                     src={user.avatar_url}
@@ -105,6 +117,8 @@ export default function Navbar({ navigation }: NavbarProps) {
                 ) : (
                   <UserCircleIcon className="h-8 w-8 text-muted" />
                 )}
+                <span className="min-w-0 flex-1 truncate text-left text-sm font-medium text-ink">{user?.full_name || "Usuario"}</span>
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
               </button>
               {profileMenuOpen && (
                 <div
@@ -125,7 +139,7 @@ export default function Navbar({ navigation }: NavbarProps) {
                   <div className="py-1">
                     <Link
                       href="/profile"
-                      className="flex items-center px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
+                      className="flex items-center min-h-11 px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
                       onClick={() => setProfileMenuOpen(false)}
                       role="menuitem"
                     >
@@ -137,7 +151,7 @@ export default function Navbar({ navigation }: NavbarProps) {
                     </Link>
                     <Link
                       href="/settings"
-                      className="flex items-center px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
+                      className="flex items-center min-h-11 px-4 py-2.5 text-sm text-ink hover:bg-paper transition-colors"
                       onClick={() => setProfileMenuOpen(false)}
                       role="menuitem"
                     >
@@ -151,7 +165,7 @@ export default function Navbar({ navigation }: NavbarProps) {
                   <div className="py-1">
                     <button
                       onClick={handleSignOut}
-                      className="flex w-full items-center px-4 py-2.5 text-sm text-danger hover:bg-paper transition-colors"
+                      className="flex w-full items-center min-h-11 px-4 py-2.5 text-sm text-danger hover:bg-paper transition-colors"
                       role="menuitem"
                     >
                       <ArrowRightOnRectangleIcon
@@ -171,7 +185,7 @@ export default function Navbar({ navigation }: NavbarProps) {
             <button
               ref={mobileToggleRef}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center justify-center rounded-md p-2 text-ink hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md p-2 text-ink hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
               aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
@@ -225,21 +239,21 @@ export default function Navbar({ navigation }: NavbarProps) {
             <div className="mt-3 space-y-1">
               <Link
                 href="/profile"
-                className="block px-4 py-2 text-base font-medium text-muted hover:text-ink hover:bg-surface"
+                className="block min-h-12 px-4 py-3 text-base font-medium text-muted hover:text-ink hover:bg-surface"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Mi Perfil
               </Link>
               <Link
                 href="/settings"
-                className="block px-4 py-2 text-base font-medium text-muted hover:text-ink hover:bg-surface"
+                className="block min-h-12 px-4 py-3 text-base font-medium text-muted hover:text-ink hover:bg-surface"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Configuración
               </Link>
               <button
                 onClick={handleSignOut}
-                className="block w-full text-left px-4 py-2 text-base font-medium text-muted hover:text-ink hover:bg-surface"
+                className="block min-h-12 w-full text-left px-4 py-3 text-base font-medium text-muted hover:text-ink hover:bg-surface"
               >
                 Cerrar Sesión
               </button>

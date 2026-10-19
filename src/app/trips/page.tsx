@@ -17,8 +17,10 @@ import {
 import {
   PlusIcon,
   MagnifyingGlassIcon,
-  PlayIcon,
   MapIcon,
+  CalendarDaysIcon,
+  MapPinIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PageSkeleton from "@/components/ui/PageSkeleton";
@@ -33,6 +35,29 @@ const tripStatusLabels: Record<string, string> = {
   completed: "Completado",
   cancelled: "Cancelado",
 };
+
+function getTripEndDate(trip: Trip) {
+  return new Date(trip.return_date || trip.departure_date);
+}
+
+function isUpcomingTrip(trip: Trip) {
+  return (
+    trip.status !== "cancelled" &&
+    new Date(trip.departure_date) > new Date()
+  );
+}
+
+function formatTripDates(trip: Trip) {
+  const format = (value: string) =>
+    new Date(value).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  return trip.return_date
+    ? `${format(trip.departure_date)} – ${format(trip.return_date)}`
+    : format(trip.departure_date);
+}
 
 export default function TripsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -104,6 +129,8 @@ export default function TripsPage() {
           trip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trip.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          formatTripDates(trip).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          trip.departure_date.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trip.airline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trip.flight_number?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
@@ -113,9 +140,7 @@ export default function TripsPage() {
     if (statusFilter !== "all") {
       if (statusFilter === "upcoming") {
         filtered = filtered.filter(
-          (trip) =>
-            new Date(trip.departure_date) > new Date() &&
-            trip.status !== "cancelled",
+          (trip) => isUpcomingTrip(trip),
         );
       } else {
         filtered = filtered.filter((trip) => trip.status === statusFilter);
@@ -124,6 +149,19 @@ export default function TripsPage() {
 
     return filtered;
   }, [trips, searchTerm, statusFilter]);
+
+  const nextTrip = useMemo(
+    () =>
+      filteredTrips
+        .filter((trip) => isUpcomingTrip(trip) && trip.status !== "completed")
+        .sort(
+          (first, second) =>
+            new Date(first.departure_date).getTime() -
+            new Date(second.departure_date).getTime(),
+        )[0],
+    [filteredTrips],
+  );
+  const otherTrips = filteredTrips.filter((trip) => trip.id !== nextTrip?.id);
 
   const error = getLoadErrorMessage(loadError, {
     timeout: "La carga de viajes ha tardado demasiado. Por favor, reintenta.",
@@ -163,11 +201,10 @@ export default function TripsPage() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-7xl space-y-6 font-sans">
-        {/* Header */}
+      <div className="mx-auto max-w-7xl space-y-7 font-sans">
         <PageTitle
-          title="Mis Viajes"
-          subtitle="Gestiona tus itinerarios y reservas"
+          title="Tus viajes"
+          subtitle="Los que vienen y los que ya forman parte de ti."
           action={
             trips.length > 0 ? (
               <Link
@@ -192,7 +229,7 @@ export default function TripsPage() {
                 <Input
                   label="Buscar viajes"
                   type="search"
-                  placeholder="Destino, origen, título o vuelo"
+                placeholder="Destino, ciudad o fecha"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="min-h-11"
@@ -234,64 +271,107 @@ export default function TripsPage() {
             </Button>
           </div>
         ) : filteredTrips.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTrips.map((trip) => (
-              <article
-                key={trip.id}
-                className="flex min-w-0 flex-col rounded-xl border border-line bg-paper p-5 transition-colors hover:border-accent/40"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 pr-3">
-                    <h2 className="truncate text-lg font-semibold tracking-tight text-ink">
-                      <Link
-                        href={`/trip?id=${encodeURIComponent(trip.id)}`}
-                        className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      >
-                        {trip.title}
-                      </Link>
+          <div className="space-y-8">
+            {nextTrip && (
+              <article className="relative overflow-hidden rounded-xl border border-line bg-paper">
+                <div className="grid min-h-72 items-stretch">
+                  <div className="flex min-w-0 flex-col justify-center p-5 sm:p-8 lg:p-10">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">El próximo</p>
+                    <h2 className="mt-2 break-words text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">
+                      {nextTrip.title}
                     </h2>
-                    <p className="mt-1 text-sm text-muted">
-                      <span className="sr-only">Ruta: </span>
-                      {trip.origin} <span aria-hidden="true">→</span> {trip.destination}
+                    <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted sm:text-base">
+                      <MapPinIcon className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+                      {nextTrip.origin} <span aria-hidden="true">→</span> {nextTrip.destination}
                     </p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                    trip.status === 'confirmed' ? 'bg-success/10 text-success' :
-                    trip.status === 'cancelled' ? 'bg-danger/10 text-danger' :
-                    trip.status === 'completed' ? 'bg-accent-soft text-accent' :
-                    'bg-warning/10 text-warning'
-                  }`}>
-                    {tripStatusLabels[trip.status] ?? trip.status}
-                  </span>
-                </div>
-                <div className="mt-5 space-y-1 text-sm text-muted">
-                  <div className="font-medium text-ink">
-                    {new Date(trip.departure_date).toLocaleDateString("es-ES", { dateStyle: "long" })}
-                  </div>
-                  {trip.return_date && (
-                    <div>
-                      Hasta el {new Date(trip.return_date).toLocaleDateString("es-ES", { dateStyle: "long" })}
+                    <p className="mt-3 flex items-center gap-2 text-sm text-muted sm:text-base">
+                      <CalendarDaysIcon className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+                      {formatTripDates(nextTrip)}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <span className={`inline-flex min-h-8 items-center rounded-full px-3 text-xs font-semibold ${
+                        nextTrip.status === "confirmed" ? "bg-success/10 text-success" : "bg-accent-soft text-accent"
+                      }`}>
+                        {tripStatusLabels[nextTrip.status] ?? nextTrip.status}
+                      </span>
+                      {new Date(nextTrip.departure_date).getTime() > Date.now() && (
+                        <span className="text-sm font-medium text-ink">
+                          {new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+                            Math.ceil((new Date(nextTrip.departure_date).getTime() - Date.now()) / 86_400_000),
+                            "day",
+                          )}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 mt-5">
-                  {trip.airline && (
-                    <div className="flex min-w-0 items-center gap-2 text-sm text-muted">
-                      <PlayIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{trip.airline}{trip.flight_number ? ` · ${trip.flight_number}` : ""}</span>
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <Link
+                        href={`/trip?id=${encodeURIComponent(nextTrip.id)}`}
+                        className={`${accentLinkClassName} min-h-11 gap-2`}
+                      >
+                        Abrir viaje <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                      <DeleteTripButton
+                        trip={nextTrip}
+                        onDeleted={() => setTrips((prev) => prev.filter((item) => item.id !== nextTrip.id))}
+                      />
                     </div>
-                  )}
-                  <div className="ml-auto flex items-center gap-3">
-                    <DeleteTripButton
-                      trip={trip}
-                      onDeleted={() =>
-                        setTrips((prev) => prev.filter((t) => t.id !== trip.id))
-                      }
-                    />
                   </div>
+
                 </div>
               </article>
-            ))}
+            )}
+
+            {otherTrips.length > 0 && (
+              <section aria-labelledby="other-trips-heading">
+                <div className="border-b border-line pb-3">
+                  <h2 id="other-trips-heading" className="text-2xl font-bold tracking-tight text-ink">
+                    {otherTrips.every((trip) => getTripEndDate(trip).getTime() < Date.now())
+                      ? "Para recordar"
+                      : "Otros viajes"}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted">
+                    {otherTrips.every((trip) => getTripEndDate(trip).getTime() < Date.now())
+                      ? "Viajes que ya viviste y siempre serán parte de tu historia."
+                      : "Tus viajes guardados, con sus fechas y detalles."}
+                  </p>
+                </div>
+                <div className="divide-y divide-line">
+                  {otherTrips.map((trip) => (
+                    <article key={trip.id} className="grid min-w-0 gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-lg font-semibold tracking-tight text-ink">
+                          <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                            {trip.title}
+                          </Link>
+                        </h3>
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                          <CalendarDaysIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {formatTripDates(trip)}
+                          <span aria-hidden="true">·</span>
+                          {trip.origin} <span aria-hidden="true">→</span> {trip.destination}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+                        <span className={`inline-flex min-h-8 items-center rounded-full px-3 text-xs font-semibold ${
+                          trip.status === "confirmed" ? "bg-success/10 text-success" :
+                          trip.status === "cancelled" ? "bg-danger/10 text-danger" :
+                          trip.status === "completed" ? "bg-accent-soft text-accent" : "bg-surface text-muted"
+                        }`}>
+                          {tripStatusLabels[trip.status] ?? trip.status}
+                        </span>
+                        <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                          Ver viaje <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                        <DeleteTripButton
+                          trip={trip}
+                          onDeleted={() => setTrips((prev) => prev.filter((item) => item.id !== trip.id))}
+                        />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         ) : trips.length > 0 ? (
           <section className="rounded-xl border border-line bg-paper px-5 py-12 text-center" aria-live="polite">

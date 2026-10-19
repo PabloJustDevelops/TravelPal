@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import TripsPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Trip } from "@/lib/insforge";
@@ -104,6 +104,36 @@ describe("TripsPage con el SDK en el navegador", () => {
     expect(from).toHaveBeenCalledWith("trips");
     // Y ni una llamada al BFF: el camino migrado ya no pasa por fetch.
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("destaca el viaje más próximo y deja visibles las acciones de detalle y borrado", async () => {
+    const now = Date.now();
+    const pastTrip: Trip = {
+      ...trip,
+      departure_date: new Date(now - 365 * 86_400_000).toISOString(),
+      return_date: new Date(now - 360 * 86_400_000).toISOString(),
+      status: "completed",
+    };
+    const upcomingTrip: Trip = {
+      ...trip,
+      id: "trip-upcoming",
+      title: "Viaje en camino",
+      departure_date: new Date(now + 14 * 86_400_000).toISOString(),
+      return_date: new Date(now + 19 * 86_400_000).toISOString(),
+      status: "planned",
+    };
+    mount({ data: [pastTrip, upcomingTrip], error: null });
+
+    render(<TripsPage />);
+
+    const featuredLabel = await screen.findByText("El próximo");
+    const featured = featuredLabel.closest("article");
+    expect(featured).not.toBeNull();
+    expect(within(featured as HTMLElement).getByRole("heading", { name: "Viaje en camino" })).toBeInTheDocument();
+    expect(within(featured as HTMLElement).getByText("Abrir viaje")).toBeInTheDocument();
+    expect(within(featured as HTMLElement).getByRole("button", { name: "Eliminar el viaje Viaje en camino" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Para recordar" })).toBeInTheDocument();
+    expect(screen.getByText("Ver viaje")).toBeInTheDocument();
   });
 
   it("pide el select, el filtro por usuario y el order del handler borrado", async () => {

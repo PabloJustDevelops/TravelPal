@@ -1,3 +1,4 @@
+import styles from './nextTrip.module.css';
 import Link from 'next/link';
 import {
   ArrowRightIcon,
@@ -133,15 +134,15 @@ export default function NextTrip({
     : [];
 
   return (
-    <div className="space-y-5">
-      <section aria-labelledby="next-trip-title" className="rounded-xl border border-line bg-paper p-6 sm:p-10">
+    <div className={styles.overview}>
+      <section aria-labelledby="next-trip-title" className={styles.hero}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{trip && localDay(trip.departure_date) < today ? 'Tu viaje en curso' : 'Tu próxima aventura'}</p>
         <div className="mt-4 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="min-w-0 max-w-2xl">
             <h2 id="next-trip-title" className="break-words text-3xl font-bold tracking-tight text-ink sm:text-4xl">{trip ? trip.title : 'El próximo viaje empieza aquí'}</h2>
             {trip ? (
               <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted">
-                <p className="flex items-center gap-2"><MapPinIcon className="h-5 w-5 shrink-0" aria-hidden="true" />{trip.destination}</p>
+                <p className="flex items-center gap-2"><MapPinIcon className="h-5 w-5 shrink-0" aria-hidden="true" />{trip.origin} → {trip.destination}</p>
                 <p className="flex items-start gap-2"><CalendarIcon className="h-5 w-5 shrink-0" aria-hidden="true" /><span>{formatDate(trip.departure_date)}{trip.return_date ? ` — ${formatDate(trip.return_date)}` : ''}</span></p>
               </div>
             ) : <p className="mt-3 leading-relaxed text-muted">Elige un destino y reúne tus fechas, planes y reservas en un solo lugar.</p>}
@@ -150,12 +151,16 @@ export default function NextTrip({
             {trip ? 'Continuar planificación' : 'Organizar un viaje'}<ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
           </Link>
         </div>
+        {trip && localDay(trip.departure_date) >= today && <p className="mt-5 text-sm font-medium text-ink">{(() => {
+          const days = Math.round((Date.parse(`${localDay(trip.departure_date)}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
+          return days === 0 ? 'Sales hoy' : days === 1 ? 'Falta 1 día' : `Faltan ${days} días`;
+        })()}</p>}
       </section>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(17rem,1fr)]">
-        <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 self-start rounded-xl border border-line bg-paper p-5 sm:p-6">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-            <h3 id="dashboard-itinerary-title" className="font-sans text-lg font-semibold text-ink">Itinerario</h3>
+      <div className="grid grid-cols-1 border-t border-line lg:grid-cols-[minmax(0,1.4fr)_minmax(17rem,1fr)]">
+        <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 self-start py-5 lg:pr-8">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
+            <h3 id="dashboard-itinerary-title" className="font-sans text-xl font-bold tracking-tight text-ink">Los primeros planes</h3>
             {trip && <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
               Ver itinerario completo<ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
             </Link>}
@@ -189,10 +194,10 @@ export default function NextTrip({
           )}
         </section>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-1">
-          <section aria-labelledby="dashboard-tasks-title" className="min-w-0 rounded-xl border border-line bg-paper p-5 sm:p-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-              <h3 id="dashboard-tasks-title" className="font-sans text-lg font-semibold text-ink">Tareas pendientes</h3>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 lg:border-l lg:border-line lg:pl-8">
+          <section aria-labelledby="dashboard-tasks-title" className="min-w-0 py-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
+              <h3 id="dashboard-tasks-title" className="font-sans text-xl font-bold tracking-tight text-ink">Antes de salir</h3>
               <Link href="/tasks" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 Ver tareas<ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -215,9 +220,9 @@ export default function NextTrip({
             ) : <p className="py-5 text-sm text-muted">No tienes tareas pendientes.</p>}
           </section>
 
-          <section aria-labelledby="dashboard-budget-title" className="min-w-0 rounded-xl border border-line bg-paper p-5 sm:p-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-              <h3 id="dashboard-budget-title" className="font-sans text-lg font-semibold text-ink">Presupuesto del viaje</h3>
+          <section aria-labelledby="dashboard-budget-title" className="min-w-0 py-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
+              <h3 id="dashboard-budget-title" className="font-sans text-xl font-bold tracking-tight text-ink">Presupuesto del viaje</h3>
               <Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 Ver presupuestos<ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
               </Link>

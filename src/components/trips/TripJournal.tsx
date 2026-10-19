@@ -208,19 +208,19 @@ export default function TripJournal({ tripId }: TripJournalProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="rounded-none border-0 bg-transparent">
+      <CardHeader className="border-b border-line px-0 pt-0 pb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2">
             <BookOpenIcon className="h-5 w-5 text-muted" aria-hidden="true" />
             Diario
           </CardTitle>
-          <Button onClick={openNewEntry} size="sm">
+          <Button onClick={openNewEntry} size="sm" className="min-h-11">
             Anadir entrada
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 py-5">
         {loading ? (
           <div
             role="status"
@@ -245,7 +245,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <p className="font-serif text-heading leading-snug text-ink">
+                      <p className="text-lg font-semibold leading-snug text-ink">
                         {formatDate(entry.entry_date)}
                       </p>
                       <Rating rating={entry.rating} />
@@ -260,6 +260,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                       size="sm"
                       onClick={() => openEditEntry(entry)}
                       aria-label="Editar entrada"
+                      className="min-h-11 min-w-11"
                     >
                       <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
                     </Button>
@@ -268,7 +269,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                       size="sm"
                       onClick={() => handleDelete(entry)}
                       aria-label="Borrar entrada"
-                      className="text-danger"
+                      className="min-h-11 min-w-11 text-danger"
                     >
                       <TrashIcon className="h-4 w-4" aria-hidden="true" />
                     </Button>

@@ -282,3 +282,9 @@ async function deleteTripsWithClient(
     if (tripError) throw new Error(`Limpieza: no se pudo borrar el viaje (${tripError.message})`)
   }
 }
+
+export async function deleteInteriorFixture(table: 'tasks' | 'notes', title: string): Promise<void> {
+  const client = await signedInClient()
+  const { error } = await client.database.from(table).delete().eq('title', title)
+  if (error) throw new Error(`Limpieza: no se pudo borrar el fixture de ${table}`)
+}

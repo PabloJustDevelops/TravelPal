@@ -242,7 +242,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     // Las tres lecturas salen del SDK, tabla a tabla.
     expect(from).toHaveBeenCalledWith("expenses");
@@ -264,7 +264,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     expect(screen.queryByLabelText("Buscar gastos y presupuestos")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Moneda para las gráficas")).not.toBeInTheDocument();
@@ -278,7 +278,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     expect(expensesChain.select).toHaveBeenCalledWith("*, trip:trips(*)");
     expect(expensesChain.eq).toHaveBeenCalledWith("user_id", "user-123");
@@ -336,7 +336,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     // El listado de gastos sigue en pie.
     expect(screen.getByText("Cena en Trastevere")).toBeInTheDocument();
@@ -378,7 +378,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     });
 
     render(<ExpensesPage />);
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const totalCard = screen.getByText("Total Gastado").parentElement;
     expect(totalCard).toHaveTextContent(flat(formatCurrency(110, "USD")));
@@ -396,10 +396,11 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     const plannedCard = screen.getByText("Presupuesto total").parentElement;
     expect(plannedCard).toHaveTextContent(flat(formatCurrency(500, "USD")));
     expect(plannedCard).toHaveTextContent(flat(formatCurrency(1200, "EUR")));
-    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+
     expect(screen.getByRole("progressbar", { name: "Real sobre previsto en USD" })).toHaveAttribute("aria-valuenow", "22");
     expect(screen.getByRole("progressbar", { name: "Real sobre previsto en EUR" })).toHaveAttribute("aria-valuenow", "83");
 
+    fireEvent.click(screen.getByText("Informe de gastos"));
     const chartCurrency = screen.getByRole("combobox", { name: "Moneda para las gráficas" });
     fireEvent.change(chartCurrency, { target: { value: "EUR" } });
     expect(screen.getByRole("region", { name: "Gastos por categoría en EUR" })).toBeInTheDocument();
@@ -418,9 +419,9 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     });
 
     render(<ExpensesPage />);
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
-    const progress = screen.getByRole("progressbar", { name: "Real sobre previsto en USD" });
+    const progress = screen.getByRole("progressbar", { name: /Uso del presupuesto/ });
     expect(progress).toHaveAttribute("aria-valuemax", "100");
     expect(progress).toHaveAttribute("aria-valuenow", "100");
     expect(progress).toHaveAttribute("aria-valuetext", "180.0% del presupuesto usado");
@@ -431,7 +432,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     fireEvent.change(screen.getByLabelText("Filtrar por categoría"), {
       target: { value: "food" },
@@ -451,7 +452,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     fireEvent.click(screen.getByText("Nuevo Presupuesto"));
 
@@ -504,7 +505,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);
@@ -553,7 +554,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const deleteButton = screen.getByRole("button", { name: "Eliminar presupuesto Presupuesto Roma" });
     expect(deleteButton).toBeDefined();
@@ -577,7 +578,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);
@@ -608,7 +609,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const deleteButton = screen.getByRole("button", { name: "Eliminar presupuesto Presupuesto Roma" });
     fireEvent.click(deleteButton as HTMLElement);
@@ -629,7 +630,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
 
     render(<ExpensesPage />);
 
-    await screen.findByText("Mis Gastos");
+    await screen.findByText("Gastos y presupuestos");
 
     const editButton = screen.getByRole("button", { name: "Editar presupuesto Presupuesto Roma" });
     fireEvent.click(editButton);

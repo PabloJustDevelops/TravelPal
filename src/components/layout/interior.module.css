@@ -1,0 +1,53 @@
+.shell {
+  --paper: #fdfcf9;
+  --surface: #f5f6f8;
+  --ink: #09132d;
+  --muted: #52648a;
+  --accent: #005bea;
+  --accent-hover: #004bc2;
+  --line: #dce2ed;
+  background: var(--paper);
+  font-family: var(--font-inter), sans-serif;
+}
+:global(.dark) .shell {
+  --paper: #101827;
+  --surface: #182338;
+  --ink: #edf3fb;
+  --muted: #b0bfd4;
+  --accent: #8dbaff;
+  --accent-hover: #b3d1ff;
+  --line: #34455f;
+}
+.shell :is(button, select, input:not([type="radio"]):not([type="checkbox"])) {
+  min-height: 44px;
+}
+.main {
+  padding: 28px 20px 40px;
+}
+.main > * {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.shell :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (min-width: 640px) {
+  .main {
+    padding: 36px 32px 48px;
+  }
+}
+@media (min-width: 1024px) {
+  .main {
+    padding: 40px 40px 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -18,7 +18,10 @@ import PageTitle from "@/components/ui/PageTitle";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
-import { selectClassName, textareaClassName } from "@/components/ui/fieldStyles";
+import {
+  selectClassName,
+  textareaClassName,
+} from "@/components/ui/fieldStyles";
 import ErrorState from "@/components/ui/ErrorState";
 import { Card, CardContent } from "@/components/ui/Card";
 import {
@@ -169,20 +172,20 @@ export default function ExpensesPage() {
         const insforge = createInsforgeClient();
         const [expensesRes, tripsRes, budgetsRes] = await withQueryTimeout(
           Promise.all([
-            insforge
-              .database.from("expenses")
+            insforge.database
+              .from("expenses")
               .select(`*, trip:trips(*)`)
               .eq("user_id", userId)
               .order("date", { ascending: false }),
-            insforge
-              .database.from("trips")
+            insforge.database
+              .from("trips")
               .select(
                 "id, title, user_id, origin, destination, departure_date, return_date, status, created_at, updated_at",
               )
               .eq("user_id", userId)
               .order("departure_date", { ascending: false }),
-            insforge
-              .database.from("budgets")
+            insforge.database
+              .from("budgets")
               .select("*")
               .eq("user_id", userId)
               .order("created_at", { ascending: false }),
@@ -242,7 +245,8 @@ export default function ExpensesPage() {
           const dateInRange =
             expenseDate >= budgetStart && expenseDate <= budgetEnd;
           const categoryMatch =
-            budget.category === "travel" || expense.category === budget.category;
+            budget.category === "travel" ||
+            expense.category === budget.category;
           const tripMatch =
             !budget.trip_id || expense.trip_id === budget.trip_id;
 
@@ -317,39 +321,46 @@ export default function ExpensesPage() {
   // Las tres lecturas comparten el techo del envoltorio: si alguna no responde
   // a tiempo, el mensaje es el de timeout y no el generico del error del SDK.
   const error = getLoadErrorMessage(expensesLoadError, {
-    timeout: "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
+    timeout:
+      "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
     request: "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
   });
 
   const showSkeleton =
     authLoading ||
     expensesLoading ||
-    ((!authLoading && !!user) && expensesData === null && !error);
+    (!authLoading && !!user && expensesData === null && !error);
 
   const getExpenseStats = () => {
-    const totals = expenses.reduce<Record<string, { total: number; count: number }>>(
+    const totals = expenses.reduce<
+      Record<string, { total: number; count: number }>
+    >((acc, expense) => {
+      const current = acc[expense.currency] ?? { total: 0, count: 0 };
+      current.total += expense.amount;
+      current.count += 1;
+      acc[expense.currency] = current;
+      return acc;
+    }, {});
+    const categoryCounts = expenses.reduce<Record<string, number>>(
       (acc, expense) => {
-        const current = acc[expense.currency] ?? { total: 0, count: 0 };
-        current.total += expense.amount;
-        current.count += 1;
-        acc[expense.currency] = current;
+        acc[expense.category] = (acc[expense.category] ?? 0) + 1;
         return acc;
       },
       {},
     );
-    const categoryCounts = expenses.reduce<Record<string, number>>((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] ?? 0) + 1;
-      return acc;
-    }, {});
     const topCategory = Object.entries(categoryCounts).sort(
-      ([categoryA, countA], [categoryB, countB]) => countB - countA || categoryA.localeCompare(categoryB),
+      ([categoryA, countA], [categoryB, countB]) =>
+        countB - countA || categoryA.localeCompare(categoryB),
     )[0];
     const totalsByCurrency = Object.entries(totals)
       .sort(([currencyA], [currencyB]) => currencyA.localeCompare(currencyB))
       .map(([currency, values]) => ({ currency, total: values.total }));
     const averagesByCurrency = Object.entries(totals)
       .sort(([currencyA], [currencyB]) => currencyA.localeCompare(currencyB))
-      .map(([currency, values]) => ({ currency, average: values.total / values.count }));
+      .map(([currency, values]) => ({
+        currency,
+        average: values.total / values.count,
+      }));
 
     return {
       count: expenses.length,
@@ -377,29 +388,32 @@ export default function ExpensesPage() {
   const stats = getExpenseStats();
   const hasFinancialData = expenses.length > 0 || budgets.length > 0;
 
-  const expenseCurrencies = [...new Set(expenses.map((expense) => expense.currency))].sort();
+  const expenseCurrencies = [
+    ...new Set(expenses.map((expense) => expense.currency)),
+  ].sort();
   const selectedChartCurrency = expenseCurrencies.includes(chartCurrency)
     ? chartCurrency
-    : expenseCurrencies[0] ?? "USD";
-  const chartExpenses = expenses.filter((expense) => expense.currency === selectedChartCurrency);
+    : (expenseCurrencies[0] ?? "USD");
+  const chartExpenses = expenses.filter(
+    (expense) => expense.currency === selectedChartCurrency,
+  );
 
   // Contadores de "previsto frente a real" (sobre todos los presupuestos,
   // igual que los totales de gastos, para que no bailen con los filtros).
   const budgetCurrencyTotals = Object.values(
-    budgets.reduce<Record<string, { currency: string; planned: number; spent: number }>>(
-      (totals, budget) => {
-        const current = totals[budget.currency] ?? {
-          currency: budget.currency,
-          planned: 0,
-          spent: 0,
-        };
-        current.planned += budget.total_amount;
-        current.spent += budget.spent_amount;
-        totals[budget.currency] = current;
-        return totals;
-      },
-      {},
-    ),
+    budgets.reduce<
+      Record<string, { currency: string; planned: number; spent: number }>
+    >((totals, budget) => {
+      const current = totals[budget.currency] ?? {
+        currency: budget.currency,
+        planned: 0,
+        spent: 0,
+      };
+      current.planned += budget.total_amount;
+      current.spent += budget.spent_amount;
+      totals[budget.currency] = current;
+      return totals;
+    }, {}),
   ).sort((a, b) => a.currency.localeCompare(b.currency));
   const overBudgetCount = budgets.filter(
     (budget) => budget.spent_amount > budget.total_amount,
@@ -535,8 +549,8 @@ export default function ExpensesPage() {
 
       if (editingBudget) {
         const { data: updatedRows, error } = await withQueryTimeout(
-          insforge
-            .database.from("budgets")
+          insforge.database
+            .from("budgets")
             .update({
               ...budgetData,
               updated_at: new Date().toISOString(),
@@ -551,8 +565,8 @@ export default function ExpensesPage() {
         assertRowsAffected(updatedRows, "No se pudo guardar el presupuesto");
       } else {
         const { error } = await withQueryTimeout(
-          insforge
-            .database.from("budgets")
+          insforge.database
+            .from("budgets")
             .insert([{ user_id: user.id, ...budgetData }])
             .select()
             .single(),
@@ -584,8 +598,8 @@ export default function ExpensesPage() {
     try {
       const insforge = createInsforgeClient();
       const { data: deletedRows, error } = await withQueryTimeout(
-        insforge
-          .database.from("budgets")
+        insforge.database
+          .from("budgets")
           .delete()
           .eq("id", budgetId)
           .eq("user_id", user.id)
@@ -646,22 +660,24 @@ export default function ExpensesPage() {
       <div className="space-y-6">
         {/* Header */}
         <PageTitle
-          title="Mis Gastos"
-          subtitle="Controla tus gastos y compáralos con lo previsto"
-          action={hasFinancialData ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" onClick={handleCreateBudget}>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nuevo Presupuesto
-              </Button>
-              <Link href="/expenses/new">
-                <Button>
+          title="Gastos y presupuestos"
+          subtitle="Lo que llevas gastado. Lo que queda por disfrutar."
+          action={
+            hasFinancialData ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" onClick={handleCreateBudget}>
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Nuevo Gasto
+                  Nuevo Presupuesto
                 </Button>
-              </Link>
-            </div>
-          ) : undefined}
+                <Link href="/expenses/new">
+                  <Button>
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Nuevo Gasto
+                  </Button>
+                </Link>
+              </div>
+            ) : undefined
+          }
         />
 
         {!hasFinancialData && (
@@ -669,7 +685,7 @@ export default function ExpensesPage() {
             icon={<CurrencyDollarIcon className="h-7 w-7" />}
             title="Empieza a organizar tu dinero"
             description="Registra un gasto o crea un presupuesto para seguir el coste del viaje desde el primer día."
-            action={(
+            action={
               <div className="flex flex-col justify-center gap-3 sm:flex-row">
                 <Link href="/expenses/new">
                   <Button className="w-full sm:w-auto">
@@ -681,349 +697,432 @@ export default function ExpensesPage() {
                   Crear presupuesto
                 </Button>
               </div>
+            }
+          />
+        )}
+
+        <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
+          <section className="min-w-0">
+            <h2 className="mb-2 text-2xl font-bold tracking-tight text-ink">
+              Movimientos
+            </h2>
+            <p className="mb-5 text-sm text-muted">
+              Todos los gastos de tu viaje en un solo lugar.
+            </p>{" "}
+            {/* Filters: un unico bloque para gastos y presupuestos */}
+            {hasFinancialData && (
+              <div className="border-b border-line pb-5">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Search */}
+                  <div className="flex-1">
+                    <div className="relative">
+                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
+                      <Input
+                        type="text"
+                        placeholder="Buscar gastos y presupuestos..."
+                        aria-label="Buscar gastos y presupuestos"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div className="lg:w-48">
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      aria-label="Filtrar por categoría"
+                      className={selectClassName}
+                    >
+                      <option value="all">Todas las categorías</option>
+                      {categoryFilters.map((category) => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Trip Filter */}
+                  <div className="lg:w-48">
+                    <select
+                      value={tripFilter}
+                      onChange={(e) => setTripFilter(e.target.value)}
+                      aria-label="Filtrar por viaje"
+                      className={selectClassName}
+                    >
+                      <option value="all">Todos los viajes</option>
+                      {trips.map((trip) => (
+                        <option key={trip.id} value={trip.id}>
+                          {trip.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-muted">
+                  {filteredExpenses.length} de {expenses.length} gastos ·{" "}
+                  {filteredBudgets.length} de {budgets.length} presupuestos
+                </p>
+              </div>
             )}
-          />
-        )}
-
-        {/* Stats Cards */}
-        {expenses.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CurrencyDollarIcon className="h-8 w-8 text-success" />
-                </div>
-                <div className="ml-4">
-                  <div className="text-sm font-medium text-muted">
-                    Total Gastado
-                  </div>
-                  <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
-                    {stats.totalsByCurrency.length > 0 ? stats.totalsByCurrency.map(({ currency, total }) => (
-                      <p key={currency}>{formatCurrency(total, currency)}</p>
-                    )) : <p>Sin gastos</p>}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-8 w-8 text-accent" />
-                </div>
-                <div className="ml-4">
-                  <div className="text-sm font-medium text-muted">
-                    Total Gastos
-                  </div>
-                  <div className="text-2xl font-bold text-ink">
-                    {stats.count}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CalendarIcon className="h-8 w-8 text-accent" />
-                </div>
-                <div className="ml-4">
-                  <div className="text-sm font-medium text-muted">
-                    Promedio por Gasto
-                  </div>
-                  <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
-                    {stats.averagesByCurrency.length > 0 ? stats.averagesByCurrency.map(({ currency, average }) => (
-                      <p key={currency}>{formatCurrency(average, currency)}</p>
-                    )) : <p>Sin gastos</p>}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TrophyIcon className="h-8 w-8 text-warning" />
-                </div>
-                <div className="ml-4">
-                  <div className="text-sm font-medium text-muted">
-                    Categoría más frecuente
-                  </div>
-                  <div className="text-lg font-bold text-ink">
-                    {stats.topCategory
-                      ? `${getCategoryName(stats.topCategory)} · ${stats.topCategoryCount} ${stats.topCategoryCount === 1 ? "gasto" : "gastos"}`
-                      : "N/A"}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        )}
-
-        {/* Las gráficas muestran una moneda cada vez para no comparar importes incompatibles. */}
-        {chartExpenses.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">Filtra ambas gráficas por una moneda</p>
-            <div className="w-full sm:w-auto sm:min-w-48">
-              <label htmlFor="expense-chart-currency" className="sr-only">
-                Moneda para las gráficas
-              </label>
-              <select
-                id="expense-chart-currency"
-                aria-label="Moneda para las gráficas"
-                value={selectedChartCurrency}
-                onChange={(event) => setChartCurrency(event.target.value)}
-                disabled={expenseCurrencies.length === 0}
-                className={selectClassName}
-              >
-                {(expenseCurrencies.length > 0 ? expenseCurrencies : ["USD"]).map((currency) => (
-                  <option key={currency} value={currency}>{currency}</option>
+            {/* Gastos */}
+            {filteredExpenses.length > 0 ? (
+              <div className="min-w-0">
+                {filteredExpenses.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    expense={expense}
+                    showTripTitle
+                  />
                 ))}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section aria-label={`Gastos por categoría en ${selectedChartCurrency}`} className="min-w-0">
-              <Card className="overflow-hidden">
-                <CardContent className="p-6">
-                  <h2 className="text-lg font-semibold text-ink mb-6">
-                    Gastos por Categoría · {selectedChartCurrency}
-                  </h2>
-                  <ExpenseChart
-                    expenses={chartExpenses}
-                    type="category"
-                    title={`Gastos por categoría en ${selectedChartCurrency}`}
-                    currency={selectedChartCurrency}
-                    height={320}
-                  />
-                </CardContent>
-              </Card>
-            </section>
-            <section aria-label={`Tendencia de gastos en ${selectedChartCurrency}`} className="min-w-0">
-              <Card className="overflow-hidden">
-                <CardContent className="p-6">
-                  <h2 className="text-lg font-semibold text-ink mb-6">
-                    Tendencia de Gastos · {selectedChartCurrency}
-                  </h2>
-                  <ExpenseChart
-                    expenses={chartExpenses}
-                    type="timeline"
-                    title={`Tendencia de gastos en ${selectedChartCurrency}`}
-                    currency={selectedChartCurrency}
-                    height={320}
-                  />
-                </CardContent>
-              </Card>
-            </section>
-          </div>
-        </div>
-        )}
-
-        {/* Filters: un unico bloque para gastos y presupuestos */}
-        {hasFinancialData && (
-        <div className="bg-surface p-4 rounded-lg shadow-sm border border-line">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
-                <Input
-                  type="text"
-                  placeholder="Buscar gastos y presupuestos..."
-                  aria-label="Buscar gastos y presupuestos"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+              </div>
+            ) : (
+              hasFinancialData && (
+                <EmptyState
+                  icon={<CurrencyDollarIcon className="h-12 w-12" />}
+                  title={
+                    searchTerm ||
+                    categoryFilter !== "all" ||
+                    tripFilter !== "all"
+                      ? "No se encontraron gastos"
+                      : "No tienes gastos registrados"
+                  }
+                  description={
+                    searchTerm ||
+                    categoryFilter !== "all" ||
+                    tripFilter !== "all"
+                      ? "Intenta ajustar los filtros de búsqueda"
+                      : "Comienza registrando tu primer gasto"
+                  }
+                  action={
+                    !searchTerm &&
+                    categoryFilter === "all" &&
+                    tripFilter === "all" ? (
+                      <Link href="/expenses/new">
+                        <Button>
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Registrar Primer Gasto
+                        </Button>
+                      </Link>
+                    ) : undefined
+                  }
                 />
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div className="lg:w-48">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                aria-label="Filtrar por categoría"
-                className={selectClassName}
-              >
-                <option value="all">Todas las categorías</option>
-                {categoryFilters.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Trip Filter */}
-            <div className="lg:w-48">
-              <select
-                value={tripFilter}
-                onChange={(e) => setTripFilter(e.target.value)}
-                aria-label="Filtrar por viaje"
-                className={selectClassName}
-              >
-                <option value="all">Todos los viajes</option>
-                {trips.map((trip) => (
-                  <option key={trip.id} value={trip.id}>
-                    {trip.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <p className="mt-3 text-xs text-muted">
-            {filteredExpenses.length} de {expenses.length} gastos ·{" "}
-            {filteredBudgets.length} de {budgets.length} presupuestos
-          </p>
-        </div>
-        )}
-
-        {/* Previsto frente a real */}
-        {budgets.length > 0 && (
-        <section className="space-y-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <ChartBarIcon className="h-6 w-6 text-accent flex-shrink-0" />
-                <div>
-                  <h2 className="text-lg font-semibold text-ink">
-                    Previsto frente a real
-                  </h2>
-                  <p className="mt-1 text-sm text-muted">
-                    Compara lo que presupuestaste con lo que llevas gastado.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {budgetSummary.map((item) => (
-                  <div key={item.label}>
-                    <p className="text-sm font-medium text-muted">
-                      {item.label}
-                    </p>
-                    {item.values ? (
-                      <div className={`mt-1 space-y-1 font-bold ${item.tone}`}>
-                        {item.values.length > 0 ? item.values.map(({ currency, amount }) => (
-                          <p key={currency} className="text-sm sm:text-base">
-                            <span className="mr-1 text-xs font-medium text-muted">{currency}</span>
-                            {formatCurrency(amount, currency)}
+              )
+            )}
+          </section>
+          <aside className="min-w-0 xl:border-l xl:border-line xl:pl-7">
+            <h2 className="mb-5 text-xl font-bold text-ink">Presupuestos</h2>{" "}
+            {/* Previsto frente a real */}
+            {budgets.length > 0 && (
+              <section className="space-y-4">
+                {filteredBudgets.length > 1 && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-3">
+                        <ChartBarIcon className="h-6 w-6 text-accent flex-shrink-0" />
+                        <div>
+                          <h2 className="text-lg font-semibold text-ink">
+                            Previsto frente a real
+                          </h2>
+                          <p className="mt-1 text-sm text-muted">
+                            Compara lo que presupuestaste con lo que llevas
+                            gastado.
                           </p>
-                        )) : <p className="text-sm font-medium text-muted">Sin presupuestos</p>}
+                        </div>
                       </div>
-                    ) : (
-                      <p className={`mt-1 text-2xl font-bold ${item.tone}`}>
-                        {item.value}
-                      </p>
-                    )}
+
+                      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        {budgetSummary.map((item) => (
+                          <div key={item.label}>
+                            <p className="text-sm font-medium text-muted">
+                              {item.label}
+                            </p>
+                            {item.values ? (
+                              <div
+                                className={`mt-1 space-y-1 font-bold ${item.tone}`}
+                              >
+                                {item.values.length > 0 ? (
+                                  item.values.map(({ currency, amount }) => (
+                                    <p
+                                      key={currency}
+                                      className="text-sm sm:text-base"
+                                    >
+                                      <span className="mr-1 text-xs font-medium text-muted">
+                                        {currency}
+                                      </span>
+                                      {formatCurrency(amount, currency)}
+                                    </p>
+                                  ))
+                                ) : (
+                                  <p className="text-sm font-medium text-muted">
+                                    Sin presupuestos
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p
+                                className={`mt-1 text-2xl font-bold ${item.tone}`}
+                              >
+                                {item.value}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {budgets.length > 0 && (
+                        <div className="mt-6 space-y-4">
+                          {budgetCurrencyTotals.map(
+                            ({ currency, planned, spent }) => {
+                              const percentage =
+                                planned > 0 ? (spent / planned) * 100 : 0;
+                              return (
+                                <div key={currency}>
+                                  <div className="flex items-center justify-between text-xs text-muted">
+                                    <span>
+                                      Real sobre previsto · {currency}
+                                    </span>
+                                    <span>{percentage.toFixed(1)}%</span>
+                                  </div>
+                                  <div
+                                    role="progressbar"
+                                    aria-label={`Real sobre previsto en ${currency}`}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-valuenow={Math.min(
+                                      100,
+                                      Math.max(0, Math.round(percentage)),
+                                    )}
+                                    aria-valuetext={`${percentage.toFixed(1)}% del presupuesto usado`}
+                                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-strong"
+                                  >
+                                    <div
+                                      className={`h-2 rounded-full transition-all duration-300 ${
+                                        percentage > 100
+                                          ? "bg-danger"
+                                          : percentage >= 80
+                                            ? "bg-warning"
+                                            : "bg-success"
+                                      }`}
+                                      style={{
+                                        width: `${Math.min(percentage, 100)}%`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {filteredBudgets.length > 0 ? (
+                  <div className="space-y-5">
+                    {filteredBudgets.map((budget) => (
+                      <BudgetCard
+                        key={budget.id}
+                        budget={budget}
+                        onEdit={handleEditBudget}
+                        onDelete={handleDeleteBudget}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
-
-              {budgets.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  {budgetCurrencyTotals.map(({ currency, planned, spent }) => {
-                    const percentage = planned > 0 ? (spent / planned) * 100 : 0;
-                    return (
-                      <div key={currency}>
-                        <div className="flex items-center justify-between text-xs text-muted">
-                          <span>Real sobre previsto · {currency}</span>
-                          <span>{percentage.toFixed(1)}%</span>
+                ) : (
+                  <EmptyState
+                    icon={<ChartBarIcon className="h-12 w-12" />}
+                    title="No se encontraron presupuestos"
+                    description="Intenta ajustar los filtros para encontrar lo que buscas"
+                  />
+                )}
+              </section>
+            )}
+          </aside>
+        </div>
+        <details className="border-t border-line pt-5">
+          <summary className="min-h-11 cursor-pointer text-lg font-semibold text-ink">
+            Informe de gastos
+          </summary>
+          <div className="mt-5 space-y-6">
+            {" "}
+            {/* Stats Cards */}
+            {expenses.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <CurrencyDollarIcon className="h-8 w-8 text-success" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-muted">
+                          Total Gastado
                         </div>
-                        <div
-                          role="progressbar"
-                          aria-label={`Real sobre previsto en ${currency}`}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-valuenow={Math.min(100, Math.max(0, Math.round(percentage)))}
-                          aria-valuetext={`${percentage.toFixed(1)}% del presupuesto usado`}
-                          className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-strong"
-                        >
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              percentage > 100
-                                ? "bg-danger"
-                                : percentage >= 80
-                                  ? "bg-warning"
-                                  : "bg-success"
-                            }`}
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                          />
+                        <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
+                          {stats.totalsByCurrency.length > 0 ? (
+                            stats.totalsByCurrency.map(
+                              ({ currency, total }) => (
+                                <p key={currency}>
+                                  {formatCurrency(total, currency)}
+                                </p>
+                              ),
+                            )
+                          ) : (
+                            <p>Sin gastos</p>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <ChartBarIcon className="h-8 w-8 text-accent" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-muted">
+                          Total Gastos
+                        </div>
+                        <div className="text-2xl font-bold text-ink">
+                          {stats.count}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <CalendarIcon className="h-8 w-8 text-accent" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-muted">
+                          Promedio por Gasto
+                        </div>
+                        <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
+                          {stats.averagesByCurrency.length > 0 ? (
+                            stats.averagesByCurrency.map(
+                              ({ currency, average }) => (
+                                <p key={currency}>
+                                  {formatCurrency(average, currency)}
+                                </p>
+                              ),
+                            )
+                          ) : (
+                            <p>Sin gastos</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <TrophyIcon className="h-8 w-8 text-warning" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-muted">
+                          Categoría más frecuente
+                        </div>
+                        <div className="text-lg font-bold text-ink">
+                          {stats.topCategory
+                            ? `${getCategoryName(stats.topCategory)} · ${stats.topCategoryCount} ${stats.topCategoryCount === 1 ? "gasto" : "gastos"}`
+                            : "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {/* Las gráficas muestran una moneda cada vez para no comparar importes incompatibles. */}
+            {chartExpenses.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted">
+                    Filtra ambas gráficas por una moneda
+                  </p>
+                  <div className="w-full sm:w-auto sm:min-w-48">
+                    <label htmlFor="expense-chart-currency" className="sr-only">
+                      Moneda para las gráficas
+                    </label>
+                    <select
+                      id="expense-chart-currency"
+                      aria-label="Moneda para las gráficas"
+                      value={selectedChartCurrency}
+                      onChange={(event) => setChartCurrency(event.target.value)}
+                      disabled={expenseCurrencies.length === 0}
+                      className={selectClassName}
+                    >
+                      {(expenseCurrencies.length > 0
+                        ? expenseCurrencies
+                        : ["USD"]
+                      ).map((currency) => (
+                        <option key={currency} value={currency}>
+                          {currency}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {filteredBudgets.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredBudgets.map((budget) => (
-                <BudgetCard
-                  key={budget.id}
-                  budget={budget}
-                  onEdit={handleEditBudget}
-                  onDelete={handleDeleteBudget}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<ChartBarIcon className="h-12 w-12" />}
-              title="No se encontraron presupuestos"
-              description="Intenta ajustar los filtros para encontrar lo que buscas"
-            />
-          )}
-        </section>
-        )}
-
-        {/* Gastos */}
-        {filteredExpenses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredExpenses.map((expense) => (
-              <ExpenseCard key={expense.id} expense={expense} showTripTitle />
-            ))}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <section
+                    aria-label={`Gastos por categoría en ${selectedChartCurrency}`}
+                    className="min-w-0"
+                  >
+                    <Card className="overflow-hidden">
+                      <CardContent className="p-6">
+                        <h2 className="text-lg font-semibold text-ink mb-6">
+                          Gastos por Categoría · {selectedChartCurrency}
+                        </h2>
+                        <ExpenseChart
+                          expenses={chartExpenses}
+                          type="category"
+                          title={`Gastos por categoría en ${selectedChartCurrency}`}
+                          currency={selectedChartCurrency}
+                          height={320}
+                        />
+                      </CardContent>
+                    </Card>
+                  </section>
+                  <section
+                    aria-label={`Tendencia de gastos en ${selectedChartCurrency}`}
+                    className="min-w-0"
+                  >
+                    <Card className="overflow-hidden">
+                      <CardContent className="p-6">
+                        <h2 className="text-lg font-semibold text-ink mb-6">
+                          Tendencia de Gastos · {selectedChartCurrency}
+                        </h2>
+                        <ExpenseChart
+                          expenses={chartExpenses}
+                          type="timeline"
+                          title={`Tendencia de gastos en ${selectedChartCurrency}`}
+                          currency={selectedChartCurrency}
+                          height={320}
+                        />
+                      </CardContent>
+                    </Card>
+                  </section>
+                </div>
+              </div>
+            )}
           </div>
-        ) : hasFinancialData && (
-          <EmptyState
-            icon={<CurrencyDollarIcon className="h-12 w-12" />}
-            title={
-              searchTerm || categoryFilter !== "all" || tripFilter !== "all"
-                ? "No se encontraron gastos"
-                : "No tienes gastos registrados"
-            }
-            description={
-              searchTerm || categoryFilter !== "all" || tripFilter !== "all"
-                ? "Intenta ajustar los filtros de búsqueda"
-                : "Comienza registrando tu primer gasto"
-            }
-            action={
-              !searchTerm &&
-              categoryFilter === "all" &&
-              tripFilter === "all" ? (
-                <Link href="/expenses/new">
-                  <Button>
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Registrar Primer Gasto
-                  </Button>
-                </Link>
-              ) : undefined
-            }
-          />
-        )}
-
+        </details>
         {/* Create/Edit Budget Modal */}
         <Modal
           isOpen={showBudgetModal}

@@ -154,6 +154,13 @@ describe("NewBookingForm", () => {
     expect(screen.getByLabelText("Viaje asociado *")).toHaveValue("trip-1");
   });
 
+  it('preselecciona el viaje del contexto aunque otro llegue primero', async () => {
+    mount({data:[{id:'recent',title:'Más reciente'},{id:'chosen',title:'Elegido'}],error:null})
+    render(<NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} defaultTripId="chosen" />)
+    await screen.findByRole('option',{name:'Elegido'})
+    expect(screen.getByLabelText('Viaje asociado *')).toHaveValue('chosen')
+  })
+
   it("da de alta la reserva por el SDK con los campos y defaults del handler", async () => {
     render(
       <NewBookingForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />,

@@ -3,6 +3,7 @@
 import React from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import Navbar from './Navbar'
+import styles from './interior.module.css'
 import { HomeIcon, MapPinIcon, CurrencyDollarIcon, DocumentTextIcon, CalendarIcon, ClipboardDocumentListIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -22,10 +23,10 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-surface text-ink">
+      <div className={`${styles.shell} min-h-screen text-ink`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-paper focus:p-3 focus:text-accent">Saltar al contenido</a>
         <Navbar navigation={navigation} />
-        <main id="main-content" tabIndex={-1} className="min-w-0 py-8 px-4 sm:px-6 lg:ml-60 lg:px-10 lg:py-10">
+        <main id="main-content" tabIndex={-1} className={`${styles.main} min-w-0 lg:ml-60`}>
           {children}
         </main>
       </div>

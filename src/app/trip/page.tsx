@@ -240,7 +240,7 @@ function TripDetailsContent() {
           </div>
         </div>
 
-        <header className="rounded-xl border border-line bg-paper p-5 sm:p-7">
+        <header className="border-b border-line pb-6 sm:pb-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
@@ -255,7 +255,7 @@ function TripDetailsContent() {
                   {TRIP_STATUS_LABELS[trip.status]}
                 </span>
               </div>
-              <h1 className="mt-2 break-words text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{trip.title}</h1>
+              <h1 className="mt-2 break-words text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[38px]">{trip.title}</h1>
               <p className="mt-2 flex items-center gap-2 text-base text-muted">
                 <MapPinIcon className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
                 <span>{trip.origin}</span><span aria-hidden="true">→</span><span>{trip.destination}</span>
@@ -285,7 +285,7 @@ function TripDetailsContent() {
             />
 
             {trip.notes && (
-              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="trip-notes-heading">
+              <section className="border-b border-line pb-6" aria-labelledby="trip-notes-heading">
                 <h2 id="trip-notes-heading" className="text-lg font-semibold text-ink">Notas del viaje</h2>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-reading text-muted">{trip.notes}</p>
               </section>
@@ -294,7 +294,7 @@ function TripDetailsContent() {
             {isPast ? (
               <TripJournal tripId={trip.id} />
             ) : (
-              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="trip-journal-heading">
+              <section className="border-b border-line pb-6" aria-labelledby="trip-journal-heading">
                 <h2 id="trip-journal-heading" className="text-lg font-semibold text-ink">Diario del viaje</h2>
                 <p className="mb-4 mt-2 text-sm leading-reading text-muted">
                   El diario se abre cuando el viaje haya pasado. También puedes marcarlo como completado ahora.
@@ -306,11 +306,11 @@ function TripDetailsContent() {
             )}
           </div>
 
-          <aside className="min-w-0 space-y-6" aria-label="Resumen y datos del viaje">
+          <aside className="min-w-0 space-y-6 lg:border-l lg:border-line lg:pl-6" aria-label="Resumen y datos del viaje">
             <TripSummary tripId={trip.id} />
 
             {(trip.airline || trip.flight_number || trip.confirmation_number) && (
-              <section className="rounded-xl bg-paper p-5 sm:p-6" aria-labelledby="flight-details-heading">
+              <section className="border-t border-line pt-5" aria-labelledby="flight-details-heading">
                 <h2 id="flight-details-heading" className="text-lg font-semibold text-ink">Información de vuelo</h2>
                 <dl className="mt-4 space-y-4">
                   {trip.airline && <div><dt className="text-sm text-muted">Aerolínea</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.airline}</dd></div>}
@@ -320,7 +320,7 @@ function TripDetailsContent() {
               </section>
             )}
 
-            <section className="rounded-xl border border-line bg-surface p-5" aria-labelledby="tasks-general-heading">
+            <section className="border-t border-line pt-5" aria-labelledby="tasks-general-heading">
               <h2 id="tasks-general-heading" className="text-base font-semibold text-ink">Tareas</h2>
               <p className="mt-2 text-sm leading-reading text-muted">Tus tareas se gestionan en una lista general y no están asignadas a este viaje.</p>
               <Link href="/tasks" className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md font-medium text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">

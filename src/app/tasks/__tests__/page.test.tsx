@@ -217,6 +217,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     expect(tasksChain.select).toHaveBeenCalledWith("*");
     expect(tasksChain.eq).toHaveBeenCalledWith("user_id", "user-123");
@@ -231,6 +232,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(screen.getByRole("button", { name: /nueva tarea/i }));
     mockModalPayload = {
@@ -261,6 +263,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(screen.getByRole("button", { name: /nueva tarea/i }));
     mockModalPayload = {
@@ -288,6 +291,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /editar reservar hotel en roma/i }),
@@ -318,6 +322,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /completar reservar hotel en roma/i }),
@@ -339,6 +344,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /borrar reservar hotel en roma/i }),
@@ -402,6 +408,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
     expect(screen.getByTestId("status-t1")).toHaveTextContent("pending");
 
     fireEvent.click(
@@ -427,6 +434,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /editar reservar hotel en roma/i }),
@@ -452,6 +460,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /borrar reservar hotel en roma/i }),
@@ -474,6 +483,7 @@ describe("TasksPage con el SDK en el navegador", () => {
     render(<TasksPage />);
 
     await screen.findByText("Reservar hotel en Roma");
+    fireEvent.click(screen.getByRole("button", {name:"Vista Tablero"}));
 
     fireEvent.click(
       screen.getByRole("button", { name: /completar reservar hotel en roma/i }),
