@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title">
+  <title id="title">TravelPal · Cuaderno abierto · marca</title>
+  <g id="mark" fill="currentColor">
+    <path d="M32 18C26 12 16 12 8 16V48C16 44 24 44 32 50C40 44 48 44 56 48V16C48 12 38 12 32 18Z M32 18V50" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 64" width="244" height="64" role="img" aria-labelledby="title">
+  <title id="title">TravelPal · Etapas</title>
+  <style>
+    :root { color: #101828; }
+    #mark { color: #0759d3; }
+    @media (prefers-color-scheme: dark) {
+      :root { color: #edf3fb; }
+      #mark { color: #8dbaff; }
+    }
+  </style>
+  <g id="mark" fill="currentColor">
+    <path d="M12 12H42A10 10 0 0 1 42 32H22A10 10 0 0 0 22 52H52" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="80" y="44" dx="0 -1.2 -0.3 -0.5 -0.2 -0.2 -0.5 -0.6 -0.2" font-family="Inter, system-ui, sans-serif" font-size="36" font-weight="600" letter-spacing="-0.7" font-kerning="none" font-variant-ligatures="none" fill="currentColor">TravelPal</text>
+</svg>

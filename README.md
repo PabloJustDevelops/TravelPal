@@ -155,6 +155,7 @@ TravelPal/
 - [docs/TESTING.md](docs/TESTING.md) · [docs/TESTER-ARMY.md](docs/TESTER-ARMY.md): cómo se prueba.
 - [docs/TRAVEL_INSPIRATION.md](docs/TRAVEL_INSPIRATION.md): alta y operación de la inspiración de vuelos.
 - [docs/DESIGN-DIRECTIONS.md](docs/DESIGN-DIRECTIONS.md) · [DESIGN.md](DESIGN.md): dirección visual.
+- [docs/design/logo/proposals/](docs/design/logo/proposals/): las seis propuestas de marca; la ligadura TP es la elegida.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) · [docs/COMMITS.md](docs/COMMITS.md) · [docs/PR_PROCESS.md](docs/PR_PROCESS.md): cómo contribuir.
 
 ## Roadmap

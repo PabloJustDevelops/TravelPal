@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title">
+  <title id="title">TravelPal · Pliegue · marca</title>
+  <g id="mark" fill="currentColor">
+    <path d="M8 20L24 12L40 20L56 12V44L40 52L24 44L8 52Z M24 12V44 M40 20V52" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

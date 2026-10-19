@@ -17,6 +17,20 @@ de marketing. No trasladar el paisaje ni la composición de la landing a cada
 formulario o listado. Las imágenes de destinos deben corresponder a datos reales;
 los ejemplos sintéticos se limitan a Storybook y tests.
 
+## Marca
+
+- La marca de TravelPal es la **ligadura TP** elegida el 19 de octubre de 2026 entre las seis
+  propuestas de `docs/design/logo/proposals/`. Se apoya en una sola forma sólida —la `T` y la `P`
+  comparten asta— y funciona a 16 px.
+- Ficheros: `src/app/icon.svg` (icono de app y favicon, marca en blanco sobre `accent` `#0759d3`),
+  `public/brand/travelpal-mark.svg` (marca suelta, hereda color con `currentColor`) y
+  `public/brand/travelpal-lockup.svg` (marca + «TravelPal», con variante oscura por
+  `prefers-color-scheme`).
+- Usar la marca en un solo color cuando el fondo no sea papel claro: `currentColor` ya lo resuelve.
+  No recolorearla con colores de estado ni meterla en degradados, sombras o contenedores decorativos.
+- El wordmark en trazados está en `docs/design/logo/proposals/03-ligadura-tp-outlined.svg`; la
+  versión de propuesta con `<text>` no debe usarse en superficies publicadas.
+
 ## Herramientas y contratos existentes
 
 - Next.js 16, React 19, Tailwind 4; Inter para la interfaz. Fraunces sigue cargada
