@@ -13,6 +13,13 @@ jest.mock('next/image', () => ({
 
 it('reproduce la portada seleccionada y conecta la acción con el registro', () => {
   render(<Home />)
+  const brand = within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', {
+    name: 'TravelPal',
+  })
+  expect(brand).toHaveAttribute('href', '/')
+  expect(brand.querySelector('[aria-hidden="true"]')).toHaveStyle({
+    maskImage: 'url("/brand/travelpal-mark.svg")',
+  })
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tu viaje, de principio a fin.')
   expect(screen.getByRole('link', { name: 'Crear mi viaje' })).toHaveAttribute('href', '/signup')
   expect(screen.getByRole('link', { name: 'Ver un ejemplo' })).toHaveAttribute('href', '#example')

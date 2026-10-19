@@ -1,12 +1,22 @@
 import Link from 'next/link'
-import { GlobeAltIcon } from '@heroicons/react/24/outline'
 
 export default function Brand() {
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5 rounded-md text-xl font-bold tracking-tight text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-on-accent">
-        <GlobeAltIcon className="h-6 w-6" aria-hidden="true" />
-      </span>
+    <Link href="/" className="inline-flex min-h-11 w-fit items-center gap-2.5 rounded-md text-xl font-semibold tracking-tight text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+      <span
+        aria-hidden="true"
+        className="h-9 w-9 shrink-0 bg-current"
+        style={{
+          maskImage: 'url("/brand/travelpal-mark.svg")',
+          maskPosition: 'center',
+          maskRepeat: 'no-repeat',
+          maskSize: 'contain',
+          WebkitMaskImage: 'url("/brand/travelpal-mark.svg")',
+          WebkitMaskPosition: 'center',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskSize: 'contain',
+        }}
+      />
       TravelPal
     </Link>
   )
