@@ -1,15 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import SettingsPage from '../page'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useTheme } from '@/contexts/ThemeContext'
 
 jest.mock('@/components/layout/DashboardLayout', () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 jest.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: null }) }))
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ theme: 'light', resolvedTheme: 'light', setTheme: jest.fn() }),
-}))
+jest.mock('@/contexts/ThemeContext', () => ({ useTheme: jest.fn() }))
 jest.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ showSuccess: jest.fn(), showError: jest.fn() }),
 }))
@@ -27,7 +26,14 @@ const pushState = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  jest.mocked(useTheme).mockReturnValue({theme:'light',resolvedTheme:'light',setTheme:jest.fn()})
   jest.mocked(usePushNotifications).mockReturnValue({ ...pushState })
+})
+
+it('permite elegir el tema automático explícitamente', () => {
+  render(<SettingsPage />)
+  fireEvent.click(screen.getByRole('radio',{name:/Automático/}))
+  expect(useTheme().setTheme).toHaveBeenCalledWith('system')
 })
 
 it('explica que el envio no esta disponible y no ofrece activar avisos inexistentes', () => {

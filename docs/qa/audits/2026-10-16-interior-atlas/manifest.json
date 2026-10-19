@@ -1,0 +1,866 @@
+[
+  {
+    "path": "comparisons/01-dashboard.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "10756b1a295e2d3970636e6a621eb340f7e566411877a801df90d537457ee7f7"
+  },
+  {
+    "path": "comparisons/02-viajes.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "17b9a0df05b14a6212b0ad6d8f1610843d79422fd55baecb537e0754c65370bc"
+  },
+  {
+    "path": "comparisons/03-crear-viaje.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "27bb854109edf21378214f98a419c38fd37cae01f4e44f9aff084b28e51d0434"
+  },
+  {
+    "path": "comparisons/04-planificacion.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "5daae6c49fcbc0607fcb1beb025f455e86ed55dcae89bbc6d7681306ec338974"
+  },
+  {
+    "path": "comparisons/05-tareas.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "fe1a8e1d2920ed25f534ff72a37e82803413b8012b32cd70e24ad324dbdbe059"
+  },
+  {
+    "path": "comparisons/06-gastos.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "d01533b576f7c5f4465e134cc6d1392dd66f9e545112f35e0876bd0a8842503e"
+  },
+  {
+    "path": "comparisons/07-anadir-gasto.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "d01ca4b56bcf1a92faf78a25b8468c1db698a7659971dae9db32a22dd23b5440"
+  },
+  {
+    "path": "comparisons/08-notas.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "176e9915e1b341f2986e49476619fd1177c894e826fc4d76c80da6cf4ddf6ca9"
+  },
+  {
+    "path": "comparisons/09-perfil.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "ef46afc3236a58a74ef0dbbe629f8a5ec95e191a77a52404e7ae6f2874ceb404"
+  },
+  {
+    "path": "comparisons/10-ajustes.webp",
+    "size": [
+      1440,
+      544
+    ],
+    "sha256": "31470dfc38e56f866aa8846fcaeb062768e2013c678a3c7ccbbab708c2e0495c"
+  },
+  {
+    "path": "comparisons/mobile-dark.webp",
+    "size": [
+      1000,
+      1110
+    ],
+    "sha256": "35d0f4fb03ec60f2307c070ac3a7dd0a9aa83a7a94baa100c60a557d09ba785f"
+  },
+  {
+    "path": "comparisons/mobile-light.webp",
+    "size": [
+      1000,
+      1110
+    ],
+    "sha256": "3b1a04a1dff6160026ef607871789db7a8600879423000b641c4122cb320762f"
+  },
+  {
+    "path": "screenshots/empty/ajustes-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "068bcae75de4a54f01fcdfe9f7aebf13113ab3b5016f6570381a9772176c8ffe"
+  },
+  {
+    "path": "screenshots/empty/ajustes-dark-390.webp",
+    "size": [
+      390,
+      1402
+    ],
+    "sha256": "ae1b9cfb323e0c346644d4b3c6b00aa6ea845d25cd6dd14cdf41b345fc257908"
+  },
+  {
+    "path": "screenshots/empty/ajustes-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "b4a9b0042846eb5495dbb27737779f4add27f9fe0ecb7dece649cd3f81e68fe3"
+  },
+  {
+    "path": "screenshots/empty/ajustes-light-390.webp",
+    "size": [
+      390,
+      1402
+    ],
+    "sha256": "da28102eb958ba594963dade4dc646b3f10ff20ffdb294b90b24a56a8870a20b"
+  },
+  {
+    "path": "screenshots/empty/anadir-gasto-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "1d76178572a4385743e5ef0407209d63f10e066f992194b717dca67633989eca"
+  },
+  {
+    "path": "screenshots/empty/anadir-gasto-dark-390.webp",
+    "size": [
+      390,
+      1786
+    ],
+    "sha256": "e81e958db8c9c32817b525b14729d6f3a629ffc64bf5721f598da718d8f2f8e5"
+  },
+  {
+    "path": "screenshots/empty/anadir-gasto-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "f78f4b0cae3819aec12cb44a99faa3dd0b55079ca508c1c02e4589d3c0aba84b"
+  },
+  {
+    "path": "screenshots/empty/anadir-gasto-light-390.webp",
+    "size": [
+      390,
+      1786
+    ],
+    "sha256": "613ff7128c5c4b1c620130b854ab484195e3c07ec16e3181768816acd37c5d59"
+  },
+  {
+    "path": "screenshots/empty/crear-viaje-dark-1440.webp",
+    "size": [
+      1440,
+      1128
+    ],
+    "sha256": "9da07b246215ff3adfa78b29dfd4a5dc1285056a8952886acb9633be4746338a"
+  },
+  {
+    "path": "screenshots/empty/crear-viaje-dark-390.webp",
+    "size": [
+      390,
+      1883
+    ],
+    "sha256": "4fdf56f90da05049039c67e091c11a12a701eb72e6af73caa5dba5e422f9c968"
+  },
+  {
+    "path": "screenshots/empty/crear-viaje-light-1440.webp",
+    "size": [
+      1440,
+      1128
+    ],
+    "sha256": "ea150cd99699658988904083dca3241159d7fc35f15bf69b6f6a27b3c9301fd4"
+  },
+  {
+    "path": "screenshots/empty/crear-viaje-light-390.webp",
+    "size": [
+      390,
+      1883
+    ],
+    "sha256": "f7c75fe9b1565bc84a4fd3b3245fe7d3f0d3d9bfb4dcc372234d824370b378bc"
+  },
+  {
+    "path": "screenshots/empty/dashboard-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "63765002568ffe6f1e4fb4675dddf37035c637a9f488f2430eeccd738525cdd4"
+  },
+  {
+    "path": "screenshots/empty/dashboard-dark-390.webp",
+    "size": [
+      390,
+      1290
+    ],
+    "sha256": "6cffa2d32b1facee041a10171d814918478676b4e4358ac5da494ea6f26ede26"
+  },
+  {
+    "path": "screenshots/empty/dashboard-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "f9c7dbce9e77cc3ead5709b4d00f7fb95bb9642025cc9a2ba28abaa11adc7e52"
+  },
+  {
+    "path": "screenshots/empty/dashboard-light-390.webp",
+    "size": [
+      390,
+      1290
+    ],
+    "sha256": "9db0199949b583c3020595cbee28fcba9b6a358f0be74d4e36fe2ca0548ce97e"
+  },
+  {
+    "path": "screenshots/empty/gastos-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "f0a872437bc6e8be56c968476c345ac6facec31ba77e261465d0fbd4837696b9"
+  },
+  {
+    "path": "screenshots/empty/gastos-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "c4201705307cbc9e1188b68d667e90461d32d145d54922a8e3c63e0392398de8"
+  },
+  {
+    "path": "screenshots/empty/gastos-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "f8d0c9f23c20570432015a51d00fe762153440c0af34d6d9394e2f9aee03b8f8"
+  },
+  {
+    "path": "screenshots/empty/gastos-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "c1aae3b8f3f92e13089d59d41769a4139645c7dad9dfd4d9777b681c7b610475"
+  },
+  {
+    "path": "screenshots/empty/notas-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "9dd91e842460e32d7de9aab24071daf9d81c095675406034c39405eec7a78c72"
+  },
+  {
+    "path": "screenshots/empty/notas-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "855ac02fb2ae8bb6f7f03df07744f159508bcb969641bdccad8ab99a3f0a0930"
+  },
+  {
+    "path": "screenshots/empty/notas-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "8199c3a8269e53adcb861a50f64507fd9ed54fafd598c4f52098b8ca112f9f03"
+  },
+  {
+    "path": "screenshots/empty/notas-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "e6530ba970e656028d70ac49d7106318787c451a81914b7d9d5031a769efc73e"
+  },
+  {
+    "path": "screenshots/empty/perfil-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "db9cf23919fdbeadfb8ad07251844c3728c6fab410bb6f3def05f559501f3161"
+  },
+  {
+    "path": "screenshots/empty/perfil-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "234e3ea566813eb114d79466097081bd115f95c19b374c0b52f2cf2b91d47f73"
+  },
+  {
+    "path": "screenshots/empty/perfil-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "dac0c81de0be86e75fab411cb75c3f9ab461bf8080919c2dacbdf25d28764187"
+  },
+  {
+    "path": "screenshots/empty/perfil-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "e44fa90d61d0f15def24d983dae1d1f40dae5283ac3b494357042b948b3a2175"
+  },
+  {
+    "path": "screenshots/empty/planificacion-dark-1440.webp",
+    "size": [
+      1440,
+      1090
+    ],
+    "sha256": "8ef2f49c49ee65094f1afd38bfaba3ed4c59685d8d27d22c38befbaf07a90383"
+  },
+  {
+    "path": "screenshots/empty/planificacion-dark-390.webp",
+    "size": [
+      390,
+      3412
+    ],
+    "sha256": "d7fa7a6c2596e9a46b7199d1667ce283cedb8492c1028c380566fff8235dac72"
+  },
+  {
+    "path": "screenshots/empty/planificacion-light-1440.webp",
+    "size": [
+      1440,
+      1090
+    ],
+    "sha256": "66d74c162aaa0a1591f11842d63843b5c28f944cedc2208ddece6b86ec53c84a"
+  },
+  {
+    "path": "screenshots/empty/planificacion-light-390.webp",
+    "size": [
+      390,
+      3412
+    ],
+    "sha256": "5d4d152acc7a04ac2f869d5876ffe62c700a99708c6bea53803bb25d9cc8d2e3"
+  },
+  {
+    "path": "screenshots/empty/tareas-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "6ba0ddf6666e176bf9a14009dfe67870e4f84796e6ca6fe547c26ba9e57f49e6"
+  },
+  {
+    "path": "screenshots/empty/tareas-dark-390.webp",
+    "size": [
+      390,
+      1057
+    ],
+    "sha256": "0b4a09ddd6267e8f1ad923b86264170df8c71e2c6c91571c33f9e9503ef8f34e"
+  },
+  {
+    "path": "screenshots/empty/tareas-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "dc143824033abff50ac72cd4252be305ae215550f1e5e8eb10fd17ead38bfccb"
+  },
+  {
+    "path": "screenshots/empty/tareas-light-390.webp",
+    "size": [
+      390,
+      1057
+    ],
+    "sha256": "3e04a140b920fe7def0e6bed8ee791915b0bc0a5f3b96f36a43358befc404914"
+  },
+  {
+    "path": "screenshots/empty/viajes-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "309947c74c75b12fedd263a147118e5946b56dcab0fbc55cf8cabe9d44f07223"
+  },
+  {
+    "path": "screenshots/empty/viajes-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "fe47433db28327f8c9882ea43f44deaa1dfd5256a467392cb095657ffca45c33"
+  },
+  {
+    "path": "screenshots/empty/viajes-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "68cbce062401decce343ecc538136841f31afbcfbd8db0c2da1f09918df12cd8"
+  },
+  {
+    "path": "screenshots/empty/viajes-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "b21f4247efc98bd0c5a3cb8bfa015ff7264c831569cd2cf6273e073a5b2ab7b6"
+  },
+  {
+    "path": "screenshots/populated/ajustes-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "3ee0b744e4e1e71e2707270f8b9560bafc208b6ed6082a5c7ffdb39e84421551"
+  },
+  {
+    "path": "screenshots/populated/ajustes-dark-390.webp",
+    "size": [
+      390,
+      1402
+    ],
+    "sha256": "60a8f94f1fa4a89985f3e2a2679dd09a3a98dfb241080020ddbd4d4ebb2feaab"
+  },
+  {
+    "path": "screenshots/populated/ajustes-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "6cc2ab9789fcbb52e33dcc89dc00f9f014db113bac52809b67008677980f49c8"
+  },
+  {
+    "path": "screenshots/populated/ajustes-light-390.webp",
+    "size": [
+      390,
+      1402
+    ],
+    "sha256": "6efd4b18d231b6a5c6b25b70f0f5421c2378e127b4a69b8883b19cc8c86320a9"
+  },
+  {
+    "path": "screenshots/populated/anadir-gasto-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "1762a23054cdd6a6fe5e5f7338b7886deb76df92d4e14463abf75f0f215213dc"
+  },
+  {
+    "path": "screenshots/populated/anadir-gasto-dark-390.webp",
+    "size": [
+      390,
+      1786
+    ],
+    "sha256": "28c33a98a0f539aa008339ff4ccd824147b13c833b31e4ac0ba6916da7e4c53e"
+  },
+  {
+    "path": "screenshots/populated/anadir-gasto-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "2b0ebe14c5cfa1d7c51f6b9792608ef72c9c59ab0983da102d1934e392d3cfd0"
+  },
+  {
+    "path": "screenshots/populated/anadir-gasto-light-390.webp",
+    "size": [
+      390,
+      1786
+    ],
+    "sha256": "73ac0150a5b88d6799223575403dfc42ad3758cf8e95a74f4a4fe1e2e2dec8b4"
+  },
+  {
+    "path": "screenshots/populated/crear-viaje-dark-1440.webp",
+    "size": [
+      1440,
+      1128
+    ],
+    "sha256": "6a658503f705e44633cb8cb7c522aea93a35f1f2117e9855ca67ca6a8e24d678"
+  },
+  {
+    "path": "screenshots/populated/crear-viaje-dark-390.webp",
+    "size": [
+      390,
+      1883
+    ],
+    "sha256": "c00122f5924b1d4037d198b4b64740eb26e79aa2d7a1c2812285a3af705847b6"
+  },
+  {
+    "path": "screenshots/populated/crear-viaje-light-1440.webp",
+    "size": [
+      1440,
+      1128
+    ],
+    "sha256": "5aa4011d5edab79f3cd4ca7a2b063d675d13208cd06d6cfa577db6c9cf67952c"
+  },
+  {
+    "path": "screenshots/populated/crear-viaje-light-390.webp",
+    "size": [
+      390,
+      1883
+    ],
+    "sha256": "93147ecd8d8a7a686ee0cd53fe5b9c0bebc9d298c4215e1e7fed686dc8cc1c50"
+  },
+  {
+    "path": "screenshots/populated/dashboard-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "8ec34a24dad04cb17eea545037316469525007b6e5ba5a782efd9aeedc326c33"
+  },
+  {
+    "path": "screenshots/populated/dashboard-dark-390.webp",
+    "size": [
+      390,
+      1611
+    ],
+    "sha256": "983446c70fb5991b30373844f65fe9b6fd9ca8922a336477a41c6a36744404a5"
+  },
+  {
+    "path": "screenshots/populated/dashboard-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "87d8b0b0269640a94b9e215acad3ce774226a9965e58dddca8cc98c859f7858b"
+  },
+  {
+    "path": "screenshots/populated/dashboard-light-390.webp",
+    "size": [
+      390,
+      1611
+    ],
+    "sha256": "314b1767bd34fbd724ce5ced346869548a4eba7a47ccc71e93cf9059a36d5cff"
+  },
+  {
+    "path": "screenshots/populated/gastos-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "0d7415d0ad9b83a1c6209ad4d2119d29179f3a2d2ff0b13d9c1233105e471c6f"
+  },
+  {
+    "path": "screenshots/populated/gastos-dark-390.webp",
+    "size": [
+      390,
+      1546
+    ],
+    "sha256": "43cb8637e7539bb64f922266344d6edcb6a8f8f86fafa10c6a0525fba17b46e5"
+  },
+  {
+    "path": "screenshots/populated/gastos-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "26cb36ac83bce921c39104af87ee4a0e499bb7d7f77ab538038dddabdbe81133"
+  },
+  {
+    "path": "screenshots/populated/gastos-light-390.webp",
+    "size": [
+      390,
+      1546
+    ],
+    "sha256": "bde73165484698dc2da17a9f105fa70ff1594ad2c66f2db904a26d0745dbf68e"
+  },
+  {
+    "path": "screenshots/populated/notas-dark-1440.webp",
+    "size": [
+      1440,
+      1033
+    ],
+    "sha256": "7a65efcd07d4053c8d820c09849e39e8e11e1121b9433a3acaed63021cb95dc2"
+  },
+  {
+    "path": "screenshots/populated/notas-dark-390.webp",
+    "size": [
+      390,
+      1038
+    ],
+    "sha256": "ae6d248dfc07c5381d551d18a14edc68bd68dc28a1658a5bbcb537567cf1d54d"
+  },
+  {
+    "path": "screenshots/populated/notas-light-1440.webp",
+    "size": [
+      1440,
+      1033
+    ],
+    "sha256": "e54c46947ef475c5d942958275cf37b28359dea227631b7106936e9efa654b4a"
+  },
+  {
+    "path": "screenshots/populated/notas-light-390.webp",
+    "size": [
+      390,
+      1038
+    ],
+    "sha256": "055bc41d6b988d45a7e0b9d2e813a2bcbcd5bffdddea15d6b91a8625fdb92cb6"
+  },
+  {
+    "path": "screenshots/populated/perfil-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "af636fcf7759b2fab7f2a892430dfd248a2ba980072717b5bf5abaa20674f231"
+  },
+  {
+    "path": "screenshots/populated/perfil-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "5aae53c5bf6399172b1ac8eeb39652b399e906097120cfc4ecbac6f17a45d012"
+  },
+  {
+    "path": "screenshots/populated/perfil-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "3a2fb68f877410ddfe1ac860279479cd22eea0892eccee6b3200b6ad01b99ae5"
+  },
+  {
+    "path": "screenshots/populated/perfil-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "d5d51759603c1999f3fa46de668b27a9d31643938fe682d2177dbb373aa025ab"
+  },
+  {
+    "path": "screenshots/populated/planificacion-dark-1440.webp",
+    "size": [
+      1440,
+      1084
+    ],
+    "sha256": "76bc38858b8b0a1fc7f3a889cc50b0c0608d169b02d718d45f164d93ecc2de47"
+  },
+  {
+    "path": "screenshots/populated/planificacion-dark-390.webp",
+    "size": [
+      390,
+      3568
+    ],
+    "sha256": "f5ed8123ba84dcc0843ca1cb18d26a7ae16ba3523d5db979bab22ac6bae6092f"
+  },
+  {
+    "path": "screenshots/populated/planificacion-light-1440.webp",
+    "size": [
+      1440,
+      1084
+    ],
+    "sha256": "a0229fac8d90b17a61bde5e5d9bb5a2c27a8309d450e37068fb6c318f40623d7"
+  },
+  {
+    "path": "screenshots/populated/planificacion-light-390.webp",
+    "size": [
+      390,
+      3568
+    ],
+    "sha256": "e482f95db861aa820aadc09d7cbfe85df604188f95d54efe97407aa9b459caf4"
+  },
+  {
+    "path": "screenshots/populated/tareas-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "b11529026cf6530cd7ce7a023076293b097c840e0a003263510a34fe112cf720"
+  },
+  {
+    "path": "screenshots/populated/tareas-dark-390.webp",
+    "size": [
+      390,
+      1200
+    ],
+    "sha256": "19c3a09157bb821be57040f0c5a70fa3d7668062946c292f34cd274fd5ef8e2f"
+  },
+  {
+    "path": "screenshots/populated/tareas-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "f2201e2c5a136643cba4f4fad7baa41157432494ee88a95bcc2038ca404799fa"
+  },
+  {
+    "path": "screenshots/populated/tareas-light-390.webp",
+    "size": [
+      390,
+      1200
+    ],
+    "sha256": "b026d09225900e11862b02fe083f8a3afcac23eefd738364f70db2a577ef0cd0"
+  },
+  {
+    "path": "screenshots/populated/viajes-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "ef0c9028ea9783b053a46502da30614b45cf0538f40b462a9a8eb8b6bbc8e0fd"
+  },
+  {
+    "path": "screenshots/populated/viajes-dark-390.webp",
+    "size": [
+      390,
+      1381
+    ],
+    "sha256": "96c847657cbc54f8fa2da7adc9507264093cd25e0637b730c9058964771b7446"
+  },
+  {
+    "path": "screenshots/populated/viajes-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "efb4a053bf6681a4f8c85629a5fa970eca9a7d6f2d3811e23d1f377e7d96728d"
+  },
+  {
+    "path": "screenshots/populated/viajes-light-390.webp",
+    "size": [
+      390,
+      1381
+    ],
+    "sha256": "332b8329326eb1acec9c92b26cb0480c24abae3c9d65add80933efda96c217d3"
+  },
+  {
+    "path": "screenshots/states/anadir-gasto-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "2638e60f0d124b0216ef6313bc6a74eab6b35a7c00f588cca518149843ab881a"
+  },
+  {
+    "path": "screenshots/states/anadir-gasto-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "01436ea841b95af90cdf948f5abc78880b1b6214288e438b4f0dda647cd3c8df"
+  },
+  {
+    "path": "screenshots/states/anadir-gasto-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "b2724925b5dd6f3d12861e4274b892312bf00abb2c111569d983517e163eb01a"
+  },
+  {
+    "path": "screenshots/states/anadir-gasto-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "df697c5f306a7296cdbf6f6b2f1e1d2f36b78f8142e8f21f69a71658c5df132b"
+  },
+  {
+    "path": "screenshots/states/crear-viaje-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "a1ceb3b3c1fc43a02fff9c7e1dfae43b003cfd2b0dd406df59531542a8df6e23"
+  },
+  {
+    "path": "screenshots/states/crear-viaje-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "0cf7ae7607ebff965fd51181b74f36d28c46d626ae40e2b7d0f6f51658f2c6a5"
+  },
+  {
+    "path": "screenshots/states/crear-viaje-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "ea2034f81c3b6fc54b733e97f643d53daaef6e73edf920693f98e950bb1eaf53"
+  },
+  {
+    "path": "screenshots/states/crear-viaje-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "f4461355cf675dac65db9f7ecee7554657999bb48dc18ec1d3a39fa8a580eb50"
+  },
+  {
+    "path": "screenshots/states/perfil-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "cd56ba7e9a625af9f6a9807d1e744a94982f890a60e91f9818f36417a2696dac"
+  },
+  {
+    "path": "screenshots/states/perfil-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "2b6158b641fa456d1dcdd3c235f31c735a903bcd0f216aebfe29e6bb2b7384fa"
+  },
+  {
+    "path": "screenshots/states/perfil-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "a588a542a3174a25b21692fa6375d7fe5dc59a20eeb4a6d7a6fa544a482b13bc"
+  },
+  {
+    "path": "screenshots/states/perfil-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "bf8e2fe55f74b5852f963d68ee78dd3a65f7a0f340514e85b6f28e7f5377529f"
+  },
+  {
+    "path": "screenshots/states/planificacion-dark-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "30199e3c53c31b40efc7f6833e4251a63e2c42099f812a0604f191062ea95ee2"
+  },
+  {
+    "path": "screenshots/states/planificacion-dark-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "bfc7679d433c6b7c1450e96845e8fd76eaa9983381ee001138ba392af3039d72"
+  },
+  {
+    "path": "screenshots/states/planificacion-light-1440.webp",
+    "size": [
+      1440,
+      1024
+    ],
+    "sha256": "402cd152e67b41c19ef28423e1ff5883989427262f8d93ade2372bf9402974cb"
+  },
+  {
+    "path": "screenshots/states/planificacion-light-390.webp",
+    "size": [
+      390,
+      1024
+    ],
+    "sha256": "0fb81aaa8f4078dc427309d70a6a591ca307235ebfa741f455c8a21bef2fb0b9"
+  }
+]

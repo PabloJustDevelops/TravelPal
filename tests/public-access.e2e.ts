@@ -11,7 +11,7 @@ test('una ruta privada sin sesion lleva al acceso con un formulario utilizable',
 
 test('el acceso ofrece registro y recuperacion de contraseña', async ({ app, screen }) => {
   await app.open('/signin')
-  await expect(screen.getByRole('link', 'crea una nueva cuenta')).toBeVisible()
+  await expect(screen.getByRole('link', 'Crea tu cuenta').first()).toBeVisible()
   await expect(screen.getByRole('link', '¿Olvidaste tu contraseña?')).toBeVisible()
   await expect(screen.getByRole('button', 'Continuar con Google')).toBeVisible()
 })

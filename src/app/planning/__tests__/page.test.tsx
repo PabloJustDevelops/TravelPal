@@ -1,3 +1,4 @@
+jest.mock("react-calendar", () => ({__esModule:true,default:()=> <div aria-label="Calendario mensual" />}));
 import {
   fireEvent,
   render,
@@ -119,6 +120,7 @@ interface DbChain {
   eq: jest.Mock;
   order: jest.Mock;
   insert: jest.Mock;
+  upsert: jest.Mock;
   update: jest.Mock;
   delete: jest.Mock;
   single: jest.Mock;
@@ -137,6 +139,7 @@ function makeChain(result: QueryResult): DbChain {
   chain.eq = jest.fn(() => chain);
   chain.order = jest.fn(() => chain);
   chain.insert = jest.fn(() => chain);
+  chain.upsert = jest.fn(() => chain);
   chain.update = jest.fn(() => chain);
   chain.delete = jest.fn(() => chain);
   chain.single = jest.fn(() => chain);
@@ -239,11 +242,11 @@ describe("PlanningPage con el SDK en el navegador", () => {
   async function openItineraryPlanner() {
     render(<PlanningPage />);
     expect(
-      await screen.findByText("Planificación de Viajes"),
+      await screen.findByText("Planificación"),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByText("Itinerario"));
-    fireEvent.click(await screen.findByText("Escapada a Roma"));
-    await screen.findByText("Planificador de Itinerario");
+
+    await screen.findByRole("group", {name:"Días del viaje"});
   }
 
   function submitActivity(title: string, label: string) {
@@ -273,7 +276,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    expect(await screen.findByText("Planificación de Viajes")).toBeInTheDocument();
+    expect(await screen.findByText("Planificación")).toBeInTheDocument();
 
     // Las tres lecturas salen del SDK, tabla a tabla.
     expect(from).toHaveBeenCalledWith("trips");
@@ -289,7 +292,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     mount();
 
     render(<PlanningPage />);
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
 
     const reservationsTab = screen.getByRole("button", { name: "Reservas" });
     expect(reservationsTab).toHaveAttribute("aria-pressed", "false");
@@ -304,7 +307,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     mount({ tripsResult: { data: [], error: null } });
 
     render(<PlanningPage />);
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
     fireEvent.click(screen.getByRole("button", { name: "Itinerario" }));
 
     expect(await screen.findByRole("heading", { name: "Aún no tienes viajes para planificar" })).toBeInTheDocument();
@@ -319,7 +322,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     });
 
     render(<PlanningPage />);
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
     fireEvent.click(screen.getByRole("button", { name: "Reservas" }));
 
     expect(await screen.findByRole("heading", { name: "Crea un viaje antes de añadir una reserva" })).toBeInTheDocument();
@@ -332,7 +335,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
 
     // Viajes: `*`, filtro por usuario y salida ascendente.
     expect(tripsChain.select).toHaveBeenCalledWith("*");
@@ -359,7 +362,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
 
     fireEvent.click(
       await screen.findByText("Borrar Cena en Trastevere"),
@@ -377,7 +380,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
 
     fireEvent.click(await screen.findByText("Mover Cena en Trastevere"));
 
@@ -395,7 +398,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    await screen.findByText("Planificación de Viajes");
+    await screen.findByText("Planificación");
 
     fireEvent.click(screen.getByText("Anadir evento"));
     fireEvent.click(screen.getByText("Reserva guardada"));
@@ -433,7 +436,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
 
     render(<PlanningPage />);
 
-    expect(await screen.findByText("Planificación de Viajes")).toBeInTheDocument();
+    expect(await screen.findByText("Planificación")).toBeInTheDocument();
     expect(from).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -481,11 +484,42 @@ describe("PlanningPage con el SDK en el navegador", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('reordena sin reescribir contenido ni recrear filas borradas en otra pestaña', async () => {
+    mount({activitiesResult:{data:[activity,{...activity,id:'a2',title:'Segunda actividad',order_index:1}],error:null}});
+    await openItineraryPlanner();
+    fireEvent.click(screen.getByRole('button',{name:/Ver día 2,/}));
+    fireEvent.click(screen.getByRole('button',{name:'Bajar Cena en Trastevere'}));
+    await waitFor(()=>expect(activitiesChain.update).toHaveBeenCalledTimes(2));
+    expect(activitiesChain.update.mock.calls).toEqual([[{order_index:0}],[{order_index:1}]]);
+    expect(activitiesChain.upsert).not.toHaveBeenCalled();
+    expect(activitiesChain.eq).toHaveBeenCalledWith('order_index',1);
+    expect(activitiesChain.eq).toHaveBeenCalledWith('order_index',0);
+  });
+
+  it('revierte el orden ya escrito si una fila cambia o desaparece antes de terminar', async () => {
+    mount({activitiesResult:{data:[activity,{...activity,id:'a2',title:'Segunda actividad',order_index:1}],error:null}});
+    const originalThen=activitiesChain.then;
+    let failed=false;
+    activitiesChain.then=(resolve,reject)=>{
+      if (activitiesChain.update.mock.calls.length===2 && !failed) {
+        failed=true;
+        return Promise.resolve({data:[],error:null}).then(resolve,reject);
+      }
+      return originalThen(resolve,reject);
+    };
+    await openItineraryPlanner();
+    fireEvent.click(screen.getByRole('button',{name:/Ver día 2,/}));
+    fireEvent.click(screen.getByRole('button',{name:'Bajar Cena en Trastevere'}));
+    await screen.findByRole('alert');
+    expect(activitiesChain.update.mock.calls).toEqual([[{order_index:0}],[{order_index:1}],[{order_index:1}]]);
+    expect(activitiesChain.upsert).not.toHaveBeenCalled();
+  });
+
   it("edita una actividad por el SDK con el id persistido", async () => {
     mount();
     await openItineraryPlanner();
 
-    fireEvent.click(screen.getByText(/Día 2/));
+    fireEvent.click(screen.getByRole("button", {name:/Ver día 2,/}));
     fireEvent.click(
       screen.getByRole("button", { name: "Editar Cena en Trastevere" }),
     );
@@ -516,7 +550,7 @@ describe("PlanningPage con el SDK en el navegador", () => {
     mount();
     await openItineraryPlanner();
 
-    fireEvent.click(screen.getByText(/Día 2/));
+    fireEvent.click(screen.getByRole("button", {name:/Ver día 2,/}));
     fireEvent.click(
       screen.getByRole("button", { name: "Eliminar Cena en Trastevere" }),
     );

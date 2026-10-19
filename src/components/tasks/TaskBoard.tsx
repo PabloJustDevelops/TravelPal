@@ -149,7 +149,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 </span>
               </div>
               
-              <div className="min-h-0 flex-1 space-y-3 md:overflow-y-auto md:pr-2 custom-scrollbar">
+              <div className="min-h-0 flex-1 space-y-3 md:pr-2">
                 {colTasks.map((task) => (
                   <div
                     key={task.id}

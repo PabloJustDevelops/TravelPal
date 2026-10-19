@@ -1,0 +1,56 @@
+.month {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-inter), sans-serif;
+}
+.month :global(.react-calendar__navigation) {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.month :global(.react-calendar__navigation__label) {
+  flex: 1;
+  font-weight: 700;
+  text-align: left;
+  text-transform: capitalize;
+}
+.month :global(.react-calendar__navigation__arrow) {
+  width: 44px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 24px;
+}
+.month :global(.react-calendar__month-view__weekdays) {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+.month abbr {
+  text-decoration: none;
+}
+.month :global(.react-calendar__tile) {
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.month :global(.react-calendar__tile):hover {
+  background: var(--surface);
+}
+.month :global(.react-calendar__tile--active) {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 6px;
+}
+.month .tripDate {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.month .tripDate:global(.react-calendar__tile--active) {
+  background: var(--accent);
+  color: var(--on-accent);
+}

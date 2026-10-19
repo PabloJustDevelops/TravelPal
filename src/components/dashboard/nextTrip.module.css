@@ -1,0 +1,24 @@
+.overview {
+  display: grid;
+  gap: 24px;
+}
+.hero {
+  border-radius: 12px;
+  padding: 32px;
+  background: var(--surface);
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (min-width: 1024px) {
+  .hero {
+    padding: 40px;
+    min-height: 288px;
+  }
+}
+@media (max-width: 639px) {
+  .hero {
+    padding: 24px;
+  }
+}

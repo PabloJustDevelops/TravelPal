@@ -50,6 +50,7 @@ for (const width of [1440, 390]) {
           .toHaveAttribute('aria-valuenow', '17')
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
+        await page.getByText('Actividad y estadísticas', {exact:false}).click()
         const charts = page.getByTestId('trip-chart')
         await expect(charts).toHaveCount(2)
         const chartHeights = await charts.evaluateAll(elements =>

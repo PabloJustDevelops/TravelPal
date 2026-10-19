@@ -16,9 +16,10 @@ import {
 async function openTripItinerary(page: Page, tripTitle: string): Promise<void> {
   await page.goto('/planning')
   await page.getByRole('button', { name: 'Itinerario' }).click()
-  await page.getByRole('button', { name: new RegExp(tripTitle) }).click()
+  const tripId = await page.locator('#planning-trip option').filter({hasText:tripTitle}).getAttribute('value')
+  await page.getByLabel('Viaje para planificar').selectOption(tripId!)
   await expect(
-    page.getByRole('heading', { name: `Itinerario: ${tripTitle}` }),
+    page.getByRole('combobox', { name: 'Viaje para planificar' }),
   ).toBeVisible()
 }
 
@@ -83,5 +84,17 @@ test.describe('flujo de planning', () => {
     await openTripItinerary(page, tripTitle)
     await expandFirstDay(page)
     await expect(page.getByRole('heading', { name: activityTitle })).toBeVisible()
+    await page.getByRole('button',{name:'Agregar',exact:true}).click()
+    await page.getByPlaceholder('Nombre de la actividad').fill(`${activityTitle}-segundo`)
+    await page.getByRole('dialog').getByRole('button',{name:'Agregar',exact:true}).click()
+    await expect(page.getByRole('heading',{name:`${activityTitle}-segundo`,exact:true})).toBeVisible()
+    const reorder=page.waitForResponse(response=>response.request().method()==='PATCH'&&response.url().includes('/itinerary_activities'))
+    await page.getByRole('button',{name:`Bajar ${activityTitle}`,exact:true}).click()
+    expect((await reorder).ok()).toBe(true)
+    await expect(page.getByRole('button',{name:`Subir ${activityTitle}`,exact:true})).toBeEnabled()
+    await page.reload()
+    await openTripItinerary(page,tripTitle)
+    const headings=await page.locator('h4').allTextContents()
+    expect(headings.indexOf(`${activityTitle}-segundo`)).toBeLessThan(headings.indexOf(activityTitle))
   })
 })

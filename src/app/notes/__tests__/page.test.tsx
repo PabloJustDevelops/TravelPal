@@ -37,7 +37,7 @@ jest.mock("@/components/notes/NoteEditor", () => {
   }: {
     onSave: (note: Partial<Note>) => Promise<void>;
   }) => (
-    <Button type="button" onClick={() => void onSave(mockEditorPayload)}>
+    <Button type="button" onClick={() => void onSave(mockEditorPayload).catch(() => {})}>
       Guardar Nota
     </Button>
   );

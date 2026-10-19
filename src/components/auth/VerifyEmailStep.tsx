@@ -9,6 +9,7 @@ import type {
 } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import styles from './authStyles.module.css'
 import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
 import { fieldClassName } from '@/components/ui/fieldStyles'
@@ -132,12 +133,12 @@ export default function VerifyEmailStep({ email }: { email: string }) {
   }
 
   return (
-    <div className="w-full max-w-md space-y-8">
+    <div className={styles.form}>
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
           Verifica tu email
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <p className={styles.description}>
           Hemos enviado un código de 6 dígitos a{' '}
           <span className="font-medium text-ink">{email}</span>. Escríbelo
           aquí para activar tu cuenta.
@@ -146,13 +147,13 @@ export default function VerifyEmailStep({ email }: { email: string }) {
 
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
         {error && (
-          <div className="rounded-md bg-danger/10 p-4">
+          <div role="alert" id="verify-error" className="rounded-md bg-danger/10 p-4">
             <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {notice && (
-          <div className="rounded-md bg-surface p-4">
+          <div role="status" className="rounded-md bg-surface p-4">
             <p className="text-sm text-ink">{notice}</p>
           </div>
         )}
@@ -178,12 +179,14 @@ export default function VerifyEmailStep({ email }: { email: string }) {
                 onPaste={(event) => handlePaste(index, event)}
                 type="text"
                 inputMode="numeric"
+                aria-invalid={!!error}
+                aria-describedby={error ? "verify-error" : undefined}
                 autoComplete={index === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
                 aria-label={`Dígito ${index + 1} del código`}
                 className={cn(
                   fieldClassName,
-                  'text-center text-lg tracking-widest',
+                  'min-w-0 h-12 px-1 text-center text-lg tracking-widest',
                 )}
               />
             ))}
@@ -195,7 +198,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
             type="submit"
             loading={isSubmitting}
             disabled={!isComplete}
-            className="w-full"
+            className="w-full min-h-12"
           >
             Verificar cuenta
           </Button>
@@ -206,7 +209,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
             loading={isResending}
             disabled={cooldown > 0}
             onClick={handleResend}
-            className="w-full"
+            className="w-full min-h-12"
           >
             {cooldown > 0
               ? `Reenviar código en ${cooldown} s`
@@ -218,7 +221,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
           ¿Ya tienes cuenta?{' '}
           <Link
             href="/signin"
-            className="font-medium text-accent hover:text-accent-hover"
+            className="inline-flex min-h-11 items-center font-medium text-accent hover:text-accent-hover"
           >
             Inicia sesión
           </Link>

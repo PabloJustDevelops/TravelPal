@@ -220,7 +220,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
   return (
     <section className="mt-6 border-t border-line pt-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="flex items-center gap-2 font-serif text-heading leading-snug text-ink">
+        <h3 className="flex items-center gap-2 text-lg font-semibold leading-snug text-ink">
           <PhotoIcon className="h-5 w-5 text-muted" aria-hidden="true" />
           Fotos
         </h3>
@@ -238,6 +238,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
             size="sm"
             loading={uploading}
             onClick={() => inputRef.current?.click()}
+            className="min-h-11"
           >
             Anadir foto
           </Button>

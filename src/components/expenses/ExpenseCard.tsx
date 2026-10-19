@@ -1,106 +1,68 @@
-'use client'
+"use client";
 
-import { Expense } from '@/lib/insforge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { formatCurrency, formatDate } from '@/lib/utils'
-import {
-  CalendarIcon,
-  DocumentTextIcon,
-  PencilSquareIcon,
-} from '@heroicons/react/24/outline'
-import Link from 'next/link'
-import CategoryIcon from '@/components/ui/CategoryIcon'
-
-interface ExpenseWithTrip extends Expense {
-  trip: {
-    title: string
-  }
-}
-
-interface ExpenseWithNotes extends Expense {
-  notes: string
-}
+import type { Expense } from "@/lib/insforge";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import CategoryIcon from "@/components/ui/CategoryIcon";
 
 interface ExpenseCardProps {
-  expense: Expense | ExpenseWithTrip | ExpenseWithNotes
-  showTripTitle?: boolean
+  expense: Expense & { trip?: { title: string }; notes?: string };
+  showTripTitle?: boolean;
 }
-
-export default function ExpenseCard({ expense, showTripTitle = false }: ExpenseCardProps) {
-  const getCategoryName = (category: Expense['category']) => {
-    switch (category) {
-      case 'accommodation':
-        return 'Alojamiento'
-      case 'transport':
-        return 'Transporte'
-      case 'food':
-        return 'Comida'
-      case 'entertainment':
-        return 'Entretenimiento'
-      case 'shopping':
-        return 'Compras'
-      case 'health':
-        return 'Salud'
-      case 'insurance':
-        return 'Seguro'
-      default:
-        return 'Otros'
-    }
-  }
-
+const categoryNames: Record<string, string> = {
+  accommodation: "Alojamiento",
+  transport: "Transporte",
+  food: "Comida",
+  entertainment: "Entretenimiento",
+  shopping: "Compras",
+  health: "Salud",
+  insurance: "Seguro",
+  other: "Otros",
+};
+export default function ExpenseCard({
+  expense,
+  showTripTitle = false,
+}: ExpenseCardProps) {
   return (
-    <Card className="relative">
-      <CardHeader className="border-b-0 pb-0">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <CardTitle headingLevel={2} className="min-w-0 text-base flex items-center gap-2">
-            <CategoryIcon
-              category={expense.category}
-              className="h-5 w-5 text-muted"
-            />
-            <span className="break-words">{expense.title || expense.description}</span>
-          </CardTitle>
-          <div className="text-right flex flex-col items-end">
-            <div className="text-xl font-semibold tabular-nums tracking-tight text-ink">
-              {formatCurrency(expense.amount, expense.currency)}
-            </div>
-            {showTripTitle && (expense as ExpenseWithTrip).trip && (
-               <div className="text-xs text-muted mt-1">
-                 {(expense as ExpenseWithTrip).trip.title}
-               </div>
-             )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-muted">{getCategoryName(expense.category)}</span>
-          <Link href={`/expense-edit?id=${encodeURIComponent(expense.id)}`} aria-label={`Editar gasto ${expense.title || expense.description}`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-            <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-
-        {/* Date */}
-        <div className="flex items-center space-x-2 text-muted">
-          <CalendarIcon className="h-4 w-4" />
-          <span className="text-sm">{formatDate(expense.date)}</span>
-        </div>
-
-        {/* Notes */}
-         {(expense as ExpenseWithNotes).notes && (
-           <div className="flex items-start space-x-2 text-muted">
-             <DocumentTextIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
-             <span className="text-sm line-clamp-2">{(expense as ExpenseWithNotes).notes}</span>
-           </div>
-         )}
-
-        {/* Receipt indicator */}
-        {expense.receipt_url && (
-          <div className="flex items-center space-x-2 text-success">
-            <div className="w-2 h-2 bg-success rounded-full"></div>
-            <span className="text-xs font-medium">Recibo adjunto</span>
-          </div>
+    <article className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-line py-5 sm:grid-cols-[100px_minmax(0,1fr)_auto_44px]">
+      <time dateTime={expense.date} className="text-xs text-muted sm:text-sm">
+        {formatDate(expense.date)}
+      </time>
+      <div className="col-start-1 row-start-1 min-w-0 sm:col-start-2">
+        <h3 className="flex items-center gap-3 font-medium text-ink">
+          <CategoryIcon
+            category={expense.category}
+            className="h-5 w-5 shrink-0 text-muted"
+          />
+          <span className="break-words">
+            {expense.title || expense.description}
+          </span>
+        </h3>
+        <p className="mt-1 text-xs text-muted">
+          {categoryNames[expense.category] || expense.category}
+          {showTripTitle && expense.trip ? ` · ${expense.trip.title}` : ""}
+        </p>
+        {(expense.notes ||
+          (expense.description !== expense.title && expense.description)) && (
+          <p className="mt-1 line-clamp-2 break-words text-sm text-muted">
+            {expense.notes || expense.description}
+          </p>
         )}
-      </CardContent>
-    </Card>
-  )
+        {expense.receipt_url && (
+          <p className="mt-1 text-xs text-success">Recibo adjunto</p>
+        )}
+      </div>
+      <p className="col-start-2 row-start-1 whitespace-nowrap text-right font-semibold tabular-nums text-ink sm:col-start-3">
+        {formatCurrency(expense.amount, expense.currency)}
+      </p>
+      <Link
+        href={`/expense-edit?id=${encodeURIComponent(expense.id)}`}
+        aria-label={`Editar gasto ${expense.title || expense.description}`}
+        className="col-start-2 inline-flex h-11 w-11 items-center justify-center justify-self-end rounded-md text-muted hover:bg-surface hover:text-accent sm:col-start-4 sm:row-start-1"
+      >
+        <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
+      </Link>
+    </article>
+  );
 }

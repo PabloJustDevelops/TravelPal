@@ -1,0 +1,130 @@
+[
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  }
+]

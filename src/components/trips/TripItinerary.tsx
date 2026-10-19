@@ -199,8 +199,8 @@ export default function TripItinerary({
   );
 
   return (
-    <Card className="overflow-hidden bg-paper">
-      <CardHeader className="flex-row items-center justify-between gap-4 border-b-0 px-5 pb-0 pt-5 sm:px-6 sm:pt-6">
+    <Card className="overflow-hidden rounded-none border-0 bg-transparent">
+      <CardHeader className="flex-row items-center justify-between gap-4 border-b border-line px-0 pb-4 pt-0">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
             Plan del viaje
@@ -216,7 +216,7 @@ export default function TripItinerary({
           Planificación <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
         </Link>
       </CardHeader>
-      <CardContent className="px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
+      <CardContent className="px-0 py-5">
         {loading ? (
           <div role="status" aria-label="Cargando itinerario" className="py-8">
             <LoadingSpinner />

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import styles from './authStyles.module.css'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Button from '@/components/ui/Button'
@@ -39,7 +40,7 @@ export default function RegisterForm() {
   // Email pendiente de verificar: si el backend pide confirmación, el registro
   // se queda en el paso del código en vez de mandar al dashboard.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
-  
+
   const { signUp } = useAuth()
   const router = useRouter()
 
@@ -72,10 +73,10 @@ export default function RegisterForm() {
   const strengthScore = getPasswordStrength(password);
 
   const getStrengthColor = (score: number) => {
-    if (score <= 1) return 'bg-red-500';
-    if (score === 2) return 'bg-yellow-500';
-    if (score === 3) return 'bg-yellow-400';
-    return 'bg-green-500';
+    if (score <= 1) return 'bg-danger';
+    if (score === 2) return 'bg-warning';
+    if (score === 3) return 'bg-warning';
+    return 'bg-success';
   };
 
   const getStrengthText = (score: number) => {
@@ -123,30 +124,22 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-8">
+    <div className={styles.form}>
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">
+        <h1>
           Crea tu cuenta
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          O{' '}
-          <Link
-            href="/signin"
-            className="font-medium text-accent hover:text-accent-hover"
-          >
-            inicia sesión si ya tienes cuenta
-          </Link>
-        </p>
+        <p className={styles.description}>Tu espacio para organizar el próximo viaje.</p>
       </div>
-      
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+
+      <form noValidate className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div role="alert" className="rounded-md bg-danger/10 p-4">
+              <div className="text-sm text-danger">{error}</div>
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className={styles.fields}>
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-ink">
                 Nombre completo
@@ -154,13 +147,15 @@ export default function RegisterForm() {
               <input
                 {...register('fullName')}
                 id="fullName"
+                aria-invalid={!!errors.fullName}
+                aria-describedby={errors.fullName ? "fullName-error" : undefined}
                 type="text"
                 autoComplete="name"
-                className={cn(fieldClassName, 'mt-1')}
-                placeholder="Tu nombre completo"
+                className={cn(fieldClassName, styles.input, 'mt-1')}
+                placeholder="Tu nombre y apellidos"
               />
               {errors.fullName && (
-                <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+                <p id="fullName-error" role="alert" className="mt-1 text-sm text-danger">{errors.fullName.message}</p>
               )}
             </div>
 
@@ -171,13 +166,15 @@ export default function RegisterForm() {
               <input
                 {...register('email')}
                 id="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 type="email"
                 autoComplete="email"
-                className={cn(fieldClassName, 'mt-1')}
+                className={cn(fieldClassName, styles.input, 'mt-1')}
                 placeholder="tu@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="mt-1 text-sm text-danger">{errors.email.message}</p>
               )}
             </div>
 
@@ -189,17 +186,19 @@ export default function RegisterForm() {
                 <input
                   {...register('password')}
                   id="password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "password-error" : "password-hint"}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  className={cn(fieldClassName, 'pr-10')}
-                  placeholder="Tu contraseña"
+                  className={cn(fieldClassName, styles.input, styles.passwordInput)}
+                  placeholder="Mínimo 8 caracteres"
                 />
                 {isClient && (
                   <button
                     type="button"
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className={styles.toggle}
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -211,35 +210,34 @@ export default function RegisterForm() {
                 )}
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p id="password-error" role="alert" className="mt-1 text-sm text-danger">{errors.password.message}</p>
               )}
-              
+
+              <p id="password-hint" className={styles.hint}>Usa 8+ caracteres, mayúsculas, minúsculas y números.</p>
               {/* Password strength indicator */}
               {password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex justify-between items-center mb-1">
                     <div className="text-xs text-muted">Fortaleza de la contraseña:</div>
                     <div className={`text-xs font-medium ${
-                        strengthScore <= 1 ? 'text-red-500' : 
-                        strengthScore === 2 ? 'text-yellow-500' : 
-                        strengthScore === 3 ? 'text-yellow-600' : 'text-green-600'
+                        strengthScore <= 1 ? 'text-danger' :
+                        strengthScore === 2 ? 'text-warning' :
+                        strengthScore === 3 ? 'text-warning' : 'text-success'
                       }`}>
                       {getStrengthText(strengthScore)}
                     </div>
                   </div>
                   <div className="flex space-x-1 h-1.5">
                     {[1, 2, 3, 4].map((index) => (
-                      <div 
+                      <div
                         key={index}
                         className={`flex-1 rounded-full transition-all duration-300 ${
-                          index <= strengthScore ? getStrengthColor(strengthScore) : 'bg-gray-200'
-                        }`} 
+                          index <= strengthScore ? getStrengthColor(strengthScore) : 'bg-line'
+                        }`}
                       />
                     ))}
                   </div>
-                  <div className="text-xs text-muted mt-1">
-                    Usa 8+ caracteres, mayúsculas, minúsculas y números.
-                  </div>
+
                 </div>
               )}
             </div>
@@ -252,17 +250,19 @@ export default function RegisterForm() {
                 <input
                   {...register('confirmPassword')}
                   id="confirmPassword"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  className={cn(fieldClassName, 'pr-10')}
-                  placeholder="Confirma tu contraseña"
+                  className={cn(fieldClassName, styles.input, styles.passwordInput)}
+                  placeholder="Repite tu contraseña"
                 />
                 {isClient && (
                   <button
                     type="button"
                     aria-label={showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
                     aria-pressed={showConfirmPassword}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className={styles.toggle}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
@@ -274,21 +274,23 @@ export default function RegisterForm() {
                 )}
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                <p id="confirmPassword-error" role="alert" className="mt-1 text-sm text-danger">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>
 
           <div>
-            <Button type="submit" loading={isLoading} className="w-full">
+            <Button type="submit" loading={isLoading} className={cn("w-full", styles.submit)}>
               Crear cuenta
             </Button>
           </div>
 
           <div>
+            <div className={styles.divider} aria-hidden="true">o</div>
             <GoogleButton />
           </div>
         </form>
+        <p className={styles.switchAccount}>¿Ya tienes cuenta? <Link href="/signin">Inicia sesión</Link></p>
     </div>
   )
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import styles from "./authStyles.module.css";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Button from "@/components/ui/Button";
@@ -36,11 +39,12 @@ export default function GoogleButton() {
         variant="outline"
         loading={isStarting}
         onClick={handleContinueWithGoogle}
-        className="w-full"
+        className={cn("w-full", styles.google)}
       >
+        <Image src="/images/atlas/google.svg" width={26} height={26} alt="" aria-hidden="true" />
         Continuar con Google
       </Button>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }

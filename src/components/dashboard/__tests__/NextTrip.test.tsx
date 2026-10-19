@@ -5,6 +5,10 @@ import type { Trip } from '@/lib/insforge';
 const trip = (id: string, departure: string, status: Trip['status'] = 'planned', end?: string): Trip => ({ id, title: id, destination: 'Lisboa', departure_date: departure, return_date: end, status, user_id: 'fixture', origin: 'Madrid', created_at: '', updated_at: '' });
 
 describe('proximo viaje', () => {
+  it('muestra los días de preparación sin convertir la salida en horas', () => {
+    render(<NextTrip trips={[trip('viaje', '2026-10-18T09:00:00')]} today="2026-10-16" />);
+    expect(screen.getByText('Faltan 2 días')).toBeInTheDocument();
+  });
   it('prioriza el viaje en curso, excluye cancelados/completados y no reordena la entrada', () => {
     const trips = [trip('futuro', '2026-10-18'), trip('cancelado', '2026-10-10', 'cancelled'), trip('en curso', '2026-10-09', 'confirmed', '2026-10-12'), trip('completado', '2026-10-10', 'completed')];
     expect(selectNextTrip(trips, '2026-10-10')?.id).toBe('en curso');

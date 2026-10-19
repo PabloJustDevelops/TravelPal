@@ -1,0 +1,322 @@
+[
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "viajes",
+    "route": "/trips",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "tareas",
+    "route": "/tasks",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "gastos",
+    "route": "/expenses",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "notas",
+    "route": "/notes",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "ajustes",
+    "route": "/settings",
+    "width": 1440,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "viajes",
+    "route": "/trips",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "tareas",
+    "route": "/tasks",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "gastos",
+    "route": "/expenses",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "notas",
+    "route": "/notes",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "ajustes",
+    "route": "/settings",
+    "width": 1440,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "viajes",
+    "route": "/trips",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "tareas",
+    "route": "/tasks",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "gastos",
+    "route": "/expenses",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "notas",
+    "route": "/notes",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "ajustes",
+    "route": "/settings",
+    "width": 390,
+    "theme": "light",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "viajes",
+    "route": "/trips",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "crear-viaje",
+    "route": "/trips/new",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "planificacion",
+    "route": "/planning",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "tareas",
+    "route": "/tasks",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "gastos",
+    "route": "/expenses",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "anadir-gasto",
+    "route": "/expenses/new",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "notas",
+    "route": "/notes",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "perfil",
+    "route": "/profile",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "name": "ajustes",
+    "route": "/settings",
+    "width": 390,
+    "theme": "dark",
+    "overflow": false,
+    "violations": []
+  }
+]

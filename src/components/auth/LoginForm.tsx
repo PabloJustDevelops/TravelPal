@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import styles from "./authStyles.module.css";
 import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import Button from "@/components/ui/Button";
@@ -176,43 +177,35 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8">
+    <div className={styles.form}>
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">
+        <h1>
           Inicia sesión en tu cuenta
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          O{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-accent hover:text-accent-hover"
-          >
-            crea una nueva cuenta
-          </Link>
-        </p>
+        <p className={styles.description}>Tus planes, listos para seguir el viaje.</p>
       </div>
 
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+      <form noValidate className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
         {notice && (
-          <div className="rounded-md bg-green-50 p-4">
-            <div className="text-sm text-green-700">{notice}</div>
+          <div role="status" className="rounded-md bg-success/10 p-4">
+            <div className="text-sm text-success">{notice}</div>
           </div>
         )}
 
         {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+          <div role="alert" className="rounded-md bg-danger/10 p-4">
+            <div className="text-sm text-danger">{error}</div>
           </div>
         )}
 
         {pendingEmail && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm text-amber-800">
+          <div role="status" className="rounded-md border border-warning/30 bg-warning/10 p-4">
+            <p className="text-sm text-warning">
               Tu email aún no está verificado. Revisa tu bandeja de entrada y
               confirma tu cuenta antes de iniciar sesión.
             </p>
             {resendNotice && (
-              <p className="mt-2 text-sm text-green-700">{resendNotice}</p>
+              <p role="status" className="mt-2 text-sm text-success">{resendNotice}</p>
             )}
             <Button
               type="button"
@@ -226,7 +219,7 @@ export default function LoginForm() {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className={styles.fields}>
             <div>
               <label
                 htmlFor="email"
@@ -237,13 +230,15 @@ export default function LoginForm() {
               <input
                 {...register("email")}
                 id="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 type="email"
                 autoComplete="email"
-                className={cn(fieldClassName, 'mt-1')}
+                className={cn(fieldClassName, styles.input, 'mt-1')}
                 placeholder="tu@email.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">
+                <p id="email-error" role="alert" className="mt-1 text-sm text-danger">
                   {errors.email.message}
                 </p>
               )}
@@ -260,9 +255,11 @@ export default function LoginForm() {
                 <input
                   {...register("password")}
                   id="password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "password-error" : undefined}
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  className={cn(fieldClassName, 'pr-10')}
+                  className={cn(fieldClassName, styles.input, styles.passwordInput)}
                   placeholder="Tu contraseña"
                 />
                 {isClient && (
@@ -270,7 +267,7 @@ export default function LoginForm() {
                     type="button"
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className={styles.toggle}
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -282,7 +279,7 @@ export default function LoginForm() {
                 )}
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
+                <p id="password-error" role="alert" className="mt-1 text-sm text-danger">
                   {errors.password.message}
                 </p>
               )}
@@ -292,22 +289,24 @@ export default function LoginForm() {
           <div className="flex items-center justify-between">
             <Link
               href="/forgot-password"
-              className="text-sm text-accent hover:text-accent-hover"
+              className="inline-flex min-h-11 items-center text-sm text-accent hover:text-accent-hover"
             >
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
 
           <div>
-            <Button type="submit" loading={isLoading} className="w-full">
+            <Button type="submit" loading={isLoading} className={cn("w-full", styles.submit)}>
               Iniciar sesión
             </Button>
           </div>
 
           <div>
+            <div className={styles.divider} aria-hidden="true">o</div>
             <GoogleButton />
           </div>
         </form>
+        <p className={styles.switchAccount}>¿Aún no tienes cuenta? <Link href="/signup">Crea tu cuenta</Link></p>
     </div>
   );
 }

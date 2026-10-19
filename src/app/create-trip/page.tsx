@@ -6,16 +6,43 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { selectClassName, textareaClassName } from "@/components/ui/fieldStyles";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import PageTitle from "@/components/ui/PageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
 import { queryErrorKind, withQueryTimeout } from "@/lib/insforge-query";
 import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  CalendarDaysIcon,
+  MapPinIcon,
+  PlusIcon,
+  UsersIcon,
+  CurrencyEuroIcon,
+} from "@heroicons/react/24/outline";
 import Link from "next/link";
 
-export default function NewTripPage() {
+function formatPreviewDate(value: string) {
+  if (!value) return "Por definir";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Por definir";
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatPreviewBudget(amount: number) {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+  }).format(amount || 0);
+}
+
+function NewTripForm() {
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -227,9 +254,8 @@ export default function NewTripPage() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-3xl space-y-6 font-sans">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mx-auto max-w-7xl space-y-7 font-sans">
+        <div className="space-y-2">
           <Link
             href="/trips"
             className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md px-3 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
@@ -237,31 +263,26 @@ export default function NewTripPage() {
             <ArrowLeftIcon aria-hidden="true" className="h-4 w-4" />
             Volver a viajes
           </Link>
-          <div className="sm:border-l sm:border-line sm:pl-5">
-            <h1 className="text-title font-bold tracking-tight text-ink">Nuevo viaje</h1>
-            <p className="mt-1 text-sm text-muted">
-              Añade las fechas y los detalles que ya tienes. Podrás completar lo demás después.
-            </p>
-          </div>
+          <PageTitle
+            title="Dale forma a tu próximo viaje."
+            subtitle="Empieza por lo que ya sabes. El resto puede esperar."
+          />
         </div>
 
-        {/* Form */}
-        <Card className="rounded-xl border border-line bg-paper shadow-sm">
-          <CardHeader className="border-b border-line px-5 py-5 sm:px-7">
-            <CardTitle className="font-sans text-lg font-semibold text-ink">Información del viaje</CardTitle>
-          </CardHeader>
-          <CardContent className="px-5 py-6 sm:px-7">
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.8fr)]"
+        >
+          <div className="min-w-0 space-y-5">
               {error && (
                 <div role="alert" className="rounded-lg border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
                   {error}
                 </div>
               )}
 
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h2 className="font-sans text-lg font-semibold text-ink">
-                  Información Básica
+              <section className="space-y-4 border-b border-line pb-5" aria-labelledby="trip-destination-heading">
+                <h2 id="trip-destination-heading" className="font-sans text-xl font-semibold text-ink">
+                  Destino y fechas
                 </h2>
 
                 <Input
@@ -269,47 +290,26 @@ export default function NewTripPage() {
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="ej. Vacaciones en París"
+                  placeholder="ej. Un fin de semana en Lisboa"
+                  className="min-h-11"
                   required
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Origen *"
-                    name="origin"
-                    value={formData.origin}
-                    onChange={handleInputChange}
-                    placeholder="ej. Madrid"
-                    required
-                  />
-                  <Input
-                    label="Destino *"
-                    name="destination"
-                    value={formData.destination}
-                    onChange={handleInputChange}
-                    placeholder="ej. París"
-                    required
-                  />
+                  <Input label="Origen *" name="origin" value={formData.origin} onChange={handleInputChange} placeholder="ej. Madrid" className="min-h-11" required />
+                  <Input label="Destino *" name="destination" value={formData.destination} onChange={handleInputChange} placeholder="ej. Lisboa" className="min-h-11" required />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Fecha de Salida *"
-                    name="departure_date"
-                    type="datetime-local"
-                    value={formData.departure_date}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <Input
-                    label="Fecha de Regreso"
-                    name="return_date"
-                    type="datetime-local"
-                    value={formData.return_date}
-                    onChange={handleInputChange}
-                  />
+                  <Input label="Fecha de Salida *" name="departure_date" type="datetime-local" value={formData.departure_date} onChange={handleInputChange} className="min-h-11" required />
+                  <Input label="Fecha de Regreso" name="return_date" type="datetime-local" value={formData.return_date} onChange={handleInputChange} className="min-h-11" />
                 </div>
+              </section>
 
+              <section className="space-y-5" aria-labelledby="trip-details-heading">
+                <h2 id="trip-details-heading" className="font-sans text-xl font-semibold text-ink">
+                  Un par de detalles
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Número de Personas"
@@ -319,6 +319,7 @@ export default function NewTripPage() {
                     value={formData.travelers}
                     onChange={handleInputChange}
                     placeholder="1"
+                    className="min-h-11"
                   />
                   <Input
                     label="Presupuesto Estimado (EUR)"
@@ -329,6 +330,7 @@ export default function NewTripPage() {
                     value={formData.budget}
                     onChange={handleInputChange}
                     placeholder="0.00"
+                    className="min-h-11"
                   />
                 </div>
 
@@ -341,19 +343,33 @@ export default function NewTripPage() {
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
-                    className={selectClassName}
+                    className={`${selectClassName} min-h-11`}
                   >
                     <option value="planned">Planeado</option>
                     <option value="confirmed">Confirmado</option>
                   </select>
                 </div>
-              </div>
 
-              {/* Optional flight details use native disclosure so essentials stay short. */}
-              <details className="rounded-xl border border-line bg-surface/50 p-4 sm:p-5">
+                <div className="space-y-1">
+                  <label htmlFor="trip-notes" className="block text-sm font-medium text-ink">
+                    Notas adicionales
+                  </label>
+                  <textarea
+                    id="trip-notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className={textareaClassName}
+                    placeholder="Añade cualquier información adicional sobre el viaje..."
+                  />
+                </div>
+              </section>
+
+              <details className="rounded-lg border border-line bg-paper p-4 sm:p-5">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-ink marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
                   <span>Añadir datos de vuelo (opcional)</span>
-                  <span aria-hidden="true" className="text-accent">＋</span>
+                  <PlusIcon aria-hidden="true" className="h-5 w-5 text-accent" />
                 </summary>
                 <div className="mt-4 space-y-4 border-t border-line pt-4">
                   <h2 className="font-sans text-base font-semibold text-ink">
@@ -367,6 +383,7 @@ export default function NewTripPage() {
                       value={formData.airline}
                       onChange={handleInputChange}
                       placeholder="ej. Iberia"
+                      className="min-h-11"
                     />
                     <Input
                       label="Número de Vuelo"
@@ -374,6 +391,7 @@ export default function NewTripPage() {
                       value={formData.flight_number}
                       onChange={handleInputChange}
                       placeholder="ej. IB3201"
+                      className="min-h-11"
                     />
                   </div>
 
@@ -383,46 +401,59 @@ export default function NewTripPage() {
                     value={formData.confirmation_number}
                     onChange={handleInputChange}
                     placeholder="ej. ABC123"
+                    className="min-h-11"
                   />
                 </div>
               </details>
 
-              {/* Notes */}
-              <div className="space-y-1">
-                <label htmlFor="trip-notes" className="block text-sm font-medium text-ink">
-                  Notas adicionales
-                </label>
-                <textarea
-                  id="trip-notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className={textareaClassName}
-                  placeholder="Añade cualquier información adicional sobre el viaje..."
-                />
-              </div>
+          </div>
 
-              {/* Actions */}
-              <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end">
-                <Link
-                  href="/trips"
-                  className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-                >
-                  Cancelar
-                </Link>
-                <Button
-                  type="submit"
-                  loading={loading}
-                  className="min-h-11 sm:min-w-40"
-                >
-                  Crear Viaje
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <aside className="min-w-0 border-t border-line pt-6 lg:sticky lg:top-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-label="Resumen del viaje">
+            <div className="space-y-5">
+              <h2 className="text-xl font-semibold text-ink">Así empieza tu viaje</h2>
+              <p className="flex items-start gap-3 text-lg font-semibold text-ink">
+                <MapPinIcon className="mt-0.5 h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
+                <span>{formData.title.trim() || "Tu próximo viaje"}</span>
+              </p>
+              <dl className="space-y-4 text-sm text-muted">
+                <div className="flex items-start gap-3">
+                  <MapPinIcon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                  <dd>{formData.origin || "Origen"} <span aria-hidden="true">→</span> {formData.destination || "Destino"}</dd>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CalendarDaysIcon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                  <dd>
+                    {formatPreviewDate(formData.departure_date)}
+                    {formData.return_date && <> – {formatPreviewDate(formData.return_date)}</>}
+                  </dd>
+                </div>
+                <div className="flex items-center gap-3">
+                  <UsersIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <dd>{formData.travelers} {formData.travelers === 1 ? "persona" : "personas"}</dd>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CurrencyEuroIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <dd>{formatPreviewBudget(formData.budget)}</dd>
+                </div>
+              </dl>
+              <p className="border-t border-line pt-4 text-sm leading-reading text-muted">
+                Al crearlo podrás añadir el itinerario y tus reservas. Las notas quedan guardadas con el viaje.
+              </p>
+            </div>
+          </aside>
+
+          <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end lg:col-start-1">
+            <Link href="/trips" className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+              Cancelar
+            </Link>
+            <Button type="submit" loading={loading} className="min-h-11 sm:min-w-40">
+              Crear Viaje
+            </Button>
+          </div>
+        </form>
       </div>
     </DashboardLayout>
   );
 }
+
+export default NewTripForm;

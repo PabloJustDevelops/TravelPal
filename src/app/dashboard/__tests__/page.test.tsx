@@ -205,9 +205,9 @@ describe("DashboardPage con el SDK en el navegador", () => {
 
     render(<DashboardPage />);
 
-    expect(await screen.findByRole("heading", { name: "Itinerario" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Los primeros planes" })).toBeInTheDocument();
     expect(screen.getByText("Paseo por Trastevere")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Tareas pendientes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Antes de salir" })).toBeInTheDocument();
     expect(screen.getByText("Confirmar alojamiento")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Presupuesto del viaje" })).toBeInTheDocument();
     expect(screen.getByText("Presupuesto Roma")).toBeInTheDocument();

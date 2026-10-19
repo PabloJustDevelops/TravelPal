@@ -114,8 +114,8 @@ export default function BudgetCard({
   const daysRemaining = getDaysRemaining()
 
   return (
-    <div className="bg-paper rounded-xl border border-line relative">
-      <div className="p-6">
+    <div className="bg-transparent border-t border-line relative">
+      <div className="py-5">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="flex items-start space-x-3">
@@ -178,7 +178,7 @@ export default function BudgetCard({
         {/* Budget Progress */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted">
+            <span className="text-lg font-semibold tabular-nums text-ink">
               Gastado: {formatCurrency(budget.spent_amount, budget.currency)}
             </span>
             <span className="text-sm text-muted">
@@ -186,9 +186,9 @@ export default function BudgetCard({
             </span>
           </div>
           
-          <div className="w-full bg-surface-strong rounded-full h-2">
+          <div role="progressbar" aria-label={`Uso del presupuesto ${budget.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100,Math.max(0,Math.round(spentPercentage)))} aria-valuetext={`${spentPercentage.toFixed(1)}% del presupuesto usado`} className="w-full bg-surface-strong rounded-full h-2">
             <div
-              className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor()}`}
+              className={`h-2 rounded-full transition-colors duration-150 ${getProgressBarColor()}`}
               style={{ width: `${Math.min(spentPercentage, 100)}%` }}
             />
           </div>

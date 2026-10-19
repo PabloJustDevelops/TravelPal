@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import AccountTabs from "@/components/layout/AccountTabs";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -93,18 +94,19 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <PageTitle title="Mi perfil" subtitle="Tu información personal y la foto de tu cuenta." />
+      <div className="mx-auto space-y-7">
+        <PageTitle title="Tu perfil" subtitle="Cómo apareces en TravelPal." />
+        <AccountTabs active="profile" />
 
-        <Card>
-          <CardHeader>
+        <Card className="rounded-none border-0 bg-transparent">
+          <CardHeader className="border-0 px-0 pt-0">
             <CardTitle headingLevel={2} className="flex items-center gap-2">
               <UserCircleIcon className="h-6 w-6" />
-              Información Personal
+              Foto de perfil
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+          <CardContent className="space-y-7 px-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <div className="relative group">
                 {formData.avatarUrl ? (
                   <img
@@ -136,7 +138,7 @@ export default function ProfilePage() {
                 />
               </div>
               
-              <div className="flex-1 text-center md:text-left space-y-2">
+              <div className="flex-1 text-left space-y-2">
                 <h2 className="text-2xl font-bold text-ink">
                   {formData.fullName || "Usuario"}
                 </h2>
@@ -145,7 +147,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="md"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
                     >
@@ -156,7 +158,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-line">
+            <div className="grid max-w-3xl grid-cols-1 gap-6 pt-6 border-t border-line">
+              <h2 className="text-2xl font-bold text-ink">Datos de la cuenta</h2>
               <div className="space-y-2">
                 <label htmlFor="profile-name" className="block text-sm font-medium text-ink">
                   Nombre Completo
@@ -185,11 +188,10 @@ export default function ProfilePage() {
               </div>
 
               {isEditing && (
-                <div className="md:col-span-2 space-y-2">
+                <div className="space-y-2">
                   <label htmlFor="profile-avatar" className="block text-sm font-medium text-ink">
                     URL del Avatar (Opcional)
                   </label>
-                  <div className="flex gap-2">
                     <Input
                       id="profile-avatar"
                       value={formData.avatarUrl}
@@ -197,9 +199,8 @@ export default function ProfilePage() {
                         setFormData({ ...formData, avatarUrl: e.target.value })
                       }
                       placeholder="https://..."
-                      className="flex-1"
+                      className="min-h-11"
                     />
-                  </div>
                   <p className="text-xs text-muted">
                     Puedes subir una foto o pegar una URL directa a una imagen.
                   </p>
@@ -207,11 +208,12 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-line gap-3">
+            <div className="flex flex-wrap justify-start pt-6 border-t border-line gap-3">
               {isEditing ? (
                 <>
                   <Button
                     variant="ghost"
+                    className="transition-none"
                     onClick={() => {
                       setIsEditing(false);
                       // Reset form data to current user data
@@ -232,7 +234,7 @@ export default function ProfilePage() {
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)}>
+                <Button className="transition-none" onClick={() => setIsEditing(true)}>
                   Editar Perfil
                 </Button>
               )}

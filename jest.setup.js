@@ -65,7 +65,7 @@ jest.mock('@/contexts/AuthContext', () => ({
 }))
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+if (typeof window !== 'undefined') Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
     matches: false,
@@ -108,7 +108,7 @@ global.ResizeObserver = class ResizeObserver {
 }
 
 // Mock window.scrollTo
-Object.defineProperty(window, 'scrollTo', {
+if (typeof window !== 'undefined') Object.defineProperty(window, 'scrollTo', {
   value: jest.fn(),
   writable: true
 })

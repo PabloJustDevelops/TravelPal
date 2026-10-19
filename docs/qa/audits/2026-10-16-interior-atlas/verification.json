@@ -1,0 +1,42 @@
+[
+  {
+    "command": "pnpm run type-check",
+    "exit_code": 0,
+    "output": "$ tsc --noEmit"
+  },
+  {
+    "command": "pnpm run lint",
+    "exit_code": 0,
+    "output": "  75 |     return () => mediaQuery.removeEventListener(\"change\", handleChange);  react-hooks/set-state-in-effect\n\n✖ 13 problems (0 errors, 13 warnings)"
+  },
+  {
+    "command": "pnpm exec jest --runInBand --coverage=false",
+    "exit_code": 0,
+    "output": "PASS src/__tests__/test-environment.test.ts\n\nTest Suites: 67 passed, 67 total\nTests:       477 passed, 477 total\nSnapshots:   0 total\nTime:        39.077 s\nRan all test suites."
+  },
+  {
+    "command": "pnpm run test:timezone",
+    "exit_code": 0,
+    "output": "    ✓ no atribuye actividades ni presupuestos si no hay un viaje próximo (8 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       8 passed, 8 total\nSnapshots:   0 total\nTime:        1.523 s\nRan all test suites matching /src\\/components\\/dashboard\\/__tests__\\/NextTrip.test.tsx/i."
+  },
+  {
+    "command": "node /home/pablorg/.cache/travelpal-interior-qa-20261017/run.cjs pnpm exec playwright test e2e/flows --project=flows --workers=1",
+    "exit_code": 0,
+    "output": "  ✓  25 [flows] › e2e/flows/trips.spec.ts:30:7 › flujo de viajes › crear un viaje lo deja en la lista con sus datos (2.9s)\n\n  25 passed (1.6m)"
+  },
+  {
+    "command": "fnm exec --using 22.22.3 node /home/pablorg/.cache/travelpal-interior-qa-20261017/run.cjs pnpm exec opennextjs-cloudflare build",
+    "exit_code": 0,
+    "output": "Worker saved in `.open-next/worker.js` 🚀\n\nOpenNext build complete."
+  },
+  {
+    "command": "node /home/pablorg/.cache/travelpal-interior-qa-20261017/capture.cjs empty",
+    "exit_code": 0,
+    "output": "QA empty: 40 views + 0 interaction states; 0 failures"
+  },
+  {
+    "command": "node /home/pablorg/.cache/travelpal-interior-qa-20261017/capture.cjs populated",
+    "exit_code": 0,
+    "output": "QA populated: 40 views + 16 interaction states; 0 failures"
+  }
+]

@@ -9,12 +9,14 @@ import { createInsforgeClient, Trip } from '@/lib/insforge'
 import { queryErrorKind, withQueryTimeout } from '@/lib/insforge-query'
 import { CONNECTION_TIMEOUT_MESSAGE } from '@/lib/utils'
 import { logger } from '@/lib/logger'
+import PageTitle from '@/components/ui/PageTitle'
+import ExpenseSummary from '@/components/expenses/ExpenseSummary'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { selectClassName, textareaClassName } from '@/components/ui/fieldStyles'
 import CategoryIcon from '@/components/ui/CategoryIcon'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 
 export default function NewExpensePage() {
   const { user } = useAuth()
@@ -164,27 +166,11 @@ export default function NewExpensePage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
-          <Link href="/expenses">
-            <Button variant="ghost" size="sm">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink">Nuevo Gasto</h1>
-            <p className="text-sm text-muted">Registra un nuevo gasto de viaje</p>
-          </div>
-        </div>
-
+      <div className="mx-auto space-y-7">
+        <div className="space-y-2"><Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />Volver a gastos</Link><PageTitle title="Un gasto más, todo en orden." subtitle="Guárdalo ahora y sigue con tu viaje."/></div>
         {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle headingLevel={2}>Información del Gasto</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(260px,0.8fr)]"><Card className="min-w-0 rounded-none border-0 bg-transparent">
+          <CardContent className="p-0">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div role="alert" className="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-md">
@@ -194,15 +180,6 @@ export default function NewExpensePage() {
 
               {/* Basic Information */}
               <div className="space-y-4">
-                <Input
-                  label="Descripción *"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="ej. Cena en restaurante"
-                  required
-                />
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Monto *"
@@ -235,6 +212,16 @@ export default function NewExpensePage() {
                     </select>
                   </div>
                 </div>
+
+                <Input
+                  label="Descripción *"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="ej. Cena en restaurante"
+                  required
+                />
+
 
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-medium text-ink">Categoría *</legend>
@@ -321,19 +308,17 @@ export default function NewExpensePage() {
                 <Button
                   type="submit"
                   loading={loading}
-                  className="flex-1 sm:flex-none"
+                  className="min-h-11 flex-1 sm:flex-none"
                 >
                   Registrar Gasto
                 </Button>
-                <Link href="/expenses" className="flex-1 sm:flex-none">
-                  <Button variant="outline" className="w-full">
-                    Cancelar
-                  </Button>
+                <Link href="/expenses" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-line px-4 font-medium text-ink hover:bg-surface sm:flex-none">
+                  Cancelar
                 </Link>
               </div>
             </form>
           </CardContent>
-        </Card>
+        </Card><ExpenseSummary data={formData} trips={trips} categoryLabel={categories.find(category=>category.value===formData.category)?.label}/></div>
       </div>
     </DashboardLayout>
   )

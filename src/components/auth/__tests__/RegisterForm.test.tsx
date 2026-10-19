@@ -24,16 +24,16 @@ jest.mock('@/lib/logger', () => ({
 }))
 
 const fillForm = () => {
-  fireEvent.change(screen.getByPlaceholderText('Tu nombre completo'), {
+  fireEvent.change(screen.getByLabelText('Nombre completo', { exact: true }), {
     target: { value: 'Ana Perez' },
   })
   fireEvent.change(screen.getByPlaceholderText('tu@email.com'), {
     target: { value: 'ana@example.com' },
   })
-  fireEvent.change(screen.getByPlaceholderText('Tu contraseña'), {
+  fireEvent.change(screen.getByLabelText('Contraseña', { exact: true }), {
     target: { value: 'Password1' },
   })
-  fireEvent.change(screen.getByPlaceholderText('Confirma tu contraseña'), {
+  fireEvent.change(screen.getByLabelText('Confirmar contraseña', { exact: true }), {
     target: { value: 'Password1' },
   })
 }

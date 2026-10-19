@@ -45,7 +45,7 @@ import { logger } from "@/lib/logger";
 import { Menu, Transition } from "@headlessui/react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
-import { motion } from "framer-motion";
+
 
 // Skeleton Component
 const DashboardSkeleton = () => (
@@ -99,27 +99,13 @@ const dateRanges = [
 
 const currencies = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD"];
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
-};
-
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [dateRange, setDateRange] = useState("all");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const statisticsRef = useRef<HTMLDetailsElement>(null);
 
   // Las lecturas llegan del SDK, tabla a tabla. El rango acota viajes y gastos
   // del informe; las tareas son generales y las actividades se cargan solo
@@ -356,6 +342,8 @@ export default function DashboardPage() {
     if (!reportRef.current) return;
 
     setIsExporting(true);
+    const wasOpen = statisticsRef.current?.open ?? false;
+    if (statisticsRef.current) statisticsRef.current.open = true;
     try {
       const element = reportRef.current;
 
@@ -400,6 +388,7 @@ export default function DashboardPage() {
         stack: exportError instanceof Error ? exportError.stack : undefined,
       });
     } finally {
+      if (statisticsRef.current) statisticsRef.current.open = wasOpen;
       setIsExporting(false);
     }
   };
@@ -428,17 +417,14 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <motion.div
+      <div
         ref={reportRef}
         className="space-y-6 font-sans"
-        variants={container}
-        initial={false}
-        animate="show"
       >
         {/* Cabecera: bienvenida y menu de exportacion */}
         <PageTitle
           title={`Bienvenido, ${user?.full_name?.split(" ")[0] || "Viajero"}`}
-          subtitle="Tus viajes, planes y recuerdos, en un solo lugar."
+          subtitle="Tu próximo viaje, cada vez más cerca."
           action={
             <Menu
               as="div"
@@ -515,6 +501,9 @@ export default function DashboardPage() {
           expenses={data?.budgetExpenses ?? []}
         />
 
+        <details ref={statisticsRef} className="rounded-lg border border-line bg-paper p-5">
+          <summary className="min-h-11 cursor-pointer rounded-md text-lg font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent">Actividad y estadísticas <span className="ml-2 text-sm font-normal text-muted">Resumen de tus viajes, gastos y planificación.</span></summary>
+          <div className="mt-6 space-y-6">
         {/* Filtros: moneda y rango de fechas */}
         <div
           className="bg-surface p-4 rounded-lg shadow-sm border border-line"
@@ -557,7 +546,7 @@ export default function DashboardPage() {
 
         {/* Resumen: solo lo que me toca del viaje */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <motion.div variants={item}>
+          <div>
             <Card className="h-full">
               <div className="p-5">
                 <div className="flex items-center">
@@ -575,9 +564,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div variants={item}>
+          <div>
             <Card className="h-full">
               <div className="p-5">
                 <div className="flex items-center">
@@ -598,9 +587,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div variants={item}>
+          <div>
             <Card className="h-full">
               <div className="p-5">
                 <div className="flex items-center">
@@ -618,9 +607,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
 
-          <motion.div variants={item}>
+          <div>
             <Card className="h-full">
               <div className="p-5">
                 <div className="flex items-center">
@@ -638,7 +627,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
 
         {/* Graficas */}
@@ -666,8 +655,8 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 gap-6">
           {/* Viajes Recientes */}
-          <motion.div
-            variants={item}
+          <div
+
             className="bg-surface shadow rounded-xl transition-all duration-200 border border-line"
           >
             <div className="px-6 py-5 flex justify-between items-center border-b border-line">
@@ -744,9 +733,11 @@ export default function DashboardPage() {
                 </li>
               )}
             </ul>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+          </div>
+        </details>
+      </div>
     </DashboardLayout>
   );
 }
