@@ -18,11 +18,13 @@ function Collections() {
   return (
     <div className="mx-auto max-w-5xl space-y-10">
       <PageTitle title="Gastos" subtitle="Lo que has gastado, viaje a viaje." action={<Button>Nuevo gasto</Button>} />
+      <h2 className="sr-only">Movimientos recientes</h2>
       <div className="grid gap-4 md:grid-cols-2">
         <ExpenseCard expense={{ id: 'story-expense', user_id: 'story-user', title: 'Tren a Lisboa', description: 'Tren a Lisboa', amount: 74, currency: 'EUR', category: 'transport', date: '2026-10-18', created_at: '', updated_at: '' }} />
         <ExpenseCard expense={{ id: 'story-stay', user_id: 'story-user', title: 'Tres noches en Alfama', description: 'Tres noches en Alfama', amount: 280, currency: 'EUR', category: 'accommodation', date: '2026-10-18', created_at: '', updated_at: '' }} />
       </div>
       <PageTitle title="Notas" subtitle="Direcciones, ideas y detalles para tener a mano." action={<Button>Nueva nota</Button>} />
+      <h2 className="sr-only">Notas recientes</h2>
       <div className="grid gap-4 md:grid-cols-2">
         <NoteCard note={note} onEdit={onEdit} />
         <NoteCard note={{ ...note, id: 'story-restaurant', title: 'Dónde comer', category: 'restaurant', content: 'Buscar un restaurante cerca del mirador para la primera noche. Revisar el horario antes de ir.' }} onEdit={onEdit} />

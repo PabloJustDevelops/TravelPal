@@ -32,7 +32,7 @@ export const Empty: Story = {
   args: { trips: [], activities: [], tasks: [], budgets: [] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const itinerary = canvas.getByRole('region', { name: 'Itinerario' });
+    const itinerary = canvas.getByRole('region', { name: 'Los primeros planes' });
     await expect(itinerary.getBoundingClientRect().height).toBeLessThan(220);
   },
 };
