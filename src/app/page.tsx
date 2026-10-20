@@ -6,6 +6,8 @@ import Features from '@/components/landing/Features';
 import HowItWorks from '@/components/landing/HowItWorks';
 import CTA from '@/components/landing/CTA';
 import Footer from '@/components/landing/Footer';
+import LandingMotion from '@/components/landing/LandingMotion';
+import styles from '@/components/landing/landing.module.css';
 
 export const metadata: Metadata = {
   title: 'TravelPal - Todos tus planes, un solo viaje',
@@ -14,14 +16,18 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-ink">
+    <div className={`${styles.landing} min-h-screen bg-background text-ink`}>
       <Navbar />
-      <Hero />
-      <ExampleJourney />
-      <Features />
-      <HowItWorks />
-      <CTA />
+      <main>
+        <Hero />
+        <LandingMotion>
+          <ExampleJourney />
+          <Features />
+          <HowItWorks />
+          <CTA />
+        </LandingMotion>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

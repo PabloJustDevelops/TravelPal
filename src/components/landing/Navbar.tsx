@@ -14,8 +14,8 @@ export default function Navbar() {
     <header className="relative z-20 bg-paper">
       <nav aria-label="Principal" className="mx-auto flex max-w-[1600px] items-center justify-between gap-6 px-5 py-5 sm:px-12">
         <Brand />
-        <div className="hidden items-center gap-8 lg:flex">{links.map(link => <Link key={link.href} href={link.href} className="text-sm font-medium text-muted hover:text-accent">{link.name}</Link>)}</div>
-        <div className="hidden items-center gap-6 lg:flex"><Link href="/signin" className="text-sm font-semibold text-accent hover:text-accent-hover">Entrar</Link></div>
+        <div className="hidden items-center gap-8 lg:flex">{links.map(link => <Link key={link.href} href={link.href} className="inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-muted hover:text-accent">{link.name}</Link>)}</div>
+        <div className="hidden items-center gap-6 lg:flex"><Link href="/signin" className="inline-flex min-h-11 items-center rounded-sm text-sm font-semibold text-accent hover:text-accent-hover">Entrar</Link></div>
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="landing-menu" aria-label={open ? 'Cerrar menú' : 'Abrir menú'} className="flex h-12 w-12 items-center justify-center rounded-lg border border-line lg:hidden">{open ? <XMarkIcon className="h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="h-6 w-6" aria-hidden="true" />}</button>
       </nav>
       {open && <nav id="landing-menu" aria-label="Menú móvil" className="border-t border-line px-5 pb-5 lg:hidden">{links.map(link => <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center font-medium">{link.name}</Link>)}<Link href="/signin" className="flex min-h-12 items-center font-medium">Entrar</Link><Link href="/signup" className={`${accentLinkClassName} mt-2 w-full min-h-12`}>Crear cuenta</Link></nav>}

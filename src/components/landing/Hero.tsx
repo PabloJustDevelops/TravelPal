@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import LandingImage from './LandingImage'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { accentLinkClassName } from '@/components/ui/actionStyles'
 import styles from './landing.module.css'
@@ -27,7 +27,7 @@ export default function Hero() {
         <span className={styles.captionTitle}>Costa mediterránea</span>
         <p>Un plan, muchos momentos<br />por descubrir.</p>
       </div>
-      <Image
+      <LandingImage
         src="/images/atlas/coastal-panorama.webp"
         alt="Ilustración de un viajero siguiendo un sendero hacia un pueblo costero, con montañas y un velero al fondo"
         width={1774}
