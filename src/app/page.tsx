@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className={`${styles.landing} min-h-screen bg-background text-ink`}>
-      <Navbar />
-      <main>
+    <div className={styles.landing}>
+      <main className="min-h-screen bg-background text-ink">
+        <Navbar />
         <Hero />
         <LandingMotion>
           <ExampleJourney />
