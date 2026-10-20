@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// El export se sirve con CSP sin unsafe-eval. Evita el probe y compilador JIT
+// de Zod; la validación usa su intérprete con las mismas reglas.
+z.config({ jitless: true });
+
 export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
 
 // Variables seguras para el cliente: Next.js sólo expone al bundle del navegador
