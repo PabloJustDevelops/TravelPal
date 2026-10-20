@@ -56,6 +56,7 @@ La app queda en `http://localhost:3000`.
 | `pnpm run test:tester` | Tester Army: acceso público en dos viewports |
 | `pnpm run build` | `next build`; `next.config.js` exporta el sitio estático en `out/` |
 | `pnpm run validate:static-export` | Comprueba las rutas y assets críticos del export y que no incluya claves privadas |
+| `pnpm run check:headers` | Comprueba CSP efectiva, hashes inline y las siete cabeceras globales de `out/_headers` |
 | `pnpm run preview` | `wrangler dev`; sirve el `out/` existente, no lo construye |
 | `pnpm run deploy` | Ejecuta build, validación y `wrangler deploy --no-autoconfig` |
 | `pnpm run upload` | Ejecuta build, validación y el dry-run de Wrangler; no publica |
@@ -63,6 +64,41 @@ La app queda en `http://localhost:3000`.
 Para una vista previa local, ejecuta `pnpm run build`, `pnpm run validate:static-export` y después
 `pnpm run preview`. La configuración `wrangler.jsonc` solo apunta el binding de assets al directorio
 `out/`; no define un entrypoint de aplicación.
+
+### Cabeceras de seguridad
+
+`public/_headers` contiene la política base y HSTS. Tras `next build`,
+`scripts/build-security-headers.mjs` añade a `out/_headers` los hashes SHA-256 de todos los
+scripts inline del HTML exportado (incluidos tema e hidratación). No se permite `unsafe-inline`
+ni `unsafe-eval` en scripts; Zod usa `jitless` en `src/lib/public-env.ts` para evitar generación
+dinámica de código. `style-src` permite estilos inline y `img-src https:` mantiene los avatares
+con URL externa. No se habilitan `data:` ni `blob:` para recursos sin usos que los necesiten.
+
+El generador carga el entorno con `@next/env` en modo producción, igual que Next: considera
+`.env.production.local`, `.env.local`, `.env.production` y `.env`, y expande referencias entre
+variables. Las variables ya exportadas conservan prioridad. Así, `connect-src` usa el mismo valor
+de `NEXT_PUBLIC_INSFORGE_URL` que el cliente compilado. Sin variable usa el host de producción
+declarado en la plantilla. Por ello el build de prueba con `https://example.invalid` no altera la
+política de producción ni necesita excepciones permanentes para pruebas.
+
+Después de construir, ejecuta `pnpm run check:headers`. Falla si falta una cabecera global,
+si CSP vuelve a Report-Only, si permite scripts arbitrarios, si faltan hashes del HTML actual o
+si una línea supera los 2.000 caracteres admitidos por Cloudflare. Si el sitio crece y alcanza ese
+límite, habrá que dividir la política por rutas; no se degrada automáticamente a `unsafe-inline`.
+No publiques el `_headers` sin procesar de `public/`: usa siempre el `out/` del build completo.
+
+Para comprobarlo con navegador sin backend real:
+
+```bash
+pnpm exec wrangler dev --ip 127.0.0.1 --port 8791 --inspector-port 9291
+# En otra terminal, con Chromium de Playwright instalado:
+node scripts/test-security-csp.mjs http://127.0.0.1:8791
+```
+
+La prueba recoge consola, peticiones fallidas y eventos `securitypolicyviolation` en `/`,
+`/signin`, `/travel-inspiration` y `/dashboard`; también comprueba la validación del formulario
+para confirmar hidratación. Con el backend ficticio se esperan errores DNS, no infracciones CSP.
+El informe inicial y las limitaciones están en [cabeceras-2026-10-20.md](security/cabeceras-2026-10-20.md).
 
 ---
 
