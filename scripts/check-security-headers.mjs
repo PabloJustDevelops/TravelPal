@@ -37,7 +37,7 @@ try {
   for (const [name, required] of Object.entries({
     'default-src': ["'self'"], 'script-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'"], 'img-src': ["'self'"],
-    'connect-src': ["'self'"],
+    'connect-src': ["'self'", 'https://insforge-storage.s3.us-east-2.amazonaws.com'],
     'font-src': ["'self'"], 'frame-src': ["'none'"], 'object-src': ["'none'"],
     'frame-ancestors': ["'none'"], 'base-uri': ["'self'"], 'form-action': ["'self'"],
   })) {

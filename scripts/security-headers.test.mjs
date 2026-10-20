@@ -28,7 +28,7 @@ test('exported headers reject missing headers, Report-Only, stale hashes and uns
     })
     assert.equal(generated.status, 0, generated.stderr)
     const original = await readFile(path.join(directory, 'out/_headers'), 'utf8')
-    assert.match(original, /connect-src 'self' https:\/\/backend\.example\.test;/)
+    assert.match(original, /connect-src 'self' https:\/\/backend\.example\.test /)
 
     const inherited = spawnSync(process.execPath, [generator], {
       cwd: directory,
@@ -41,11 +41,13 @@ test('exported headers reject missing headers, Report-Only, stale hashes and uns
     })
     assert.equal(inherited.status, 0, inherited.stderr)
     const inheritedHeaders = await readFile(path.join(directory, 'out/_headers'), 'utf8')
-    assert.match(inheritedHeaders, /connect-src 'self' https:\/\/inherited\.example\.test;/)
+    assert.match(inheritedHeaders, /connect-src 'self' https:\/\/inherited\.example\.test /)
 
     const check = () => spawnSync(process.execPath, [checker], { cwd: directory, encoding: 'utf8' })
     assert.equal(check().status, 0)
+    assert.match(inheritedHeaders, /connect-src [^;]*https:\/\/insforge-storage\.s3\.us-east-2\.amazonaws\.com/)
     const mutations = [
+      [original.replace(' https://insforge-storage.s3.us-east-2.amazonaws.com', ''), /connect-src/],
       [original.replace(/^\s+Strict-Transport-Security:.*\n/m, '\n'), /strict-transport-security/],
       [original.replace('Content-Security-Policy:', 'Content-Security-Policy-Report-Only:'), /Report-Only/],
       [original.replace(/ 'sha256-[^']+'/g, ''), /hashes do not cover/],
