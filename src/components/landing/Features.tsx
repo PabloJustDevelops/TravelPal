@@ -1,4 +1,5 @@
-import Image from 'next/image'
+import LandingImage from './LandingImage'
+import styles from './landing.module.css'
 
 export default function Features() {
   return (
@@ -12,7 +13,7 @@ export default function Features() {
           <div className="py-5"><dt className="font-semibold">Los recuerdos también cuentan</dt><dd className="mt-2 text-sm leading-relaxed text-muted">Escribe en el diario y guarda las fotos que quieras conservar al volver.</dd></div>
         </dl>
       </div>
-      <Image src="/images/atlas/coastal-journey.webp" alt="Detalle ilustrado del pueblo costero y el camino de un viajero" width={1536} height={1024} sizes="(min-width: 1024px) 50vw, 100vw" className="h-64 w-full object-cover object-left lg:h-full" />
+      <LandingImage src="/images/atlas/coastal-journey.webp" alt="Detalle ilustrado del pueblo costero y el camino de un viajero" width={1536} height={1024} sizes="(min-width: 1024px) 50vw, 100vw" className={styles.featureImage} />
     </section>
   )
 }
