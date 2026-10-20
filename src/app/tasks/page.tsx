@@ -28,7 +28,6 @@ import {
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 
@@ -267,18 +266,12 @@ export default function TasksPage() {
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-          <LoadingSpinner size="lg" />
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="tasks" pending loadingView={viewMode} />;
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="tasks">
         <ErrorState
           message={error}
           onRetry={() => refetch()}
@@ -289,7 +282,7 @@ export default function TasksPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="tasks">
       <div className="flex min-h-[calc(100vh-100px)] flex-col">
         {/* Header */}
         <div className="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between">
@@ -381,11 +374,7 @@ export default function TasksPage() {
         </div>
         {/* Content */}
         <div className="min-w-0">
-          {loading ? (
-            <div className="h-full flex items-center justify-center">
-              <LoadingSpinner />
-            </div>
-          ) : viewMode === "list" ? (
+          {viewMode === "list" ? (
             <TaskList
               tasks={filteredTasks}
               onEditTask={handleEditTask}

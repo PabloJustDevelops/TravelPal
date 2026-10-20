@@ -20,7 +20,6 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { selectClassName, textareaClassName } from '@/components/ui/fieldStyles'
 import CategoryIcon from '@/components/ui/CategoryIcon'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ErrorState from '@/components/ui/ErrorState'
 import { Card, CardContent } from '@/components/ui/Card'
 import { logger } from '@/lib/logger'
@@ -270,25 +269,19 @@ function EditExpenseContent() {
 
   if (!id) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="expense-edit">
         <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un gasto para editar.</p>
       </DashboardLayout>
     )
   }
 
   if (loadingData) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner size="lg" />
-        </div>
-      </DashboardLayout>
-    )
+    return <DashboardLayout skeleton="expense-edit" pending />;
   }
 
   if (loadErrorMessage) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="expense-edit">
         <ErrorState
           title="No se pudo cargar el gasto"
           message={loadErrorMessage}
@@ -300,14 +293,14 @@ function EditExpenseContent() {
 
   if (notFound) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="expense-edit">
         <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Gasto no encontrado.</p>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="expense-edit">
       <div className="mx-auto space-y-7">
         <div className="space-y-2"><Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />Volver a gastos</Link><PageTitle title="Editar gasto" subtitle="Modifica los detalles del gasto." action={<Button variant="outline" className="min-h-11 text-danger border-danger/30" onClick={handleDelete}>Eliminar</Button>}/></div>
         {/* Form */}
@@ -464,7 +457,7 @@ function EditExpenseContent() {
 }
 export default function EditExpensePage() {
   return (
-    <Suspense fallback={<div role="status" aria-label="Cargando gasto">Cargando gasto…</div>}>
+    <Suspense fallback={<DashboardLayout skeleton="expense-edit" pending />}>
       <EditExpenseContent />
     </Suspense>
   )

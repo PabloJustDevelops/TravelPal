@@ -253,7 +253,7 @@ function NewTripForm() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="create-trip">
       <div className="mx-auto max-w-7xl space-y-7 font-sans">
         <div className="space-y-2">
           <Link

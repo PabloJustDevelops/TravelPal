@@ -19,7 +19,6 @@ import {
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import EditTripModal from "@/components/trips/EditTripModal";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import TripJournal from "@/components/trips/TripJournal";
@@ -136,32 +135,26 @@ function TripDetailsContent() {
 
   if (!id) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="trip">
         <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un viaje para ver el detalle.</p>
       </DashboardLayout>
     );
   }
 
   if (loading || authLoading || (!trip && !error && !notFound)) {
-    return (
-      <DashboardLayout>
-        <div role="status" aria-label="Cargando viaje" className="flex min-h-[50vh] items-center justify-center">
-          <LoadingSpinner size="lg" />
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="trip" pending />;
   }
 
   if (error || !trip) {
     if (notFound) {
       return (
-        <DashboardLayout>
+        <DashboardLayout skeleton="trip">
           <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Viaje no encontrado.</p>
         </DashboardLayout>
       );
     }
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="trip">
         <section className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center" aria-labelledby="trip-load-error">
           <h1 id="trip-load-error" className="font-sans text-2xl font-semibold text-ink">No se pudo abrir el viaje</h1>
           <p className="mb-6 mt-3 text-muted">{error || "Viaje no encontrado"}</p>
@@ -226,7 +219,7 @@ function TripDetailsContent() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="trip">
       <div className="mx-auto max-w-7xl space-y-6 font-sans">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link href="/trips" className="inline-flex min-h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -345,7 +338,7 @@ function TripDetailsContent() {
 
 export default function TripPage() {
   return (
-    <Suspense fallback={<div role="status" aria-label="Cargando viaje">Cargando viaje…</div>}>
+    <Suspense fallback={<DashboardLayout skeleton="trip" pending />}>
       <TripDetailsContent />
     </Suspense>
   );

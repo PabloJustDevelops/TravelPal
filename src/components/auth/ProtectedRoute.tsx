@@ -8,11 +8,13 @@ import ErrorState from '@/components/ui/ErrorState'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
+  fallback?: React.ReactNode
   redirectTo?: string
 }
 
 export default function ProtectedRoute({ 
   children, 
+  fallback,
   redirectTo = '/signin' 
 }: ProtectedRouteProps) {
   const { user, loading, sessionError, reloadSession } = useAuth()
@@ -33,6 +35,7 @@ export default function ProtectedRoute({
   }, [user, loading, sessionError, router, redirectTo])
 
   if (loading) {
+    if (fallback) return <>{fallback}</>
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />

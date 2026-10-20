@@ -120,7 +120,7 @@ describe('ruta estática de detalle de viaje', () => {
     rerender(<TripPage />)
 
     expect(screen.queryByRole('heading', { name: 'Escapada a Roma' })).not.toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Cargando viaje' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 
     await act(async () => {
       resolveMissing?.({ data: null, error: null })

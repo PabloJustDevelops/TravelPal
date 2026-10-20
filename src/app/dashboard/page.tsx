@@ -47,37 +47,6 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 
 
-// Skeleton Component
-const DashboardSkeleton = () => (
-  <div role="status" aria-label="Cargando dashboard" aria-busy="true" className="space-y-6 animate-pulse">
-    <div className="h-8 bg-surface-strong rounded w-1/3"></div>
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {[...Array(4)].map((_, i) => (
-        <div
-          key={i}
-          className="bg-surface overflow-hidden shadow rounded-lg p-5"
-        >
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-surface-strong rounded-md p-3 h-12 w-12"></div>
-            <div className="ml-5 w-0 flex-1">
-              <div className="h-4 bg-surface-strong rounded w-1/2 mb-2"></div>
-              <div className="h-6 bg-surface-strong rounded w-3/4"></div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {[...Array(2)].map((_, i) => (
-        <div
-          key={i}
-          className="bg-surface shadow rounded-lg h-64"
-        ></div>
-      ))}
-    </div>
-  </div>
-);
-
 interface Budget {
   id: string;
   trip_id?: string;
@@ -394,16 +363,12 @@ export default function DashboardPage() {
   };
 
   if (showSkeleton) {
-    return (
-      <DashboardLayout>
-        <DashboardSkeleton />
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="dashboard" pending />;
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="dashboard">
         <div role="alert">
           <ErrorState
             message={error}
@@ -416,7 +381,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="dashboard">
       <div
         ref={reportRef}
         className="space-y-6 font-sans"

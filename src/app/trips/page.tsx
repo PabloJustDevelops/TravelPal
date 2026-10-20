@@ -23,7 +23,6 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import PageSkeleton from "@/components/ui/PageSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import { logger } from "@/lib/logger";
@@ -171,16 +170,12 @@ export default function TripsPage() {
   const showSkeleton = authLoading || loading;
 
   if (showSkeleton) {
-    return (
-      <DashboardLayout>
-        <PageSkeleton />
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="trips" pending />;
   }
 
   if (!user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="trips">
         <div className="mx-auto max-w-xl py-16 text-center font-sans">
           <h3 className="text-lg font-semibold text-ink">
             Inicia sesión para ver tus viajes
@@ -200,7 +195,7 @@ export default function TripsPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="trips">
       <div className="mx-auto max-w-7xl space-y-7 font-sans">
         <PageTitle
           title="Tus viajes"

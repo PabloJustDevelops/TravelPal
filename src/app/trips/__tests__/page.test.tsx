@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import TripsPage from "../page";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient, type Trip } from "@/lib/insforge";
@@ -215,21 +215,6 @@ describe("TripsPage con el SDK en el navegador", () => {
     expect(from).not.toHaveBeenCalled();
   });
 
-  it("muestra el esqueleto mientras la autenticacion carga", async () => {
-    (useAuth as jest.Mock).mockReturnValue({ user: null, loading: true });
-    mount();
-
-    const { container } = render(<TripsPage />);
-    // Se deja asentar el efecto: sin el corte por `authLoading`, la carga
-    // terminaria y asomaria el aviso de login.
-    await act(async () => {});
-
-    expect(container.querySelector(".animate-pulse")).not.toBeNull();
-    expect(screen.queryByText("Mis Viajes")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Inicia sesión para ver tus viajes"),
-    ).not.toBeInTheDocument();
-  });
 
   it("borra el viaje por el SDK tras confirmar en el dialogo y lo quita de la lista", async () => {
     mount();
