@@ -1,0 +1,14 @@
+.shape {
+  background: color-mix(in srgb, var(--muted) 14%, var(--paper));
+}
+@keyframes breathe {
+  50% { opacity: .5; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shape { animation: breathe 2s ease-in-out infinite; }
+}
+/* Reserva común a la espera y al contenido, también antes de los 120 ms. */
+.frame { min-height: calc(100svh - 132px); }
+@media (min-width: 1024px) {
+  .frame { min-height: calc(100svh - 88px); }
+}

@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="profile">
         <div className="flex items-center justify-center h-full">
           <p>Cargando perfil...</p>
         </div>
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="profile">
       <div className="mx-auto space-y-7">
         <PageTitle title="Tu perfil" subtitle="Cómo apareces en TravelPal." />
         <AccountTabs active="profile" />

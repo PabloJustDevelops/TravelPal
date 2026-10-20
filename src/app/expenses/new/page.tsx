@@ -19,11 +19,12 @@ import CategoryIcon from '@/components/ui/CategoryIcon'
 import { Card, CardContent } from '@/components/ui/Card'
 
 export default function NewExpensePage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [trips, setTrips] = useState<Trip[]>([])
+  const [tripsLoading, setTripsLoading] = useState(true)
 
   const [formData, setFormData] = useState({
     description: '',
@@ -36,6 +37,7 @@ export default function NewExpensePage() {
   })
 
   const loadTrips = useCallback(async (userId: string) => {
+    setTripsLoading(true)
     try {
       // Los viajes alimentan el selector: se leen del SDK, no del BFF.
       const insforge = createInsforgeClient()
@@ -53,6 +55,8 @@ export default function NewExpensePage() {
     } catch (error) {
       console.error('Error loading trips:', error)
       // No bloqueamos la UI si fallan los viajes, solo no aparecen en el selector
+    } finally {
+      setTripsLoading(false)
     }
   }, [])
 
@@ -165,7 +169,7 @@ export default function NewExpensePage() {
   ]
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="expenses/new" pending={authLoading || (!!user && tripsLoading)}>
       <div className="mx-auto space-y-7">
         <div className="space-y-2"><Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />Volver a gastos</Link><PageTitle title="Un gasto más, todo en orden." subtitle="Guárdalo ahora y sigue con tu viaje."/></div>
         {/* Form */}

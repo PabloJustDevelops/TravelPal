@@ -32,7 +32,6 @@ import {
   DocumentTextIcon,
   StarIcon,
 } from "@heroicons/react/24/outline";
-import PageSkeleton from "@/components/ui/PageSkeleton";
 
 export default function NotesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -309,16 +308,12 @@ export default function NotesPage() {
   };
 
   if (showSkeleton) {
-    return (
-      <DashboardLayout>
-        <PageSkeleton />
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="notes" pending />;
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="notes">
         <ErrorState message={error} onRetry={() => refetch()} />
       </DashboardLayout>
     );
@@ -326,7 +321,7 @@ export default function NotesPage() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="notes">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-ink">
             Inicia sesión para gestionar tus notas
@@ -346,7 +341,7 @@ export default function NotesPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="notes">
       <div className="space-y-6">
         {/* Header */}
         <PageTitle

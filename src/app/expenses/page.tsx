@@ -39,7 +39,6 @@ import {
   getLoadErrorMessage,
 } from "@/lib/utils";
 import Link from "next/link";
-import PageSkeleton from "@/components/ui/PageSkeleton";
 import { logger } from "@/lib/logger";
 
 interface Budget {
@@ -622,16 +621,12 @@ export default function ExpensesPage() {
   };
 
   if (showSkeleton) {
-    return (
-      <DashboardLayout>
-        <PageSkeleton />
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="expenses" pending />;
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="expenses">
         <ErrorState message={error} onRetry={refetchExpenses} />
       </DashboardLayout>
     );
@@ -639,7 +634,7 @@ export default function ExpensesPage() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="expenses">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-ink">
             Inicia sesión para ver tus gastos
@@ -656,7 +651,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="expenses">
       <div className="space-y-6">
         {/* Header */}
         <PageTitle

@@ -61,7 +61,6 @@ import {
   getLoadErrorMessage,
 } from "../../lib/utils";
 import { logger } from "@/lib/logger";
-import PageSkeleton from "@/components/ui/PageSkeleton";
 import { accentLinkClassName } from "@/components/ui/actionStyles";
 
 import { format } from "date-fns";
@@ -667,19 +666,12 @@ export default function PlanningPage() {
   );
 
   if (showSkeleton) {
-    return (
-      <DashboardLayout>
-        <div role="status" aria-busy="true" aria-label="Cargando planificación">
-          <PageSkeleton />
-          <span className="sr-only">Cargando planificación</span>
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLayout skeleton="planning" pending loadingView={viewMode} />;
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout skeleton="planning">
         <div role="alert">
           <ErrorState message={error} onRetry={() => refetch()} />
         </div>
@@ -688,7 +680,7 @@ export default function PlanningPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="planning">
       <div className="mx-auto max-w-7xl space-y-6 font-sans">
         {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

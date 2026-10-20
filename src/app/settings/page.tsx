@@ -64,7 +64,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout skeleton="settings">
       <div className="mx-auto space-y-8">
         <PageTitle
           title="Ajustes"
