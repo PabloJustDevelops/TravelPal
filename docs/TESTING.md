@@ -55,7 +55,7 @@ El destino lo elige `E2E_BASE_URL`, y por defecto es localhost:
 
 ```bash
 pnpm run test:e2e                      # export local servido por Wrangler
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:e2e   # lo desplegado
+E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm run test:e2e   # lo desplegado
 ```
 
 ## Que cubre el smoke de la etapa 0
@@ -97,7 +97,7 @@ viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
 
 ```bash
 pnpm exec playwright test e2e/flows                 # local, contra Wrangler y out/
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm exec playwright test e2e/flows
+E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm exec playwright test e2e/flows
 ```
 
 El proyecto `flows` ya limita a un worker, asi que no hace falta pasar

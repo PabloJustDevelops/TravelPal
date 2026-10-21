@@ -40,7 +40,7 @@ function fixture(options: {
     },
     now: () => now,
   });
-  const request = (value: unknown = body, method = "POST", origin = "https://app-viajes.prg-dev.workers.dev") =>
+  const request = (value: unknown = body, method = "POST", origin = "https://travelpal.prg-dev.workers.dev") =>
     handler(new Request("https://function.test/travel-inspiration", {
       method, headers: { Authorization: "Bearer session-token", Origin: origin, "Content-Type": "application/json" },
       ...(method === "POST" ? { body: JSON.stringify(value) } : {}),
@@ -52,7 +52,7 @@ Deno.test("preflight permits only an allowed origin and rejects other methods", 
   const f = fixture();
   const preflight = await f.request(undefined, "OPTIONS");
   assertEquals(preflight.status, 204);
-  assertEquals(preflight.headers.get("access-control-allow-origin"), "https://app-viajes.prg-dev.workers.dev");
+  assertEquals(preflight.headers.get("access-control-allow-origin"), "https://travelpal.prg-dev.workers.dev");
   assertEquals((await f.request(undefined, "GET")).status, 405);
   const denied = await f.request(undefined, "OPTIONS", "https://evil.example");
   assertEquals(denied.headers.get("access-control-allow-origin"), null);

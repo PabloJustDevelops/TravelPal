@@ -4,7 +4,7 @@ import { parseFlightIdeas, parseInspirationQuery } from "../../../src/lib/travel
 
 const PROVIDER_URL = "https://api.travelpayouts.com/aviasales/v3/get_latest_prices";
 const ALLOWED_ORIGINS = new Set([
-  "https://app-viajes.prg-dev.workers.dev",
+  "https://travelpal.prg-dev.workers.dev",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);
