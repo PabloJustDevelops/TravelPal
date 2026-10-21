@@ -4,7 +4,7 @@ const headerName = process.argv.includes('--report-only') ? 'content-security-po
 const browser = await chromium.launch({ headless: true })
 const results = []
 try {
-  for (const route of ['/', '/signin', '/travel-inspiration', '/dashboard']) {
+  for (const route of ['/', '/signin', '/signup', '/travel-inspiration', '/dashboard']) {
     const page = await browser.newPage()
     const consoleMessages = [], failedRequests = [], pageErrors = []
     page.on('pageerror', error => pageErrors.push(error.message))
@@ -39,6 +39,20 @@ try {
     }))
     if (!probe.blocked) throw new Error('Unhashed inline script was not blocked')
     console.log(`Unhashed inline script blocked by ${probe.directive}.`)
+    const imageProbe = await page.evaluate(() => new Promise(resolve => {
+      const image = new Image()
+      const forbidden = 'https://csp-blocked.example.test/pixel.png'
+      document.addEventListener('securitypolicyviolation', event => {
+        if (event.blockedURI === forbidden && event.effectiveDirective === 'img-src') {
+          resolve({ blocked: true, directive: event.effectiveDirective })
+        }
+      })
+      image.src = forbidden
+      document.body.append(image)
+      setTimeout(() => resolve({ blocked: false }), 2000)
+    }))
+    if (!imageProbe.blocked) throw new Error('External image was not blocked by img-src')
+    console.log(`External HTTPS image blocked by ${imageProbe.directive}.`)
     await page.close()
   }
   console.log(JSON.stringify(results, null, 2))

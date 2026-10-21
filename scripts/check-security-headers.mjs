@@ -46,6 +46,10 @@ try {
     }
   }
   const scriptSources = directives.get('script-src')
+  const imageSources = directives.get('img-src')
+  if (imageSources.some((source) => source.toLowerCase() === 'https:')) {
+    throw new Error('img-src must not contain the https: wildcard')
+  }
   if (scriptSources.some((value) => value !== "'self'" && !/^'sha256-[A-Za-z0-9+/]{43}='$/.test(value))) {
     throw new Error('script-src must contain only self and SHA-256 hashes')
   }

@@ -10,6 +10,7 @@ import PageTitle from "@/components/ui/PageTitle";
 import Input from "@/components/ui/Input";
 import { UserCircleIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/ui/Toast";
+import { avatarUrlSchema, AVATAR_URL_ERROR } from "@/lib/avatar-url";
 
 export default function ProfilePage() {
   const { user, updateProfile, uploadAvatar } = useAuth();
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -36,6 +38,12 @@ export default function ProfilePage() {
   }, [user]);
 
   const handleSave = async () => {
+    const avatar = avatarUrlSchema.safeParse(formData.avatarUrl);
+    if (!avatar.success) {
+      setAvatarError(AVATAR_URL_ERROR);
+      return;
+    }
+    setAvatarError("");
     setLoading(true);
     // Timeout de seguridad local para la UI
     const timeoutId = setTimeout(() => {
@@ -46,7 +54,7 @@ export default function ProfilePage() {
     try {
       await updateProfile({
         full_name: formData.fullName,
-        avatar_url: formData.avatarUrl,
+        avatar_url: avatar.data ?? "",
       });
       showSuccess("Perfil actualizado correctamente");
       setIsEditing(false);
@@ -73,6 +81,7 @@ export default function ProfilePage() {
     try {
       const publicUrl = await uploadAvatar(file);
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+      setAvatarError("");
       showSuccess("Imagen subida correctamente");
     } catch (error) {
       console.error("Error uploading avatar:", error);
@@ -108,7 +117,7 @@ export default function ProfilePage() {
           <CardContent className="space-y-7 px-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <div className="relative group">
-                {formData.avatarUrl ? (
+                {formData.avatarUrl && avatarUrlSchema.safeParse(formData.avatarUrl).success ? (
                   <img
                     src={formData.avatarUrl}
                     alt={formData.fullName || "Usuario"}
@@ -195,14 +204,18 @@ export default function ProfilePage() {
                     <Input
                       id="profile-avatar"
                       value={formData.avatarUrl}
-                      onChange={(e) =>
-                        setFormData({ ...formData, avatarUrl: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, avatarUrl: e.target.value });
+                        setAvatarError("");
+                      }}
+                      aria-invalid={!!avatarError}
+                      aria-describedby={avatarError ? "profile-avatar-error" : "profile-avatar-help"}
                       placeholder="https://..."
                       className="min-h-11"
                     />
-                  <p className="text-xs text-muted">
-                    Puedes subir una foto o pegar una URL directa a una imagen.
+                  {avatarError && <p id="profile-avatar-error" role="alert" className="text-sm text-danger">{avatarError}</p>}
+                  <p id="profile-avatar-help" className="text-xs text-muted">
+                    Puedes subir una foto o pegar una URL HTTPS de esta app o del almacenamiento de InsForge.
                   </p>
                 </div>
               )}
@@ -216,6 +229,7 @@ export default function ProfilePage() {
                     className="transition-none"
                     onClick={() => {
                       setIsEditing(false);
+                      setAvatarError("");
                       // Reset form data to current user data
                       if (user) {
                         setFormData({

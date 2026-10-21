@@ -14,6 +14,9 @@ if (!/script-src 'self';/.test(headers)) throw new Error('Missing script-src tem
 const backendOrigin = new URL(process.env.NEXT_PUBLIC_INSFORGE_URL ?? 'https://sjdq7zsn.eu-central.insforge.app').origin
 if (!backendOrigin.startsWith('https://')) throw new Error('CSP backend origin must use HTTPS')
 const template = headers.replace(
+  "img-src 'self' https://sjdq7zsn.eu-central.insforge.app",
+  `img-src 'self' ${backendOrigin}`,
+).replace(
   "connect-src 'self' https://sjdq7zsn.eu-central.insforge.app",
   `connect-src 'self' ${backendOrigin}`,
 )
