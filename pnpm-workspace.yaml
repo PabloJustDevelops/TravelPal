@@ -6,3 +6,11 @@ allowBuilds:
   '@tailwindcss/oxide': true
   unrs-resolver: true
   core-js: false # Su postinstall solo muestra un mensaje de financiacion.
+
+# Versiones mínimas corregidas; solo se fuerzan los rangos vulnerables.
+overrides:
+  'sharp@<0.35.5': 0.35.5
+  'source-map-js@<1.2.2': 1.2.2
+  'browserslist@<4.28.7': 4.28.7
+  'dompurify@<3.4.16': 3.4.16
+  '@babel/core@<7.29.6': 7.29.6
