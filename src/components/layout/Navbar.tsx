@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import NotificationSystem from "@/components/notifications/NotificationSystem";
+import { avatarUrlSchema } from "@/lib/avatar-url";
 interface NavigationItem {
   name: string;
   href: string;
@@ -27,6 +28,8 @@ export default function Navbar({ navigation }: NavbarProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const { user, signOut } = useAuth();
+  const avatar = avatarUrlSchema.safeParse(user?.avatar_url ?? "");
+  const avatarUrl = avatar.success ? avatar.data : undefined;
   const pathname = usePathname();
   const handleSignOut = async () => {
     try {
@@ -106,10 +109,10 @@ export default function Navbar({ navigation }: NavbarProps) {
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
               >
-                {user?.avatar_url && !avatarError ? (
+                {avatarUrl && !avatarError ? (
                   <img
-                    src={user.avatar_url}
-                    alt={user.full_name || "Usuario"}
+                    src={avatarUrl}
+                    alt={user?.full_name || "Usuario"}
                     className="h-8 w-8 rounded-full object-cover"
                     referrerPolicy="no-referrer"
                     onError={() => setAvatarError(true)}
@@ -218,10 +221,10 @@ export default function Navbar({ navigation }: NavbarProps) {
           </div>
           <div className="pt-4 pb-3 border-t border-line">
             <div className="flex items-center px-4">
-              {user?.avatar_url && !avatarError ? (
+              {avatarUrl && !avatarError ? (
                 <img
-                  src={user.avatar_url}
-                  alt={user.full_name || "Usuario"}
+                  src={avatarUrl}
+                  alt={user?.full_name || "Usuario"}
                   className="h-10 w-10 rounded-full object-cover"
                   referrerPolicy="no-referrer"
                   onError={() => setAvatarError(true)}

@@ -271,3 +271,246 @@ encuentra nuevos hallazgos. Verificó `node scripts/check-security-headers.mjs` 
 Su ejecución local del test de subprocesos quedó limitada por el sandbox; la ejecución completa
 fuera de sandbox indicada arriba pasó (exit 0). La última suite Jest completa pasó 68/68 suites
 y 485/485 tests, exit 0; los dos fallos intermitentes anteriores se conservan en este informe.
+
+
+## Restricción de img-src y validación del avatar — 2026-10-21
+
+Rama `chore/csp-img-src`, base `4483868330e7b7876d475eef7d60969b5f21d4af`.
+Esta sección sustituye la apertura deliberada de `img-src https:` descrita arriba y
+atiende F3 de `auditoria-2026-10-20.md`. Solo este worktree; sin push, PR ni deploy.
+
+La política de imágenes queda así:
+
+```text
+img-src 'self' https://sjdq7zsn.eu-central.insforge.app https://insforge-storage.s3.us-east-2.amazonaws.com
+```
+
+El inventario comprobado en `src/` cubre las imágenes reales:
+
+- Las ilustraciones de Hero, Features y AuthShell y el SVG de GoogleButton están
+  en `public/images/` y se sirven desde el mismo export: son `'self'`. La marca
+  en `public/brand/` también es del mismo origen.
+- El avatar del perfil y los dos avatares de Navbar usan URLs de imagen. El
+  formulario permite ahora solo HTTPS del propio sitio, del backend configurado
+  o del storage permitido. Los avatares antiguos de otros orígenes (incluido OAuth)
+  muestran el icono de usuario sin iniciar su petición; se pueden sustituir subiendo
+  una foto. No se han migrado valores guardados en el backend.
+- `AuthService.uploadAvatar` usa el bucket `avatars` y `getPublicUrl`;
+  `JournalPhotos` sube con el SDK, conserva URL/key y obtiene URLs firmadas para
+  mostrar fotos. API InsForge y S3 quedan permitidos en `img-src`; `connect-src`
+  conserva ambos orígenes para estrategia, POST prefirmado y confirmación.
+
+El generador adapta también `img-src` al origen de `NEXT_PUBLIC_INSFORGE_URL`, igual
+que `connect-src`. Las pruebas verifican interpolación de entorno y prioridad de
+variables heredadas para ambas directivas. El comprobador rechaza el token `https:`
+en `img-src`; las mutaciones cubren tanto añadirlo a la lista como sustituirla por
+`'self' https:`. Los hashes inline y el resto de la política se conservan.
+
+`src/lib/avatar-url.ts` reutiliza `optionalUrl` de `public-env.ts`. Añade un límite
+de 2048 caracteres, HTTPS, ausencia de credenciales/fragmentos y orígenes acordes
+con CSP. Rechaza `data:` y caracteres de control antes del parser existente, que
+elimina tabulaciones y saltos de línea. Admite vacío para quitar el avatar y conserva
+queries de URLs firmadas. `handleSave` valida antes de `updateProfile`; el formulario
+muestra un error con `role="alert"`, `aria-invalid` y descripción asociada al campo.
+La previsualización y Navbar aplican la misma regla para bloquear avatares externos.
+Los tests cubren rechazo sin guardar, corrección, eliminación, firmas, credenciales,
+fragmentos vacíos/no vacíos, esquemas, hosts parecidos, puertos y longitud excesiva.
+
+### Gates del estado final
+
+Comandos exactos, extractos reales y códigos de salida:
+
+```text
+$ pnpm run type-check
+$ tsc --noEmit
+exit 0
+
+$ pnpm run lint
+✖ 13 problems (0 errors, 13 warnings)
+exit 0
+
+$ pnpm exec jest --runInBand --coverage=false
+
+Test Suites: 73 passed, 73 total
+Tests:       548 passed, 548 total
+Snapshots:   0 total
+Time:        52.644 s
+Ran all test suites.
+exit 0
+
+$ pnpm run build
+$ next build && node scripts/build-security-headers.mjs
+○  (Static)  prerendered as static content
+
+Generated out/_headers with 22 inline script hashes.
+exit 0
+
+$ pnpm run validate:static-export
+$ node scripts/validate-static-export.mjs
+Validated 182 static files and 13 critical routes; no private key markers found.
+exit 0
+
+$ node scripts/check-security-headers.mjs
+Validated 7 global security headers and 22 inline script hashes; CSP enforced.
+exit 0
+
+$ node --test scripts/security-headers.test.mjs
+✔ exported headers reject missing headers, Report-Only, stale hashes and unsafe scripts (669.548608ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 752.445732
+exit 0
+
+```
+
+Lint: mismos 13 warnings y 0 errores que el baseline. El intento inicial de Jest en
+sandbox falló antes de ejecutar tests con `Could not parse output from TypeScript's
+--showConfig.` (exit 1). La instalación inicial tampoco tenía DNS; se instaló desde
+el lockfile con `pnpm install --frozen-lockfile` fuera del sandbox (exit 0) y se
+repitió Jest fuera del sandbox con el resultado completo anterior. No se modificaron
+`package.json` ni el lockfile. El primer type-check de la implementación falló por
+el tipo de entrada `unknown` de Zod al encadenar el preprocesador (exit 2); se corrigió
+y se repitieron type-check, lint y la suite completa. Los tests nuevos se ejecutaron
+primero en rojo: cabecera abierta, módulo de avatar aún inexistente y Navbar
+solicitando el avatar externo; también detectaron la normalización de saltos de línea.
+
+### Wrangler y navegador
+
+Después de reconstruir el artefacto definitivo:
+
+```text
+$ pnpm exec wrangler dev --ip 127.0.0.1 --port 8791 --inspector-port 9291
+[wrangler:info] Ready on http://127.0.0.1:8791
+
+$ node scripts/test-security-csp.mjs http://127.0.0.1:8791
+Unhashed inline script blocked by script-src-elem.
+External HTTPS image blocked by img-src.
+Checked 5 routes; 0 CSP violations.
+exit 0
+```
+
+Listener `securitypolicyviolation` instalado antes de cargar cada página. Las dos
+inyecciones deliberadas se miden en otra página y se separan de las cargas normales:
+el navegador bloquea tanto el script sin hash como el pixel HTTPS de un host ajeno.
+
+| Ruta | HTTP inicial | Violaciones CSP | Errores JS | Resultado |
+|---|---|---|---|---|
+| `/` | 200 | 0 | 0 | Landing |
+| `/signin` | 200 | 0 | 0 | Formulario hidratado; validación de campos vacíos |
+| `/signup` | 200 | 0 | 0 | Formulario |
+| `/travel-inspiration` | 200 | 0 | 0 | Guard redirige a signin sin sesión |
+| `/dashboard` | 200 | 0 | 0 | Guard redirige a signin sin sesión |
+
+Con el placeholder, el backend devuelve 401 al comprobar la sesión. Se observan
+además `net::ERR_ABORTED` de peticiones de navegación/prefetch. Se conservan en la
+salida del harness: no son violaciones CSP ni se presentan como sesión real.
+
+Pruebas del interior con backend/S3 **simulados**, usando el SDK y el export reales:
+
+```text
+$ node scripts/test-journal-photo-csp.mjs http://127.0.0.1:8791
+{
+  "networkMode": "mocked",
+  "imageDecoded": true,
+  "uploads": 1,
+  "signatures": 1,
+  "photoVisible": 1,
+  "violations": [],
+  "consoleErrors": []
+}
+exit 0
+
+$ node scripts/test-profile-avatar-csp.mjs http://127.0.0.1:8791
+{
+  "networkMode": "mocked",
+  "route": "/profile",
+  "invalidSaveBlocked": true,
+  "validSaveCount": 1,
+  "imageDecoded": true,
+  "trackerRequests": 0,
+  "violations": [],
+  "pageErrors": []
+}
+exit 0
+```
+
+El diario solicitó `/api/storage/buckets/journal-photos/upload-strategy`, hizo un POST
+`multipart/form-data` al origen S3 (204), confirmó el upload y obtuvo la URL firmada
+con `download-strategy/objects/...`; la imagen se decodificó en Chromium. El harness
+registra algunos `ERR_ABORTED` (prefetch y peticiones canceladas), sin errores de consola
+ni violaciones CSP. El host S3 de esta prueba viene de la respuesta **simulada** de
+`upload-strategy`, no de una consulta autenticada al backend de producción.
+
+El perfil parte de un avatar externo heredado, verifica que no hay peticiones al
+tercero y que guardar una URL inválida no llama al backend. Corrige con una URL S3,
+guarda una vez y decodifica la imagen. Se inspeccionó visualmente la captura del
+mensaje de error: texto visible bajo el campo, sin desbordamiento.
+
+### Cabeceras servidas realmente
+
+```text
+$ curl -I http://127.0.0.1:8791/
+exit 0
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Cache-Control: public, max-age=0, must-revalidate
+ETag: "f6177decc60ffe808fdb68c798e429b8"
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+CF-Cache-Status: HIT
+content-security-policy: default-src 'self'; script-src 'self' 'sha256-+Nqr9OymcwEbGOIxjYoAfY0i0arwuRC1ksow0OvOAlo=' 'sha256-1hJ22wQXbvqSciu+ciYxdpJpsuLh4WUNxnikypxMp/o=' 'sha256-1zaHl6VmWVnYPQka6BYNWgtZkGhYlYBmX/7Byhc7XX4=' 'sha256-3RU9Erb7+v1oCOzk6uF4K9E0k/qV9kkLT7ONzfeW4Bo=' 'sha256-6WbmhqIZ9Vk5N1Zw9QH3WPL96QMBfmzsMPe7qmpNlnA=' 'sha256-Ba2iXOQ5503x77s1lLqkIxSx/Z/5zNcVIZQSy0YfuSU=' 'sha256-D0oy+l+JEYqhjlrgsswdy4NGYcyDOGjuKvlBGOZ+HHA=' 'sha256-DK5sQ913Nb3OpjHcR9Tg0lagbcrUqJJk+xjk5+v+LbU=' 'sha256-FZM/myxJmrKjBHqS5xfKIN2xmGTCYvo1+X6vh4uAb3w=' 'sha256-OBTN3RiyCV4Bq7dFqZ5a2pAXjnCcCYeTJMO2I/LYKeo=' 'sha256-adEzBkKucSZ5NNIo218jNo5JKDzyx54EG0QQyUGvSGs=' 'sha256-bfevcY7elgCryMuKNkT/cOh7Rh+mMJeUyNeehs8mY8Q=' 'sha256-gkYZsy9KP7oz2lrpgscXwD7nqU/+NBKeSzkL4KQHlcc=' 'sha256-hlqwwECAtuaZvSv6faPfNlf6vQl+qPD0ttFEE0vFrL0=' 'sha256-hqjoTFlgdXhIVN72RpQ80OuNfTtzoelnV1Tfd22wJUk=' 'sha256-jHhPj5BRcfveCPJ5FtO+ctzJuLKhOxvLex/cSO0WIfs=' 'sha256-jfkA9OY8+VFk+g4+gyiOFvcJ/IjugCnzXr/W1mVQq3w=' 'sha256-jsH1NFx9S+SzhTOYnh6wAPrTMnoCpjuR58abXP5L+CM=' 'sha256-ovwH8fVgN2VlzVX/34BUalj+pySjOEVrgKmJbKmiQh0=' 'sha256-pprKCrUYJth2tDHFF4bFxy/5dsoIdbT5emCy6HaHXpc=' 'sha256-thwQZIc7aJia336kEeAejeYZPijvpom4MipfkDS32+c=' 'sha256-vlL6+1PCSK+dMe0hrg5PVuqMG9yXnkb+pC5BAWVOIK4='; style-src 'self' 'unsafe-inline'; img-src 'self' https://sjdq7zsn.eu-central.insforge.app https://insforge-storage.s3.us-east-2.amazonaws.com; connect-src 'self' https://sjdq7zsn.eu-central.insforge.app https://insforge-storage.s3.us-east-2.amazonaws.com; font-src 'self'; frame-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://sjdq7zsn.eu-central.insforge.app https://accounts.google.com
+cross-origin-opener-policy: same-origin-allow-popups
+permissions-policy: camera=(), microphone=(), geolocation=()
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+x-frame-options: DENY
+```
+
+### Limpieza y límites
+
+El build utilizó `.env.local` temporal con la URL pública de producción y la clave
+`placeholder`. Después se ejecutó:
+
+```text
+$ rm .env.local && test ! -e .env.local && node scripts/check-security-headers.mjs
+Validated 7 global security headers and 22 inline script hashes; CSP enforced.
+exit 0
+```
+
+No se consultó `upload-strategy` con una sesión real ni se probó Google OAuth completo:
+no hay credenciales reales en este encargo. El host permitido es el indicado en el
+encargo y empleado por el harness existente; no se ha observado otro origen real.
+La subida/lectura real contra producción queda sin verificar por esa falta de sesión;
+la regresión del SDK bajo CSP sí se ha ejecutado con respuestas interceptadas. No se
+ha relajado la política ni desplegado nada. El service worker no se ha modificado;
+sus tests están incluidos en la suite Jest ejecutada.
+
+
+### Revisión independiente y corrección
+
+El subagente `reviewer` encontró un P2 en `scripts/check-security-headers.mjs:50`:
+la comparación del token era sensible a mayúsculas y aceptaba `HTTPS:`, equivalente
+al comodín `https:` según [CSP3 §6.7.2.9](https://www.w3.org/TR/CSP3/#match-schemes).
+El revisor lo reprodujo con exit 0 del guardián y no encontró otros hallazgos.
+
+Un tercer contexto corrigió la comparación con `source.toLowerCase()` y añadió
+mutaciones `HTTPS:` y `HtTpS:`. Con el código anterior, la suite nueva falló
+(`AssertionError: actual 0, expected 1`, exit 1); tras corregirlo,
+`node --test scripts/security-headers.test.mjs` pasó (1 test, 1 pass, 0 fail, exit 0).
+Type-check, lint, Jest completo, comprobador de cabeceras y validador del export se
+repitieron tras ese arreglo; sus resultados finales aparecen arriba. El arreglo
+solo cambia el guardián y sus tests, sin modificar los assets del export probado.
+
+Segunda revisión independiente del diff completo: «Sin hallazgos nuevos. P2 resuelto»
+en `scripts/check-security-headers.mjs:50`. El revisor confirmó que `HTTPS:` y
+`HtTpS:` producen `Security headers check failed: img-src must not contain the
+https: wildcard` (exit 1 en ambos casos) y que el export válido pasa el comprobador
+con 7 cabeceras y 22 hashes (exit 0). Revisión favorable; la limitación de sesión
+real para Storage/OAuth se mantiene explícita.
