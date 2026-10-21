@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
@@ -198,6 +199,7 @@ export default function TripsPage() {
     <DashboardLayout skeleton="trips">
       <div className="mx-auto max-w-7xl space-y-7 font-sans">
         <PageTitle
+          className={slots.tripsTitle}
           title="Tus viajes"
           subtitle="Los que vienen y los que ya forman parte de ti."
           action={
@@ -213,6 +215,7 @@ export default function TripsPage() {
           }
         />
 
+        <div data-loading-slot="tripsBody" tabIndex={0} role="region" aria-label="Viajes" className={`${slots.tripsBody} space-y-7`}>
         {/* Filters */}
         {trips.length > 0 && (
           <section
@@ -401,6 +404,7 @@ export default function TripsPage() {
             )}
           />
         )}
+        </div>
       </div>
     </DashboardLayout>
   );

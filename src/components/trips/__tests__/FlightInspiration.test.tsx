@@ -14,6 +14,10 @@ jest.mock("@/lib/insforge", () => ({
 describe("FlightInspiration", () => {
   const invoke = jest.fn();
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     invoke.mockReset();
@@ -127,7 +131,7 @@ describe("FlightInspiration", () => {
       fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
       invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [] }, error: null });
       fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
-      await waitFor(() => expect(screen.getByRole("button", { name: /actualizar ideas/i })).toBeDisabled());
+      await act(async () => { await jest.advanceTimersByTimeAsync(0); });
       expect(screen.getByRole("button", { name: /actualizar ideas/i })).toBeDisabled();
       act(() => { jest.advanceTimersByTime(30_000); });
       expect(screen.getByRole("button", { name: /actualizar ideas/i })).toBeEnabled();
@@ -162,16 +166,18 @@ describe("FlightInspiration", () => {
       });
 
       expect(invoke).toHaveBeenCalledTimes(3);
-      expect(await screen.findByText(/no encontramos ideas/i)).toBeInTheDocument();
+      expect(screen.getByText(/no encontramos ideas/i)).toBeInTheDocument();
     } finally {
       jest.useRealTimers();
     }
   });
 
   it("refresca automáticamente al caducar un resultado", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-01T12:00:00.000Z"));
     invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
     render(<FlightInspiration />);
-    await screen.findByText(/no está disponible ahora/i);
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByText(/no está disponible ahora/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
     const expiresSoon = new Date(Date.now() + 500).toISOString();
     invoke.mockResolvedValueOnce({
@@ -183,16 +189,20 @@ describe("FlightInspiration", () => {
       error: null,
     });
     fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
-    await screen.findByRole("heading", { name: "MAD → LON" });
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
     invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [] }, error: null });
-    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(3), { timeout: 2_000 });
-    expect(await screen.findByText(/no encontramos ideas/i)).toBeInTheDocument();
+    await act(async () => { await jest.advanceTimersByTimeAsync(500); });
+    expect(invoke).toHaveBeenCalledTimes(3);
+    expect(screen.getByText(/no encontramos ideas/i)).toBeInTheDocument();
   });
 
   it("oculta resultados caducados y muestra un error si falla la renovación automática", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-01T12:00:00.000Z"));
     invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
     render(<FlightInspiration />);
-    await screen.findByText(/no está disponible ahora/i);
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByText(/no está disponible ahora/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
     const expiresSoon = new Date(Date.now() + 500).toISOString();
     invoke.mockResolvedValueOnce({
@@ -204,24 +214,27 @@ describe("FlightInspiration", () => {
       error: null,
     });
     fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
-    await screen.findByRole("heading", { name: "MAD → LON" });
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
     invoke.mockRejectedValueOnce(new Error("private provider detail"));
 
-    expect(await screen.findByRole("alert", {}, { timeout: 2_000 })).toHaveTextContent(
+    await act(async () => { await jest.advanceTimersByTimeAsync(500); });
+    expect(invoke).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("alert")).toHaveTextContent(
       "No se pudieron cargar las ideas. Inténtalo más tarde.",
     );
-    await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: "MAD → LON" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /abrir aviasales/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /planear este viaje/i })).not.toBeInTheDocument();
-    });
+    expect(screen.queryByRole("heading", { name: "MAD → LON" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /abrir aviasales/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /planear este viaje/i })).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).not.toHaveTextContent("private provider detail");
   });
 
   it("reintenta al siguiente vencimiento tras un error y conserva las ideas aún vigentes", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-01T12:00:00.000Z"));
     invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
     render(<FlightInspiration />);
-    await screen.findByText(/no está disponible ahora/i);
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByText(/no está disponible ahora/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
     const firstExpiry = new Date(Date.now() + 800).toISOString();
     const secondExpiry = new Date(Date.now() + 1_800).toISOString();
@@ -241,26 +254,25 @@ describe("FlightInspiration", () => {
       error: null,
     });
     fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
-    await screen.findByRole("heading", { name: "MAD → LON" });
-    await screen.findByRole("heading", { name: "MAD → PAR" });
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(screen.getByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "MAD → PAR" })).toBeInTheDocument();
     invoke.mockRejectedValueOnce(new Error("first renewal failed"));
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(3), { timeout: 2_000 });
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    await act(async () => { await jest.advanceTimersByTimeAsync(800); });
+    expect(invoke).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("alert")).toHaveTextContent(
       "No se pudieron cargar las ideas. Inténtalo más tarde.",
     );
-    await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: "MAD → LON" })).not.toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "MAD → PAR" })).toBeInTheDocument();
-    });
+    expect(screen.queryByRole("heading", { name: "MAD → LON" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "MAD → PAR" })).toBeInTheDocument();
     invoke.mockRejectedValueOnce(new Error("second renewal failed"));
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(4), { timeout: 2_000 });
-    await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: "MAD → PAR" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /abrir aviasales/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /planear este viaje/i })).not.toBeInTheDocument();
-    });
+    await act(async () => { await jest.advanceTimersByTimeAsync(1_000); });
+    expect(invoke).toHaveBeenCalledTimes(4);
+    expect(screen.queryByRole("heading", { name: "MAD → PAR" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /abrir aviasales/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /planear este viaje/i })).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "No se pudieron cargar las ideas. Inténtalo más tarde.",
     );

@@ -1,0 +1,162 @@
+Comando repetido sin variaciones: pnpm exec jest src/components/trips/__tests__/FlightInspiration.test.tsx --runInBand --coverage=false
+
+
+Ejecución 1: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.262 s, estimated 4 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 2: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.189 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 3: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.282 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 4: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.152 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 5: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.367 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 6: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.228 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 7: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.09 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 8: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.064 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 9: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.101 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 10: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.233 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 11: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.764 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 12: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        2.183 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 13: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.627 s, estimated 2 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 14: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.21 s, estimated 2 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 15: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.12 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 16: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.537 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 17: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        2.099 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 18: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        2.037 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 19: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.824 s, estimated 2 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.
+
+Ejecución 20: código de salida 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.798 s, estimated 2 s
+Ran all test suites matching /src\/components\/trips\/__tests__\/FlightInspiration.test.tsx/i.

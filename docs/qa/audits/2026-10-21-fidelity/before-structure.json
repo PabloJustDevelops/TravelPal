@@ -1,0 +1,1151 @@
+[
+  {
+    "screen": "planning",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 918,
+      "frame": 850,
+      "blocks": [
+        {
+          "height": 128
+        },
+        {
+          "height": 64
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 698
+        },
+        {
+          "height": 374
+        },
+        {
+          "height": 308
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 850
+        }
+      ]
+    },
+    "after": {
+      "main": 3402.5,
+      "frame": 3334.5,
+      "blocks": [
+        {
+          "height": 69.5
+        },
+        {
+          "height": 65.5
+        },
+        {
+          "height": 54
+        },
+        {
+          "label": "octubre 2026",
+          "height": 2903
+        },
+        {
+          "height": 0
+        },
+        {
+          "height": 1
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 252
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 90
+        },
+        {
+          "label": "Viajes Activos",
+          "height": 146
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 139.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 3171
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 970,
+      "frame": 886,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 778
+        },
+        {
+          "height": 454
+        },
+        {
+          "height": 308
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 886
+        }
+      ]
+    },
+    "after": {
+      "main": 1424.109375,
+      "frame": 1340.109375,
+      "blocks": [
+        {
+          "height": 84.109375
+        },
+        {
+          "height": 80.109375
+        },
+        {
+          "height": 54
+        },
+        {
+          "label": "octubre 2026",
+          "height": 894
+        },
+        {
+          "height": 0
+        },
+        {
+          "height": 1
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 252
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 90
+        },
+        {
+          "label": "Viajes Activos",
+          "height": 146
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 154.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 1162
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 454
+        },
+        {
+          "height": 454
+        },
+        {
+          "height": 454
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 562
+        }
+      ]
+    },
+    "after": {
+      "main": 1090.109375,
+      "frame": 1002.109375,
+      "blocks": [
+        {
+          "height": 84.109375
+        },
+        {
+          "height": 80.109375
+        },
+        {
+          "height": 54
+        },
+        {
+          "label": "octubre 2026",
+          "height": 894
+        },
+        {
+          "height": 0
+        },
+        {
+          "height": 1
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 894
+        },
+        {
+          "label": "Próximas Reservas",
+          "height": 90
+        },
+        {
+          "label": "Viajes Activos",
+          "height": 146
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 894
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 893,
+      "frame": 825,
+      "blocks": [
+        {
+          "height": 128
+        },
+        {
+          "height": 64
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 104
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 288
+        },
+        {
+          "height": 16
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 233
+        },
+        {
+          "height": 117
+        },
+        {
+          "height": 116
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 825
+        }
+      ]
+    },
+    "after": {
+      "main": 780,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 91.09375
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 155.09375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 162
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 307.5
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 865,
+      "frame": 781,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 104
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 288
+        },
+        {
+          "height": 16
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 233
+        },
+        {
+          "height": 117
+        },
+        {
+          "height": 116
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 80.109375
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 110
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 327
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 869,
+      "frame": 781,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 104
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 288
+        },
+        {
+          "height": 16
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 40
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 233
+        },
+        {
+          "height": 117
+        },
+        {
+          "height": 116
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 80.109375
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 110
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 343
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 817,
+      "frame": 749,
+      "blocks": [
+        {
+          "height": 128
+        },
+        {
+          "height": 64
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 145
+        },
+        {
+          "height": 0
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 428
+        },
+        {
+          "height": 426
+        },
+        {
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 749
+        }
+      ]
+    },
+    "after": {
+      "main": 780,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 91.09375
+        },
+        {
+          "height": 164
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 225
+        },
+        {
+          "label": "Antes de salir",
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 155.09375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 227
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 145
+        },
+        {
+          "height": 0
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 428
+        },
+        {
+          "height": 426
+        },
+        {
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 705
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 80.109375
+        },
+        {
+          "height": 164
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 225
+        },
+        {
+          "label": "Antes de salir",
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 227
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 69
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 428
+        },
+        {
+          "height": 426
+        },
+        {
+          "height": 426
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 629
+        }
+      ]
+    },
+    "after": {
+      "main": 1033.109375,
+      "frame": 945.109375,
+      "blocks": [
+        {
+          "height": 80.109375
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 742
+        },
+        {
+          "label": "Antes de salir",
+          "height": 742
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 69
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 744
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 895,
+      "frame": 827,
+      "blocks": [
+        {
+          "height": 128
+        },
+        {
+          "height": 64
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 104
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 547
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 76
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 827
+        }
+      ]
+    },
+    "after": {
+      "main": 812,
+      "frame": 744,
+      "blocks": [
+        {
+          "height": 101.40625
+        },
+        {
+          "height": 97.40625
+        },
+        {
+          "height": 54
+        },
+        {
+          "height": 54
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "label": "Por hacer · 0",
+          "height": 352
+        },
+        {
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 171.40625
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 104
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 807,
+      "frame": 723,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 547
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 76
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 828,
+      "frame": 744,
+      "blocks": [
+        {
+          "height": 127.421875
+        },
+        {
+          "height": 123.421875
+        },
+        {
+          "height": 110
+        },
+        {
+          "height": 54
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "label": "Por hacer · 0",
+          "height": 352
+        },
+        {
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 127.421875
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 84
+        },
+        {
+          "height": 80
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 547
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 235
+        },
+        {
+          "height": 76
+        }
+      ],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 84.109375
+        },
+        {
+          "height": 80.109375
+        },
+        {
+          "height": 54
+        },
+        {
+          "height": 54
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "height": 44
+        },
+        {
+          "label": "Por hacer · 0",
+          "height": 405
+        },
+        {
+          "height": 53
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 405
+        }
+      ]
+    }
+  }
+]

@@ -1,3 +1,4 @@
+import slots from '@/components/ui/interiorSlots.module.css';
 import styles from './nextTrip.module.css';
 import Link from 'next/link';
 import {
@@ -135,7 +136,7 @@ export default function NextTrip({
 
   return (
     <div className={styles.overview}>
-      <section aria-labelledby="next-trip-title" className={styles.hero}>
+      <section aria-labelledby="next-trip-title" data-loading-slot="dashboardHero" className={`${styles.hero} ${slots.dashboardHero}`}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{trip && localDay(trip.departure_date) < today ? 'Tu viaje en curso' : 'Tu próxima aventura'}</p>
         <div className="mt-4 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="min-w-0 max-w-2xl">
@@ -158,7 +159,7 @@ export default function NextTrip({
       </section>
 
       <div className="grid grid-cols-1 border-t border-line lg:grid-cols-[minmax(0,1.4fr)_minmax(17rem,1fr)]">
-        <section aria-labelledby="dashboard-itinerary-title" className="min-w-0 self-start py-5 lg:pr-8">
+        <section tabIndex={0} aria-labelledby="dashboard-itinerary-title" data-loading-slot="dashboardItinerary" className={`${slots.dashboardItinerary} min-w-0 self-start py-5 lg:pr-8`}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
             <h3 id="dashboard-itinerary-title" className="font-sans text-xl font-bold tracking-tight text-ink">Los primeros planes</h3>
             {trip && <Link href={`/trip?id=${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -195,7 +196,7 @@ export default function NextTrip({
         </section>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 lg:border-l lg:border-line lg:pl-8">
-          <section aria-labelledby="dashboard-tasks-title" className="min-w-0 py-5">
+          <section tabIndex={0} aria-labelledby="dashboard-tasks-title" data-loading-slot="dashboardTasks" className={`${slots.dashboardTasks} min-w-0 py-5`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
               <h3 id="dashboard-tasks-title" className="font-sans text-xl font-bold tracking-tight text-ink">Antes de salir</h3>
               <Link href="/tasks" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
@@ -220,7 +221,7 @@ export default function NextTrip({
             ) : <p className="py-5 text-sm text-muted">No tienes tareas pendientes.</p>}
           </section>
 
-          <section aria-labelledby="dashboard-budget-title" className="min-w-0 py-5">
+          <section tabIndex={0} aria-labelledby="dashboard-budget-title" data-loading-slot="dashboardBudget" className={`${slots.dashboardBudget} min-w-0 py-5`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-2">
               <h3 id="dashboard-budget-title" className="font-sans text-xl font-bold tracking-tight text-ink">Presupuesto del viaje</h3>
               <Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
