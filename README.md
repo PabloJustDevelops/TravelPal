@@ -15,7 +15,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 
-[**Demo**](https://app-viajes.prg-dev.workers.dev) · [Documentación](#documentación) · [Reportar un problema](https://github.com/PabloJustDevelops/TravelPal/issues)
+[**Demo**](https://travelpal.prg-dev.workers.dev) · [Documentación](#documentación) · [Reportar un problema](https://github.com/PabloJustDevelops/TravelPal/issues)
 
 </div>
 
@@ -26,7 +26,7 @@ organiza sus viajes de principio a fin — itinerario por días, tareas antes de
 notas con fotos, gastos por categoría y presupuesto — con autenticación real, datos aislados por
 usuario mediante RLS y una interfaz accesible, en claro y oscuro, de móvil a escritorio.
 
-La app publicada es la demo: <https://app-viajes.prg-dev.workers.dev>
+La app publicada es la demo: <https://travelpal.prg-dev.workers.dev>
 
 ## Cómo funciona
 

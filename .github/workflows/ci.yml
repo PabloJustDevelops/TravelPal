@@ -92,7 +92,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/e2e.yml
     with:
-      base-url: https://app-viajes.prg-dev.workers.dev
+      base-url: https://travelpal.prg-dev.workers.dev
     secrets: inherit
 
   deploy:

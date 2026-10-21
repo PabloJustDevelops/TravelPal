@@ -20,7 +20,7 @@ NEXT_PUBLIC_INSFORGE_URL=https://insforge.example.invalid NEXT_PUBLIC_INSFORGE_A
 pnpm run validate:static-export
 pnpm exec e2e-web install chromium --with-deps
 pnpm run test:tester
-E2E_BASE_URL=https://app-viajes.prg-dev.workers.dev pnpm run test:tester
+E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm run test:tester
 ```
 
 Sin `E2E_BASE_URL`, el runner inicia o reutiliza Wrangler en localhost:3000 para servir `out/`;

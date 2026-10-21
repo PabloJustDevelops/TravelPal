@@ -12,7 +12,7 @@ describe('puertas de despliegue', () => {
     // Sin un if limitado a PR, el mismo test del codigo tambien se ejecuta en push a main.
     expect(ci.jobs.e2e.if).toBeUndefined()
     expect(ci.jobs['e2e-produccion'].needs).toEqual(['deploy'])
-    expect(ci.jobs['e2e-produccion'].with['base-url']).toBe('https://app-viajes.prg-dev.workers.dev')
+    expect(ci.jobs['e2e-produccion'].with['base-url']).toBe('https://travelpal.prg-dev.workers.dev')
   })
 
   it('construye, valida y publica el mismo export sin una clave privada', () => {
