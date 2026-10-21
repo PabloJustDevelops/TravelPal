@@ -1,0 +1,404 @@
+[
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "long",
+    "before": {
+      "main": 1168,
+      "frame": 1100,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1100
+        }
+      ]
+    },
+    "after": {
+      "main": 1748.5,
+      "frame": 1680.5,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 316
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 430
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 290
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 308
+        },
+        {
+          "label": "Actividad y estad\u00edsticas Resumen de tus viajes, gastos y planificaci\u00f3n.",
+          "height": 126
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 129.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 1377
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 126
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "long",
+    "before": {
+      "main": 1140,
+      "frame": 1056,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1056
+        }
+      ]
+    },
+    "after": {
+      "main": 1309.109375,
+      "frame": 1225.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 284
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 390
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 308
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 308
+        },
+        {
+          "label": "Actividad y estad\u00edsticas Resumen de tus viajes, gastos y planificaci\u00f3n.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 1007
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "long",
+    "before": {
+      "main": 920,
+      "frame": 832,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 832
+        }
+      ]
+    },
+    "after": {
+      "main": 1185.109375,
+      "frame": 1097.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 288
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 390
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 290
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 268
+        },
+        {
+          "label": "Actividad y estad\u00edsticas Resumen de tus viajes, gastos y planificaci\u00f3n.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 879
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 390,
+    "fixture": "long",
+    "before": {
+      "main": 1078,
+      "frame": 1010,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1010
+        }
+      ]
+    },
+    "after": {
+      "main": 3920.09375,
+      "frame": 3852.09375,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 1985
+        },
+        {
+          "label": "Presupuestos",
+          "height": 1511
+        },
+        {
+          "label": "Previsto frente a real",
+          "height": 1463
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categor\u00eda \u00b7 EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos \u00b7 EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 211.09375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 3528
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 768,
+    "fixture": "long",
+    "before": {
+      "main": 1050,
+      "frame": 966,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 966
+        }
+      ]
+    },
+    "after": {
+      "main": 2961.21875,
+      "frame": 2877.21875,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 1313
+        },
+        {
+          "label": "Presupuestos",
+          "height": 1263
+        },
+        {
+          "label": "Previsto frente a real",
+          "height": 1215
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categor\u00eda \u00b7 EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos \u00b7 EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 156.21875
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 2608
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 1440,
+    "fixture": "long",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 558
+        }
+      ]
+    },
+    "after": {
+      "main": 1588.109375,
+      "frame": 1500.109375,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 1303
+        },
+        {
+          "label": "Presupuestos",
+          "height": 1303
+        },
+        {
+          "label": "Previsto frente a real",
+          "height": 1255
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categor\u00eda \u00b7 EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos \u00b7 EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 1303
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  }
+]

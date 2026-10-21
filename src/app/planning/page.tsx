@@ -18,6 +18,7 @@ import {
 import styles from "./planning.module.css";
 import MonthCalendar from "react-calendar";
 import { selectNextTrip, localToday } from "@/components/dashboard/NextTrip";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import {
   Calendar,
@@ -683,7 +684,7 @@ export default function PlanningPage() {
     <DashboardLayout skeleton="planning">
       <div className="mx-auto max-w-7xl space-y-6 font-sans">
         {/* Header */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div data-loading-slot="title" className={`${slots.planningTitle} flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between`}>
           <PageTitle
             title="Planificación"
             subtitle="Un día cada vez, a tu manera."
@@ -762,7 +763,7 @@ export default function PlanningPage() {
         {/* Contenido principal */}
         {viewMode === "calendar" && (
           <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6">
-            <div className="min-w-0">
+            <div data-loading-slot="planningCalendar" className={slots.planningCalendar}>
               <Calendar
                 events={events}
                 selectedDate={selectedDate}
@@ -774,7 +775,7 @@ export default function PlanningPage() {
               />
             </div>
 
-            <div className="space-y-4">
+            <div data-loading-slot="planningSidebar" tabIndex={0} role="region" aria-label="Resumen de planificación" className={`${slots.planningSidebar} space-y-4`}>
               <Card className="rounded-xl border border-line bg-paper p-4">
                 <h3 className="font-semibold text-ink mb-3">
                   Próximas Reservas

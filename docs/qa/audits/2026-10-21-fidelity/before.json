@@ -1,0 +1,1982 @@
+[
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 1168,
+      "frame": 1100,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1100
+        }
+      ]
+    },
+    "after": {
+      "main": 1224.5,
+      "frame": 1156.5,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 288
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 144
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 164
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 224
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 126
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 129.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 853
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 126
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 1168,
+      "frame": 1100,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1100
+        }
+      ]
+    },
+    "after": {
+      "main": 1352.5,
+      "frame": 1284.5,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 316
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 264
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 164
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 204
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 126
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 129.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 981
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 126
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 1140,
+      "frame": 1056,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1056
+        }
+      ]
+    },
+    "after": {
+      "main": 935.109375,
+      "frame": 851.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 260
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 124
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 224
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 224
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 633
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 1140,
+      "frame": 1056,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1056
+        }
+      ]
+    },
+    "after": {
+      "main": 1039.109375,
+      "frame": 955.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 284
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 224
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 204
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 204
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 737
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 920,
+      "frame": 832,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 832
+        }
+      ]
+    },
+    "after": {
+      "main": 955.109375,
+      "frame": 867.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 288
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 124
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 164
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 164
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 649
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 920,
+      "frame": 832,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 832
+        }
+      ]
+    },
+    "after": {
+      "main": 955.109375,
+      "frame": 867.109375,
+      "blocks": [
+        {
+          "label": "next-trip-title",
+          "height": 288
+        },
+        {
+          "label": "dashboard-itinerary-title",
+          "height": 224
+        },
+        {
+          "label": "dashboard-tasks-title",
+          "height": 164
+        },
+        {
+          "label": "dashboard-budget-title",
+          "height": 164
+        },
+        {
+          "label": "Actividad y estadísticas Resumen de tus viajes, gastos y planificación.",
+          "height": 86
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "_overview_g1177_1",
+          "height": 649
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "rounded-lg border border-line bg-paper p-5",
+          "height": 86
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 1078,
+      "frame": 1010,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1010
+        }
+      ]
+    },
+    "after": {
+      "main": 794.015625,
+      "frame": 726.015625,
+      "blocks": [
+        {
+          "label": "Empieza a organizar tu dinero",
+          "height": 333.921875
+        },
+        {
+          "label": "Movimientos",
+          "height": 80
+        },
+        {
+          "label": "Presupuestos",
+          "height": 48
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 95.09375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 333.921875
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 160
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 1078,
+      "frame": 1010,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 1010
+        }
+      ]
+    },
+    "after": {
+      "main": 906.09375,
+      "frame": 838.09375,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 434
+        },
+        {
+          "label": "Presupuestos",
+          "height": 48
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categoría · EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos · EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 211.09375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 514
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 1050,
+      "frame": 966,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 966
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "label": "Empieza a organizar tu dinero",
+          "height": 271.53125
+        },
+        {
+          "label": "Movimientos",
+          "height": 80
+        },
+        {
+          "label": "Presupuestos",
+          "height": 48
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 271.53125
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 160
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 1050,
+      "frame": 966,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 966
+        }
+      ]
+    },
+    "after": {
+      "main": 811.21875,
+      "frame": 727.21875,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 378
+        },
+        {
+          "label": "Presupuestos",
+          "height": 48
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categoría · EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos · EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 156.21875
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 458
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 558
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "Empieza a organizar tu dinero",
+          "height": 271.53125
+        },
+        {
+          "label": "Movimientos",
+          "height": 80
+        },
+        {
+          "label": "Presupuestos",
+          "height": 80
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 271.53125
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 80
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "expenses",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 558
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "Movimientos",
+          "height": 258
+        },
+        {
+          "label": "Presupuestos",
+          "height": 258
+        },
+        {
+          "label": "Informe de gastos",
+          "height": 65
+        },
+        {
+          "label": "Gastos por Categoría · EUR",
+          "height": 422
+        },
+        {
+          "label": "Tendencia de Gastos · EUR",
+          "height": 422
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]",
+          "height": 258
+        },
+        {
+          "tag": "DETAILS",
+          "cls": "border-t border-line pt-5",
+          "height": 65
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 893,
+      "frame": 825,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 825
+        }
+      ]
+    },
+    "after": {
+      "main": 780,
+      "frame": 712,
+      "blocks": [
+        {
+          "label": "No tienes viajes registrados",
+          "height": 277.921875
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 95.09375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 277.921875
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 893,
+      "frame": 825,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 825
+        }
+      ]
+    },
+    "after": {
+      "main": 780,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 162
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 155.09375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 162
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 307.5
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 865,
+      "frame": 781,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "label": "No tienes viajes registrados",
+          "height": 271.53125
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 271.53125
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 865,
+      "frame": 781,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 110
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 110
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 327
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 869,
+      "frame": 781,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "No tienes viajes registrados",
+          "height": 271.53125
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "flex flex-col items-start rounded-xl border border-line bg-paper px-6 py-8 text-left sm:px-8 sm:py-10",
+          "height": 271.53125
+        }
+      ]
+    }
+  },
+  {
+    "screen": "trips",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 869,
+      "frame": 781,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 781
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "height": 110
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "SECTION",
+          "cls": "rounded-xl border border-line bg-paper p-4 sm:p-5",
+          "height": 110
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-8",
+          "height": 343
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 918,
+      "frame": 850,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 850
+        }
+      ]
+    },
+    "after": {
+      "main": 3346.5,
+      "frame": 3278.5,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 2903
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 139.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 3115
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 918,
+      "frame": 850,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 850
+        }
+      ]
+    },
+    "after": {
+      "main": 3402.5,
+      "frame": 3334.5,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 2903
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 139.5
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 3171
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 970,
+      "frame": 886,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 886
+        }
+      ]
+    },
+    "after": {
+      "main": 1368.109375,
+      "frame": 1284.109375,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 894
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 154.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 1106
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 970,
+      "frame": 886,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 886
+        }
+      ]
+    },
+    "after": {
+      "main": 1424.109375,
+      "frame": 1340.109375,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 894
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 154.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 1162
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 562
+        }
+      ]
+    },
+    "after": {
+      "main": 1090.109375,
+      "frame": 1002.109375,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 894
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 894
+        }
+      ]
+    }
+  },
+  {
+    "screen": "planning",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 562
+        }
+      ]
+    },
+    "after": {
+      "main": 1090.109375,
+      "frame": 1002.109375,
+      "blocks": [
+        {
+          "label": "octubre 2026",
+          "height": 894
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:gap-6",
+          "height": 894
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 895,
+      "frame": 827,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 827
+        }
+      ]
+    },
+    "after": {
+      "main": 812,
+      "frame": 744,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 171.40625
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 104
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 895,
+      "frame": 827,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 827
+        }
+      ]
+    },
+    "after": {
+      "main": 812,
+      "frame": 744,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 171.40625
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 104
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 807,
+      "frame": 723,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 828,
+      "frame": 744,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 127.421875
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 807,
+      "frame": 723,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 828,
+      "frame": 744,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 127.421875
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 352
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 405
+        }
+      ]
+    }
+  },
+  {
+    "screen": "tasks",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 723
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "Por hacer · 0",
+          "height": 137
+        },
+        {
+          "label": "En curso · 0",
+          "height": 137
+        },
+        {
+          "label": "Completadas · 0",
+          "height": 77
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "mb-6 flex flex-wrap items-center justify-between gap-4",
+          "height": 44
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0",
+          "height": 405
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 390,
+    "fixture": "empty",
+    "before": {
+      "main": 817,
+      "frame": 749,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 749
+        }
+      ]
+    },
+    "after": {
+      "main": 818.625,
+      "frame": 750.625,
+      "blocks": [
+        {
+          "label": "No tienes notas registradas",
+          "height": 356.53125
+        },
+        {
+          "label": "No tienes notas registradas",
+          "height": 255.53125
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 155.09375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 358.53125
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 390,
+    "fixture": "populated",
+    "before": {
+      "main": 817,
+      "frame": 749,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 749
+        }
+      ]
+    },
+    "after": {
+      "main": 780,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 225
+        },
+        {
+          "label": "Antes de salir",
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 155.09375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 227
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 768,
+    "fixture": "empty",
+    "before": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 705
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "label": "No tienes notas registradas",
+          "height": 350.140625
+        },
+        {
+          "label": "No tienes notas registradas",
+          "height": 249.140625
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 352.140625
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 768,
+    "fixture": "populated",
+    "before": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 705
+        }
+      ]
+    },
+    "after": {
+      "main": 796,
+      "frame": 712,
+      "blocks": [
+        {
+          "height": 225
+        },
+        {
+          "label": "Antes de salir",
+          "height": 0
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 189
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 227
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 1440,
+    "fixture": "empty",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 629
+        }
+      ]
+    },
+    "after": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [
+        {
+          "label": "No tienes notas registradas",
+          "height": 372.53125
+        },
+        {
+          "label": "No tienes notas registradas",
+          "height": 271.53125
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 69
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 374.53125
+        }
+      ]
+    }
+  },
+  {
+    "screen": "notes",
+    "width": 1440,
+    "fixture": "populated",
+    "before": {
+      "main": 844,
+      "frame": 756,
+      "blocks": [],
+      "children": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only",
+          "height": 1
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-6 ",
+          "height": 629
+        }
+      ]
+    },
+    "after": {
+      "main": 1033.109375,
+      "frame": 945.109375,
+      "blocks": [
+        {
+          "height": 742
+        },
+        {
+          "label": "Antes de salir",
+          "height": 742
+        }
+      ],
+      "children": [
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between",
+          "height": 84.109375
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b border-line pb-6",
+          "height": 69
+        },
+        {
+          "tag": "DIV",
+          "cls": "grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]",
+          "height": 744
+        }
+      ]
+    }
+  }
+]

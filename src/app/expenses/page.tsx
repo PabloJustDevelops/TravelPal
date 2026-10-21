@@ -9,6 +9,7 @@ import {
   withQueryTimeout,
   type QueryErrorKind,
 } from "@/lib/insforge-query";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ExpenseCard from "@/components/expenses/ExpenseCard";
 import BudgetCard from "@/components/budget/BudgetCard";
@@ -655,6 +656,7 @@ export default function ExpensesPage() {
       <div className="space-y-6">
         {/* Header */}
         <PageTitle
+          className={slots.expensesTitle}
           title="Gastos y presupuestos"
           subtitle="Lo que llevas gastado. Lo que queda por disfrutar."
           action={
@@ -675,29 +677,8 @@ export default function ExpensesPage() {
           }
         />
 
-        {!hasFinancialData && (
-          <EmptyState
-            icon={<CurrencyDollarIcon className="h-7 w-7" />}
-            title="Empieza a organizar tu dinero"
-            description="Registra un gasto o crea un presupuesto para seguir el coste del viaje desde el primer día."
-            action={
-              <div className="flex flex-col justify-center gap-3 sm:flex-row">
-                <Link href="/expenses/new">
-                  <Button className="w-full sm:w-auto">
-                    <PlusIcon className="mr-2 h-4 w-4" />
-                    Registrar primer gasto
-                  </Button>
-                </Link>
-                <Button variant="outline" onClick={handleCreateBudget}>
-                  Crear presupuesto
-                </Button>
-              </div>
-            }
-          />
-        )}
-
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
-          <section className="min-w-0">
+          <section aria-label="Movimientos" tabIndex={0} data-loading-slot="expensesMovements" className={slots.expensesMovements}>
             <h2 className="mb-2 text-2xl font-bold tracking-tight text-ink">
               Movimientos
             </h2>
@@ -764,6 +745,26 @@ export default function ExpensesPage() {
                 </p>
               </div>
             )}
+            {!hasFinancialData && (
+              <EmptyState
+                icon={<CurrencyDollarIcon className="h-7 w-7" />}
+                title="Empieza a organizar tu dinero"
+                description="Registra un gasto o crea un presupuesto para seguir el coste del viaje desde el primer día."
+                action={
+                  <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                    <Link href="/expenses/new">
+                      <Button className="w-full sm:w-auto">
+                        <PlusIcon className="mr-2 h-4 w-4" />
+                        Registrar primer gasto
+                      </Button>
+                    </Link>
+                    <Button variant="outline" onClick={handleCreateBudget}>
+                      Crear presupuesto
+                    </Button>
+                  </div>
+                }
+              />
+            )}
             {/* Gastos */}
             {filteredExpenses.length > 0 ? (
               <div className="min-w-0">
@@ -809,7 +810,7 @@ export default function ExpensesPage() {
               )
             )}
           </section>
-          <aside className="min-w-0 xl:border-l xl:border-line xl:pl-7">
+          <aside aria-label="Presupuestos" tabIndex={0} data-loading-slot="expensesBudgets" className={`${slots.expensesBudgets} xl:border-l xl:border-line xl:pl-7`}>
             <h2 className="mb-5 text-xl font-bold text-ink">Presupuestos</h2>{" "}
             {/* Previsto frente a real */}
             {budgets.length > 0 && (
@@ -940,7 +941,7 @@ export default function ExpensesPage() {
             )}
           </aside>
         </div>
-        <details className="border-t border-line pt-5">
+        <details data-loading-slot="expensesReport" className={`${slots.expensesReport} border-t border-line pt-5`}>
           <summary className="min-h-11 cursor-pointer text-lg font-semibold text-ink">
             Informe de gastos
           </summary>

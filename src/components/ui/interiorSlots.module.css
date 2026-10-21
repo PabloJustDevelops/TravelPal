@@ -1,0 +1,75 @@
+/* Alturas medidas con las páginas reales a 390, 768 y 1440 px.
+   Véase docs/qa/audits/2026-10-21-fidelity. Las listas conservan su
+   espacio y desplazan su propio contenido, sin mover el bloque siguiente. */
+.dashboardTitle { height: 130px; }
+.expensesTitle { height: 212px; }
+.dashboardHero { height: 316px; }
+.dashboardItinerary { height: 430px; }
+.dashboardTasks { height: 290px; }
+.dashboardBudget { height: 308px; }
+.dashboardReport:not([open]) { height: 126px; }
+.expensesMovements { height: 434px; }
+.expensesBudgets { height: 411px; } /* título 48 + tarjeta 363 */
+.expensesReport:not([open]) { height: 65px; }
+.dashboardTitle, .expensesTitle, .dashboardHero, .dashboardItinerary,
+.dashboardTasks, .dashboardBudget, .expensesMovements, .expensesBudgets {
+  min-width: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior-block: contain;
+}
+.dashboardTitle { overflow: visible; }
+@media (min-width: 640px) {
+  .dashboardTitle { height: 85px; }
+  .expensesTitle { height: 157px; }
+  .dashboardHero { height: 284px; }
+  .dashboardItinerary { height: 390px; }
+  .dashboardTasks { height: 308px; }
+  .dashboardReport:not([open]) { height: 86px; }
+  .expensesMovements { height: 378px; }
+  .expensesBudgets { height: 355px; } /* título 48 + tarjeta 307 */
+}
+@media (min-width: 1024px) {
+  .dashboardHero { height: 288px; }
+  .dashboardTasks { height: 290px; }
+  .dashboardBudget { height: 268px; }
+}
+@media (min-width: 1280px) {
+  .expensesTitle { height: 85px; }
+  .expensesMovements { height: 355px; }
+}
+.tripsTitle, .notesTitle { height: 156px; }
+.tripsBody { height: 498px; } /* filtros 162 + separación 28 + viaje 307.5 */
+.notesFilters { height: 189px; }
+.notesWorkspace { height: 359px; }
+.notesWorkspace > * { min-height: 0; overflow: auto; }
+.planningTitle { height: 140px; }
+.planningCalendar { height: 2903px; }
+.planningSidebar { height: 252px; }
+.tasksScreen { min-height: calc(100vh - 100px); }
+.tasksTitle { height: 172px; flex-shrink: 0; }
+.tasksFilters { height: 104px; flex-shrink: 0; }
+.tasksBody { height: 352px; flex-shrink: 0; }
+.tripsTitle, .notesTitle, .tripsBody, .notesFilters, .planningTitle,
+.planningCalendar, .planningSidebar, .tasksTitle, .tasksFilters, .tasksBody {
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior-block: contain;
+}
+@media (min-width: 640px) {
+  .tripsTitle, .notesTitle { height: 85px; }
+  .tripsBody { height: 498px; }
+  .planningTitle { height: 155px; }
+  .planningCalendar { height: 894px; }
+}
+@media (min-width: 768px) {
+  .tasksTitle { height: 128px; }
+  .tasksFilters { height: 44px; }
+}
+@media (min-width: 1024px) {
+  .notesFilters { height: 69px; }
+  .notesWorkspace { height: 744px; }
+  .planningTitle { height: 85px; }
+  .tasksTitle { height: 85px; }
+  .tasksBody { height: 405px; }
+}

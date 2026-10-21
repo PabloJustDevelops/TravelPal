@@ -13,6 +13,7 @@ import {
   withQueryTimeout,
   type QueryErrorKind,
 } from "@/lib/insforge-query";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NextTrip, {
   localToday,
@@ -388,6 +389,7 @@ export default function DashboardPage() {
       >
         {/* Cabecera: bienvenida y menu de exportacion */}
         <PageTitle
+          className={slots.dashboardTitle}
           title={`Bienvenido, ${user?.full_name?.split(" ")[0] || "Viajero"}`}
           subtitle="Tu próximo viaje, cada vez más cerca."
           action={
@@ -466,7 +468,7 @@ export default function DashboardPage() {
           expenses={data?.budgetExpenses ?? []}
         />
 
-        <details ref={statisticsRef} className="rounded-lg border border-line bg-paper p-5">
+        <details ref={statisticsRef} data-loading-slot="dashboardReport" className={`${slots.dashboardReport} rounded-lg border border-line bg-paper p-5`}>
           <summary className="min-h-11 cursor-pointer rounded-md text-lg font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent">Actividad y estadísticas <span className="ml-2 text-sm font-normal text-muted">Resumen de tus viajes, gastos y planificación.</span></summary>
           <div className="mt-6 space-y-6">
         {/* Filtros: moneda y rango de fechas */}

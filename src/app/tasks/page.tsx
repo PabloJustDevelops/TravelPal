@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
@@ -283,9 +284,9 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout skeleton="tasks">
-      <div className="flex min-h-[calc(100vh-100px)] flex-col">
+      <div className={`${slots.tasksScreen} flex flex-col`}>
         {/* Header */}
-        <div className="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between">
+        <div data-loading-slot="title" className={`${slots.tasksTitle} mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between`}>
           <PageTitle
             title="Lo importante, antes de salir."
             subtitle="Tus pendientes, sin perder el hilo."
@@ -340,7 +341,7 @@ export default function TasksPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div data-loading-slot="tasksFilters" className={`${slots.tasksFilters} mb-6 flex flex-wrap items-center justify-between gap-4`}>
           <div
             role="group"
             aria-label="Filtrar tareas por estado"
@@ -373,7 +374,7 @@ export default function TasksPage() {
           </div>
         </div>
         {/* Content */}
-        <div className="min-w-0">
+        <div data-loading-slot="tasksBody" role="region" aria-label="Tareas" tabIndex={0} className={slots.tasksBody}>
           {viewMode === "list" ? (
             <TaskList
               tasks={filteredTasks}

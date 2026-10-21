@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useMemo } from "react";
+import slots from "@/components/ui/interiorSlots.module.css";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 import NoteEditor from "@/components/notes/NoteEditor";
@@ -345,6 +346,7 @@ export default function NotesPage() {
       <div className="space-y-6">
         {/* Header */}
         <PageTitle
+          className={slots.notesTitle}
           title="Tu cuaderno de viaje"
           subtitle="Direcciones, ideas y detalles que merece la pena guardar."
           action={
@@ -356,7 +358,7 @@ export default function NotesPage() {
         />
 
         {/* Filters */}
-        <div className="border-b border-line pb-6">
+        <div data-loading-slot="notesFilters" className={`${slots.notesFilters} border-b border-line pb-6`}>
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -413,7 +415,7 @@ export default function NotesPage() {
           </div>
         </div>
 
-        <div className="grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]">
+        <div data-loading-slot="notesWorkspace" className={`${slots.notesWorkspace} grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]`}>
           <section
             aria-label="Lista de notas"
             className={`${showEditor ? "hidden lg:block" : ""} min-w-0 p-4 lg:border-r lg:border-line`}

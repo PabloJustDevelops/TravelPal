@@ -1,0 +1,1298 @@
+[
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "empty",
+    "theme": "light",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "empty",
+    "theme": "dark",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "populated",
+    "theme": "light",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "populated",
+    "theme": "dark",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "long",
+    "theme": "light",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 390,
+    "fixture": "long",
+    "theme": "dark",
+    "before": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "after": {
+      "main": 1749,
+      "slots": {
+        "title": {
+          "height": 130,
+          "top": 93
+        },
+        "dashboardHero": {
+          "height": 316,
+          "top": 247
+        },
+        "dashboardItinerary": {
+          "height": 430,
+          "top": 588
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 1018
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 1316
+        },
+        "dashboardReport": {
+          "height": 126,
+          "top": 1648
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "empty",
+    "theme": "light",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "empty",
+    "theme": "dark",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "populated",
+    "theme": "light",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "populated",
+    "theme": "dark",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "long",
+    "theme": "light",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 768,
+    "fixture": "long",
+    "theme": "dark",
+    "before": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "after": {
+      "main": 1310,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 101
+        },
+        "dashboardHero": {
+          "height": 284,
+          "top": 210
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 519
+        },
+        "dashboardTasks": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardBudget": {
+          "height": 308,
+          "top": 909
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1241
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "empty",
+    "theme": "light",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "empty",
+    "theme": "dark",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "populated",
+    "theme": "light",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "populated",
+    "theme": "dark",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "long",
+    "theme": "light",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  },
+  {
+    "screen": "dashboard",
+    "width": 1440,
+    "fixture": "long",
+    "theme": "dark",
+    "before": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "after": {
+      "main": 1186,
+      "slots": {
+        "title": {
+          "height": 85,
+          "top": 40
+        },
+        "dashboardHero": {
+          "height": 288,
+          "top": 149
+        },
+        "dashboardItinerary": {
+          "height": 390,
+          "top": 462
+        },
+        "dashboardTasks": {
+          "height": 290,
+          "top": 462
+        },
+        "dashboardBudget": {
+          "height": 268,
+          "top": 760
+        },
+        "dashboardReport": {
+          "height": 86,
+          "top": 1052
+        }
+      }
+    },
+    "delta": 0,
+    "slotErrors": [],
+    "shifts": [],
+    "overflow": false,
+    "reducedAnimation": "none",
+    "animation": "_breathe_wnqpu_1",
+    "errors": [],
+    "pass": true
+  }
+]
