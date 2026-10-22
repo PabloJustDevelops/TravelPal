@@ -24,6 +24,8 @@ export default function Footer() {
           <nav aria-label="Proyecto">
             <h2 className="mb-2 text-sm font-semibold">Proyecto</h2>
             <ul>
+              <li><Link href="/aviso-legal" className={styles.footerLink}>Aviso legal</Link></li>
+              <li><Link href="/privacidad" className={styles.footerLink}>Privacidad</Link></li>
               <li><a href="https://github.com/PabloJustDevelops/TravelPal" className={styles.footerLink}>Repositorio en GitHub</a></li>
               <li><a href="https://github.com/PabloJustDevelops/TravelPal/blob/main/LICENSE" className={styles.footerLink}>Licencia MIT</a></li>
             </ul>
