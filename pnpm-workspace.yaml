@@ -6,6 +6,7 @@ allowBuilds:
   '@tailwindcss/oxide': true
   unrs-resolver: true
   core-js: false # Su postinstall solo muestra un mensaje de financiacion.
+  '@sentry/cli': false # El binario viene en la dependencia opcional de la plataforma.
 
 # Versiones mínimas corregidas; solo se fuerzan los rangos vulnerables.
 overrides:

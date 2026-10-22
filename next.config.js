@@ -1,6 +1,13 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { execFileSync } = require('node:child_process')
+let sentryRelease
+try { sentryRelease = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() } catch { /* No git metadata: no release. */ }
+if (/^[a-f0-9]{40,64}$/.test(process.env.GITHUB_SHA || '')) sentryRelease = process.env.GITHUB_SHA
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
+  productionBrowserSourceMaps: process.env.CI === "true" && Boolean(process.env.SENTRY_AUTH_TOKEN),
   // La burbuja de desarrollo no debe tapar controles durante los E2E.
   devIndicators: process.env.E2E_DISABLE_DEV_INDICATORS === "1" ? false : undefined,
   // Configuración para Turbopack (silencia advertencia de conflicto con webpack)
@@ -90,6 +97,7 @@ const nextConfig = {
 
   // Configuración de variables de entorno públicas
   env: {
+    NEXT_PUBLIC_SENTRY_RELEASE: sentryRelease,
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 

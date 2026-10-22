@@ -5,6 +5,7 @@ import { ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outl
 import Button from '@/components/ui/Button'
 import { logger } from '@/lib/logger'
 import { getErrorMessage } from '@/lib/utils'
+import { captureClientException } from '@/lib/sentry'
 
 interface Props {
   children: ReactNode
@@ -15,6 +16,7 @@ interface Props {
 interface State {
   hasError: boolean
   error?: Error
+  errorId?: string
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -28,6 +30,8 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const errorId = captureClientException(error)
+    if (errorId) this.setState({ errorId })
     logger.error('ErrorBoundary: Error capturado', {
       error: getErrorMessage(error),
       componentStack: errorInfo.componentStack,
@@ -37,27 +41,17 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.props.onError) {
       this.props.onError(error, errorInfo)
     }
-
-    // En producción, enviar error a servicio de monitoreo
-    if (process.env.NODE_ENV === 'production') {
-      // Aquí se podría integrar con Sentry, LogRocket, etc.
-      logger.error('ErrorBoundary: Error en producción', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack
-      })
-    }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined })
+    this.setState({ hasError: false, error: undefined, errorId: undefined })
   }
 
   render() {
     if (this.state.hasError) {
       // Usar fallback personalizado si se proporciona
       if (this.props.fallback) {
-        return this.props.fallback
+        return <>{this.props.fallback}{this.state.errorId && <p role="status">Referencia del error: {this.state.errorId}</p>}</>
       }
 
       // Fallback por defecto
@@ -84,6 +78,8 @@ class ErrorBoundary extends Component<Props, State> {
                 </pre>
               </details>
             )}
+
+            {this.state.errorId && <p role="status" className="text-sm text-gray-600 mb-4">Referencia del error: {this.state.errorId}</p>}
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={this.handleRetry}>

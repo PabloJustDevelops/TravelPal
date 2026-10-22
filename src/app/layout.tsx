@@ -3,6 +3,7 @@ import { Inter, Fraunces } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import SentryInit from '@/components/common/SentryInit'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import MotionProvider from '@/components/common/MotionProvider'
@@ -46,6 +47,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} ${fraunces.variable}`} suppressHydrationWarning>
+        <SentryInit />
         <ErrorBoundary>
           <MotionProvider>
             <ToastProvider>

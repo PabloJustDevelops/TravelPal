@@ -16,6 +16,9 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     env:
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: "0.01"
       NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
       NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
     steps:
@@ -47,6 +50,14 @@ jobs:
       - name: Congelar los caminos de datos (issue 38, etapa 0)
         run: node scripts/check-data-paths.mjs
       - run: pnpm run build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Subir mapas Sentry y retirarlos del export público
+        run: node scripts/sentry-sourcemaps.mjs
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'pabloorgs' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'travelpal' }}
       - name: Validar export estático
         run: pnpm run validate:static-export
       - run: pnpm run build-storybook

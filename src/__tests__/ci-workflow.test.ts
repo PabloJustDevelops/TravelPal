@@ -86,3 +86,16 @@ it('limita la cache immutable a los assets estaticos de Next', () => {
   expect(headers).toMatch(/\/_next\/static\/\*[\s\S]*Cache-Control: public,max-age=31536000,immutable/)
   expect(cacheControlRules).toHaveLength(1)
 })
+
+it('mantiene el token de mapas fuera del entorno público y elimina mapas antes de empaquetar', () => {
+  expect(ci.jobs.build.env).not.toHaveProperty('SENTRY_AUTH_TOKEN')
+  expect(ci.jobs.build.env.NEXT_PUBLIC_SENTRY_DSN).toBe('${{ vars.NEXT_PUBLIC_SENTRY_DSN }}')
+  const steps = ci.jobs.build.steps
+  const build = steps.findIndex((step: { run?: string }) => step.run === 'pnpm run build')
+  const maps = steps.findIndex((step: { run?: string }) => step.run === 'node scripts/sentry-sourcemaps.mjs')
+  const validate = steps.findIndex((step: { run?: string }) => step.run === 'pnpm run validate:static-export')
+  expect(maps).toBeGreaterThan(build)
+  expect(validate).toBeGreaterThan(maps)
+  expect(steps[build].env.SENTRY_AUTH_TOKEN).toBe('${{ secrets.SENTRY_AUTH_TOKEN }}')
+  expect(steps[maps].env.SENTRY_AUTH_TOKEN).toBe('${{ secrets.SENTRY_AUTH_TOKEN }}')
+})
