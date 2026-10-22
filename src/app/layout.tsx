@@ -20,11 +20,28 @@ const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', dis
 const themeInitScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})()`
 
 export const metadata: Metadata = {
-  title: 'TravelPal | Tu compañero de viaje',
+  metadataBase: new URL('https://travelpal.prg-dev.workers.dev'),
+  title: { default: 'TravelPal | Tu compañero de viaje', template: '%s | TravelPal' },
+  alternates: { canonical: './' },
+  openGraph: {
+    type: 'website',
+    locale: 'es_ES',
+    siteName: 'TravelPal',
+    title: 'TravelPal | Todos tus planes, un solo viaje',
+    description: 'Planifica itinerarios, tareas y gastos de viaje en un solo lugar.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'TravelPal: todos tus planes, un solo viaje' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TravelPal | Todos tus planes, un solo viaje',
+    description: 'Planifica itinerarios, tareas y gastos de viaje en un solo lugar.',
+    images: ['/og-image.png'],
+  },
   description: 'Planifica itinerarios, tareas y gastos de viaje en un solo lugar.',
   keywords: 'viajes, gastos, planificación, presupuesto, itinerario',
   authors: [{ name: 'TravelPal' }],
-  robots: 'index, follow',
+  // Safe default for every private route, including future pages. Public pages opt in.
+  robots: { index: false, follow: true },
 }
 
 // En Next.js App Router, `viewport` debe exportarse por separado y como objeto

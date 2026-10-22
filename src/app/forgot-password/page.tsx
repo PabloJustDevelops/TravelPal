@@ -1,7 +1,14 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm'
 import AuthShell from '@/components/auth/AuthShell'
+
+export const metadata: Metadata = {
+  title: 'Recuperar contraseña',
+  robots: { index: true, follow: true },
+  alternates: { canonical: '/forgot-password' },
+}
 
 export default function ForgotPasswordPage() {
   return (

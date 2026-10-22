@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import ResetPasswordForm from '@/components/auth/ResetPasswordForm'
 import AuthShell from '@/components/auth/AuthShell'
+
+export const metadata: Metadata = {
+  title: 'Restablecer contraseña',
+  robots: { index: true, follow: true },
+  alternates: { canonical: '/reset-password' },
+}
 
 export default function ResetPasswordPage() {
   return (
