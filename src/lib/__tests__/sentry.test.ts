@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import * as SDK from '@sentry/browser'
-import { initializeSentry, captureClientException, sanitizeEvent, sampleRate } from '@/lib/sentry'
+import { initializeSentry, captureClientException, sanitizeEvent, sampleRate, scrubMessage } from '@/lib/sentry'
 
 jest.mock('@sentry/browser', () => ({ init: jest.fn(), captureException: jest.fn(() => 'event-123') }))
 
@@ -65,6 +65,24 @@ it('drops private payloads, query/hash, auth headers and authenticated users', (
   const serialized = JSON.stringify(event)
   for (const sensitive of ['secret', 'email@example.com', 'authenticated-id', 'Authorization', 'redirectTo', 'private']) expect(serialized).not.toContain(sensitive)
   expect(event.exception?.values?.[0].stacktrace?.frames?.[0].lineno).toBe(1)
+})
+
+it('keeps a scrubbed, truncated exception message so issues stay readable', () => {
+  const event = sanitizeEvent({
+    event_id: 'abc',
+    exception: { values: [
+      { type: 'TypeError', value: 'Cannot read properties of undefined (reading \'trips\')' },
+      { type: 'Error', value: 'fallo al cargar el perfil de email@example.com con id 1234567890' },
+      { type: 'Error', value: `fallo con ${'x'.repeat(400)}` },
+    ] },
+  })
+  const values = event.exception?.values ?? []
+  expect(values[0].value).toBe("Cannot read properties of undefined (reading 'trips')")
+  expect(values[1].value).toBe('fallo al cargar el perfil de [email] con id [num]')
+  expect(values[2].value).toHaveLength(200)
+  expect(values[2].value?.endsWith('…')).toBe(true)
+  expect(scrubMessage('   ')).toBeUndefined()
+  expect(scrubMessage('Authorization: Bearer abc123def456')).toBe('Authorization: [token]')
 })
 
 it('bounds configurable trace sampling to a low rate', () => {

@@ -10,6 +10,26 @@ export function sampleRate(value: string | undefined): number {
   return Number.isFinite(rate) && rate >= 0 && rate <= 0.05 ? rate : 0.01
 }
 
+const MESSAGE_LIMIT = 200
+
+// The exception message is the only free text we keep: it is what makes an
+// issue readable (title and grouping). It is scrubbed of identifiers and
+// truncated before leaving the browser.
+export function scrubMessage(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  const scrubbed = value
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[email]')
+    .replace(/\bBearer\s+\S+/gi, '[token]')
+    .replace(/\b(sk|pk|rk)_[A-Za-z0-9_]{8,}/g, '[token]')
+    .replace(/\bsntry[a-z]?_[A-Za-z0-9_]{8,}/g, '[token]')
+    .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, '[token]')
+    .replace(/\b\d{9,}\b/g, '[num]')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!scrubbed) return undefined
+  return scrubbed.length > MESSAGE_LIMIT ? `${scrubbed.slice(0, MESSAGE_LIMIT - 1)}…` : scrubbed
+}
+
 function cleanUrl(value: string | undefined): string | undefined {
   if (!value) return undefined
   try {
@@ -33,7 +53,7 @@ export function sanitizeEvent<T extends Event>(event: T): T {
     request: { url: cleanUrl(event.request?.url ?? (typeof window !== 'undefined' ? window.location.href : undefined)) },
     exception: event.exception ? { values: event.exception.values?.map((exception) => ({
       type: exception.type,
-      value: 'Exception details omitted',
+      value: scrubMessage(exception.value) ?? 'Exception details omitted',
       mechanism: exception.mechanism ? { type: exception.mechanism.type, handled: exception.mechanism.handled } : undefined,
       stacktrace: exception.stacktrace ? { frames: exception.stacktrace.frames?.map((frame) => ({
         filename: cleanUrl(frame.filename),
