@@ -50,7 +50,8 @@ it('ofrece un footer global con navegación de producto y proyecto', () => {
   expect(within(footer).getByRole('navigation', { name: 'Producto' })).toBeInTheDocument()
   expect(within(footer).getByRole('navigation', { name: 'Proyecto' })).toBeInTheDocument()
   expect(within(footer).getByRole('link', { name: /GitHub/ })).toHaveAttribute('href', 'https://github.com/PabloJustDevelops/TravelPal')
-  expect(within(footer).getByText(/Trabajo de Fin de Grado/)).toBeInTheDocument()
+  expect(within(footer).getByRole('link', { name: /Repositorio en GitHub/ })).toBeInTheDocument()
+  expect(within(footer).getByRole('link', { name: /Licencia MIT/ })).toBeInTheDocument()
 })
 
 it('retira el placeholder al cargar o fallar una imagen sin cambiar sus dimensiones', () => {

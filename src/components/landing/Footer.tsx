@@ -27,7 +27,6 @@ export default function Footer() {
               <li><a href="https://github.com/PabloJustDevelops/TravelPal" className={styles.footerLink}>Repositorio en GitHub</a></li>
               <li><a href="https://github.com/PabloJustDevelops/TravelPal/blob/main/LICENSE" className={styles.footerLink}>Licencia MIT</a></li>
             </ul>
-            <p className="mt-2 text-sm leading-relaxed text-muted">Trabajo de Fin de Grado (TFG).</p>
           </nav>
         </div>
         <div className="mt-10 flex flex-col gap-3 border-t border-line pt-6 text-xs leading-relaxed text-muted sm:flex-row sm:justify-between">
