@@ -154,3 +154,5 @@ para estas consultas de agentes.
 - README y declaraciones instaladas: `node_modules/@sentry/browser/README.md`, `build/npm/types/sdk.d.ts`, `build/npm/types/exports.d.ts`.
 - [SDK browser exacto 10.76.2](https://github.com/getsentry/sentry-javascript/blob/10.76.2/packages/browser/src/sdk.ts): sin integraciones por defecto tampoco instala global handlers ni BrowserSession; aquí los handlers son propios.
 - [Privacidad/configuración de JavaScript](https://docs.sentry.io/platforms/javascript/configuration/options/), [Next SDK](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/), [permisos API](https://docs.sentry.io/api/permissions/).
+
+<!-- comprobación temporal: sourcemaps en CI -->
