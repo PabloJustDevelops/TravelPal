@@ -37,13 +37,17 @@ try {
   for (const [name, required] of Object.entries({
     'default-src': ["'self'"], 'script-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'"], 'img-src': ["'self'"],
-    'connect-src': ["'self'", 'https://insforge-storage.s3.us-east-2.amazonaws.com'],
+    'connect-src': ["'self'", 'https://o4511064837062656.ingest.de.sentry.io', 'https://insforge-storage.s3.us-east-2.amazonaws.com'],
     'font-src': ["'self'"], 'frame-src': ["'none'"], 'object-src': ["'none'"],
     'frame-ancestors': ["'none'"], 'base-uri': ["'self'"], 'form-action': ["'self'"],
   })) {
     if (!required.every((value) => directives.get(name)?.includes(value))) {
       throw new Error(`Missing or unexpected CSP directive: ${name}`)
     }
+  }
+  const connectSources = directives.get('connect-src')
+  if (connectSources.some((source) => source !== "'self'" && !/^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::[0-9]+)?$/.test(source))) {
+    throw new Error('connect-src must use explicit HTTPS origins without wildcards')
   }
   const scriptSources = directives.get('script-src')
   const imageSources = directives.get('img-src')

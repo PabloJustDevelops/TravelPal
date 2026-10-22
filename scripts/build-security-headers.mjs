@@ -17,8 +17,8 @@ const template = headers.replace(
   "img-src 'self' https://sjdq7zsn.eu-central.insforge.app",
   `img-src 'self' ${backendOrigin}`,
 ).replace(
-  "connect-src 'self' https://sjdq7zsn.eu-central.insforge.app",
-  `connect-src 'self' ${backendOrigin}`,
+  "connect-src 'self' https://o4511064837062656.ingest.de.sentry.io https://sjdq7zsn.eu-central.insforge.app",
+  `connect-src 'self' https://o4511064837062656.ingest.de.sentry.io ${backendOrigin}`,
 )
 const generated = template.replace("script-src 'self';", `script-src 'self' ${hashes.join(' ')};`)
 checkHeaderLimits(generated)

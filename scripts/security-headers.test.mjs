@@ -28,7 +28,7 @@ test('exported headers reject missing headers, Report-Only, stale hashes and uns
     })
     assert.equal(generated.status, 0, generated.stderr)
     const original = await readFile(path.join(directory, 'out/_headers'), 'utf8')
-    assert.match(original, /connect-src 'self' https:\/\/backend\.example\.test /)
+    assert.match(original, /connect-src 'self' https:\/\/o4511064837062656\.ingest\.de\.sentry\.io https:\/\/backend\.example\.test /)
     assert.match(original, /img-src 'self' https:\/\/backend\.example\.test https:\/\/insforge-storage\.s3\.us-east-2\.amazonaws\.com;/)
 
     const inherited = spawnSync(process.execPath, [generator], {
@@ -42,13 +42,15 @@ test('exported headers reject missing headers, Report-Only, stale hashes and uns
     })
     assert.equal(inherited.status, 0, inherited.stderr)
     const inheritedHeaders = await readFile(path.join(directory, 'out/_headers'), 'utf8')
-    assert.match(inheritedHeaders, /connect-src 'self' https:\/\/inherited\.example\.test /)
+    assert.match(inheritedHeaders, /connect-src 'self' https:\/\/o4511064837062656\.ingest\.de\.sentry\.io https:\/\/inherited\.example\.test /)
     assert.match(inheritedHeaders, /img-src 'self' https:\/\/inherited\.example\.test /)
 
     const check = () => spawnSync(process.execPath, [checker], { cwd: directory, encoding: 'utf8' })
     assert.equal(check().status, 0)
     assert.match(inheritedHeaders, /connect-src [^;]*https:\/\/insforge-storage\.s3\.us-east-2\.amazonaws\.com/)
     const mutations = [
+      [original.replace(' https://o4511064837062656.ingest.de.sentry.io', ''), /connect-src/],
+      ...['*', 'https:', 'HTTPS:', 'https://*', 'https://*.example.test', 'https://*.ingest.sentry.io', 'https://*.ingest.de.sentry.io', 'wss:'].map((source) => [original.replace("connect-src 'self'", `connect-src 'self' ${source}`), /connect-src/]),
       [original.replace(/connect-src ([^;]*) https:\/\/insforge-storage\.s3\.us-east-2\.amazonaws\.com/, 'connect-src $1'), /connect-src/],
       [original.replace("img-src 'self'", "img-src 'self' https:"), /img-src/],
       [original.replace(/img-src [^;]+;/, "img-src 'self' https:;"), /img-src/],
