@@ -19,17 +19,23 @@ configurado queda disponible para instrumentación explícita futura; actualment
 `beforeSend` reconstruye el evento con una lista permitida: ID, fecha, plataforma,
 nivel, release, entorno, URL sin query/fragmento/credenciales, tipo de excepción y
 ubicaciones de stack (archivo sin query, función, línea, columna, `in_app`).
-Se sustituyen los mensajes de excepción por `Exception details omitted`; se
-eliminan mensajes libres, variables de stack, contexto de aplicación, extras,
-breadcrumbs, cabeceras (incluidas Authorization/Cookie), cuerpos y datos del usuario.
+Se conserva el mensaje de la excepción, que es lo que hace legible un issue, pero
+saneado en el navegador: se sustituyen emails, `Bearer`, claves `sk_`/`pk_`/`rk_`,
+tokens `sntry…`, JWT y secuencias de 9 o más dígitos por `[email]`, `[token]` o
+`[num]`; se colapsan los espacios y se recorta a 200 caracteres. Si tras el saneado
+queda vacío, se envía `Exception details omitted`. Se eliminan mensajes libres del
+evento, variables de stack, contexto de aplicación, extras, breadcrumbs, cabeceras
+(incluidas Authorization/Cookie), cuerpos y datos del usuario.
 El único usuario enviado es `anon-<UUID>` generado en memoria por carga de página:
 no es email, ID de InsForge ni una identidad persistente. La ruta permanece visible;
 no añadas datos privados al pathname ni a nombres de funciones/tipos de excepción.
 Sentry recibe además los metadatos de red inherentes al transporte HTTP; configura
 la retención y el filtrado de IP en la cuenta del propietario.
 
-Se pierden deliberadamente los mensajes detallados. Para investigar, utiliza stack,
-release, ruta, referencia visible y el ID anónimo de esa carga de página.
+El mensaje es el único texto libre que sale del navegador: si escribes un error con
+datos del usuario dentro del `Error(...)`, acabarán en Sentry salvo que encajen en
+los patrones anteriores. No metas nombres, direcciones ni contenido de notas en los
+mensajes de error.
 
 ## Variables y CI
 
