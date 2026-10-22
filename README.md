@@ -21,7 +21,7 @@
 
 ## Qué es
 
-TravelPal es la aplicación web de mi Trabajo de Fin de Grado: una app de viajes donde cada persona
+TravelPal es una app de viajes donde cada persona
 organiza sus viajes de principio a fin — itinerario por días, tareas antes de salir, reservas,
 notas con fotos, gastos por categoría y presupuesto — con autenticación real, datos aislados por
 usuario mediante RLS y una interfaz accesible, en claro y oscuro, de móvil a escritorio.
@@ -180,5 +180,4 @@ MIT — ver [LICENSE](LICENSE).
 
 ## Autor
 
-**Pablo Rodríguez Garijo** ([@PabloJustDevelops](https://github.com/PabloJustDevelops)) — Trabajo de
-Fin de Grado, especialización en Ciberseguridad.
+**Pablo Rodríguez Garijo** ([@PabloJustDevelops](https://github.com/PabloJustDevelops)) — desarrollador de software.
