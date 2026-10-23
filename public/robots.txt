@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /signin
+Allow: /signup
+Disallow: /dashboard
+Disallow: /trips
+Disallow: /trip
+Disallow: /planning
+Disallow: /tasks
+Disallow: /expenses
+Disallow: /notes
+Disallow: /profile
+Disallow: /settings
+Disallow: /create-trip
+Disallow: /expense-edit
+Disallow: /travel-inspiration
+Disallow: /auth/callback
+
+Sitemap: https://travelpal.prg-dev.workers.dev/sitemap.xml

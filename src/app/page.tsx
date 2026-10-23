@@ -10,7 +10,9 @@ import LandingMotion from '@/components/landing/LandingMotion';
 import styles from '@/components/landing/landing.module.css';
 
 export const metadata: Metadata = {
-  title: 'TravelPal - Todos tus planes, un solo viaje',
+  title: { absolute: 'TravelPal - Todos tus planes, un solo viaje' },
+  robots: { index: true, follow: true },
+  alternates: { canonical: '/' },
   description: 'Organiza itinerarios, reservas, gastos y recuerdos en un solo lugar. Dale forma a tu próximo viaje con TravelPal.',
 };
 

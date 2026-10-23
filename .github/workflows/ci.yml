@@ -60,6 +60,10 @@ jobs:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'travelpal' }}
       - name: Validar export estático
         run: pnpm run validate:static-export
+      - name: Validar cabeceras de seguridad
+        run: pnpm run check:headers
+      - name: Validar SEO del export
+        run: pnpm run check:seo
       - run: pnpm run build-storybook
       - name: Subir export estático
         uses: actions/upload-artifact@v4
