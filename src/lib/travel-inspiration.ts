@@ -2,7 +2,11 @@ import { z } from "zod";
 
 const IATA = /^[A-Z]{3}$/;
 const MONTH = /^\d{4}-\d{2}$/;
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+// El proveedor devuelve `depart_date` como instante ISO completo
+// (`2026-11-18T06:15:00+01:00`), no como día suelto. Se acepta también
+// `YYYY-MM-DD` y, en ambos casos, se conserva el día tal como lo escribe el
+// proveedor: es la fecha local de salida del vuelo, no su equivalente en UTC.
+const DAY = /^(\d{4}-\d{2}-\d{2})(?:[T ](?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):?[0-5]\d)?)?$/;
 const MAX_PROVIDER_ROWS = 1000;
 const MAX_IDEAS = 12;
 const MAX_AGE_MS = 48 * 60 * 60 * 1000;
@@ -93,11 +97,13 @@ function validInstant(value: string): Date | undefined {
 }
 
 function datePart(value: string): string | undefined {
-  if (!DAY.test(value)) return undefined;
-  const [year, month, day] = value.split("-").map(Number);
+  const match = DAY.exec(value);
+  if (!match) return undefined;
+  const date = match[1];
+  const [year, month, day] = date.split("-").map(Number);
   const parsed = new Date(Date.UTC(year, month - 1, day));
   if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return undefined;
-  return value;
+  return date;
 }
 
 function toIdea(value: unknown, query: InspirationQuery, now: Date): FlightIdea | undefined {

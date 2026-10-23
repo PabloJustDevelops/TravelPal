@@ -66,7 +66,7 @@ describe("parseFlightIdeas", () => {
       row({ show_to_affiliates: false }),
       row({ found_at: "2026-10-15T11:59:59.000Z" }),
       row({ depart_date: "2026-10-16" }),
-      row({ depart_date: "2026-11-01T00:30:00+14:00" }),
+      row({ depart_date: "2026-11-01T25:99:00+14:00" }),
       row({ depart_date: "2026-02-30" }),
       row({ value: 0 }),
       null,
@@ -77,6 +77,25 @@ describe("parseFlightIdeas", () => {
       departureDate: "2026-11-10", returnDate: "2026-11-17", changes: 1,
       validUntil: "2026-10-19T10:00:00.000Z",
     });
+  });
+
+  it("acepta el instante ISO que devuelve el proveedor y conserva el día local", () => {
+    // Fila literal de api.travelpayouts.com (get_latest_prices, origin=MAD).
+    const real = {
+      depart_date: "2026-11-18T06:15:00+01:00", origin: "MAD", destination: "RBA",
+      gate: "Tickets", return_date: "", found_at: "2026-10-17T10:35:07Z", trip_class: 0,
+      value: 15, number_of_changes: 0, duration: 100, distance: 768,
+      show_to_affiliates: true, actual: true,
+    };
+    const oneWay = { origin: "MAD", month: "2026-11", journey: "one-way" };
+    const ideas = parseFlightIdeas({ data: [real] }, parseInspirationQuery(oneWay, now), now);
+    expect(ideas).toHaveLength(1);
+    expect(ideas[0]).toMatchObject({ origin: "MAD", destination: "RBA", departureDate: "2026-11-18", price: 15 });
+
+    // 2026-11-02T00:30:00+14:00 ya es 2026-11-01 en UTC: manda el día del aeropuerto.
+    const crossing = { ...real, depart_date: "2026-11-02T00:30:00+14:00" };
+    const crossed = parseFlightIdeas({ data: [crossing] }, parseInspirationQuery(oneWay, now), now);
+    expect(crossed[0]?.departureDate).toBe("2026-11-02");
   });
 
   it("filters by query, deduplicates, sorts by price and caps at twelve", () => {
