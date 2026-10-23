@@ -88,12 +88,13 @@ y corrigen la base; `public.users` se retira en `20260918210000_drop-public-user
 
 ## Notificaciones push de navegador
 
-La campana lee las alertas de `alerts` con el SDK. Sobre eso, el cliente registra `public/sw.js` y
-ofrece alta/baja de suscripcion push en `/settings` (`src/hooks/usePushNotifications.ts` +
-`src/lib/push.ts`), con el permiso pedido solo desde un gesto. **El envio esta bloqueado**: faltan la
-tabla `push_subscriptions`, la marca de envio, la edge function de firma y el schedule, que no se
-tocan. La suscripcion se refleja en localStorage como puente temporal, no como fuente de verdad (esa
-es `pushManager.getSubscription()`). El detalle, el esquema propuesto y el porqué están en
+La campana persiste y lee `alerts` con el SDK. El cliente registra `public/sw.js` y persiste
+suscripciones en `push_subscriptions` con la identidad verificada de la sesión. El hook reconcilia
+al iniciar sesión o cambiar de cuenta desde el layout global y Ajustes; localStorage conserva una
+caché auxiliar. Ajustes permite activar con clave pública y soporte del navegador. El servidor añade
+RLS, marca de envío y reserva temporal en `alerts`, y la función Deno `send-push` (VAPID + RFC 8291).
+El schedule, secretos, migración remota y deploy siguen pendientes de activar.
+Operación y límites: [PUSH.md](PUSH.md). Decisión y estado:
 [ADR-013](DECISIONS/ADR-013-push-de-navegador-solo-cliente.md).
 
 ## Configuración y entorno

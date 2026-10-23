@@ -16,6 +16,7 @@ jest.mock('@/hooks/usePushNotifications', () => ({ usePushNotifications: jest.fn
 
 const pushState = {
   supported: true,
+  configured: true,
   permission: 'granted' as const,
   subscribed: false,
   busy: false,
@@ -36,18 +37,26 @@ it('permite elegir el tema automático explícitamente', () => {
   expect(useTheme().setTheme).toHaveBeenCalledWith('system')
 })
 
-it('explica que el envio no esta disponible y no ofrece activar avisos inexistentes', () => {
+it('permite activar los avisos cuando hay soporte y clave pública', () => {
   render(<SettingsPage />)
-  expect(screen.getByText(/los avisos fuera de la app todavía no están disponibles/i)).toBeInTheDocument()
-  expect(screen.getByRole('switch', { name: /notificaciones push/i })).toBeDisabled()
+  const toggle = screen.getByRole('switch', { name: /notificaciones push/i })
+  expect(toggle).toBeEnabled()
+  fireEvent.click(toggle)
+  expect(pushState.subscribe).toHaveBeenCalledTimes(1)
 })
 
-it('permite quitar una suscripcion anterior sin prometer que recibe avisos', () => {
+it('permite quitar una suscripción del navegador', () => {
   jest.mocked(usePushNotifications).mockReturnValue({ ...pushState, subscribed: true })
   render(<SettingsPage />)
-  expect(screen.getByText(/todavía no recibe avisos/i)).toBeInTheDocument()
   const toggle = screen.getByRole('switch', { name: /notificaciones push/i })
   expect(toggle).toBeEnabled()
   fireEvent.click(toggle)
   expect(pushState.unsubscribe).toHaveBeenCalledTimes(1)
+})
+
+it('sin clave pública mantiene el alta deshabilitada', () => {
+  jest.mocked(usePushNotifications).mockReturnValue({ ...pushState, configured: false })
+  render(<SettingsPage />)
+  expect(screen.getByRole('switch', { name: /notificaciones push/i })).toBeDisabled()
+  expect(screen.getByText(/no están configuradas/i)).toBeInTheDocument()
 })

@@ -1,13 +1,9 @@
 /**
- * Capa de navegador de las notificaciones push de TravelPal.
- *
- * Solo toca APIs del navegador (Service Worker, PushManager, Notification) y el
- * puente de localStorage. NO firma ni envia nada: la firma VAPID y el envio son
- * de servidor y hoy estan bloqueados (ver ADR-013). La suscripcion serializada
- * que devuelve `subscribeToPush` es exactamente la fila que guardara la futura
- * tabla `push_subscriptions`; localStorage es un puente temporal, no la fuente
- * de verdad (esa es `pushManager.getSubscription()`).
+ * Suscripciones Web Push del navegador y persistencia del propietario en InsForge.
+ * El navegador determina el estado del permiso y la suscripción; push_subscriptions
+ * permite al servidor enviar avisos. localStorage conserva una caché para la baja.
  */
+import { createInsforgeClient } from "@/lib/insforge";
 
 export const PUSH_SUBSCRIPTION_STORAGE_KEY = "travelpal.push.subscription.v1";
 export const PUSH_SERVICE_WORKER_URL = "/sw.js";
@@ -100,7 +96,7 @@ export function saveStoredSubscription(
       JSON.stringify(subscription),
     );
   } catch {
-    // Sin almacenamiento (modo privado, cuota) el flujo sigue: es un puente.
+    // Sin caché (modo privado, cuota), la persistencia del servidor sigue disponible.
   }
 }
 
@@ -109,7 +105,7 @@ export function clearStoredSubscription(): void {
   try {
     window.localStorage.removeItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
   } catch {
-    // Idem: borrar un puente que no existe no es un fallo.
+    // Borrar una caché que no existe no es un fallo.
   }
 }
 
@@ -128,57 +124,122 @@ export async function getExistingSubscription(): Promise<PushSubscription | null
   return registration.pushManager.getSubscription();
 }
 
-/**
- * Pide el permiso (solo si esta sin decidir), registra el service worker y
- * suscribe. Reutiliza la suscripcion existente en vez de crear otra. Guarda el
- * resultado en el puente de localStorage.
- */
-export async function subscribeToPush(
-  vapidPublicKey: string,
+// Serializa mutaciones entre la reconciliación global y el interruptor de Ajustes.
+let pendingMutation: Promise<unknown> = Promise.resolve();
+function mutatePush<T>(operation: () => Promise<T>): Promise<T> {
+  const result = pendingMutation.then(operation);
+  pendingMutation = result.catch(() => undefined);
+  return result;
+}
+
+class EndpointOwnershipConflict extends Error {}
+
+async function upsertSubscription(
+  subscription: PushSubscription,
 ): Promise<SerializedPushSubscription> {
-  if (!isPushSupported()) {
-    throw new Error("Este navegador no soporta notificaciones push");
+  const client = createInsforgeClient();
+  const { data, error: authError } = await client.auth.getCurrentUser();
+  if (authError || !data?.user?.id) {
+    throw new Error("No se pudo verificar la sesión para guardar la suscripción");
   }
-  if (!vapidPublicKey) {
-    throw new Error("Falta la clave publica VAPID");
-  }
-
-  let permission = getPushPermission();
-  if (permission === "default") {
-    permission = await window.Notification.requestPermission();
-  }
-  if (permission !== "granted") {
-    throw new Error("No hay permiso para mostrar notificaciones");
-  }
-
-  const registration = await registerPushServiceWorker();
-  const existing = await registration.pushManager.getSubscription();
-  const subscription =
-    existing ??
-    (await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    }));
-
   const serialized = serializeSubscription(subscription);
+  if (!serialized.endpoint || !serialized.keys.p256dh || !serialized.keys.auth) {
+    throw new Error("La suscripción del navegador no contiene las claves necesarias");
+  }
+  const { error } = await client.database.from("push_subscriptions").upsert([{
+    user_id: data.user.id,
+    endpoint: serialized.endpoint,
+    p256dh: serialized.keys.p256dh,
+    auth: serialized.keys.auth,
+    user_agent: navigator.userAgent,
+    last_seen_at: new Date().toISOString(),
+  }], { onConflict: "endpoint" });
+  if (error) {
+    if (error.code === "42501" || error.code === "23505") throw new EndpointOwnershipConflict();
+    throw new Error("No se pudo guardar la suscripción de notificaciones");
+  }
   saveStoredSubscription(serialized);
   return serialized;
 }
 
-/**
- * Da de baja la suscripcion en el navegador y limpia el puente. Devuelve true si
- * habia algo que desuscribir.
- */
-export async function unsubscribeFromPush(): Promise<boolean> {
-  if (!isPushSupported()) return false;
+async function persistSubscription(
+  subscription: PushSubscription,
+  vapidPublicKey?: string,
+): Promise<SerializedPushSubscription> {
+  try {
+    return await upsertSubscription(subscription);
+  } catch (error) {
+    if (!(error instanceof EndpointOwnershipConflict)) throw error;
+    // RLS no permite apropiarse del endpoint de otra cuenta. Invalida el anterior
+    // y genera uno nuevo; la función de envío limpiará la fila antigua tras 404/410.
+    if (!await subscription.unsubscribe()) {
+      throw new Error("No se pudo renovar la suscripción de notificaciones");
+    }
+    clearStoredSubscription();
+    if (!vapidPublicKey) {
+      throw new Error("Falta la clave pública VAPID para renovar la suscripción");
+    }
+    const registration = await registerPushServiceWorker();
+    const replacement = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+    // Un segundo error se propaga: nunca hay un bucle de renovación.
+    return upsertSubscription(replacement);
+  }
+}
 
-  const registration = await navigator.serviceWorker.getRegistration();
-  const subscription = registration
-    ? await registration.pushManager.getSubscription()
-    : null;
+/** Recupera una fila borrada y refresca last_seen_at sin pedir permiso al arrancar. */
+export function syncPushSubscription(): Promise<void> {
+  return mutatePush(async () => {
+    const subscription = await getExistingSubscription();
+    if (subscription) await persistSubscription(subscription, getVapidPublicKey());
+  });
+}
 
-  clearStoredSubscription();
+/** Pide permiso desde un gesto y guarda la suscripción del navegador en InsForge. */
+export async function subscribeToPush(vapidPublicKey: string): Promise<SerializedPushSubscription> {
+  if (!isPushSupported()) throw new Error("Este navegador no soporta notificaciones push");
+  if (!vapidPublicKey) throw new Error("Falta la clave publica VAPID");
+  // Mantener la petición de permiso dentro del gesto, antes de esperar red o la cola.
+  let permission = getPushPermission();
+  if (permission === "default") permission = await window.Notification.requestPermission();
+  if (permission !== "granted") throw new Error("No hay permiso para mostrar notificaciones");
+  return mutatePush(async () => {
+    const registration = await registerPushServiceWorker();
+    const existing = await registration.pushManager.getSubscription();
+    const subscription = existing ?? await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+    return persistSubscription(subscription, vapidPublicKey);
+  });
+}
 
-  if (!subscription) return false;
-  return subscription.unsubscribe();
+/** Borra la fila propia antes de cancelar el navegador; una fila ausente no es un error. */
+export function unsubscribeFromPush(): Promise<boolean> {
+  return mutatePush(async () => {
+    if (!isPushSupported()) return false;
+    const subscription = await getExistingSubscription();
+    const endpoint = subscription
+      ? serializeSubscription(subscription).endpoint
+      : loadStoredSubscription()?.endpoint;
+    if (endpoint) {
+      const client = createInsforgeClient();
+      const { data, error: authError } = await client.auth.getCurrentUser();
+      if (authError || !data?.user?.id) {
+        throw new Error("No se pudo verificar la sesión para borrar la suscripción");
+      }
+      const { error } = await client.database.from("push_subscriptions").delete()
+        .eq("endpoint", endpoint).eq("user_id", data.user.id);
+      if (error) throw new Error("No se pudo borrar la suscripción de notificaciones");
+    }
+    if (!subscription) {
+      clearStoredSubscription();
+      return false;
+    }
+    const removed = await subscription.unsubscribe();
+    if (removed) clearStoredSubscription();
+    return removed;
+  });
 }

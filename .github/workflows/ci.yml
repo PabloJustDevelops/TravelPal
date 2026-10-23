@@ -21,6 +21,7 @@ jobs:
       NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: "0.01"
       NEXT_PUBLIC_INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_INSFORGE_URL }}
       NEXT_PUBLIC_INSFORGE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_INSFORGE_ANON_KEY }}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v6
@@ -38,6 +39,12 @@ jobs:
         run: 'printf ''{"imports":{"zod":"%s"},"compilerOptions":{"lib":["deno.window","deno.ns","dom"],"strict":true}}'' "$ZOD_SPECIFIER" > "$RUNNER_TEMP/travel-inspiration-deno.json"'
       - name: Probar función de inspiración
         run: deno test --config "$RUNNER_TEMP/travel-inspiration-deno.json" --no-lock --allow-env --allow-net insforge/functions/travel-inspiration/index_test.ts
+      - name: Probar función de push
+        run: deno test --config "$RUNNER_TEMP/travel-inspiration-deno.json" --no-lock insforge/functions/send-push/index_test.ts
+      - name: Empaquetar función de push
+        env:
+          INSFORGE_SDK_SPECIFIER: npm:@insforge/sdk@1.5.2
+        run: deno bundle --config "$RUNNER_TEMP/travel-inspiration-deno.json" --no-lock --platform deno --packages bundle --output "$RUNNER_TEMP/send-push.js" --external="$INSFORGE_SDK_SPECIFIER" insforge/functions/send-push/index.ts
       - name: Empaquetar función de inspiración
         env:
           INSFORGE_SDK_SPECIFIER: npm:@insforge/sdk
@@ -46,6 +53,7 @@ jobs:
       - run: pnpm run type-check
       - run: pnpm run test:ci
       - run: pnpm run test:trip-owner-rls
+      - run: pnpm run test:push-rls
       - run: pnpm run test:timezone
       - name: Congelar los caminos de datos (issue 38, etapa 0)
         run: node scripts/check-data-paths.mjs
