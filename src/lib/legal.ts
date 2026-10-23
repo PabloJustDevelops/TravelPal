@@ -1,12 +1,14 @@
-// Única fuente de datos del responsable. Sustituir los marcadores antes de
-// presentar estos textos como información definitiva.
+// Única fuente de datos del responsable. Si vuelves a dejar marcadores, el
+// aviso de «información pendiente» reaparece solo en las páginas legales.
 export const legal = {
   TITULAR: 'Pablo Rodríguez Garijo',
-  CONTACTO: '[CONTACTO: pendiente de dirección de contacto para ejercer derechos]',
-  FECHA_ACTUALIZACION: '[FECHA_ACTUALIZACION: pendiente de revisión del responsable]',
-  IDENTIFICACION: '[TITULAR: pendiente de NIF y domicilio de contacto aplicables al aviso legal]',
+  CONTACTO: 'pabloroga6@gmail.com',
+  FECHA_ACTUALIZACION: '23 de octubre de 2026',
+  // Persona física, sin actividad mercantil: sin NIF ni domicilio público. Si el
+  // proyecto pasa a facturar, hay que añadirlos aquí (LSSI, art. 10).
+  IDENTIFICACION: 'Pablo Rodríguez Garijo, Albacete (España)',
 } as const;
 
 export const legalPending = Object.values(legal).some(value =>
-  /\[(TITULAR|CONTACTO|FECHA_ACTUALIZACION):/.test(value),
+  /\[(TITULAR|CONTACTO|FECHA_ACTUALIZACION|IDENTIFICACION):/.test(value),
 );
