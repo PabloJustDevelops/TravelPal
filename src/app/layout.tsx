@@ -7,6 +7,7 @@ import SentryInit from '@/components/common/SentryInit'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import MotionProvider from '@/components/common/MotionProvider'
+import PushSubscriptionSync from '@/components/common/PushSubscriptionSync'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -70,6 +71,7 @@ export default function RootLayout({
             <ToastProvider>
               <ThemeProvider>
                 <AuthProvider>
+                  <PushSubscriptionSync />
                   {children}
                 </AuthProvider>
               </ThemeProvider>

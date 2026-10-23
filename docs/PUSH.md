@@ -8,18 +8,30 @@ invocada por un schedule, sin route handlers. Usa únicamente WebCrypto para VAP
 `aes128gcm` ([RFC 8291](https://www.rfc-editor.org/rfc/rfc8291.html)). El SDK de InsForge
 se fija a `npm:@insforge/sdk@1.5.2`, la versión del lockfile; no hay dependencias nuevas.
 
-**Esta entrega es la mitad de servidor, todavía no activada en producción.** El cliente actual
-solo guarda la suscripción en localStorage y Ajustes mantiene deshabilitada el alta. Falta conectar
-el alta/baja/reconciliación con `push_subscriptions` usando la sesión del propietario, además de
-aplicar la migración, configurar secretos, publicar la función y programarla. No habilitar Ajustes
-hasta terminar esa integración. No se ha probado una entrega real a un navegador.
+**Cliente y servidor están implementados en código; la activación remota sigue pendiente.**
+El cliente hace upsert en `push_subscriptions` al suscribirse y reconcilia una suscripción viva
+al hidratar la sesión o cambiar de cuenta, desde `PushSubscriptionSync` en el layout raíz y desde
+Ajustes. La identidad de cada escritura/borrado se obtiene con `auth.getCurrentUser()`, nunca
+con datos de la interfaz. El endpoint es la clave de conflicto y cada upsert refresca `last_seen_at`.
+La baja borra la fila propia por endpoint antes de cancelar la suscripción del navegador; no exige
+que la fila exista. localStorage es una caché auxiliar para recuperar el endpoint al darla de baja.
+
+Si RLS rechaza reutilizar el endpoint de otra cuenta, el cliente cancela la suscripción anterior
+y crea una nueva para la sesión actual. No reasigna ni borra filas ajenas; el servidor retirará
+el endpoint invalidado cuando responda 404/410. Las mutaciones se serializan para que la
+reconciliación global y Ajustes no se pisen. No se pide permiso automáticamente.
+
+El interruptor refleja el navegador incluso si falla el SDK, muestra el error y vuelve a permitir
+reintentar. Ajustes permite el alta con soporte, permiso disponible y clave pública VAPID.
+Siguen pendientes aplicar la migración, configurar secretos, publicar la función y programarla.
+No se ha probado una entrega real a un navegador.
 
 La campana crea las filas `alerts` desde tareas, reservas y presupuestos cuando se abre la app.
 El servidor consume esas filas: no crea alertas si la campana no se ha ejecutado.
 
 - Migración: `migrations/20261023120000_browser-push-server.sql`, idempotente. RLS CRUD con
   `(select auth.uid()) = user_id`; sin acceso anónimo. `endpoint` único; claves `p256dh` y `auth`
-  en base64url sin padding; `last_seen_at` debe actualizarlo el futuro cliente al reconciliar.
+  en base64url sin padding; `last_seen_at` se actualiza desde el cliente al reconciliar.
 - Autorización exclusiva mediante `X-Push-Secret`. Un bearer de usuario no autoriza el envío.
   No hay CORS: el navegador no invoca esta función. No se lee el cuerpo ni se aceptan parámetros.
 - RPC `claim_push_alerts` solo ejecutable por `project_admin` (API key administrativa de InsForge).
@@ -141,7 +153,7 @@ comprueba rechazo de bearer sin secreto, SSRF, 404/410, errores, éxito parcial 
 PGlite aplica dos veces la migración y comprueba RLS CRUD, privilegios del RPC, ventana temporal,
 reservas y deduplicación. No accede al backend del proyecto.
 
-Prueba real pendiente, con la integración cliente y configuración terminadas: suscribir un navegador
+Prueba real pendiente, con la infraestructura remota configurada: suscribir un navegador
 con la pública correspondiente, confirmar su fila propia y una alerta no leída vencida hace menos de
 24 horas, cerrar la app y ejecutar un ciclo. Confirmar recepción y apertura del viaje/dashboard,
 `push_sent_at` persistido y ausencia de segundo envío al repetir el ciclo. Repetir con Android y con

@@ -1,4 +1,21 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import PushSubscriptionSync from "@/components/common/PushSubscriptionSync";
+import { useAuth } from "@/contexts/AuthContext";
+jest.mock(
+  "@/contexts/AuthContext",
+  () => ({ useAuth: jest.fn(() => ({ user: { id: "ui-user" }, loading: false })) }),
+);
+import { createInsforgeClient } from "@/lib/insforge";
+jest.mock("@/lib/insforge", () => ({ createInsforgeClient: jest.fn() }));
+const getCurrentUser = jest.fn();
+const upsert = jest.fn();
+const deleteQuery = {
+  eq: jest.fn().mockReturnThis(),
+  then: (resolve: (value: unknown) => unknown) => Promise.resolve(deleteResult).then(resolve),
+};
+let deleteResult: { error: unknown } = { error: null };
+const remove = jest.fn(() => deleteQuery);
+const from = jest.fn(() => ({ upsert, delete: remove }));
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 type AnyRecord = Record<string, unknown>;
@@ -27,6 +44,14 @@ function installEnv(permission: NotificationPermission = "granted"): Env {
   const subscription = makeSubscription();
   const subscribe = jest.fn().mockResolvedValue(subscription);
   const getSubscription = jest.fn().mockResolvedValue(null);
+  subscribe.mockImplementation(async () => {
+    getSubscription.mockResolvedValue(subscription);
+    return subscription;
+  });
+  (subscription.unsubscribe as jest.Mock).mockImplementation(async () => {
+    getSubscription.mockResolvedValue(null);
+    return true;
+  });
   const registration = { pushManager: { getSubscription, subscribe } };
   Object.defineProperty(navigator, "serviceWorker", {
     configurable: true,
@@ -69,6 +94,18 @@ function installLocalStorage(): Map<string, string> {
 }
 
 beforeEach(() => {
+  jest.clearAllMocks();
+  jest.mocked(useAuth).mockReturnValue(
+    { user: { id: "ui-user" }, loading: false } as ReturnType<typeof useAuth>,
+  );
+  jest.mocked(createInsforgeClient).mockReturnValue(
+    { auth: { getCurrentUser }, database: { from } } as unknown as ReturnType<
+      typeof createInsforgeClient
+    >,
+  );
+  getCurrentUser.mockResolvedValue({ data: { user: { id: "session-owner" } }, error: null });
+  upsert.mockResolvedValue({ error: null });
+  deleteResult = { error: null };
   installLocalStorage();
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY =
     "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
@@ -138,7 +175,7 @@ describe("usePushNotifications", () => {
     expect(env.requestPermission).not.toHaveBeenCalled();
   });
 
-  it("desactivar desuscribe en el navegador y limpia el puente", async () => {
+  it("desactivar desuscribe en el navegador y limpia el caché", async () => {
     const env = installEnv("granted");
     env.getSubscription.mockResolvedValue(env.subscription);
 
@@ -160,4 +197,72 @@ describe("usePushNotifications", () => {
     await waitFor(() => expect(result.current.supported).toBe(false));
     expect(result.current.subscribed).toBe(false);
   });
+});
+
+it("reconcilia una suscripción viva mediante upsert con el usuario del SDK", async () => {
+  const env = installEnv("granted");
+  env.getSubscription.mockResolvedValue(env.subscription);
+  render(<PushSubscriptionSync />);
+  await waitFor(() =>
+    expect(upsert).toHaveBeenCalledWith([
+      expect.objectContaining({ user_id: "session-owner", endpoint: "https://push.example/abc" }),
+    ], { onConflict: "endpoint" })
+  );
+  expect(env.requestPermission).not.toHaveBeenCalled();
+  expect(env.subscribe).not.toHaveBeenCalled();
+});
+
+it("un error de reconciliación conserva el interruptor activo y muestra el fallo", async () => {
+  const env = installEnv("granted");
+  env.getSubscription.mockResolvedValue(env.subscription);
+  upsert.mockResolvedValue({ error: { message: "offline" } });
+  const { result } = renderHook(() => usePushNotifications());
+  await waitFor(() => expect(result.current.error).not.toBeNull());
+  expect(result.current.subscribed).toBe(true);
+  expect(result.current.busy).toBe(false);
+});
+
+it("un error de borrado mantiene el interruptor activo y permite reintentar", async () => {
+  const env = installEnv("granted");
+  env.getSubscription.mockResolvedValue(env.subscription);
+  const { result } = renderHook(() => usePushNotifications());
+  await waitFor(() => expect(result.current.subscribed).toBe(true));
+  deleteResult = { error: { message: "offline" } };
+  await act(async () => {
+    await result.current.unsubscribe();
+  });
+  expect(result.current.subscribed).toBe(true);
+  expect(result.current.busy).toBe(false);
+  expect(result.current.error).not.toBeNull();
+});
+
+it("si falla el SDK tras crear el alta, refleja la suscripción real y deja reintentar", async () => {
+  installEnv("granted");
+  upsert.mockRejectedValue(new Error("network down"));
+  const { result } = renderHook(() => usePushNotifications());
+  await waitFor(() => expect(result.current.busy).toBe(false));
+  await act(async () => {
+    await result.current.subscribe();
+  });
+  expect(result.current.subscribed).toBe(true);
+  expect(result.current.busy).toBe(false);
+  expect(result.current.error).not.toBeNull();
+});
+
+it("reconcilia al cambiar de cuenta y obtiene la identidad nueva del SDK", async () => {
+  const env = installEnv("granted");
+  env.getSubscription.mockResolvedValue(env.subscription);
+  const { result, rerender } = renderHook(() => usePushNotifications());
+  await waitFor(() => expect(result.current.busy).toBe(false));
+  expect(upsert).toHaveBeenCalled();
+  getCurrentUser.mockResolvedValue({ data: { user: { id: "new-session-owner" } }, error: null });
+  jest.mocked(useAuth).mockReturnValue(
+    { user: { id: "new-ui-user" }, loading: false } as ReturnType<typeof useAuth>,
+  );
+  rerender();
+  await waitFor(() =>
+    expect(upsert).toHaveBeenLastCalledWith([
+      expect.objectContaining({ user_id: "new-session-owner" }),
+    ], { onConflict: "endpoint" })
+  );
 });

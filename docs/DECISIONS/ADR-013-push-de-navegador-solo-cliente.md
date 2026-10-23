@@ -55,9 +55,10 @@ nadie visita la app, será otro trabajo. Safari iOS requiere instalación como P
 Implementado en código **con envío de servidor**, pendiente de activación y validación real.
 No se han aplicado la migración ni los secretos, el deploy ni el schedule en el backend.
 
-**Pendiente de la mitad cliente:** `src/lib/push.ts` y `usePushNotifications` aún guardan la
-suscripción únicamente en localStorage; no escriben ni borran `push_subscriptions`. Ajustes mantiene
-el alta deshabilitada. Hace falta conectar persistencia y reconciliación con RLS antes de habilitarlo.
-La existencia de esta función no significa que el interruptor actual entregue notificaciones.
+**Persistencia cliente implementada:** `src/lib/push.ts` usa upsert por endpoint y la identidad
+verificada del SDK; la baja borra la fila propia. `usePushNotifications` reconcilia al hidratar
+la sesión y cambiar de cuenta, también desde el layout global. Ajustes permite el alta cuando
+hay clave pública y soporte. Los errores del SDK se muestran sin falsear el estado del navegador.
+La activación de infraestructura y la prueba real de entrega siguen pendientes.
 
 [#48]: https://github.com/PabloJustDevelops/TravelPal/issues/48
