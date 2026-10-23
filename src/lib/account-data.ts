@@ -44,10 +44,16 @@ async function listFiles(client: Client, bucket: string) {
     const { data, error } = await client.storage.from(bucket).list({ limit: PAGE_SIZE, offset });
     check(error, `No se pudieron listar archivos de ${bucket}`);
     if (!data) throw new Error(`Respuesta vacía al listar ${bucket}`);
-    keys.push(...data.objects.map(object => object.key));
-    offset += data.objects.length;
-    if (offset >= data.pagination.total) return keys;
-    if (!data.objects.length) throw new Error(`Listado incompleto de ${bucket}`);
+    // El SDK devuelve el cuerpo tal cual: `{ data: [...], pagination: { total } }`.
+    // No hay `objects`: asumirlo rompía la exportación y el borrado con las
+    // cubetas vacías, que es el caso de toda cuenta recién creada.
+    const page = data as unknown as { data?: { key: string }[] | null; pagination?: { total?: number } | null };
+    const objects = page.data ?? [];
+    const total = page.pagination?.total ?? objects.length;
+    keys.push(...objects.map(object => object.key));
+    offset += objects.length;
+    if (offset >= total) return keys;
+    if (!objects.length) throw new Error(`Listado incompleto de ${bucket}`);
   }
 }
 

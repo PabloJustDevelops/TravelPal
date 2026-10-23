@@ -22,7 +22,8 @@ function sdk() {
     } }),
   })) };
   const storage = { from: (bucket: string) => ({
-    list: async ({ offset }: { offset: number }) => ({ data: { objects: offset ? [] : [{ key: 'owner/photo.jpg' }], pagination: { total: 1 } }, error: null }),
+    // Forma real del SDK: el cuerpo llega tal cual, `{ data: [...], pagination }`.
+    list: async ({ offset }: { offset: number }) => ({ data: { data: offset ? [] : [{ key: 'owner/photo.jpg' }], pagination: { offset: 0, limit: 500, total: 1 } }, error: null }),
     download: async () => ({ data: new Blob(['photo'], { type: 'image/jpeg' }), error: null }),
     remove: async (key: string) => {
       events.push(`storage:${bucket}:${key}`);
@@ -48,6 +49,18 @@ describe('portabilidad y supresión por SDK', () => {
     expect(result.identity.email).toBe('a@example.com');
     expect(result.files[0]).toMatchObject({ key: 'owner/photo.jpg', dataUrl: 'data:image/jpeg;base64,cGhvdG8=' });
     expect(mock.events.every(e => e.endsWith(':owner'))).toBe(true);
+  });
+
+  it('exporta una cuenta sin archivos (cubetas vacías) sin romperse', async () => {
+    const mock = sdk();
+    // Caso real que falló en producción: la respuesta vacía trae `data: []`.
+    const empty = { data: { data: [], pagination: { offset: 0, limit: 500, total: 0 } }, error: null };
+    const client = mock.client as unknown as { storage: { from: (bucket: string) => { list: () => Promise<typeof empty> } } };
+    const original = client.storage.from;
+    client.storage.from = (bucket: string) => ({ ...original(bucket), list: async () => empty });
+    const result = await exportAccountData(client as unknown as Client);
+    expect(result.files).toEqual([]);
+    expect(Object.keys(result.tables)).toHaveLength(ACCOUNT_TABLES.length);
   });
 
   it('no entrega una exportación parcial si falla una lectura', async () => {
