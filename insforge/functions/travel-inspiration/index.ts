@@ -192,6 +192,6 @@ export function createHandler(deps: Dependencies = defaultDependencies): (reques
 }
 
 const handler = createHandler();
+// InsForge sirve la función con su propio router: el entrypoint solo exporta el
+// handler. Un `Deno.serve()` aquí hace que el despliegue se rechace.
 export default handler;
-
-if (import.meta.main) Deno.serve(handler);
