@@ -1,5 +1,6 @@
 "use client";
 
+import AccountDataControls from "@/components/settings/AccountDataControls";
 import AccountTabs from "@/components/layout/AccountTabs";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -194,6 +195,7 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        <AccountDataControls />
       </div>
     </DashboardLayout>
   );
