@@ -8,8 +8,8 @@ try {
   if (/content-security-policy-report-only\s*:/i.test(headers)) {
     throw new Error('CSP must be enforced, not Report-Only')
   }
+
   const rules = new Map()
-  const detachedHeaders = new Map()
   let activeRoute
   for (const line of headers.split(/\r?\n/)) {
     if (/^\S/.test(line) && !line.startsWith('#')) {
@@ -18,11 +18,8 @@ try {
       continue
     }
     if (!activeRoute) continue
-    const detach = line.match(/^\s*!\s*([^\s:]+)\s*$/)
-    if (detach) {
-      if (!detachedHeaders.has(activeRoute)) detachedHeaders.set(activeRoute, new Set())
-      detachedHeaders.get(activeRoute).add(detach[1].toLowerCase())
-      continue
+    if (/^\s*!/.test(line)) {
+      throw new Error(`Header detach directives are not supported by Workers assets: ${line.trim()} on ${activeRoute}`)
     }
     if (!/^\s+[^\s:]+:/.test(line)) continue
     const separator = line.indexOf(':')
@@ -31,6 +28,7 @@ try {
     if (rule.has(name)) throw new Error(`Duplicate header ${name} on ${activeRoute}`)
     rule.set(name, line.slice(separator + 1).trim())
   }
+
   const globalRule = rules.get('/*')
   if (!globalRule) throw new Error('Missing global /* headers rule')
   const expected = {
@@ -44,8 +42,14 @@ try {
   for (const [name, value] of Object.entries(expected)) {
     if (globalRule.get(name) !== value) throw new Error(`Missing or unexpected header: ${name}`)
   }
-  const fallbackCsp = globalRule.get('content-security-policy')
-  if (!fallbackCsp) throw new Error('Missing global CSP for the Cloudflare 404 fallback')
+
+  // El CSP vive solo en reglas por ruta. Si la regla global tambien lo trae, el navegador
+  // recibe dos cabeceras en las rutas que casan con ambas y aplica la interseccion, que es
+  // exactamente lo que dejo la portada sin hidratar.
+  if (globalRule.has('content-security-policy')) {
+    throw new Error('The global /* rule must not carry a Content-Security-Policy; declare it per route instead')
+  }
+
   async function walk(directory) {
     const entries = await readdir(directory, { withFileTypes: true })
     return (await Promise.all(entries.map(async (entry) => {
@@ -58,23 +62,18 @@ try {
     if (relative === 'index.html') return '/'
     return `/${relative.replace(/index\.html$/, '').replace(/\.html$/, '')}`
   }
+
   const htmlFiles = (await walk('out')).filter((file) => file.endsWith('.html'))
-  const notFound = htmlFiles.find((file) => path.relative('out', file).split(path.sep).join('/') === '404.html')
-  if (!notFound) throw new Error('Missing 404.html fallback document')
-  const fallbackHashes = await inlineScriptHashesForFile(notFound)
-  const fallbackDirectives = new Map(fallbackCsp.split(';').filter((part) => part.trim()).map((part) => {
-    const [name, ...values] = part.trim().split(/\s+/)
-    return [name, values]
-  }))
-  const fallbackScripts = fallbackDirectives.get('script-src')
-  if (!fallbackScripts || fallbackScripts.some((source) => source !== "'self'" && !/^'sha256-[A-Za-z0-9+/]{43}='$/.test(source))) throw new Error('404 fallback script-src must contain only self and SHA-256 hashes')
-  if (!fallbackHashes.every((hash) => fallbackScripts.includes(hash))) throw new Error('404 fallback CSP hashes do not cover every inline script')
+  if (!htmlFiles.some((file) => path.relative('out', file).split(path.sep).join('/') === '404.html')) {
+    throw new Error('Missing 404.html fallback document')
+  }
+
   let inlineHashes = 0
   for (const file of htmlFiles) {
     const route = routeFor(file)
     const csp = rules.get(route)?.get('content-security-policy')
-    if (!csp) throw new Error(`Missing route-specific Content-Security-Policy on ${route}`)
-    if (!detachedHeaders.get(route)?.has('content-security-policy')) throw new Error(`Missing route-level detach for fallback CSP on ${route}`)
+    if (!csp) throw new Error(`Missing Content-Security-Policy for ${route}`)
+
     const directives = new Map(csp.split(';').filter((part) => part.trim()).map((part) => {
       const [name, ...values] = part.trim().split(/\s+/)
       return [name, values]
@@ -86,20 +85,32 @@ try {
       'font-src': ["'self'"], 'frame-src': ["'none'"], 'object-src': ["'none'"],
       'frame-ancestors': ["'none'"], 'base-uri': ["'self'"], 'form-action': ["'self'"],
     })) {
-      if (!required.every((value) => directives.get(name)?.includes(value))) throw new Error(`Missing or unexpected CSP directive: ${name} on ${route}`)
+      if (!required.every((value) => directives.get(name)?.includes(value))) {
+        throw new Error(`Missing or unexpected CSP directive: ${name} on ${route}`)
+      }
+    }
+
+    const scriptSources = directives.get('script-src')
+    if (scriptSources.some((value) => value !== "'self'" && !/^'sha256-[A-Za-z0-9+/]{43}='$/.test(value))) {
+      throw new Error(`script-src must contain only self and SHA-256 hashes on ${route}`)
     }
     const connectSources = directives.get('connect-src')
-    if (connectSources.some((source) => source !== "'self'" && !/^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::[0-9]+)?$/.test(source))) throw new Error(`connect-src must use explicit HTTPS origins without wildcards on ${route}`)
-    const scriptSources = directives.get('script-src')
-    const imageSources = directives.get('img-src')
-    if (imageSources.some((source) => source.toLowerCase() === 'https:')) throw new Error(`img-src must not contain the https: wildcard on ${route}`)
-    if (scriptSources.some((value) => value !== "'self'" && !/^'sha256-[A-Za-z0-9+/]{43}='$/.test(value))) throw new Error(`script-src must contain only self and SHA-256 hashes on ${route}`)
+    if (connectSources.some((source) => source !== "'self'" && !/^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::[0-9]+)?$/.test(source))) {
+      throw new Error(`connect-src must use explicit HTTPS origins without wildcards on ${route}`)
+    }
+    if (directives.get('img-src').some((source) => source.toLowerCase() === 'https:')) {
+      throw new Error(`img-src must not contain the https: wildcard on ${route}`)
+    }
+
     const hashes = await inlineScriptHashesForFile(file)
     inlineHashes += hashes.length
-    if (!hashes.every((hash) => scriptSources.includes(hash))) throw new Error(`CSP hashes do not cover every inline script on ${route}`)
+    if (!hashes.every((hash) => scriptSources.includes(hash))) {
+      throw new Error(`CSP hashes do not cover every inline script on ${route}`)
+    }
   }
+
   if (rules.size > 100) throw new Error(`Generated _headers exceeds Cloudflare’s 100 rule limit (${rules.size})`)
-  console.log(`Validated 7 global security headers and ${inlineHashes} route-scoped inline script hashes across ${htmlFiles.length} HTML pages; CSP enforced.`)
+  console.log(`Validated 6 global security headers, one enforced CSP per route and ${inlineHashes} inline script hashes across ${htmlFiles.length} HTML pages.`)
 } catch (error) {
   console.error(`Security headers check failed: ${error.message}`)
   process.exitCode = 1
