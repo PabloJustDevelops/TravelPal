@@ -1,106 +1,104 @@
-# ADR-011: Fotos del diario en un bucket privado, con urls firmadas
+# ADR-011: Journal photos in a private bucket, with signed URLs
 
-## Contexto
+## Context
 
-Las fotos del diario viven en el bucket `journal-photos` de Storage y la tabla
-`journal_photos` guarda dos cosas por cada foto: la `url` que devolvió el upload y la `key` del
-objeto. El bucket era **público**, así que esa `url` era una capacidad de lectura permanente y sin
-dueño: cualquiera que la tuviera —un enlace compartido, el historial del navegador, un log, una
-captura de pantalla— veía la foto, con sesión o sin ella. El aislamiento por usuario existía en la
-tabla (RLS `auth.uid() = user_id`, [ADR-002](ADR-002-insforge-backend.md)) pero no en el objeto: la
-política protege qué filas se leen, no quién abre la imagen.
+Journal photos live in the `journal-photos` Storage bucket and the `journal_photos` table stores two
+things per photo: the `url` the upload returned and the object's `key`. The bucket was public, so
+that `url` was a permanent read capability with no owner: anyone holding it (a shared link, browser
+history, a log, a screenshot) saw the photo, with or without a session. Per-user isolation existed in
+the table (RLS `auth.uid() = user_id`, [ADR-002](ADR-002-insforge-backend.md)) but not on the object:
+the policy protects which rows are read, not who opens the image.
 
-Las fotos de un viaje son contenido privado del usuario, así que el bucket pasa a privado y la
-imagen se sirve **firmada**. Lo que verifiqué antes de escribir esto, contra un branch de InsForge
-con el bucket ya privado ([#64]):
+A trip's photos are the user's private content, so the bucket becomes private and the image is served
+signed. What I verified before writing this, against an InsForge branch with the bucket already
+private ([#64]):
 
-- `storage.from(bucket).upload(key, file)` sigue devolviendo `{ bucket, key, size, mimeType,
-  uploadedAt, url }`. Esa `url` responde **401 sin firma**, pero sigue viniendo rellena y la columna
-  es `not null`: **no hay migración de esquema**. Lo que autoriza la lectura del objeto es la `key`.
-- `storage.from(bucket).createSignedUrl(key, ttl)` devuelve `{ signedUrl, expiresAt }` y la url
-  firmada sirve **sin sesión**.
-- `storage.from(bucket).createSignedUrls(paths[], ttl)` firma en lote y cada entrada trae
-  `{ path, signedUrl, error }`: el fallo de una no tumba al resto.
+- `storage.from(bucket).upload(key, file)` still returns `{ bucket, key, size, mimeType,
+  uploadedAt, url }`. That `url` answers 401 without a signature, but it still comes back filled and
+  the column is `not null`: there is no schema migration. What authorises reading the object is the
+  `key`.
+- `storage.from(bucket).createSignedUrl(key, ttl)` returns `{ signedUrl, expiresAt }` and the signed
+  url is served without a session.
+- `storage.from(bucket).createSignedUrls(paths[], ttl)` signs in batch and each entry carries
+  `{ path, signedUrl, error }`: one failure does not take down the rest.
 
-## Decisión
+## Decision
 
-1. **El bucket `journal-photos` es privado y las fotos se leen firmadas.** La visibilidad del bucket
-   no la cambia la app: la aplica el CLI de InsForge. El código, en cambio, deja de pedir la `url`
-   pública y pide firmas a partir de la `key`.
-2. **La columna `url` deja de servir para pintar la imagen.** La lectura autorizada es la
-   `signedUrl`, que se pide al cargar el listado con `createSignedUrls(keys, 3600)`: **una llamada en
-   lote** para todas las filas y un **ttl de 3600 s** (`JOURNAL_PHOTOS_SIGNED_URL_TTL`). La columna
-   `url` se sigue escribiendo tal cual la devuelve el upload, porque es `not null` y no hay motivo
-   para migrar el esquema; queda como dato histórico, no como fuente de la imagen.
-3. **El fallo de firma es por foto.** Cada entrada del lote trae su propio `error`, así que la foto
-   sin firma se pinta como hueco («Foto del diario no disponible») con su botón de borrar intacto, y
-   las demás se pintan con normalidad: una foto rota no tumba la lista. Si lo que falla es la llamada
-   en bloque, la carga entera se trata como fallida con el patrón habitual del repo
-   (`withQueryTimeout` + `queryErrorKind` + `getLoadErrorMessage`) y se puede reintentar: no se
-   traga el error silenciosamente.
-4. **La subida y el borrado no cambian.** El upload sigue persistiendo `url` y `key` (y sigue
-   limpiando el objeto huérfano si falla el insert), y el borrado sigue usando la `key`, que es lo
-   único que identifica el objeto con independencia de la visibilidad del bucket.
-5. **`avatars` sigue público.** Es la cara del usuario y se pinta en contextos donde un enlace
-   caducable complica el render sin aportar privacidad: no es contenido del viaje. Lo que este ADR
-   cambia es el bucket de las fotos del diario, no el resto de Storage.
+1. The `journal-photos` bucket is private and photos are read signed. The bucket's visibility is not
+   changed by the app: the InsForge CLI applies it. The code, instead, stops asking for the public
+   `url` and asks for signatures from the `key`.
+2. The `url` column stops being used to render the image. The authorised read is the `signedUrl`,
+   requested when loading the listing with `createSignedUrls(keys, 3600)`: one batch call for all
+   rows and a ttl of 3600 s (`JOURNAL_PHOTOS_SIGNED_URL_TTL`). The `url` column is still written as
+   the upload returns it, because it is `not null` and there is no reason to migrate the schema; it
+   remains historical data, not the source of the image.
+3. Signature failure is per photo. Each entry in the batch carries its own `error`, so a photo without
+   a signature renders as a gap ("Foto del diario no disponible") with its delete button intact, and
+   the others render normally: one broken photo does not take down the list. If the batch call itself
+   fails, the whole load is treated as failed with the repo's usual pattern (`withQueryTimeout` +
+   `queryErrorKind` + `getLoadErrorMessage`) and can be retried: the error is not swallowed silently.
+4. Upload and delete do not change. The upload still persists `url` and `key` (and still cleans up the
+   orphaned object if the insert fails), and delete still uses the `key`, which is the only thing that
+   identifies the object regardless of the bucket's visibility.
+5. `avatars` stays public. It is the user's face and it is rendered in contexts where an expiring link
+   complicates the render without adding privacy: it is not trip content. What this ADR changes is the
+   journal photos bucket, not the rest of Storage.
 
-## La privacidad son las dos cosas juntas
+## Privacy is both halves together
 
-Las urls firmadas en la app (punto 2) y las **politicas de propietario de `storage.objects`** ([#68])
-son la misma decisión vista desde dos lados: la url firmada decide **qué se pide**, y la politica
-decide **quién puede firmarlo**. Sin la segunda, el bucket privado no daba privacidad: `storage.objects`
-estaba con RLS deshabilitada y cero politicas, así que en un bucket privado **cualquier usuario
-autenticado listaba, firmaba y descargaba los objetos de otro** —dos usuarios reales, medido en
-[#68]—. Firmar no es autorizar.
+The signed urls in the app (point 2) and the owner policies on `storage.objects` ([#68]) are the same
+decision seen from two sides: the signed url decides what is requested, and the policy decides who can
+sign it. Without the second, the private bucket gave no privacy: `storage.objects` had RLS disabled
+and zero policies, so in a private bucket any authenticated user could list, sign and download another
+user's objects (two real users, measured in [#68]). Signing is not authorising.
 
-Las politicas viven en `migrations/20260917120000_storage-objects-owner-only.sql`: RLS habilitada en
-`storage.objects`, el `drop policy if exists` antes de cada `create policy` (idempotente, como el resto
-de migraciones) y las cuatro de propietario `to authenticated` —select, insert, update y delete— con
-`uploaded_by = (select auth.jwt() ->> 'sub')`, más los grants de tabla y de esquema que el propietario
-necesita. El dueño del objeto es `uploaded_by`, el `sub` del token, **no el prefijo de la `key`**: la
-key lleva el id del usuario por convención, no es una frontera de seguridad.
+The policies live in `migrations/20260917120000_storage-objects-owner-only.sql`: RLS enabled on
+`storage.objects`, `drop policy if exists` before each `create policy` (idempotent, like the rest of
+the migrations) and the four owner policies `to authenticated` (select, insert, update and delete)
+with `uploaded_by = (select auth.jwt() ->> 'sub')`, plus the table and schema grants the owner needs.
+The object's owner is `uploaded_by`, the token's `sub`, not the `key` prefix: the key carries the user
+id by convention, it is not a security boundary.
 
-**`avatars` sigue público a propósito**, como ya decía el punto 5: no hay contenido del viaje que
-proteger ahí y multiplicaría las firmas en las vistas que pintan avatares. Estas politicas son
-`to authenticated` y no añaden grant a `anon`: gobiernan el acceso autenticado a la tabla, mientras que
-la visibilidad de un bucket se decide en el bucket.
+`avatars` stays public on purpose, as point 5 already said: there is no trip content to protect there
+and it would multiply signatures in the views that render avatars. These policies are
+`to authenticated` and add no grant to `anon`: they govern authenticated access to the table, while a
+bucket's visibility is decided on the bucket.
 
-## Consecuencias
+## Consequences
 
-- **Una llamada de red más por carga del listado**: el `select` de las filas y, después, la firma en
-  lote de sus `key`. Es una sola petición extra, no una por foto, y va dentro del mismo
-  `withQueryTimeout` que ya cortaba la lectura.
-- **Las urls firmadas caducan.** A los 3600 s dejan de servir; la lista vuelve a firmar en cada
-  carga, así que no hay estado que mantener ni caché que invalidar. Una pestaña abierta más tiempo
-  que el ttl y sin recargar mostrará la imagen rota hasta que recargue, que es el
-  comportamiento de aceptar el ttl como única frescura.
-- **La autorización del objeto la impone el backend al firmar**: el SDK solo devuelve una firma a
-  quien puede leer el objeto. La de la tabla la sigue imponiendo RLS. Son dos capas, no una.
-- **Un dato muerto más explícito**: la `url` de cada fila ya no explica cómo se pinta la foto. Quien
-  lea la tabla no debe asumir que esa columna sirve para abrir la imagen; el comentario del bucket en
-  `src/lib/insforge.ts` y el tipo `JournalPhotoRow` (que añade `signedUrl`) lo dejan escrito.
-- **Nada de endpoints nuevos**: la firma la pide el navegador con el SDK, en línea con el camino
-  único del [ADR-009](ADR-009-camino-unico-sdk-en-navegador.md).
+- One more network call per listing load: the `select` of the rows and then the batch signature of
+  their `key`s. It is a single extra request, not one per photo, and it runs inside the same
+  `withQueryTimeout` that already bounded the read.
+- Signed urls expire. After 3600 s they stop being served; the list signs again on each load, so there
+  is no state to maintain and no cache to invalidate. A tab open longer than the ttl without reloading
+  will show a broken image until it reloads, which is the behaviour of accepting the ttl as the only
+  freshness.
+- Object authorisation is enforced by the backend when signing: the SDK only returns a signature to
+  someone who can read the object. Table authorisation is still enforced by RLS. Two layers, not one.
+- One more explicit dead value: each row's `url` no longer explains how the photo is rendered. Whoever
+  reads the table should not assume that column opens the image; the bucket comment in
+  `src/lib/insforge.ts` and the `JournalPhotoRow` type (which adds `signedUrl`) write it down.
+- No new endpoints: the browser requests the signature with the SDK, in line with the single path of
+  [ADR-009](ADR-009-camino-unico-sdk-en-navegador.md).
 
-## Alternativas consideradas
+## Alternatives considered
 
-- **Dejar el bucket público.** Descartada: es lo que el [#64] viene a corregir. El enlace no caduca y
-  no tiene dueño, así que no hay forma de revocar el acceso a una foto ya vista.
-- **Firmar desde un endpoint `/api` propio.** Descartada: reabre el BFF que el
-  [ADR-009](ADR-009-camino-unico-sdk-en-navegador.md) cierra y paga la llamada extra de auth por
-  petición. Es justo el camino que el guardián `scripts/check-data-paths.mjs` prohíbe.
-- **`download()` del SDK (Blob y `objectURL`).** Descartada: baja cada foto a memoria y obliga a
-  revocar los `objectURL` al desmontar. La url firmada la sirve el navegador como cualquier `img`,
-  con su caché y sin gestión de memoria propia.
-- **Firmar una a una con `createSignedUrl`.** Descartada: N peticiones donde el lote hace una. El ttl
-  y la vida de cada firma son iguales.
-- **Hacer privado también `avatars`.** Fuera de este cambio: no hay contenido privado que proteger
-  ahí y multiplicaría las firmas en las vistas que pintan avatares.
+- Leaving the bucket public. Discarded: it is what [#64] corrects. The link does not expire and has no
+  owner, so there is no way to revoke access to a photo already seen.
+- Signing from an `/api` endpoint of our own. Discarded: it reopens the BFF that
+  [ADR-009](ADR-009-camino-unico-sdk-en-navegador.md) closes and pays the extra auth call per request.
+  It is exactly the path the `scripts/check-data-paths.mjs` guard forbids.
+- The SDK's `download()` (Blob and `objectURL`). Discarded: it downloads each photo into memory and
+  forces revoking the `objectURL`s on unmount. The signed url is served by the browser like any `img`,
+  with its cache and no memory management of our own.
+- Signing one by one with `createSignedUrl`. Discarded: N requests where the batch does one. The ttl
+  and the life of each signature are the same.
+- Making `avatars` private too. Out of this change: there is no private content to protect there and it
+  would multiply signatures in the views that render avatars.
 
-## Estado
+## Status
 
-Aprobado
+Accepted
 
 [#64]: https://github.com/PabloJustDevelops/TravelPal/issues/64
 [#68]: https://github.com/PabloJustDevelops/TravelPal/issues/68

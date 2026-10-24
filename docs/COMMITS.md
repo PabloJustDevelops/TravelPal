@@ -1,609 +1,414 @@
-# 📝 Convenciones de Commits
+# Commit conventions
 
-> **Guía completa para escribir commits semánticos y consistentes**
+Semantic commits keep the history readable, make individual changes searchable, and allow reverts
+that target one change instead of a batch.
 
----
-
-## 🎯 Filosofía de Commits
-
-Los **commits semánticos** son la base de un historial de Git limpio y útil. Cada commit debe contar una historia clara sobre **qué cambió** y **por qué cambió**.
-
-### ✅ **Beneficios**
-- 📚 **Historial legible** y navegable
-- 🤖 **Automatización** de changelogs y releases
-- 🔍 **Búsqueda eficiente** de cambios específicos
-- 🔄 **Rollbacks precisos** cuando sea necesario
-- 👥 **Colaboración mejorada** entre desarrolladores
-
----
-
-## 📋 Formato Estándar
-
-### 🎯 **Estructura Base**
+## Format
 
 ```
-tipo(scope): descripción corta
+type(scope): short description
 
-[cuerpo opcional]
+[optional body]
 
-[footer opcional]
+[optional footer]
 ```
 
-#### 📏 **Reglas de Formato**
-- **Línea 1**: Máximo 72 caracteres
-- **Tipo**: Siempre en minúsculas
-- **Descripción**: Imperativo, sin punto final
-- **Cuerpo**: Opcional, separado por línea en blanco
-- **Footer**: Opcional, para breaking changes o issues
+Rules:
 
----
+- Header line: 72 characters recommended; commitlint rejects anything above 100.
+- Type: lowercase, from the list below.
+- Description: imperative mood, no trailing period.
+- Body: optional, separated from the header by one blank line. Explain what changed and why.
+- Footer: optional, for breaking changes and issue references.
 
-## 🏷️ Tipos de Commits
+## Allowed types
 
-### 🚀 **Tipos Principales**
+`.commitlintrc.json` extends `@commitlint/config-conventional` and restricts `type-enum` to seven
+values. A commit with any other type fails the check.
 
-| Tipo | Emoji | Descripción | Cuándo usar |
-|------|-------|-------------|-------------|
-| `feat` | ✨ | Nueva funcionalidad | Añadir features para usuarios |
-| `fix` | 🐛 | Corrección de bugs | Solucionar errores |
-| `docs` | 📚 | Solo documentación | Cambios en docs |
-| `style` | 🎨 | Formato/estilo | Espacios, formato, etc. |
-| `refactor` | ♻️ | Refactorización | Mejorar código sin cambiar funcionalidad |
-| `test` | ✅ | Tests | Añadir o corregir tests |
-| `chore` | 🔧 | Mantenimiento | Deps, config, build |
+| Type | Use for |
+|------|---------|
+| `feat` | New functionality visible to users |
+| `fix` | Correction of incorrect behaviour |
+| `docs` | Documentation only |
+| `style` | Formatting, whitespace, semicolons; no logic change |
+| `refactor` | Code change that neither adds functionality nor fixes a bug |
+| `test` | Adding or correcting tests |
+| `chore` | Dependencies, configuration, build, tooling |
 
-### 🔧 **Tipos Secundarios**
+`subject-case` accepts `sentence-case` or `lower-case`. A subject in Title Case fails.
 
-| Tipo | Emoji | Descripción | Cuándo usar |
-|------|-------|-------------|-------------|
-| `perf` | ⚡ | Performance | Mejoras de rendimiento |
-| `ci` | 👷 | CI/CD | Cambios en pipelines |
-| `build` | 📦 | Build system | Webpack, npm scripts, etc. |
-| `revert` | ⏪ | Revertir | Deshacer commits previos |
+The Conventional Commits specification also defines `perf`, `ci`, `build` and `revert`. This
+repository does not accept them; use `chore` with a scope that names the area (`chore(ci)`,
+`chore(deps)`, `chore(build)`).
 
----
+## Scopes
 
-## 🎯 Scopes Recomendados
+The scope is optional. It stays lowercase, like the type.
 
-### 📂 **Por Dominio/Feature**
+By feature: `auth`, `booking`, `search`, `payment`, `dashboard`, `budget`.
+
+By layer: `api`, `db`, `ui`, `config`.
+
+By component: `header`, `sidebar`, `modal`.
+
+By area, when the change cuts across features: `ui`, `config`, `deps`.
 
 ```bash
-# Autenticación
-feat(auth): implementar login con Google
-fix(auth): corregir validación de tokens
+# Authentication
+feat(auth): add Google login
+fix(auth): correct token validation
 
-# Reservas/Booking
-feat(booking): añadir selección de asientos
-fix(booking): calcular precios con descuentos
+# Booking
+feat(booking): add seat selection
+fix(booking): compute prices with discounts
 
-# Búsqueda
-feat(search): filtros avanzados de vuelos
-perf(search): optimizar consultas de API
+# Search
+feat(search): add advanced flight filters
+chore(search): optimize API queries
 
-# Dashboard/UI
-feat(dashboard): gráficos de estadísticas
-style(dashboard): mejorar responsive design
+# Dashboard
+feat(dashboard): add statistics charts
+style(dashboard): improve responsive layout
 ```
 
-### 🏗️ **Por Capa Técnica**
-
 ```bash
-# API/Backend
-feat(api): endpoint para notificaciones
-fix(api): manejo de errores 500
+# Backend and data
+feat(api): add notifications endpoint
+fix(api): handle 500 responses
+feat(db): add users table migration
+fix(db): add indexes for slow queries
 
-# Base de datos
-feat(db): migración para tabla users
-fix(db): índices para queries lentas
+# Frontend
+feat(ui): add DatePicker component
+fix(ui): keep modal open on mobile
 
-# Frontend/UI
-feat(ui): componente DatePicker
-fix(ui): modal no se cierra en mobile
-
-# Config/Tooling
-chore(config): actualizar ESLint rules
-ci(github): añadir workflow de deploy
+# Tooling
+chore(config): update ESLint rules
+chore(ci): add deploy workflow
 ```
 
-### 🔧 **Scopes Especiales**
-
 ```bash
-# Sin scope específico
-feat: añadir página de contacto
-fix: corregir typo en README
+# No scope
+feat: add contact page
+fix: correct typo in README
 
-# Múltiples áreas
-feat(auth,ui): login con diseño renovado
-fix(api,db): sincronización de datos
+# Several areas
+feat(auth,ui): add redesigned login
+fix(api,db): synchronize trip data
 ```
 
----
+## Examples
 
-## ✅ Ejemplos Correctos
-
-### 🚀 **Features**
+A short commit is a single line. A larger one uses the body to record the parts and the reason.
 
 ```bash
-# ✅ Feature simple
-feat(search): añadir filtro por aerolínea
+# Correct
+feat(search): add airline filter
 
-# ✅ Feature con contexto
-feat(booking): implementar pago con Stripe
+feat(booking): implement Stripe payments
 
-Permite a los usuarios pagar reservas usando tarjetas de crédito
-a través de la integración con Stripe API.
+Allow users to pay for a booking with a credit card through
+the Stripe API.
 
-- Añadir componente PaymentForm
-- Integrar Stripe Elements
-- Manejar webhooks de confirmación
-- Añadir tests para flujo de pago
+- Add PaymentForm component
+- Integrate Stripe Elements
+- Handle confirmation webhooks
+- Add tests for the payment flow
 
 Closes #123
 ```
 
-### 🐛 **Bug Fixes**
-
 ```bash
-# ✅ Fix simple
-fix(auth): corregir logout en Safari
+fix(auth): log out correctly in Safari
 
-# ✅ Fix con detalles
-fix(booking): calcular correctamente precios con descuentos
+fix(booking): compute prices with discounts
 
-El cálculo de descuentos no consideraba impuestos, causando
-precios incorrectos en el checkout.
+The discount calculation ignored taxes, which produced wrong
+totals at checkout.
 
-- Aplicar descuentos antes de calcular impuestos
-- Añadir validación para descuentos > 100%
-- Actualizar tests de pricing
+- Apply discounts before computing taxes
+- Validate discounts above 100%
+- Update pricing tests
 
 Fixes #456
 ```
 
-### 📚 **Documentación**
-
 ```bash
-# ✅ Docs simples
-docs: actualizar guía de instalación
+docs: update installation guide
+docs(api): add search endpoint examples
 
-# ✅ Docs específicas
-docs(api): añadir ejemplos para endpoints de búsqueda
-
-- Ejemplos de request/response
-- Códigos de error comunes
-- Rate limiting info
+- Request and response examples
+- Common error codes
+- Rate limiting
 ```
 
-### 🔧 **Chores y Mantenimiento**
-
 ```bash
-# ✅ Dependencies
-chore(deps): actualizar React a v18.2.0
+chore(deps): upgrade React to 18.2.0
+chore(eslint): add rules for hooks
+chore(build): reduce bundle size
 
-# ✅ Config
-chore(eslint): añadir reglas para hooks
-
-# ✅ Build
-build(webpack): optimizar bundle size
-
-Reduce el bundle principal de 2.1MB a 1.8MB mediante:
-- Tree shaking mejorado
-- Code splitting por rutas
-- Compresión gzip
+Reduce the main bundle from 2.1 MB to 1.8 MB through better
+tree shaking, per-route code splitting and gzip compression.
 ```
 
----
-
-## ❌ Ejemplos Incorrectos
-
-### 🚫 **Qué NO hacer**
+## What to avoid
 
 ```bash
-# ❌ Muy vago
+# Too vague
 fix: bug
 
-# ❌ Sin tipo
-añadir nueva feature
+# No type
+add new feature
 
-# ❌ Demasiado largo en título
-feat(booking): implementar sistema completo de reservas con pago, confirmación, emails y notificaciones push
+# Title too long
+feat(booking): implement the complete booking system with payment, confirmation, emails and push notifications
 
-# ❌ Descripción no imperativa
+# Not imperative
 feat(auth): added login functionality
 
-# ❌ Múltiples cambios no relacionados
+# Unrelated changes in one commit
 feat(auth): login + fix search bug + update docs
 
-# ❌ Tipo incorrecto
-feat(fix): corregir error de login
+# Type used as scope
+feat(fix): correct login error
 
-# ❌ Scope muy genérico
-feat(app): nueva funcionalidad
+# Scope too generic
+feat(app): new functionality
 ```
 
-### ✅ **Versiones Corregidas**
+Corrected:
 
 ```bash
-# ✅ Específico y claro
-fix(auth): corregir error de validación en login
-
-# ✅ Con tipo apropiado
-feat(auth): implementar login con Google OAuth
-
-# ✅ Título conciso
-feat(booking): sistema de reservas con pago
-
-Implementa flujo completo de reservas incluyendo:
-- Selección de vuelos y asientos
-- Integración con Stripe para pagos
-- Confirmación por email
-- Notificaciones push
-
-# ✅ Imperativo
+fix(auth): correct login validation error
 feat(auth): implement Google OAuth login
+feat(booking): add booking system with payment
 
-# ✅ Un cambio por commit
-feat(auth): implementar login con Google
-fix(search): corregir filtros de fecha
-docs(readme): actualizar guía de instalación
+Implement the full booking flow:
 
-# ✅ Tipo y scope correctos
-fix(auth): corregir validación de tokens JWT
+- Flight and seat selection
+- Stripe payment integration
+- Email confirmation
+- Push notifications
+
+# One change per commit
+feat(auth): implement Google login
+fix(search): correct date filters
+docs(readme): update installation guide
 ```
 
----
+## Breaking changes
 
-## 🔄 Breaking Changes
-
-### 💥 **Formato para Breaking Changes**
+Mark the commit with `!` after the type or scope, and describe the change in a `BREAKING CHANGE:`
+footer.
 
 ```bash
-# Opción 1: Con ! en el tipo
-feat(api)!: cambiar formato de respuesta de usuarios
+feat(api)!: change user response format
 
-BREAKING CHANGE: El endpoint /api/users ahora retorna un objeto
-con estructura diferente. Ver migration guide en docs/MIGRATION.md
+BREAKING CHANGE: /api/users now returns a different object
+structure. See the ADR in docs/DECISIONS/ for the rationale.
+```
 
-# Opción 2: En el footer
-feat(api): mejorar estructura de respuesta de usuarios
+```bash
+feat(api): restructure the user response
 
-BREAKING CHANGE: El campo 'name' se dividió en 'firstName' y 'lastName'.
-Actualizar código cliente para usar la nueva estructura.
+BREAKING CHANGE: the `name` field is split into `firstName` and
+`lastName`. Client code must use the new structure.
 
-Antes:
+Before:
 {
-  "name": "Juan Pérez"
+  "name": "Jane Doe"
 }
 
-Después:
+After:
 {
-  "firstName": "Juan",
-  "lastName": "Pérez"
+  "firstName": "Jane",
+  "lastName": "Doe"
 }
 ```
 
-### 📋 **Checklist para Breaking Changes**
+Checklist for a breaking change:
 
-- [ ] 💥 Usar `!` o `BREAKING CHANGE:` en footer
-- [ ] 📖 Documentar el cambio en detalle
-- [ ] 🔄 Proporcionar guía de migración
-- [ ] 📝 Actualizar documentación de API
-- [ ] 🧪 Añadir tests para nueva funcionalidad
-- [ ] 📢 Comunicar al equipo antes del merge
+- [ ] `!` in the header or `BREAKING CHANGE:` in the footer
+- [ ] The change is described in detail in the body
+- [ ] A migration guide exists
+- [ ] API documentation is updated
+- [ ] Tests cover the new behaviour
+- [ ] The team knows before the merge
 
----
+## Issue references
 
-## 🔗 Referencias a Issues
-
-### 🎯 **Palabras Clave**
-
-| Palabra | Efecto | Cuándo usar |
+| Keyword | Effect | When to use |
 |---------|--------|-------------|
-| `Fixes #123` | Cierra el issue | Bug fixes |
-| `Closes #123` | Cierra el issue | Features completadas |
-| `Resolves #123` | Cierra el issue | Cualquier resolución |
-| `Related to #123` | Solo referencia | Trabajo parcial |
-| `See #123` | Solo referencia | Contexto adicional |
-
-### 📝 **Ejemplos**
+| `Fixes #123` | Closes the issue | Bug fixes |
+| `Closes #123` | Closes the issue | Completed features |
+| `Resolves #123` | Closes the issue | Any resolution |
+| `Related to #123` | Reference only | Partial work |
+| `See #123` | Reference only | Additional context |
 
 ```bash
-# ✅ Cierra issue específico
-fix(auth): corregir timeout en login
+fix(auth): correct login timeout
 
 Fixes #234
+```
 
-# ✅ Múltiples issues
-feat(search): filtros avanzados de vuelos
+```bash
+feat(search): add advanced flight filters
 
-Implementa filtros por:
-- Aerolínea
-- Horario de salida
-- Número de escalas
-- Precio máximo
+Filter by airline, departure time, number of stops and maximum
+price.
 
 Closes #123, #124, #125
+```
 
-# ✅ Issue relacionado pero no cerrado
-refactor(api): mejorar estructura de endpoints
+```bash
+refactor(api): restructure endpoints
 
-Preparación para implementar cache en #456.
-No cierra el issue pero facilita la implementación.
+Preparation for the cache work in #456. Does not close the issue.
 
 Related to #456
 ```
 
----
+## Tooling
 
-## 🛠️ Herramientas y Automatización
+Commit messages are validated by commitlint. The configuration lives in `.commitlintrc.json`:
 
-### 🤖 **Commitizen**
-
-```bash
-# Instalar commitizen
-npm install -g commitizen
-npm install -g cz-conventional-changelog
-
-# Configurar en package.json
+```json
 {
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
-  }
-}
-
-# Usar para commits interactivos
-git cz
-```
-
-### 🔧 **Commitlint**
-
-```bash
-# Instalar commitlint
-npm install --save-dev @commitlint/cli @commitlint/config-conventional
-
-# Configurar en commitlint.config.js
-module.exports = {
-  extends: ['@commitlint/config-conventional'],
-  rules: {
-    'type-enum': [2, 'always', [
-      'feat', 'fix', 'docs', 'style', 'refactor', 
-      'test', 'chore', 'perf', 'ci', 'build', 'revert'
-    ]],
-    'scope-case': [2, 'always', 'lower-case'],
-    'subject-case': [2, 'always', 'lower-case'],
-    'subject-max-length': [2, 'always', 72]
-  }
-};
-
-# Añadir hook en package.json
-{
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [2, "always", ["feat", "fix", "docs", "chore", "refactor", "test", "style"]],
+    "subject-case": [2, "always", "sentence-case", "lower-case"]
   }
 }
 ```
 
-### 📊 **Conventional Changelog**
+`.github/workflows/commitlint.yml` runs `wagoid/commitlint-github-action` on every pull request that
+is opened, edited or synchronized, so a non-conforming commit blocks the PR. There is no local git
+hook in this repository; run the check by hand before pushing if the message is unusual:
 
 ```bash
-# Generar changelog automático
-npm install --save-dev conventional-changelog-cli
-
-# Script en package.json
-{
-  "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
-  }
-}
-
-# Generar changelog
-npm run changelog
+pnpm exec commitlint --from origin/main --to HEAD
 ```
 
----
+## Workflow
 
-## 📈 Flujo de Trabajo Recomendado
-
-### 1️⃣ **Antes del Commit**
+Before the commit:
 
 ```bash
-# Verificar cambios
 git status
 git diff
 
-# Añadir archivos específicos
 git add src/components/LoginForm.tsx
 git add src/tests/LoginForm.test.tsx
 
-# O añadir todo si estás seguro
+# Only when every staged file belongs to the same change
 git add .
 ```
 
-### 2️⃣ **Escribir el Commit**
+Writing the commit:
 
 ```bash
-# Opción 1: Commit directo
-git commit -m "feat(auth): implementar login con Google OAuth"
+git commit -m "feat(auth): implement Google OAuth login"
 
-# Opción 2: Con editor para mensaje largo
+# Editor, for a message with body and footer
 git commit
-# Se abre editor para escribir mensaje completo
-
-# Opción 3: Con commitizen (recomendado)
-git cz
 ```
 
-### 3️⃣ **Verificar el Commit**
+After the commit:
 
 ```bash
-# Ver el último commit
 git log -1 --oneline
-
-# Ver detalles completos
 git show HEAD
 
-# Corregir si es necesario (solo si no se ha pusheado)
+# Not pushed yet
 git commit --amend
 ```
 
----
-
-## 🔍 Comandos Útiles
-
-### 📊 **Análisis de Commits**
+## Commands
 
 ```bash
-# Ver historial con formato bonito
+# History
 git log --oneline --graph --decorate
-
-# Filtrar por tipo
 git log --oneline --grep="feat:"
 git log --oneline --grep="fix:"
-
-# Ver commits por autor
-git log --author="nombre" --oneline
-
-# Estadísticas de commits
+git log --author="name" --oneline
 git shortlog -sn --since="1 month ago"
-
-# Ver cambios entre versiones
 git log v1.0.0..v1.1.0 --oneline
 ```
 
-### 🔧 **Corrección de Commits**
-
 ```bash
-# Cambiar mensaje del último commit (no pusheado)
-git commit --amend -m "nuevo mensaje"
-
-# Cambiar autor del último commit
-git commit --amend --author="Nombre <email@example.com>"
-
-# Revertir commit manteniendo historial
+# Correcting commits
+git commit --amend -m "corrected message"
+git commit --amend --author="Name <email@example.com>"
 git revert HEAD
-
-# Revertir múltiples commits
 git revert HEAD~3..HEAD
 ```
 
----
+## Template and aliases
 
-## 📋 Templates y Aliases
-
-### 📝 **Template de Commit**
+A message template keeps the structure in front of you:
 
 ```bash
-# Crear template en ~/.gitmessage
-# Tipo(scope): descripción corta (máx 72 chars)
+# ~/.gitmessage
+# type(scope): short description (max 72 characters)
 #
-# Explicación más detallada del cambio (opcional)
-# - Qué cambió
-# - Por qué cambió
-# - Cómo afecta a los usuarios
+# What changed and why (optional)
+# - What changed
+# - Why it changed
+# - How it affects users
 #
 # Fixes #123
 # Closes #456
+```
 
-# Configurar template globalmente
+```bash
 git config --global commit.template ~/.gitmessage
 ```
 
-### ⚡ **Aliases Útiles**
+Aliases for `~/.gitconfig`:
 
 ```bash
-# Añadir a ~/.gitconfig
 [alias]
-  # Commits rápidos
+  # Short commits
   cf = "!f() { git commit -m \"feat: $1\"; }; f"
   cx = "!f() { git commit -m \"fix: $1\"; }; f"
   cd = "!f() { git commit -m \"docs: $1\"; }; f"
-  
-  # Ver historial bonito
+
+  # History
   lg = log --oneline --graph --decorate --all
-  
-  # Último commit
   last = log -1 HEAD --stat
-  
-  # Commits por tipo
+
+  # Filter by type
   feat = log --oneline --grep="feat:"
   fixes = log --oneline --grep="fix:"
 ```
 
----
-
-## ❓ Preguntas Frecuentes
-
-### 🤔 **¿Cuándo usar cada tipo?**
-
-- **feat**: Cualquier cosa nueva que el usuario puede usar
-- **fix**: Cualquier corrección de comportamiento incorrecto
-- **docs**: Solo cambios en documentación (README, comentarios)
-- **style**: Formato, espacios, punto y coma (sin cambios de lógica)
-- **refactor**: Cambios de código que no añaden features ni corrigen bugs
-- **test**: Añadir tests faltantes o corregir tests existentes
-- **chore**: Cambios en herramientas, configuración, dependencias
-
-### 🤔 **¿Qué scope usar?**
-
-1. **Por feature**: `auth`, `booking`, `search`, `payment`
-2. **Por componente**: `header`, `sidebar`, `modal`
-3. **Por capa**: `api`, `db`, `ui`, `config`
-4. **Sin scope**: Para cambios globales o cuando no aplica
-
-### 🤔 **¿Cómo manejar commits grandes?**
+## Splitting large changes
 
 ```bash
-# ❌ Evitar commits masivos
-git commit -m "feat: implementar todo el sistema de reservas"
+# Avoid
+git commit -m "feat: implement the whole booking system"
 
-# ✅ Dividir en commits lógicos
-git commit -m "feat(booking): añadir modelo de reserva"
-git commit -m "feat(booking): implementar API endpoints"
-git commit -m "feat(booking): crear componentes UI"
-git commit -m "test(booking): añadir tests unitarios"
+# Split by layer
+git commit -m "feat(booking): add booking model"
+git commit -m "feat(booking): add API endpoints"
+git commit -m "feat(booking): add UI components"
+git commit -m "test(booking): add unit tests"
 ```
 
-### 🤔 **¿Qué hacer con commits incorrectos?**
+When a commit is wrong: amend it if it has not been pushed. Once pushed, add a correcting commit.
+For a bad change that is already merged, revert it and commit the replacement.
 
-```bash
-# Si no se ha pusheado - cambiar mensaje
-git commit --amend -m "mensaje correcto"
+## Related documentation
 
-# Si ya se pusheó - crear commit de corrección
-git commit -m "fix: corregir typo en mensaje anterior"
+- [`BRANCHING.md`](./BRANCHING.md) - branch strategy
+- [`PR_PROCESS.md`](./PR_PROCESS.md) - pull request process
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) - contribution guide
 
-# Para cambios mayores - revertir y rehacer
-git revert HEAD
-git commit -m "feat(auth): implementar login correctamente"
-```
+External references:
 
----
-
-## 📚 Recursos Adicionales
-
-### 📖 **Documentación Relacionada**
-- 🌳 [`BRANCHING.md`](./BRANCHING.md) - Estrategia de branching
-- 🔄 [`PR_PROCESS.md`](./PR_PROCESS.md) - Proceso de Pull Requests
-- 🤝 [`CONTRIBUTING.md`](./CONTRIBUTING.md) - Guía de contribución
-
-### 🔗 **Enlaces Útiles**
 - [Conventional Commits](https://www.conventionalcommits.org/)
-- [Angular Commit Guidelines](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit)
+- [Angular commit guidelines](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit)
 - [Semantic Versioning](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
-
-### 🛠️ **Herramientas Recomendadas**
-- **Commitizen**: Commits interactivos
-- **Commitlint**: Validación de formato
-- **Conventional Changelog**: Generación automática
-- **Semantic Release**: Releases automáticos
-
----
-
-**📝 Commits semánticos para un desarrollo organizado y profesional**
-
-*Última actualización: Enero 2025*

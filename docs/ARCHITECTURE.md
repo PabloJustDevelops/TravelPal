@@ -1,140 +1,140 @@
-# 🏗️ Arquitectura del Sistema
+# System architecture
 
-> Diseño y patrones de TravelPal (repo `PabloJustDevelops/TravelPal`).
+> Design and patterns of TravelPal (repo `PabloJustDevelops/TravelPal`).
 
-## Visión general
+## Overview
 
-App web Next.js (App Router) exportada como archivos estáticos y servida por Cloudflare Workers
-Assets, con InsForge como backend. En producción no se ejecuta un servidor Next.js: la UI y la
-autenticación funcionan en el navegador y el SDK se conecta directamente a InsForge.
+Next.js web app (App Router) exported as static files and served by Cloudflare Workers Assets,
+with InsForge as the backend. In production no Next.js server runs: the UI and authentication work
+in the browser and the SDK talks to InsForge directly.
 
 ### Stack
 
-| Capa | Tecnología | Propósito |
+| Layer | Technology | Purpose |
 |------|------------|-----------|
-| Frontend | Next.js 16.3.8 + React 19 | Framework y UI |
-| Lenguaje | TypeScript | Tipado estático |
-| Estilos | Tailwind CSS | Diseño responsive |
+| Frontend | Next.js 16.3.8 + React 19 | Framework and UI |
+| Language | TypeScript | Static typing |
+| Styles | Tailwind CSS | Responsive design |
 | Backend | InsForge (`@insforge/sdk`) | Postgres + Auth + Storage |
-| Hosting | Cloudflare Workers Assets + Wrangler | Servir el export estático de `out/` |
+| Hosting | Cloudflare Workers Assets + Wrangler | Serve the static export from `out/` |
 
-### Estructura
+### Structure
 
 ```
 src/
-├── app/                  # App Router: páginas y API routes
-├── components/           # UI por dominio (trips, notes, planning, ...)
+├── app/                  # App Router: pages only, no route handlers
+├── components/           # UI by domain (trips, notes, planning, ...)
 ├── contexts/             # AuthContext, ThemeContext
 └── lib/
-    ├── insforge.ts       # Cliente InsForge del navegador (createInsforgeClient)
-    ├── auth.ts           # AuthService; llamadas de auth desde el navegador
-    ├── public-env.ts     # Validación de variables públicas (zod)
-    └── env.ts            # Validación de secreto para utilidades administrativas locales
-migrations/               # Esquema InsForge (fuente de verdad; ver ADR-004)
-public/                   # Assets estáticos y sw.js (service worker de push; ver ADR-013)
+    ├── insforge.ts       # Browser InsForge client (createInsforgeClient)
+    ├── auth.ts           # AuthService; auth calls from the browser
+    ├── public-env.ts     # Public variable validation (zod)
+    └── env.ts            # Secret validation for local administrative utilities
+migrations/               # InsForge schema (source of truth; see ADR-004)
+public/                   # Static assets and sw.js (push service worker; see ADR-013)
 ```
 
-## Flujo de datos
+## Data flow
 
-Hay **un único camino** para los datos de usuario: el navegador habla directamente con InsForge por
-el SDK. El BFF de `/api/*` se retiró; el porqué y las pérdidas quedan en
+There is **a single path** for user data: the browser talks to InsForge directly through the SDK.
+The `/api/*` BFF was removed; the reasoning and what was lost are in
 [ADR-009](DECISIONS/ADR-009-camino-unico-sdk-en-navegador.md).
 
 ```mermaid
 graph TB
-    A[Usuario] --> B[Cloudflare Worker de assets]
-    B --> C[Export estático de Next.js en out/]
-    C --> D[Componentes React en el navegador]
-    D --> E[Contextos: AuthContext]
-    D --> F[SDK InsForge en el navegador]
+    A[User] --> B[Cloudflare assets Worker]
+    B --> C[Next.js static export in out/]
+    C --> D[React components in the browser]
+    D --> E[Contexts: AuthContext]
+    D --> F[InsForge SDK in the browser]
     E --> F
     F --> G[InsForge: Postgres + Auth]
 ```
 
-En cliente, autenticación y acceso a datos van por `createInsforgeClient()` y el SDK de InsForge.
-La autorización la decide **RLS** (`auth.uid() = user_id`), no el Worker: cada usuario ve y toca
-sólo sus filas aunque llame al SDK directamente. La agregación y el cálculo viven en las páginas,
-no en un servidor de la aplicación.
+On the client, authentication and data access go through `createInsforgeClient()` and the InsForge
+SDK. Authorization is decided by **RLS** (`auth.uid() = user_id`), not by the Worker: each user sees
+and touches only their own rows even when calling the SDK directly. Aggregation and computation live
+in the pages, not in an application server.
 
-El **guardián** `scripts/check-data-paths.mjs` (con `scripts/data-paths-baseline.json`) es la valla
-que impide volver al BFF: cuenta los `fetch`/`useApiResource` a `/api/<dominio>` y falla el build si
-aparece uno nuevo, con literal o con la url en variable. Hoy está en `puntos bff: 0 / 0` y
-`sin dominio 0 / 0`.
+The **guard** `scripts/check-data-paths.mjs` (with `scripts/data-paths-baseline.json`) is the fence
+that blocks a return to the BFF: it counts `fetch`/`useApiResource` calls to `/api/<domain>` and fails
+the build if a new one appears, whether the URL is a literal or a variable. Today it reports
+`bff points: 0 / 0` and `no domain: 0 / 0`.
 
-### Rutas y API
+### Routes and API
 
-No quedan Route Handlers ni endpoints de Next.js en producción. Las páginas de `src/app/` se
-exportan como archivos en `out/`; `/auth/callback` es una página cliente que deja que el SDK
-InsForge termine el intercambio OAuth. Las llamadas de datos y auth se hacen directamente desde el
-navegador a InsForge.
+No Route Handlers or Next.js endpoints remain in production. The pages in `src/app/` are exported as
+files in `out/`; `/auth/callback` is a client page that lets the InsForge SDK finish the OAuth
+exchange. Data and auth calls go directly from the browser to InsForge.
 
-## Autenticación
+## Authentication
 
-- `AuthService` usa `createInsforgeClient()` del SDK en el navegador para registro, login, logout,
-  OAuth, restablecimiento y consulta de sesión.
-- `/auth/callback` es una ruta estática. El SDK cliente procesa los parámetros del callback y la
-  página envía al usuario al dashboard o al acceso según el resultado.
-- No hay proxy, Server Actions ni route handlers de auth en el despliegue estático. La sesión y los
-  datos privados quedan protegidos por InsForge y sus políticas RLS.
+- `AuthService` uses `createInsforgeClient()` from the SDK in the browser for sign-up, login, logout,
+  OAuth, reset and session lookup.
+- `/auth/callback` is a static route. The client SDK processes the callback parameters and the page
+  sends the user to the dashboard or to sign-in depending on the result.
+- There is no proxy, no Server Actions and no auth route handlers in the static deployment. The
+  session and private data are protected by InsForge and its RLS policies.
 
-## Modelo de datos
+## Data model
 
-Fuente de verdad única: `migrations/20260913181842_create-app-schema.sql` (ver ADR-004). Deriva de
-las consultas reales y usa `text + CHECK` en vez de enums, con RLS de propietario (`auth.uid()`).
+Single source of truth: `migrations/20260913181842_create-app-schema.sql` (see ADR-004). It derives
+from the real queries and uses `text + CHECK` instead of enums, with owner RLS (`auth.uid()`).
 
-Tablas: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `alerts`,
-`budgets`, `journal_entries`, `journal_photos`, `profiles`. Las migraciones posteriores amplían
-y corrigen la base; `public.users` se retira en `20260918210000_drop-public-users.sql`. El detalle y el glosario están en [CONTEXT.md](../CONTEXT.md).
+Tables: `trips`, `expenses`, `notes`, `tasks`, `bookings`, `itinerary_activities`, `alerts`,
+`budgets`, `journal_entries`, `journal_photos`, `profiles`. Later migrations extend and correct the
+base; `public.users` is dropped in `20260918210000_drop-public-users.sql`. Details and the glossary
+are in [CONTEXT.md](../CONTEXT.md).
 
-## Notificaciones push de navegador
+## Browser push notifications
 
-La campana persiste y lee `alerts` con el SDK. El cliente registra `public/sw.js` y persiste
-suscripciones en `push_subscriptions` con la identidad verificada de la sesión. El hook reconcilia
-al iniciar sesión o cambiar de cuenta desde el layout global y Ajustes; localStorage conserva una
-caché auxiliar. Ajustes permite activar con clave pública y soporte del navegador. El servidor añade
-RLS, marca de envío y reserva temporal en `alerts`, y la función Deno `send-push` (VAPID + RFC 8291).
-El schedule, secretos, migración remota y deploy siguen pendientes de activar.
-Operación y límites: [PUSH.md](PUSH.md). Decisión y estado:
+The bell persists to and reads `alerts` with the SDK. The client registers `public/sw.js` and
+persists subscriptions in `push_subscriptions` with the verified session identity. The hook
+reconciles on sign-in or account switch from the global layout and Settings; localStorage keeps an
+auxiliary cache. Settings allows enabling with the public key and browser support. The server adds
+RLS, a send marker and a temporary reservation on `alerts`, and the Deno function `send-push`
+(VAPID + RFC 8291). The schedule, secrets, remote migration and deploy are still pending activation.
+Operation and limits: [PUSH.md](PUSH.md). Decision and status:
 [ADR-013](DECISIONS/ADR-013-push-de-navegador-solo-cliente.md).
 
-## Configuración y entorno
+## Configuration and environment
 
-- `src/lib/public-env.ts`: variables `NEXT_PUBLIC_*` (van al bundle del cliente).
-- `src/lib/env.ts` valida `INSFORGE_API_KEY`; `src/instrumentation.ts` la carga en `pnpm run dev`,
-  así que es necesaria para ese entorno local. No se incorpora al export ni se configura en el
-  Worker estático.
-- `NEXT_PUBLIC_INSFORGE_URL` y `NEXT_PUBLIC_INSFORGE_ANON_KEY` se incorporan al export durante el
-  build. La autorización de datos la aplica RLS. Ver [ADR-014](DECISIONS/ADR-014-cloudflare-static-assets-worker.md).
+- `src/lib/public-env.ts`: `NEXT_PUBLIC_*` variables (they go into the client bundle).
+- `src/lib/env.ts` validates `INSFORGE_API_KEY`; `src/instrumentation.ts` loads it in `pnpm run dev`,
+  so it is required for that local environment. It is not embedded in the export and is not
+  configured on the static Worker.
+- `NEXT_PUBLIC_INSFORGE_URL` and `NEXT_PUBLIC_INSFORGE_ANON_KEY` are embedded in the export during
+  the build. Data authorization is enforced by RLS. See [ADR-014](DECISIONS/ADR-014-cloudflare-static-assets-worker.md).
 
 ## CI
 
-`.github/workflows/ci.yml` ejecuta en PR: lint, type-check, Jest, prueba RLS, prueba de timezone,
-guardián de rutas de datos, export estático, validación del export y build de Storybook. `build`
-sube `out/` como artefacto; `worker` (mostrado como `worker-build`) lo descarga, lo valida y corre
-`pnpm exec wrangler deploy --dry-run --no-autoconfig`. No compila un Worker OpenNext. `commitlint.yml`
-valida los mensajes de commit.
+`.github/workflows/ci.yml` runs on PR: the Deno tests for the InsForge functions (`travel-inspiration`,
+`send-push`), lint, type-check, Jest, both RLS scripts, the timezone test, the data-route guard, the
+static export, the export validator, the header and SEO validators, and the Storybook build. `build`
+uploads `out/` as an artifact; `worker` (displayed as `worker-build`) downloads it, validates it and
+runs `pnpm exec wrangler deploy --dry-run --no-autoconfig`. It does not compile an OpenNext Worker.
+`commitlint.yml` validates commit messages.
 
-Los E2E de Playwright, Tester Army y Storybook corren contra el export estático en PR y en push a
-`main`. En `main`, `deploy` depende de `build`, `worker` y `e2e`, descarga el artefacto y lo publica
-con Wrangler; `e2e-produccion` corre después contra el sitio desplegado. Los tests del usuario
-dedicado se serializan entre ramas. CI usa Node 22.22.3. GitHub Actions es la única vía automática;
-no hay triggers de Cloudflare Workers Builds.
-Ver [TESTING.md](TESTING.md) y [TESTER-ARMY.md](TESTER-ARMY.md).
+The Playwright E2E, Tester Army and Storybook suites run against the static export on PR and on push
+to `main`. On `main`, `deploy` depends on `build`, `worker` and `e2e`, downloads the artifact and
+publishes it with Wrangler; `e2e-produccion` runs afterwards against the deployed site. The dedicated
+user's tests are serialized across branches. CI uses Node 22.22.3. GitHub Actions is the only
+automated path; there are no Cloudflare Workers Builds triggers.
+See [TESTING.md](TESTING.md) and [TESTER-ARMY.md](TESTER-ARMY.md).
 
-El job `build` ejecuta además `node scripts/check-data-paths.mjs` (etapa 0 del [#38]): cuenta las
-llamadas al BFF por `/api` (`fetch` y `useApiResource`) y los puntos de uso del SDK de InsForge
-(`.database.from`), y falla si aparece un `fetch` nuevo a un endpoint de datos de usuario. Con el BFF
-retirado no queda ningún punto (todo a cero), así que el guardián ya no congela deuda: **prohíbe**
-volver a él (ver [ADR-009](DECISIONS/ADR-009-camino-unico-sdk-en-navegador.md)). El baseline por
-fichero y por dominio vive en `scripts/data-paths-baseline.json` y se regenera con `--update` al
-borrar un endpoint.
+The `build` job also runs `node scripts/check-data-paths.mjs` (stage 0 of [#38]): it counts BFF calls
+by `/api` (`fetch` and `useApiResource`) and the InsForge SDK usage points (`.database.from`), and
+fails if a new `fetch` to a user-data endpoint appears. With the BFF removed no point remains
+(everything at zero), so the guard no longer freezes debt: it **forbids** going back to it (see
+[ADR-009](DECISIONS/ADR-009-camino-unico-sdk-en-navegador.md)). The per-file and per-domain baseline
+lives in `scripts/data-paths-baseline.json` and is regenerated with `--update` when an endpoint is
+removed.
 
 [#38]: https://github.com/PabloJustDevelops/TravelPal/issues/38
 
+## Decisions
 
-## Decisiones
-
-Ver `docs/DECISIONS/`: 002 (InsForge), 003 (hosting OpenNext retirado), 004 (esquema desde el modelo TS), 009
-(camino único de datos por el SDK), 012 (retirada del código BFF y de `public.users`), 013 (push de
-navegador: cliente ya, envío bloqueado), 014 (Worker de assets estáticos). El ADR-001 (adaptador de
-sesión sobre Supabase) queda como histórico.
+See `docs/DECISIONS/`: 002 (InsForge), 003 (OpenNext hosting, retired), 004 (schema from the TS model), 009
+(single data path through the SDK), 012 (removal of the BFF code and `public.users`), 013 (browser push:
+client done, sending blocked), 014 (static assets Worker). ADR-001 (session adapter on Supabase) remains
+as history.

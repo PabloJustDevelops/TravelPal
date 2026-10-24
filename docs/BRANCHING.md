@@ -1,325 +1,262 @@
-# 🌳 Estrategia de Branching
+# Branch strategy
 
-> **Flujo de trabajo con Git para el proyecto App Viajes**
+Git workflow for TravelPal. The model is GitHub Flow: `main` is always deployable, work happens on
+short-lived branches, and every change reaches `main` through a pull request.
 
----
+## `main`
 
-## 🎯 Filosofía de Branching
+| Property | Value |
+|----------|-------|
+| Purpose | Stable, deployable code |
+| Protection | Force pushes and deletion disabled; required checks |
+| Updates | Pull requests only |
+| Deployment | Automatic on push |
+| Requirements | CI green, review approved |
 
-Seguimos un **flujo simplificado basado en GitHub Flow** que prioriza la **simplicidad**, **colaboración** y **despliegues frecuentes**. Nuestro objetivo es mantener un historial limpio y facilitar la colaboración entre desarrolladores.
+Protection rules currently configured on `main`:
 
----
+- Required status checks: `build`, `worker-build`, `lint-commits`.
+- Force pushes rejected.
+- Branch deletion rejected.
+- `strict` mode is off, so a branch does not have to be rebased on `main` before merging; do it
+  anyway when the diff overlaps recent work.
+- GitHub does not require an approving review; one approval is the team convention and the reviewer
+  enforces it.
 
-## 🏠 Rama Principal
+A merge into `main` runs the `deploy` job and then `e2e-produccion` against
+`https://travelpal.prg-dev.workers.dev`, so the branch state and the published site move together.
 
-### 🌟 **`main`** - Rama de Producción
+## Working branches
 
-| Característica | Descripción |
-|----------------|-------------|
-| 🎯 **Propósito** | Código estable y desplegable |
-| 🛡️ **Protección** | Protegida contra push directo |
-| 🔄 **Actualizaciones** | Solo mediante Pull Requests |
-| 🚀 **Despliegue** | Auto-deploy a producción |
-| ✅ **Requisitos** | Tests pasando + Review aprobado |
-
-#### 🔒 **Reglas de Protección**
-- ❌ **No push directo** - Solo PRs permitidos
-- ✅ **Review obligatorio** - Al menos 1 aprobación
-- 🧪 **Status checks** - Tests y lint deben pasar
-- 🔄 **Branch actualizada** - Debe estar al día con main
-
----
-
-## 🌿 Ramas de Trabajo
-
-### 🆕 **Feature Branches** - Nuevas Funcionalidades
+### Feature branches
 
 ```bash
-# Nomenclatura
-feature/<descripcion-breve>
-feature/<numero-issue>-<descripcion>
+# Naming
+feature/<short-description>
+feature/<issue-number>-<description>
 
-# Ejemplos
-feature/login-google
-feature/123-busqueda-vuelos
-feature/dashboard-usuario
+# Examples
+feature/google-login
+feature/123-flight-search
+feature/user-dashboard
 ```
 
-#### 📋 **Características**
-- 🎯 **Propósito**: Desarrollo de nuevas funcionalidades
-- ⏱️ **Duración**: Corta (1-5 días idealmente)
-- 🔄 **Origen**: Siempre desde `main` actualizada
-- 🎯 **Destino**: Merge hacia `main` via PR
+- Purpose: new functionality.
+- Lifetime: short, one to five days.
+- Origin: current `main`.
+- Destination: `main`, through a PR.
 
-#### 🚀 **Flujo de Trabajo**
 ```bash
-# 1. Actualizar main
+# 1. Update main
 git checkout main
 git pull origin main
 
-# 2. Crear feature branch
-git checkout -b feature/nueva-funcionalidad
+# 2. Create the branch
+git checkout -b feature/new-feature
 
-# 3. Desarrollar y commitear
+# 3. Develop and commit
 git add .
-git commit -m "feat: añadir nueva funcionalidad"
+git commit -m "feat: add new feature"
 
-# 4. Push y crear PR
-git push origin feature/nueva-funcionalidad
+# 4. Push and open the PR
+git push origin feature/new-feature
 ```
 
-### 🐛 **Fix Branches** - Corrección de Bugs
+### Fix branches
 
 ```bash
-# Nomenclatura
-fix/<descripcion-del-bug>
-fix/<numero-issue>-<descripcion>
+# Naming
+fix/<bug-description>
+fix/<issue-number>-<description>
 
-# Ejemplos
-fix/error-login
-fix/456-calculo-precios
-fix/responsive-mobile
+# Examples
+fix/login-error
+fix/456-price-calculation
+fix/mobile-layout
 ```
 
-#### 📋 **Características**
-- 🎯 **Propósito**: Corrección de errores y bugs
-- ⚡ **Prioridad**: Alta (especialmente bugs críticos)
-- 🔄 **Origen**: Desde `main` o desde la rama afectada
-- 🚨 **Urgencia**: Pueden tener fast-track para bugs críticos
+- Purpose: correction of incorrect behaviour.
+- Priority: high for production bugs.
+- Origin: `main`, or the branch that carries the defect.
+- Production bugs may take a fast track; see the hotfix section.
 
-### 🔧 **Chore Branches** - Tareas de Mantenimiento
+### Chore branches
 
 ```bash
-# Nomenclatura
-chore/<descripcion-tarea>
+# Naming
+chore/<task-description>
 
-# Ejemplos
-chore/actualizar-dependencias
-chore/configurar-eslint
-chore/mejorar-documentacion
+# Examples
+chore/update-dependencies
+chore/configure-eslint
+chore/improve-docs
 ```
 
-#### 📋 **Características**
-- 🎯 **Propósito**: Mantenimiento, configuración, refactoring
-- 📚 **Incluye**: Docs, deps, config, tooling
-- 🔄 **Impacto**: No afecta funcionalidad del usuario
+- Purpose: maintenance, configuration, refactoring.
+- Includes: docs, dependencies, config, tooling.
+- Impact: none on user-facing behaviour.
 
----
+## Full workflow
 
-## 🔄 Flujo de Trabajo Completo
-
-### 1️⃣ **Preparación**
+1. Preparation
 
 ```bash
-# Asegurar que main está actualizada
 git checkout main
 git pull origin main
-
-# Verificar estado limpio
 git status
 ```
 
-### 2️⃣ **Crear Rama de Trabajo**
+2. Branch
 
 ```bash
-# Crear y cambiar a nueva rama
-git checkout -b tipo/descripcion-clara
-
-# Verificar rama actual
+git checkout -b type/clear-description
 git branch --show-current
 ```
 
-### 3️⃣ **Desarrollo**
+3. Develop
 
 ```bash
-# Hacer cambios y commits frecuentes
-git add archivo-modificado.ts
-git commit -m "tipo(scope): descripción clara"
+git add changed-file.ts
+git commit -m "type(scope): clear description"
 
-# Push regular para backup
-git push origin nombre-de-rama
+# Regular push as a backup
+git push origin branch-name
 ```
 
-### 4️⃣ **Mantener Actualizada**
+4. Keep up to date
 
 ```bash
-# Sincronizar con main regularmente
 git checkout main
 git pull origin main
-git checkout tu-rama
-git rebase main  # o git merge main
+git checkout your-branch
+git rebase main   # or: git merge main
 ```
 
-### 5️⃣ **Preparar para PR**
+5. Prepare the PR
 
 ```bash
-# Verificar que todo está commiteado
 git status
-
-# Ejecutar tests y lint
-npm run lint
-npm test
-
-# Push final
-git push origin tu-rama
+pnpm run lint
+pnpm run type-check
+pnpm test
+pnpm run build
+git push origin your-branch
 ```
 
-### 6️⃣ **Pull Request**
+6. Pull request
 
-1. 🌐 Ir a GitHub y crear PR
-2. 📝 Completar plantilla del PR
-3. 🏷️ Añadir labels apropiadas
-4. 👥 Solicitar reviewers
-5. ✅ Esperar aprobación y merge
+1. Open the PR against `main`.
+2. Fill in `.github/PULL_REQUEST_TEMPLATE.md`.
+3. Set the labels from `.github/labels.json`.
+4. Request a review.
+5. Merge once the checks pass and the review is approved.
 
----
+## Merge policy
 
-## 🔀 Políticas de Merge
+Squash and merge is the default: one commit per feature, easy to revert, with a consolidated message.
 
-### 🎯 **Estrategia Recomendada: Squash & Merge**
-
-#### ✅ **Ventajas**
-- 📚 **Historial limpio**: Un commit por feature
-- 🔍 **Fácil seguimiento**: Cada feature es un commit
-- 🔄 **Rollback simple**: Revertir features completas
-- 📝 **Mensaje claro**: Descripción consolidada
-
-#### 📝 **Formato del Commit de Merge**
 ```
-tipo(scope): descripción clara de la feature (#PR)
+type(scope): clear description of the feature (#PR)
 
-- Detalle 1 de lo implementado
-- Detalle 2 de lo implementado
-- Fixes #issue-number
+- Detail of what was implemented
+- Detail of what was implemented
+Fixes #issue-number
 ```
 
-### 🔄 **Alternativas Permitidas**
+| Strategy | When | Result |
+|----------|------|--------|
+| Squash and merge | Default | One clean commit |
+| Merge commit | Complex features with several contributors | Branch history preserved |
+| Rebase and merge | Branch already holds clean commits | Linear history |
 
-| Estrategia | Cuándo Usar | Resultado |
-|------------|-------------|-----------|
-| **Squash & Merge** | ✅ Por defecto | 1 commit limpio |
-| **Merge Commit** | 🔄 Features complejas | Preserva historial |
-| **Rebase & Merge** | 📚 Commits ya limpios | Historial lineal |
+## Special cases
 
----
-
-## 🚨 Casos Especiales
-
-### 🔥 **Hotfixes Críticos**
-
-Para bugs críticos en producción:
+### Production hotfix
 
 ```bash
-# 1. Crear hotfix desde main
+# 1. Branch from main
 git checkout main
 git pull origin main
-git checkout -b hotfix/descripcion-critica
+git checkout -b hotfix/critical-description
 
-# 2. Fix rápido y test
-# ... hacer cambios mínimos ...
-npm test
+# 2. Minimal fix and test
+pnpm test
 
-# 3. PR con prioridad alta
-git push origin hotfix/descripcion-critica
-# Crear PR con label "priority: high"
+# 3. PR with high priority
+git push origin hotfix/critical-description
 ```
 
-### 🔄 **Ramas de Larga Duración**
+Open the PR with `bug` and `ready-for-human`, and note the production impact in the description.
 
-Para features muy grandes (evitar si es posible):
+### Long-lived branches
+
+Avoid them. When one is unavoidable:
 
 ```bash
-# Mantener sincronizada con main
 git checkout main
 git pull origin main
-git checkout feature/gran-feature
+git checkout feature/large-feature
 git rebase main
 
-# O usar merge si hay conflictos complejos
+# Or merge when the conflicts are structural
 git merge main
 ```
 
-### 🧪 **Ramas Experimentales**
+Split the work into PRs that land on `main` instead of keeping a long branch alive.
 
-Para experimentos y POCs:
+### Experimental branches
 
 ```bash
-# Nomenclatura especial
-experiment/nombre-experimento
-poc/prueba-concepto
-
-# No necesariamente van a main
+experiment/experiment-name
+poc/proof-of-concept
 ```
 
----
+These do not have to reach `main`. Delete them when the experiment ends, and record the conclusion in
+an ADR under `docs/DECISIONS/` if it changes a decision.
 
-## 📊 Monitoreo y Métricas
+## Monitoring
 
-### 📈 **KPIs de Branching**
-
-| Métrica | Objetivo | Herramienta |
-|---------|----------|-------------|
-| **Tiempo de vida de rama** | < 5 días | GitHub Insights |
-| **Tamaño de PR** | < 400 líneas | GitHub PR stats |
-| **Tiempo de review** | < 24 horas | GitHub metrics |
-| **Conflictos de merge** | < 5% | Git logs |
-
-### 🔍 **Comandos de Análisis**
+| Metric | Target | Source |
+|--------|--------|--------|
+| Branch lifetime | under 5 days | GitHub Insights |
+| PR size | under 400 lines | `gh pr list --json additions,deletions` |
+| Review time | under 24 hours | GitHub metrics |
+| Merge conflicts | under 5% | `git log` |
 
 ```bash
-# Ver ramas activas
+# Active branches
 git branch -a
 
-# Ver ramas merged
+# Branches already merged
 git branch --merged main
 
-# Limpiar ramas locales merged
+# Delete merged local branches
 git branch --merged main | grep -v main | xargs git branch -d
 
-# Ver estadísticas de commits
+# Commit activity
 git shortlog -sn --since="1 month ago"
 ```
 
----
+## Tools
 
-## 🛠️ Herramientas y Automatización
+CI enforces the checks that matter; there is no local git hook in the repository. To run the same
+checks before pushing, use the scripts in `package.json`:
 
-### 🤖 **GitHub Actions**
-
-```yaml
-# .github/workflows/branch-protection.yml
-name: Branch Protection
-on:
-  pull_request:
-    branches: [main]
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run tests
-        run: npm test
-      - name: Run lint
-        run: npm run lint
+```bash
+pnpm run lint && pnpm run type-check && pnpm test
 ```
 
-### 🔧 **Git Hooks**
+A `pre-push` hook is optional and not versioned. If you add one locally:
 
 ```bash
 # .git/hooks/pre-push
 #!/bin/sh
-# Ejecutar tests antes de push
-npm test
-if [ $? -ne 0 ]; then
-  echo "❌ Tests fallaron. Push cancelado."
-  exit 1
-fi
+pnpm test || { echo "Tests failed. Push aborted."; exit 1; }
 ```
 
-### 📱 **Comandos Útiles**
+Useful aliases for `~/.gitconfig`:
 
 ```bash
-# Alias útiles para .gitconfig
 [alias]
   co = checkout
   br = branch
@@ -327,60 +264,45 @@ fi
   st = status
   unstage = reset HEAD --
   last = log -1 HEAD
-  visual = !gitk
-  
-  # Crear feature branch
+
+  # Create a feature branch from an updated main
   feature = "!f() { git checkout main && git pull && git checkout -b feature/$1; }; f"
-  
-  # Limpiar ramas merged
+
+  # Delete merged branches
   cleanup = "!git branch --merged main | grep -v main | xargs git branch -d"
 ```
 
----
+## FAQ
 
-## ❓ Preguntas Frecuentes
+When to create a branch: for any change that is not trivial, always for a feature, always for a bug
+fix, and for documentation changes that touch several files.
 
-### 🤔 **¿Cuándo crear una nueva rama?**
-- ✅ Para cualquier cambio que no sea trivial
-- ✅ Siempre para nuevas features
-- ✅ Para cualquier bug fix
-- ✅ Para cambios de documentación extensos
+Resolving conflicts:
 
-### 🤔 **¿Cómo manejar conflictos?**
 ```bash
-# Durante rebase
+# During a rebase
 git rebase main
-# Resolver conflictos manualmente
-git add archivo-resuelto.ts
+# Resolve each conflict, then
+git add resolved-file.ts
 git rebase --continue
 
-# Durante merge
+# During a merge
 git merge main
-# Resolver conflictos
 git add .
-git commit -m "resolve: conflictos con main"
+git commit -m "chore: resolve conflicts with main"
 ```
 
-### 🤔 **¿Cuándo hacer rebase vs merge?**
-- **Rebase**: Para mantener historial lineal y limpio
-- **Merge**: Cuando quieres preservar el contexto de la rama
+Rebase or merge: rebase to keep a linear history on a branch nobody else is using; merge when the
+branch is shared and its context matters.
 
----
+## Related documentation
 
-## 📚 Recursos Adicionales
+- [`COMMITS.md`](./COMMITS.md) - commit conventions
+- [`PR_PROCESS.md`](./PR_PROCESS.md) - pull request process
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) - contribution guide
 
-### 📖 **Documentación Relacionada**
-- 📝 [`COMMITS.md`](./COMMITS.md) - Convenciones de commits
-- 🔄 [`PR_PROCESS.md`](./PR_PROCESS.md) - Proceso de Pull Requests
-- 🤝 [`CONTRIBUTING.md`](./CONTRIBUTING.md) - Guía de contribución
+External references:
 
-### 🔗 **Enlaces Útiles**
 - [GitHub Flow](https://guides.github.com/introduction/flow/)
-- [Git Branching Best Practices](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
+- [Git branching workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
 - [Conventional Commits](https://www.conventionalcommits.org/)
-
----
-
-**🌳 Un flujo de branching simple y efectivo para un desarrollo colaborativo exitoso**
-
-*Última actualización: Enero 2025*

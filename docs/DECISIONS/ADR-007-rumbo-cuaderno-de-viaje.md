@@ -1,126 +1,126 @@
-# ADR-007: El rumbo visual es "Cuaderno de viaje" y se implanta por tokens
+# ADR-007: The visual direction is "Travel journal" and it is implemented through tokens
 
-## Contexto
+## Context
 
-El sistema de diseño acababa de cerrarse cuando se escribieron tres direcciones para la piel de la
-app (`docs/DESIGN-DIRECTIONS.md`): **A, Cuaderno de viaje** (editorial, cálida); **B, Sala de
-control** (utilitaria, densa); **C, Tarjeta postal** (escaparate, consumidor). El documento no
-decidía: proponía, y recomendaba la C por coste.
+The design system had just been closed when three directions were written for the app's skin
+(`docs/DESIGN-DIRECTIONS.md`): A, Travel journal (editorial, warm); B, Control room (utilitarian,
+dense); C, Postcard (showcase, consumer). The document did not decide: it proposed, and it
+recommended C on cost.
 
-Lo que había, medido sobre el árbol:
+What existed, measured against the tree:
 
-- **Tokens**: solo `--background` y `--foreground`. Todo lo demás eran utilidades crudas de
-  Tailwind escritas en el componente.
-- **Uso crudo de color**: **904 usos** de utilidades de paleta (`bg-*`, `text-*`, `border-*` de
-  `gray`, `blue`, `red`, `green`, `yellow` y las familias de categoría) repartidos en **71
-  ficheros**. Cualquier dirección que se aplique pantalla a pantalla es un barrido de esa
-  magnitud.
-- **Tipografía**: Inter, declarada una sola vez en `layout.tsx` con `next/font`.
-- **Modo oscuro**: **9 de 22 páginas** con clases `dark:` propias y **13 sin ellas**; el armazón
-  usaba `dark:bg-black` mientras tarjeta, modal y aviso usaban `dark:bg-gray-800`. No había escala
-  de superficies: había dos decisiones distintas conviviendo.
-- **Guardia**: `src/__tests__/design-system.test.ts` fija el contrato (un spinner, una clase de
-  campo, un botón primario, una librería de iconos, una tipografía) y además lo ata a los
-  **valores**: exige que `bg-blue-600` + `hover:bg-blue-700` solo exista en `Button.tsx`.
+- Tokens: only `--background` and `--foreground`. Everything else was raw Tailwind utilities
+  written in the component.
+- Raw colour use: 904 uses of palette utilities (`bg-*`, `text-*`, `border-*` from `gray`, `blue`,
+  `red`, `green`, `yellow` and the category families) spread across 71 files. Any direction applied
+  screen by screen is a sweep of that size.
+- Typography: Inter, declared once in `layout.tsx` with `next/font`.
+- Dark mode: 9 of 22 pages with their own `dark:` classes and 13 without them; the shell used
+  `dark:bg-black` while card, modal and notice used `dark:bg-gray-800`. There was no surface scale:
+  there were two different decisions living together.
+- Guard: `src/__tests__/design-system.test.ts` fixes the contract (one spinner, one field class, one
+  primary button, one icon library, one typeface) and also ties it to values: it requires that
+  `bg-blue-600` + `hover:bg-blue-700` exist only in `Button.tsx`.
 
-Dos hechos más condicionan la decisión:
+Two further facts condition the decision:
 
-1. **Hay un rework funcional completo sobre la mesa.** No se sabe qué pantallas sobreviven, así que
-   gastar esfuerzo pintándolas una a una es invertir en lo que puede desaparecer.
-2. **La primera impresión del producto es la landing**, que hoy es una plantilla oscura con
-   degradado, tarjetas redondeadas y sombras: lo contrario del rumbo editorial.
+1. There is a full functional rework on the table. It is not known which screens survive, so
+   spending effort painting them one by one is investing in something that may disappear.
+2. The product's first impression is the landing page, which today is a dark template with a
+   gradient, rounded cards and shadows: the opposite of the editorial direction.
 
-## Decisión
+## Decision
 
-Se implanta la dirección **A, Cuaderno de viaje**, y se implanta **en la capa de fundamentos**
-(tokens, componentes compartidos y armazón), no pantalla por pantalla. Lo que se decide:
+Direction A, Travel journal, is implemented, and it is implemented at the foundations layer
+(tokens, shared components and shell), not screen by screen. What is decided:
 
-1. **Paleta en tres capas dentro de `globals.css`.** (1) Paleta cruda en `:root` y `.dark`: papel
-   `#FBF8F3`, superficie `#F3EDE3`, tinta `#1A1815`, secundario `#6A645B`, línea `#E4DCD0`, acento
-   `#AC4F09` y los tres estados (éxito `#2E6D5C`, aviso `#8D5606`, error `#9F1239`). Secundario,
-   acento, éxito y aviso son un punto más oscuros que los valores originales del rumbo, el ajuste
-   mínimo para que sus pares de texto superen 4.5:1 (lo vigilan los e2e con axe). (2) Tokens
-   semánticos en `@theme inline` (`background`, `surface`, `line`, `ink`, `muted`, `accent`,
-   `accent-hover`, `accent-soft`, `on-accent`, `success`, `warning`, `danger`) más radios de lámina
-   (2–4px), escala de espaciado por secciones (3rem / 5rem), escala tipográfica editorial y escala
-   de lectura 1,6. (3) **Alias de compatibilidad**: se redefinen las escalas crudas de Tailwind
-   (`gray`, `blue`, `red`, `green`, `yellow`) con la paleta del rumbo, de modo que los 904 usos
-   crudos heredan la dirección sin repintar pantalla por pantalla.
+1. Palette in three layers inside `globals.css`. (1) Raw palette in `:root` and `.dark`: paper
+   `#FBF8F3`, surface `#F3EDE3`, ink `#1A1815`, secondary `#6A645B`, line `#E4DCD0`, accent
+   `#AC4F09` and the three states (success `#2E6D5C`, warning `#8D5606`, danger `#9F1239`).
+   Secondary, accent, success and warning are one step darker than the direction's original values,
+   the minimum adjustment for their text pairs to exceed 4.5:1 (the e2e tests with axe watch this).
+   (2) Semantic tokens in `@theme inline` (`background`, `surface`, `line`, `ink`, `muted`, `accent`,
+   `accent-hover`, `accent-soft`, `on-accent`, `success`, `warning`, `danger`) plus sheet radii
+   (2–4px), a section spacing scale (3rem / 5rem), an editorial type scale and a reading scale of
+   1.6. (3) Compatibility aliases: the raw Tailwind scales (`gray`, `blue`, `red`, `green`, `yellow`)
+   are redefined with the direction's palette, so the 904 raw uses inherit the direction without
+   repainting screen by screen.
 
-2. **Tipografía en un solo import.** Se añade la serif de titulares (`Fraunces`) **en la misma
-   importación de `next/font`** que Inter, según el aviso del propio documento de rumbos: una
-   segunda importación rompe el contrato. El texto sigue en Inter sobre el `<body>`; la serif se
-   expone como variable y `globals.css` la resuelve en `font-serif`, de forma que ningún componente
-   declara familias.
+2. Typography in a single import. The headline serif (`Fraunces`) is added in the same
+   `next/font` import as Inter, following the warning in the directions document itself: a second
+   import breaks the contract. Text stays in Inter on `<body>`; the serif is exposed as a variable
+   and `globals.css` resolves it in `font-serif`, so no component declares font families.
 
-3. **Componentes compartidos como láminas.** Botón, campo, tarjeta, cabeceras, estados vacío y de
-   error, aviso, spinner, modal y esqueleto de página dejan de pedir color por escala cruda y lo
-   piden por token. La tarjeta pierde borde y sombra y usa un filete de 1px como separador que se
-   concentra en la clase de acción primaria; los enlaces que actúan como botón (landing, CTA) se
-   apoyan en esa misma clase en vez de copiar el acento.
+3. Shared components as sheets. Button, field, card, headers, empty and error states, notice,
+   spinner, modal and page skeleton stop asking for colour by raw scale and ask for it by token.
+   The card loses border and shadow and uses a 1px rule as a separator concentrated in the primary
+   action class; links that act as buttons (landing, CTA) rely on that same class instead of copying
+   the accent.
 
-4. **Armazón y landing.** Barra y layout del panel sobre papel con filete; la barra del panel pierde
-   el degradado, el logo en degradado y el grupo de pastillas flotantes. La landing pasa a portada a
-   sangre con velo plano (sin degradado), titulares en serif, ritmo de secciones por token, sin
-   elevación y sin `hover:scale`.
+4. Shell and landing. Dashboard bar and layout on paper with a rule; the dashboard bar loses the
+   gradient, the gradient logo and the floating pill group. The landing page becomes a full-bleed
+   cover with a flat veil (no gradient), serif headlines, section rhythm by token, no elevation and
+   no `hover:scale`.
 
-5. **Modo oscuro: claro primero.** El oscuro no es una piel distinta, es el **inverso literal del
-   papel** (fondo `#14120F`, superficie `#1E1B16`, tinta `#EFE9DE`, línea `#332E26`, acento
-   `#E8A33D`) y se resuelve entero por tokens, así que el armazón y los componentes compartidos
-   cambian de modo sin que ninguna pantalla declare su propio `dark:`. Se añade `color-scheme` por
-   modo y el tema se aplica antes del primer pintado (sin fogonazo claro).
+5. Dark mode: light first. Dark is not a different skin, it is the literal inverse of paper
+   (background `#14120F`, surface `#1E1B16`, ink `#EFE9DE`, line `#332E26`, accent `#E8A33D`) and it
+   is resolved entirely through tokens, so the shell and the shared components change mode without
+   any screen declaring its own `dark:`. A per-mode `color-scheme` is added and the theme is applied
+   before the first paint (no light flash).
 
-6. **La guardia se actualiza con criterio, no se esquiva.** Es un contrato: cambia el acento, luego
-   cambian los dos asserts que lo fijaban. Se reescriben para apuntar a la clase compartida
-   (`actionStyles.ts`) y al campo, se añade el requisito de que botón y enlaces se apoyen en esa
-   clase, y se añade un bloque nuevo que fija el rumbo: la paleta vive en tokens en claro **y** en
-   oscuro, `color-scheme` de los dos modos, el tema antes del pintado, la serif por variable y que
-   los componentes compartidos no vuelvan a la escala cruda.
+6. The guard is updated on purpose, not bypassed. It is a contract: the accent changes, so the two
+   asserts that fixed it change. They are rewritten to point at the shared class (`actionStyles.ts`)
+   and the field, a requirement is added that button and links rely on that class, and a new block
+   fixes the direction: the palette lives in tokens in light and in dark, `color-scheme` for both
+   modes, the theme before painting, the serif by variable, and shared components not returning to
+   the raw scale.
 
-**Fuera de alcance de esta decisión:** repintar páginas y componentes de dominio. Los 904 usos
-crudos de página siguen ahí; lo que cambia es que ahora resuelven a la paleta del rumbo.
+Out of scope for this decision: repainting pages and domain components. The 904 raw page uses are
+still there; what changes is that they now resolve to the direction's palette.
 
-### Alternativas consideradas
+### Alternatives considered
 
-- **Dirección C, Tarjeta postal** (la que recomendaba el documento de rumbos). Descartada: es
-  barata y vende bien el destino, pero es una piel de escaparate con tres niveles de sombra y
-  radios de 16px, y el objetivo declarado pasó a ser *diferenciación de marca*, no coste.
-- **Dirección B, Sala de control**. Descartada: es una herramienta excelente y un mal escaparate, y
-  renuncia explícitamente a vender; la landing es hoy el escaparate del producto.
-- **Barrido de los 904 usos, fichero a fichero.** Descartada por coste y por riesgo: con un rework
-  funcional pendiente, parte de ese trabajo se tira. El alias de escalas consigue el mismo efecto
-  visual a una fracción del coste, y deja el barrido para cuando se sepa qué pantallas viven.
-- **Eliminar el modo oscuro** en lugar de resolverlo. Descartada: quitar una preferencia del
-  usuario es una decisión de producto, y el inverso del papel es la mitad de coherente que el
-  claro. Se mantiene la preferencia y se define su comportamiento.
-- **Sustituir Inter por la serif** o declarar una segunda importación de fuentes. Descartada de
-  raíz: rompe el contrato de tipografía y empeora la lectura de las tablas de gastos.
+- Direction C, Postcard (the one the directions document recommended). Discarded: it is cheap and
+  it sells the destination well, but it is a showcase skin with three shadow levels and 16px radii,
+  and the stated goal became brand differentiation, not cost.
+- Direction B, Control room. Discarded: it is an excellent tool and a poor showcase, and it
+  explicitly gives up on selling; the landing page is today the product's showcase.
+- Sweeping the 904 uses, file by file. Discarded on cost and risk: with a functional rework
+  pending, part of that work is thrown away. The scale aliases achieve the same visual effect at a
+  fraction of the cost and leave the sweep for when it is known which screens survive.
+- Removing dark mode instead of resolving it. Discarded: taking away a user preference is a product
+  decision, and the inverse of paper is half as coherent as light. The preference stays and its
+  behaviour is defined.
+- Replacing Inter with the serif, or declaring a second font import. Discarded outright: it breaks
+  the typography contract and makes the expense tables harder to read.
 
-## Consecuencias
+## Consequences
 
-Positivas:
+Positive:
 
-- El rumbo llega a **toda** la app (los 904 usos crudos resuelven a la paleta nueva) sin repintar
-  una sola pantalla. Verificado en el CSS compilado: no queda ningún valor por defecto de Tailwind
-  de las escalas redefinidas.
-- El código nuevo pide color por nombre (`bg-surface`, `text-ink`, `border-line`, `bg-accent`), así
-  que el siguiente cambio de acento o de papel se hace en un sitio.
-- El modo oscuro deja de tener dos verdades: armazón, componentes y controles nativos acompañan al
-  modo elegido y no hay fogonazo al cargar.
-- La guardia ahora protege el rumbo, no solo la forma.
+- The direction reaches the whole app (the 904 raw uses resolve to the new palette) without
+  repainting a single screen. Verified in the compiled CSS: no default Tailwind value from the
+  redefined scales is left.
+- New code asks for colour by name (`bg-surface`, `text-ink`, `border-line`, `bg-accent`), so the
+  next change of accent or paper happens in one place.
+- Dark mode no longer has two truths: shell, components and native controls follow the chosen mode
+  and there is no flash on load.
+- The guard now protects the direction, not only the shape.
 
-Negativas y deuda asumida:
+Negative, and accepted debt:
 
-- **Las escalas crudas de Tailwind ya no significan lo que su nombre dice**: `blue-600` es el acento
-  del rumbo, no un azul. Queda documentado en `globals.css`; el código nuevo no debe usarlas.
-- **Queda asimetría de pantalla**: varias páginas llevan utilidades sueltas (`bg-white`, `dark:*`)
-  que no son del sistema. Se corrigen o desaparecen con el rework funcional (ver la spec de rework
-  funcional), no en esta decisión.
-- Las familias de color **categóricas** (violeta, naranja, rosa, índigo, esmeralda) y los hex fijos
-  de las gráficas **no** se tocan: son código de datos, no cromo. Quedan como candidatas a una
-  rampa propia si el rework conserva analítica y gastos.
-- Un cambio de paleta exige ahora actualizar la guardia en el mismo commit. Es intencionado.
+- The raw Tailwind scales no longer mean what their name says: `blue-600` is the direction's accent,
+  not a blue. This is documented in `globals.css`; new code must not use them.
+- Screen asymmetry remains: several pages carry loose utilities (`bg-white`, `dark:*`) that are not
+  part of the system. They are fixed or disappear with the functional rework (see the functional
+  rework spec), not in this decision.
+- The categorical colour families (violet, orange, pink, indigo, emerald) and the charts' fixed hex
+  values are not touched: they are data code, not chrome. They remain candidates for their own ramp
+  if the rework keeps analytics and expenses.
+- A palette change now requires updating the guard in the same commit. This is intentional.
 
-## Estado
+## Status
 
-Aprobado
+Accepted. The palette and editorial hierarchy described here were superseded by ADR-008 (atlas claro);
+the rest of the direction still applies.
+

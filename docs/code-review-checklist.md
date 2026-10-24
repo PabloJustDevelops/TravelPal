@@ -1,8 +1,8 @@
-# Code Review Checklist
+# Code review checklist
 
-- Correctitud funcional y cobertura de casos
-- Manejo de errores y edge cases
-- Rendimiento y seguridad básica
-- Legibilidad y consistencia (nombres, estructuras)
-- Tests y lint pasan
-- Documentación y comentarios donde corresponda
+- Functional correctness and coverage of the cases that matter
+- Error handling and edge cases
+- Performance and basic security
+- Readability and consistency: names, structure, placement
+- Tests and lint pass
+- Documentation and comments where they are needed

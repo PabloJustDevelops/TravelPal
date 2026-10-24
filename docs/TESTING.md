@@ -1,186 +1,178 @@
 # Testing
 
-| Nivel | Herramienta | Donde vive | Comando |
+| Level | Tool | Where it lives | Command |
 | --- | --- | --- | --- |
-| Unidad y componente | Jest + Testing Library | `src/**/__tests__/` | `pnpm run test:ci` |
-| End-to-end con datos | Playwright | `e2e/` | `pnpm run test:e2e` |
-| Acceso público, escritorio y viewport estrecho | Tester Army (`e2e`) | `tests/*.e2e.ts` | `pnpm run test:tester` |
+| Unit and component | Jest + Testing Library | `src/**/__tests__/` | `pnpm run test:ci` |
+| End-to-end with data | Playwright | `e2e/` | `pnpm run test:e2e` |
+| Public access, desktop and narrow viewport | Tester Army (`e2e`) | `tests/*.e2e.ts` | `pnpm run test:tester` |
 
-## Regla: ningun bug entra sin el test que falla sin el arreglo
+## Rule: no bug lands without the test that fails without the fix
 
-Todo bug arreglado entra con la prueba que se pone en rojo con el codigo anterior
-y en verde con el arreglo. La red tiene que fallar antes: un test que no puede
-fallar no vale. Los tres fallos que pasaron lint, type-check, build y los 290
-tests unitarios en verde (el registro que no persistia, el dashboard en blanco
-tras iniciar sesion y la ruta protegida rebotando) no eran detectables con tests
-unitarios, y cada uno entro con su caso en `e2e/smoke/`.
+Every fixed bug lands with the test that goes red on the previous code and green with the fix. The
+net has to fail first: a test that cannot fail is worth nothing. The three failures that passed lint,
+type-check, build and the 290 unit tests green (the record that did not persist, the blank dashboard
+after signing in and the protected route bouncing back) were not detectable with unit tests, and each
+one landed with its case in `e2e/smoke/`.
 
-## E2E en local
+## E2E in local
 
-Hacen falta las credenciales del usuario dedicado de e2e (esta verificado en
-produccion; la suite nunca crea usuarios):
+The credentials of the dedicated e2e user are required (it is verified in production; the suite never
+creates users):
 
 ```bash
-export E2E_USER_EMAIL=<email del usuario dedicado>
-export E2E_USER_PASSWORD=<su contrasena>
+export E2E_USER_EMAIL=<email of the dedicated user>
+export E2E_USER_PASSWORD=<its password>
 pnpm run test:e2e
 ```
 
-Si prefieres no exportarlas en cada shell, dejarlas en `.env.local` (esta en
-`.gitignore`): el runner lo carga. Las credenciales no se versionan nunca.
+If you would rather not export them in every shell, leave them in `.env.local` (it is in
+`.gitignore`): the runner loads it. Credentials are never committed.
 
-Antes de correr E2E local, exporta la URL real y la clave anónima pública del
-proyecto InsForge que usará la prueba. El valor `example.invalid` solo sirve
-para verificar la compilación del export; provoca errores de DNS en flujos que
-contactan al backend. No hace falta `INSFORGE_API_KEY` para servir la app:
+Before running E2E locally, export the real URL and the public anon key of the InsForge project the
+test will use. The `example.invalid` value only serves to verify that the export compiles; it causes
+DNS errors in flows that contact the backend. `INSFORGE_API_KEY` is not needed to serve the app:
 
 ```bash
 export NEXT_PUBLIC_INSFORGE_URL="https://sjdq7zsn.eu-central.insforge.app"
-export NEXT_PUBLIC_INSFORGE_ANON_KEY="<clave anónima pública del proyecto>"
+export NEXT_PUBLIC_INSFORGE_ANON_KEY="<public anon key of the project>"
 pnpm run build
 pnpm run validate:static-export
 ```
 
-Playwright arranca Wrangler para servir ese export en el puerto 3000 y reutiliza
-un servidor local existente. Para ver los pasos en el navegador,
-`pnpm exec playwright test --headed`; con `--debug`, paso a paso.
+Playwright starts `wrangler dev` through `scripts/e2e-server.mjs`, a supervisor that relaunches it
+when it dies and kills the whole process group (the open `ProxyWorker` failure in
+`cloudflare/workers-sdk#15203` left the port held and blocked deploys), to serve that export on port
+3000, and reuses an existing local server. To watch the steps in the browser,
+`pnpm exec playwright test --headed`; with `--debug`, step by step.
 
-La suite va en dos proyectos: `smoke` en paralelo y `flows` con `workers: 1`.
-Los flujos comparten el usuario dedicado y pueden consultar o borrar los datos
-que crean durante la corrida, así que se ejecutan de uno en uno.
+The suite runs in two projects: `smoke` in parallel and `flows` with `workers: 1`. The flows share the
+dedicated user and may read or delete the data they create during the run, so they run one at a time.
 
-## Las dos formas de la misma suite
+## The two forms of the same suite
 
-El destino lo elige `E2E_BASE_URL`, y por defecto es localhost:
+The target is chosen by `E2E_BASE_URL`, and defaults to localhost:
 
 ```bash
-pnpm run test:e2e                      # export local servido por Wrangler
-E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm run test:e2e   # lo desplegado
+pnpm run test:e2e                      # local export served by Wrangler
+E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm run test:e2e   # the deployed site
 ```
 
-## Que cubre el smoke de la etapa 0
+## What the stage 0 smoke covers
 
-- `/signup`: formulario valido, envio y llegada al paso de verificacion con el
-  email pendiente. El codigo no se completa (no hay buzon legible al que ir).
-- `/signin` con el usuario dedicado: dashboard **con contenido** (titulo y
-  navegacion reales), no solo la URL correcta.
-- `/dashboard` sin sesion: acaba en `/signin`, sin bucle y sin pantalla vacia.
-- `/signin` sin sesión: rellena el formulario con datos sintéticos usando el mismo
-  helper que el login real, sin enviarlo. Comprueba mostrar y volver a ocultar la
-  contraseña, sin confundir el input con el botón de visibilidad.
+- `/signup`: valid form, submit and arrival at the verification step with the email pending. The code
+  is not completed (there is no readable mailbox to go to).
+- `/signin` with the dedicated user: dashboard **with content** (real title and navigation), not only
+  the right URL.
+- `/dashboard` without a session: ends at `/signin`, with no loop and no blank screen.
+- `/signin` without a session: fills the form with synthetic data using the same helper as the real
+  login, without submitting it. It checks showing and hiding the password again, without confusing the
+  input with the visibility button.
 
-## Que cubre la etapa 1 (flujos con datos)
+## What stage 1 covers (flows with data)
 
-Cinco specs con seis casos en `e2e/flows/`, cada uno con su limpieza y una comprobacion de
-accesibilidad con `@axe-core/playwright` (sin violaciones `critical` ni
-`serious` en las pantallas donde se llama al helper de axe):
+Five specs with six cases in `e2e/flows/`, each with its own cleanup and an accessibility check with
+`@axe-core/playwright` (no `critical` or `serious` violations on the screens where the axe helper is
+called):
 
-- `trips.spec.ts`: crear un viaje en `/create-trip`, verlo en el detalle y en la
-  lista, buscandolo por su titulo. Axe en la lista de viajes.
-- `expenses.spec.ts`: con un viaje recien creado, registrar un gasto asociado,
-  verlo en `/expenses` y comprobar que suma en el resumen del viaje. Axe en la
-  lista de gastos.
-- `planning.spec.ts`: anadir una actividad en el planificador y comprobar que
-  sigue ahi tras recargar (la persistencia por operacion del #60, sin boton de
-  guardar). Axe en el planificador.
-- `journal-photos.spec.ts`: subir una foto al diario de un viaje pasado y
-  comprobar que se pinta con URL firmada; el hueco `role="img"` del fallback no
-  cuenta como exito. Axe en el detalle del viaje.
+- `trips.spec.ts`: create a trip in `/create-trip`, see it in the detail and in the list, finding it by
+  its title. Axe on the trips list.
+- `expenses.spec.ts`: with a freshly created trip, record an associated expense, see it in `/expenses`
+  and check that it adds up in the trip summary. Axe on the expenses list.
+- `planning.spec.ts`: add an activity in the planner and check that it is still there after reloading
+  (the per-operation persistence of #60, with no save button). Axe on the planner.
+- `journal-photos.spec.ts`: upload a photo to the journal of a past trip and check that it renders with
+  a signed URL; the `role="img"` slot of the fallback does not count as success. Axe on the trip detail.
 
-Los helpers compartidos viven en `e2e/support/`: `flows.ts` (login, alta del
-viaje, comprobacion de axe) y `cleanup.ts` (borrado del viaje).
+The shared helpers live in `e2e/support/`: `flows.ts` (login, trip creation, axe check) and
+`cleanup.ts` (trip deletion).
 
-- `delete-trip.spec.ts`: borrar un viaje desde la UI y comprobar por separado que un gasto
-  conservado queda sin viaje.
+- `delete-trip.spec.ts`: delete a trip from the UI and check separately that a kept expense is left
+  without a trip.
 
-## Correr solo los flujos que crean datos
+## Running only the flows that create data
 
 ```bash
-pnpm exec playwright test e2e/flows                 # local, contra Wrangler y out/
+pnpm exec playwright test e2e/flows                 # local, against Wrangler and out/
 E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm exec playwright test e2e/flows
 ```
 
-El proyecto `flows` ya limita a un worker, asi que no hace falta pasar
-`--workers=1` a mano.
+The `flows` project already limits itself to one worker, so there is no need to pass `--workers=1` by
+hand.
 
-## Borrado y limpieza de datos
+## Deleting and cleaning up data
 
-La lista y el detalle permiten borrar viajes y decidir qué ocurre con sus gastos y notas.
-El calendario normaliza las fechas de los viajes para mostrarlos en la rejilla. Estos fallos se
-corrigieron en #81; no son limitaciones actuales.
+The list and the detail let you delete trips and decide what happens to their expenses and notes. The
+calendar normalizes trip dates to show them in the grid. These failures were fixed in #81; they are not
+current limitations.
 
-Los E2E usan `e2e/support/cleanup.ts` como limpieza de seguridad, con la sesión del usuario
-dedicado y RLS. Borra los datos y fotos que el propio test creó. Los casos de borrado prueban la
-acción real de la UI; los demás no dependen de ella para limpiar tras un fallo.
+The E2E use `e2e/support/cleanup.ts` as a safety cleanup, with the dedicated user's session and RLS. It
+deletes the data and photos the test itself created. The deletion cases exercise the real UI action;
+the others do not depend on it to clean up after a failure.
 
-## Datos de prueba y trazas
+## Test data and traces
 
-Los datos que crea un test llevan prefijo `e2e-` + marca de tiempo y se borran en
-el propio test. Excepcion conocida: el caso de registro crea un usuario sin
-verificar que no se puede borrar (InsForge no expone endpoint para eliminar
-usuarios), asi que queda uno por corrida.
+The data a test creates carries the prefix `e2e-` plus a timestamp and is deleted in the test itself.
+Known exception: the sign-up case creates an unverified user that cannot be deleted (InsForge exposes
+no endpoint to delete users), so one is left per run.
 
-`trace: on-first-retry` y `retries: 2` en CI: la traza de un fallo queda en
-`test-results/` y el job la sube como artefacto (`playwright-trace`).
+`trace: on-first-retry` and `retries: 2` in CI: a failure's trace stays in `test-results/` and the job
+uploads it as an artifact (`playwright-trace`).
 
-Los casos de accesibilidad del dashboard y del detalle generan capturas en ambos
-temas a 1440 y 390 px. El dashboard tiene una captura del estado de la cuenta y
-otra con un viaje de QA, actividad, tarea y presupuesto con gasto. El escenario
-poblado crea un viaje con la UI e inserta los datos auxiliares con el SDK bajo la
-sesión E2E; al terminar, elimina la tarea, el presupuesto, el gasto, la actividad
-y el viaje asociados a sus nombres únicos. Para revisar el contenido bajo el
-primer pliegue, también guarda capturas completas del dashboard móvil poblado.
+The accessibility cases of the dashboard and the detail generate screenshots in both themes at 1440
+and 390 px. The dashboard has one capture of the empty state and another with a QA trip, activity, task
+and budget with spend. The populated scenario creates a trip with the UI and inserts the auxiliary data
+with the SDK under the E2E session; when it finishes, it deletes the task, budget, expense, activity and
+trip associated with its unique names. To review the content under the first fold, it also saves
+full-page captures of the populated mobile dashboard.
 
-El job conserva las PNG de `/tmp/travelpal-atlas-*.png` y
-`/tmp/travelpal-trip-*.png` durante 7 días como `atlas-qa-codigo` o
-`atlas-qa-produccion`, también cuando la suite pasa. Las capturas sirven para
-revisar el estado vacío y poblado de esa ejecución; no sustituyen una revisión
-visual ni una comparación de fidelidad global.
+The job keeps the PNGs in `/tmp/travelpal-atlas-*.png` and `/tmp/travelpal-trip-*.png` for 7 days as
+`atlas-qa-codigo` or `atlas-qa-produccion`, including when the suite passes. The captures serve to
+review the empty and populated state of that run; they do not replace a visual review or a global
+fidelity comparison.
 
 ## Tester Army
 
-`pnpm run test:tester` ejecuta tres casos públicos en Chromium a 1440×900 y 390×844:
-redirección de ruta protegida, opciones de acceso y recuperación de contraseña. No crea
-usuarios, no envía correos y no necesita modelo ni suscripción. El viewport estrecho comprueba
-layout responsive; no equivale a Safari/iOS ni a un dispositivo táctil real.
+`pnpm run test:tester` runs three public cases in Chromium at 1440×900 and 390×844: protected route
+redirect, sign-in options and password recovery. It creates no users, sends no emails and needs no
+model or subscription. The narrow viewport checks responsive layout; it is not equivalent to Safari/iOS
+or to a real touch device.
 
-Ver [TESTER-ARMY.md](TESTER-ARMY.md) para configuración, límites y evolución.
+See [TESTER-ARMY.md](TESTER-ARMY.md) for configuration, limits and evolution.
 
 ## CI
 
-El trabajo `e2e` de `.github/workflows/ci.yml` llama a la suite reutilizable
-`.github/workflows/e2e.yml` tanto en PR como en push a `main`, contra el artifact
-estático del build, servido localmente por Wrangler.
-`deploy` espera a `build`, `worker` y `e2e`. Tras publicar, `e2e-produccion` ejecuta
-las dos suites contra el Worker. CI fija Node 22.22.3.
+The `e2e` job in `.github/workflows/ci.yml` calls the reusable suite
+`.github/workflows/e2e.yml` on both PR and push to `main`, against the static artifact from the
+build, served locally by Wrangler.
+`deploy` waits for `build`, `worker` and `e2e`. After publishing, `e2e-produccion` runs both suites
+against the Worker. CI pins Node 22.22.3.
 
-Necesita `E2E_USER_EMAIL` y `E2E_USER_PASSWORD`; si faltan, el job falla antes de que el
-login pueda omitirse. El job completo se serializa entre ramas porque comparte usuario y
-backend. Los pushes nuevos de un PR cancelan su CI anterior; un deploy de `main` no se cancela.
+It needs `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`; if they are missing, the job fails before the
+login can be skipped. The whole job is serialized across branches because it shares a user and a
+backend. New pushes to a PR cancel their previous CI; a `main` deploy is never cancelled.
 
-Los artefactos de fallo de Playwright y el informe de Tester Army se conservan siete días.
-La telemetría de Tester Army está desactivada. No hay pasos con modelos en el gate.
+Playwright's failure artifacts and the Tester Army report are kept for seven days. Tester Army
+telemetry is disabled. There are no steps with models in the gate.
 
-## Cobertura pendiente
+## Pending coverage
 
-No existe aún cobertura completa de móvil real, WebKit/Firefox, OAuth de Google con proveedor
-real, verificación de email completa, CRUD completo de tareas/notas, perfil/ajustes ni regresión visual.
-Jest prueba la capa cliente de push; no demuestra entrega real de avisos. Los asserts de axe
-existentes tampoco constituyen una auditoría completa de accesibilidad.
+There is still no full coverage of real mobile, WebKit/Firefox, Google OAuth with a real provider, full
+email verification, complete task/note CRUD, profile/settings or visual regression. Jest tests the push
+client layer; it does not prove real delivery of notifications. The existing axe asserts are not a full
+accessibility audit either.
 
-## Componentes y accesibilidad aislada
+## Components and isolated accessibility
 
-`pnpm run storybook` abre el catálogo en localhost:6006 con controles y formularios reales,
-datos sintéticos y selector de tema. `pnpm run build-storybook` genera el catálogo estático
-local (ignorado por Git; no se publica con el Worker).
+`pnpm run storybook` opens the catalogue on localhost:6006 with real controls and forms, synthetic
+data and a theme selector. `pnpm run build-storybook` generates the static catalogue locally (ignored
+by Git; it is not published with the Worker).
 
-`pnpm run test:storybook` usa Vitest exclusivamente para las stories, en Chromium real.
-Jest conserva las pruebas de unidad y aplicación. El addon de accesibilidad tiene
-`a11y.test: error`: sus violaciones fallan el test. La CI construye el catálogo y ejecuta
-estas pruebas después de instalar Chromium.
+`pnpm run test:storybook` uses Vitest exclusively for the stories, in real Chromium. Jest keeps the
+unit and application tests. The accessibility addon has `a11y.test: error`: its violations fail the
+test. CI builds the catalogue and runs these tests after installing Chromium.
 
-`e2e/flows/forms-accessibility.spec.ts` verifica Tareas y Notas en claro/oscuro a 390 y
-1440 px: etiquetas, error de título, radios con teclado, axe completo dentro del diálogo,
-cierre y restauración del foco. No guarda tareas ni notas. Espera al final de la transición
-antes de medir contraste. No acredita compatibilidad con lectores de pantalla reales ni
-un cumplimiento WCAG de toda la app.
+`e2e/flows/forms-accessibility.spec.ts` verifies Tasks and Notes in light/dark at 390 and 1440 px:
+labels, title error, radios with the keyboard, full axe inside the dialog, closing and focus
+restoration. It saves no tasks or notes. It waits for the end of the transition before measuring
+contrast. It does not vouch for compatibility with real screen readers or for WCAG compliance across
+the whole app.

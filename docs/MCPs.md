@@ -1,11 +1,13 @@
-# MCPs (Mínimos Códigos Productivos) usados en Trae
+# MCPs (minimal productive code units) used in Trae
 
-Este proyecto documenta patrones reutilizables y conectores usados en Trae:
+This project documents reusable patterns and connectors used in Trae:
 
-- Logger centralizado (`src/lib/logger.ts`): captura niveles `debug|info|warn|error` y emite toasts.
-- Toasts globales (`src/lib/toast.ts`, `src/components/ui/Toast.tsx`): proveedor en `RootLayout`.
-- Clientes de servicios (`src/lib/insforge.ts`): inicialización y ayudantes de datos.
-- Pruebas y auditoría (plan): `Jest` + posibilidad de `testsprite`.
-- UI modular: componentes reusables en `src/components/ui/*` y por dominio.
+- Centralized logger (`src/lib/logger.ts`): captures `debug|info|warn|error` levels and
+  emits toasts.
+- Global toasts (`src/lib/toast.ts`, `src/components/ui/Toast.tsx`): provider in
+  `RootLayout`.
+- Service clients (`src/lib/insforge.ts`): initialization and data helpers.
+- Tests and audit (plan): `Jest` plus the option of `testsprite`.
+- Modular UI: reusable components in `src/components/ui/*` and per domain.
 
-Estos MCPs aceleran implementación sin comprometer calidad.
+These patterns speed up implementation without lowering the quality bar.

@@ -1,51 +1,45 @@
-# ADR-005: La web no cargaba por las variables públicas no inlineadas, no por la compresión
+# ADR-005: The site failed to load because of non-inlined public variables, not compression
 
-## Contexto
+## Context
 
-La web dejó de cargar en cualquier navegador (página de error del navegador, y
-por debajo la página `__next_error__` de Next), mientras que `curl` recibía 200
-con el HTML correcto. La investigación inicial atribuyó el fallo a la
-compresión: pidiendo con cabecera de navegador (`Accept-Encoding: gzip, deflate,
-br, zstd`) la respuesta traía `Content-Encoding: zstd`. De ahí salieron dos
-"arreglos": `compress: false` en `next.config.js` (`ba609f4`) y un
-`Cache-Control: no-transform` escrito desde `src/proxy.ts`.
+The site stopped loading in any browser (browser error page, with Next's `__next_error__` page
+underneath), while `curl` received 200 with the correct HTML. The initial investigation attributed
+the failure to compression: requesting with a browser header (`Accept-Encoding: gzip, deflate,
+br, zstd`) returned `Content-Encoding: zstd`. Two "fixes" came out of that: `compress: false` in
+`next.config.js` (`ba609f4`) and a `Cache-Control: no-transform` written from `src/proxy.ts`.
 
-## Decisión
+## Decision
 
-El diagnóstico era falso. Se descartan ambos cambios y se documenta por qué:
+The diagnosis was wrong. Both changes are discarded and the reason is documented:
 
-- El zstd que sirve el borde es **válido**: 8667 B decodifican exactamente a los
-  mismos 37456 B del HTML sin comprimir (comparación byte a byte, Node zlib).
-- Sirviendo **todas** las respuestas sin comprimir (proxy inverso local que
-  elimina `Accept-Encoding` en cada petición, reescribiendo el origen), el
-  navegador falla exactamente igual, con la misma excepción.
-- Con `compress: false` ya desplegado, el borde sigue enviando zstd: la opción
-  `compress` de Next sólo afecta al servidor Node, no al Worker de Cloudflare.
+- The zstd served by the edge is valid: 8667 B decode exactly to the same 37456 B of the
+  uncompressed HTML (byte-by-byte comparison, Node zlib).
+- Serving every response uncompressed (a local reverse proxy stripping `Accept-Encoding` from each
+  request, rewriting the origin), the browser fails exactly the same way, with the same exception.
+- With `compress: false` already deployed, the edge still sends zstd: Next's `compress` option only
+  affects the Node server, not the Cloudflare Worker.
 
-La causa real era otra: `src/lib/public-env.ts` validaba el objeto
-`process.env` completo. El bundler sólo sustituye los accesos **estáticos**
-(`process.env.NEXT_PUBLIC_X`); el objeto entero llega `{}` al navegador, la
-validación zod lanzaba durante la evaluación del módulo y tumbaba todo módulo
-que importa `publicEnv` (cliente de InsForge, logger, auth). Se corrige
-enumerando cada variable pública con acceso estático.
+The real cause was different: `src/lib/public-env.ts` validated the whole `process.env` object. The
+bundler only substitutes static accesses (`process.env.NEXT_PUBLIC_X`); the whole object arrives as
+`{}` in the browser, the zod validation threw during module evaluation and took down every module
+importing `publicEnv` (InsForge client, logger, auth). It is fixed by enumerating each public
+variable with a static access.
 
-`no-transform` **sí** impide que Cloudflare comprima (verificado en una versión
-de preview: la respuesta pierde `Content-Encoding`), pero es innecesario para
-este fallo, desactiva la compresión del HTML y sobrescribe el `Cache-Control:
-s-maxage` de la ruta. No se usa.
+`no-transform` does stop Cloudflare from compressing (verified on a preview version: the response
+loses `Content-Encoding`), but it is unnecessary for this failure, it disables HTML compression and
+it overrides the route's `Cache-Control: s-maxage`. It is not used.
 
-## Consecuencias
+## Consequences
 
-- Se mantiene la compresión del borde (zstd/brotli/gzip según
-  `Accept-Encoding`); es correcta y no impide que el navegador renderice.
-- Ante un síntoma "la web no carga en el navegador pero `curl` recibe 200",
-  sospechar primero del bundle cliente (excepciones al evaluar módulos) y no de
-  la compresión: `curl` no ejecuta JavaScript, un navegador sí.
-- `compress: false` no hace nada en el Worker; no volver a proponerlo como
-  arreglo de hosting.
-- Al leer variables `NEXT_PUBLIC_*` en código que se ejecuta en el cliente, usar
-  siempre acceso estático; nunca pasar `process.env` como objeto.
+- Edge compression stays on (zstd/brotli/gzip depending on `Accept-Encoding`); it is correct and it
+  does not stop the browser from rendering.
+- When the symptom is "the site does not load in the browser but `curl` gets 200", suspect the
+  client bundle first (exceptions while evaluating modules) and not compression: `curl` does not
+  execute JavaScript, a browser does.
+- `compress: false` does nothing in the Worker; do not propose it again as a hosting fix.
+- When reading `NEXT_PUBLIC_*` variables in code that runs in the client, always use static access;
+  never pass `process.env` as an object.
 
-## Estado
+## Status
 
-Aprobado
+Accepted

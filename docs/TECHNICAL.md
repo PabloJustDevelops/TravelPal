@@ -1,175 +1,160 @@
-# 🛠️ Documentación Técnica
+# Technical documentation
 
-> Guía técnica y configuración de TravelPal (repo `PabloJustDevelops/TravelPal`).
+> Technical guide and configuration for TravelPal (repo `PabloJustDevelops/TravelPal`).
 
-Para el contexto de dominio y el modelo de datos, ver [CONTEXT.md](../CONTEXT.md). Para la
-arquitectura, [ARCHITECTURE.md](./ARCHITECTURE.md). Para las decisiones, [DECISIONS/](./DECISIONS/).
+For domain context and the data model, see [CONTEXT.md](../CONTEXT.md). For the architecture,
+[ARCHITECTURE.md](./ARCHITECTURE.md). For decisions, [DECISIONS/](./DECISIONS/).
 
----
+## Requirements
 
-## Requisitos
-
-| Componente | Versión | Descripción |
+| Component | Version | Description |
 |------------|---------|-------------|
-| Node.js | 22.22.3+ o 24.8+ | CI fija 22.22.3; requerido por Tester Army |
-| pnpm | 12.3.4 | Gestor de paquetes (repo con `pnpm-lock.yaml`) |
-| Proyecto InsForge | - | Postgres + Auth + Storage |
+| Node.js | 22.22.3+ or 24.8+ | CI pins 22.22.3; required by Tester Army |
+| pnpm | 12.3.4 | Package manager (repo with `pnpm-lock.yaml`) |
+| InsForge project | - | Postgres + Auth + Storage |
 
----
+## Main dependencies
 
-## Dependencias principales
+- `next` ^16.3.8, `react`/`react-dom` 19.1.0
+- `@insforge/sdk` ^1.5.2 (data, auth, storage)
+- `wrangler` ^4.125.0 to serve and publish the static export on Cloudflare Workers Assets
+- `@opennextjs/cloudflare` remains as a legacy development/configuration dependency, but takes no
+  part in `build`, `preview` or the current publish
+- `typescript` ^5, `eslint` ^9, `jest` ^29.7.0 + Testing Library
+- `storybook` 10.6.3, `vitest` 4.1.11 (Storybook only), `@playwright/test` ^1.63.0
 
-- `next` 16.3.8, `react`/`react-dom` 19
-- `@insforge/sdk` (datos, auth, storage)
-- `wrangler` para servir y publicar el export estático en Cloudflare Workers Assets
-- `@opennextjs/cloudflare` permanece como dependencia de desarrollo/configuración heredada, pero
-  no interviene en `build`, `preview` ni en la publicación actual
-- `typescript`, `eslint`, `jest` + Testing Library
+Check `package.json` for the exact versions.
 
-Consulta `package.json` para las versiones exactas.
-
----
-
-## Instalación
+## Installation
 
 ```bash
 git clone https://github.com/PabloJustDevelops/TravelPal.git
 cd TravelPal
 pnpm install --frozen-lockfile
-cp .env.example .env.local   # y rellena los valores
+cp .env.example .env.local   # and fill in the values
 pnpm run dev
 ```
 
-La app queda en `http://localhost:3000`.
+The app is served at `http://localhost:3000`.
 
----
+## Commands
 
-## Comandos
-
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `pnpm run dev` | Servidor de desarrollo |
+| `pnpm run dev` | Development server (`next dev --turbopack`) |
 | `pnpm run lint` | ESLint |
 | `pnpm run type-check` | `tsc --noEmit` |
 | `pnpm run test:ci` | Jest (CI) |
-| `pnpm run test:e2e` | Playwright: flujos con datos |
-| `pnpm run test:tester` | Tester Army: acceso público en dos viewports |
-| `pnpm run build` | `next build`; `next.config.js` exporta el sitio estático en `out/` |
-| `pnpm run validate:static-export` | Comprueba las rutas y assets críticos del export y que no incluya claves privadas |
-| `pnpm run check:headers` | Comprueba CSP efectiva, hashes inline y las siete cabeceras globales de `out/_headers` |
-| `pnpm run preview` | `wrangler dev`; sirve el `out/` existente, no lo construye |
-| `pnpm run deploy` | Ejecuta build, validación y `wrangler deploy --no-autoconfig` |
-| `pnpm run upload` | Ejecuta build, validación y el dry-run de Wrangler; no publica |
+| `pnpm run test:e2e` | Playwright: flows with data |
+| `pnpm run test:tester` | Tester Army: public access in two viewports |
+| `pnpm run build` | `node scripts/build-seo.mjs && next build && node scripts/build-security-headers.mjs`; `next.config.js` exports the static site to `out/` |
+| `pnpm run validate:static-export` | Checks the export's critical routes and assets, and that it carries no private keys |
+| `pnpm run check:headers` | Checks the effective CSP, inline hashes and the seven global headers in `out/_headers` |
+| `pnpm run preview` | `wrangler dev`; serves the existing `out/`, does not build it |
+| `pnpm run deploy` | Runs build, validation and `wrangler deploy --no-autoconfig` |
+| `pnpm run upload` | Runs build, validation and the Wrangler dry-run; does not publish |
 
-Para una vista previa local, ejecuta `pnpm run build`, `pnpm run validate:static-export` y después
-`pnpm run preview`. La configuración `wrangler.jsonc` solo apunta el binding de assets al directorio
-`out/`; no define un entrypoint de aplicación.
+For a local preview, run `pnpm run build`, `pnpm run validate:static-export` and then
+`pnpm run preview`. The `wrangler.jsonc` configuration only points the assets binding at the `out/`
+directory; it defines no application entrypoint.
 
-### Cabeceras de seguridad
+### Security headers
 
-`public/_headers` contiene la política base y HSTS. Tras `next build`,
-`scripts/build-security-headers.mjs` añade a `out/_headers` los hashes SHA-256 de todos los
-scripts inline del HTML exportado (incluidos tema e hidratación). No se permite `unsafe-inline`
-ni `unsafe-eval` en scripts; Zod usa `jitless` en `src/lib/public-env.ts` para evitar generación
-dinámica de código. `style-src` permite estilos inline y `img-src https:` mantiene los avatares
-con URL externa. No se habilitan `data:` ni `blob:` para recursos sin usos que los necesiten.
+`public/_headers` holds the base policy and HSTS. After `next build`,
+`scripts/build-security-headers.mjs` adds to `out/_headers` the SHA-256 hashes of every inline script
+in the exported HTML (theme and hydration included). `unsafe-inline` and `unsafe-eval` are not allowed
+for scripts; Zod uses `jitless` in `src/lib/public-env.ts` to avoid dynamic code generation.
+`style-src` allows inline styles and `img-src https:` keeps avatars with external URLs working.
+`data:` and `blob:` are not enabled for resources without a use that needs them.
 
-El generador carga el entorno con `@next/env` en modo producción, igual que Next: considera
-`.env.production.local`, `.env.local`, `.env.production` y `.env`, y expande referencias entre
-variables. Las variables ya exportadas conservan prioridad. Así, `connect-src` usa el mismo valor
-de `NEXT_PUBLIC_INSFORGE_URL` que el cliente compilado. Sin variable usa el host de producción
-declarado en la plantilla. Por ello el build de prueba con `https://example.invalid` no altera la
-política de producción ni necesita excepciones permanentes para pruebas.
+The generator loads the environment with `@next/env` in production mode, like Next: it considers
+`.env.production.local`, `.env.local`, `.env.production` and `.env`, and expands references between
+variables. Variables already exported keep priority. That way `connect-src` uses the same
+`NEXT_PUBLIC_INSFORGE_URL` value as the compiled client. Without the variable it uses the production
+host declared in the template. As a result the test build with `https://example.invalid` does not
+alter the production policy and needs no permanent test exceptions.
 
-Después de construir, ejecuta `pnpm run check:headers`. Falla si falta una cabecera global,
-si CSP vuelve a Report-Only, si permite scripts arbitrarios, si faltan hashes del HTML actual o
-si una línea supera los 2.000 caracteres admitidos por Cloudflare. Si el sitio crece y alcanza ese
-límite, habrá que dividir la política por rutas; no se degrada automáticamente a `unsafe-inline`.
-No publiques el `_headers` sin procesar de `public/`: usa siempre el `out/` del build completo.
+After building, run `pnpm run check:headers`. It fails if a global header is missing, if the CSP goes
+back to Report-Only, if it allows arbitrary scripts, if hashes for the current HTML are missing, or if
+a line exceeds the 2,000 characters Cloudflare accepts. If the site grows to that limit, the policy
+will have to be split by route; it does not degrade to `unsafe-inline` automatically. Do not publish
+the unprocessed `_headers` from `public/`: always use the `out/` from a full build.
 
-Para comprobarlo con navegador sin backend real:
+To check it in a browser without a real backend:
 
 ```bash
 pnpm exec wrangler dev --ip 127.0.0.1 --port 8791 --inspector-port 9291
-# En otra terminal, con Chromium de Playwright instalado:
+# In another terminal, with Playwright's Chromium installed:
 node scripts/test-security-csp.mjs http://127.0.0.1:8791
 ```
 
-La prueba recoge consola, peticiones fallidas y eventos `securitypolicyviolation` en `/`,
-`/signin`, `/travel-inspiration` y `/dashboard`; también comprueba la validación del formulario
-para confirmar hidratación. Con el backend ficticio se esperan errores DNS, no infracciones CSP.
-El informe inicial y las limitaciones están en [cabeceras-2026-10-20.md](security/cabeceras-2026-10-20.md).
+The test collects console output, failed requests and `securitypolicyviolation` events on `/`,
+`/signin`, `/travel-inspiration` and `/dashboard`; it also checks form validation to confirm
+hydration. With the dummy backend, DNS errors are expected, not CSP violations.
+The initial report and its limitations are in [cabeceras-2026-10-20.md](security/cabeceras-2026-10-20.md).
 
----
+## Environment variables
 
-## Variables de entorno
-
-`.env.local` (nunca se versiona):
+`.env.local` (never committed):
 
 ```bash
-# InsForge (obligatorias)
+# InsForge (required)
 NEXT_PUBLIC_INSFORGE_URL=https://<appkey>.<region>.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<anon key>
 
-# Requerida por la validación de entorno de pnpm run dev; no se incluye en el export
+# Required by the environment validation of pnpm run dev; not included in the export
 INSFORGE_API_KEY=<api key>
 
-# Logging (opcional): debug | info | warn | error
+# Logging (optional): debug | info | warn | error
 NEXT_PUBLIC_LOG_LEVEL=info
 
 ```
 
-`NEXT_PUBLIC_*` se incorporan al export durante el build. `pnpm run dev` carga `src/lib/env.ts` a
-través de `src/instrumentation.ts`, por lo que requiere `INSFORGE_API_KEY`; el build estático y el
-Worker no la necesitan ni la reciben. La publicación de CI usa `CLOUDFLARE_API_TOKEN`; el build
-solo recibe las dos variables públicas de InsForge.
+`NEXT_PUBLIC_*` values are embedded in the export during the build. `pnpm run dev` loads
+`src/lib/env.ts` through `src/instrumentation.ts`, so it requires `INSFORGE_API_KEY`; the static build
+and the Worker neither need it nor receive it. The CI publish uses `CLOUDFLARE_API_TOKEN`; the build
+receives only the two public InsForge variables.
 
----
-
-## Estructura
+## Structure
 
 ```
 src/
-├── app/                    # App Router: páginas exportables como archivos estáticos
-├── components/             # UI por dominio + ui/ base
+├── app/                    # App Router: pages exportable as static files
+├── components/             # UI by domain + base ui/
 ├── contexts/               # AuthContext, ThemeContext
 └── lib/
-    ├── insforge.ts         # Cliente de navegador (createInsforgeClient)
+    ├── insforge.ts         # Browser client (createInsforgeClient)
     ├── auth.ts             # AuthService
-    ├── public-env.ts       # Validación de variables públicas
-    └── env.ts              # Validación del secreto para utilidades administrativas locales
-migrations/                 # Esquema InsForge (fuente de verdad)
+    ├── public-env.ts       # Public variable validation
+    └── env.ts              # Secret validation for local administrative utilities
+migrations/                 # InsForge schema (source of truth)
 ```
 
----
+## Testing and quality
 
-## Testing y calidad
-
-- Jest + React Testing Library; tests en `__tests__/` o `*.test.ts(x)`.
-- Configuración: `jest.config.js`, `jest.setup.js`.
+- Jest + React Testing Library; tests in `__tests__/` or `*.test.ts(x)`.
+- Configuration: `jest.config.js`, `jest.setup.js`.
 - ESLint: `eslint.config.mjs`.
-- CI: `.github/workflows/ci.yml` (lint, type-check, tests, export estático, validación y dry-run de Wrangler).
+- CI: `.github/workflows/ci.yml` (lint, type-check, tests, static export, validation and Wrangler dry-run).
 
-En un PR, `build` valida el export y publica `out/` como artefacto; `worker` descarga ese mismo
-artefacto, lo valida y ejecuta `wrangler deploy --dry-run --no-autoconfig`; `e2e` prueba el export
-antes del deploy. En pushes a `main`, `deploy` espera a esos tres gates y publica el artefacto con
-`wrangler deploy --no-autoconfig`. `e2e-produccion` vuelve a ejecutar las suites después de publicar.
-Cloudflare Workers Builds no se usa: GitHub Actions es la única vía de publicación.
+On a PR, `build` validates the export and uploads `out/` as an artifact; `worker` downloads that same
+artifact, validates it and runs `wrangler deploy --dry-run --no-autoconfig`; `e2e` tests the export
+before deploy. On pushes to `main`, `deploy` waits for those three gates and publishes the artifact
+with `wrangler deploy --no-autoconfig`. `e2e-produccion` runs the suites again after publishing.
+Cloudflare Workers Builds is not used: GitHub Actions is the only publish path.
 
----
+## Troubleshooting
 
-## Solución de problemas
-
-### Error de instalación de dependencias
+### Dependency installation error
 ```bash
 pnpm install --frozen-lockfile
 ```
 
-### Error de variables de entorno
-- Verifica que `.env.local` existe y tiene los valores correctos.
-- Reinicia el servidor de desarrollo tras cambiar variables.
+### Environment variable error
+- Check that `.env.local` exists and holds the right values.
+- Restart the development server after changing variables.
 
-### Wrangler no puede servir la vista previa
-- Comprueba que `out/` exista y sea reciente: `pnpm run preview` no compila el sitio.
-- Ejecuta `pnpm run build` y `pnpm run validate:static-export`, y vuelve a iniciar `pnpm run preview`.
-- Para publicar manualmente, autentica Wrangler y ejecuta `pnpm run deploy`.
+### Wrangler cannot serve the preview
+- Check that `out/` exists and is recent: `pnpm run preview` does not build the site.
+- Run `pnpm run build` and `pnpm run validate:static-export`, then start `pnpm run preview` again.
+- To publish manually, authenticate Wrangler and run `pnpm run deploy`.

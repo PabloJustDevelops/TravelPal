@@ -1,36 +1,38 @@
-# Operación: inspiración de vuelos
+# Operation: flight inspiration
 
-La página estática `/travel-inspiration` consulta la función de InsForge con la sesión del usuario.
-La función `travel-inspiration` verifica esa sesión antes de llamar a Travelpayouts Data API. La
-aplicación y el Worker de Cloudflare no reciben el token de Travelpayouts.
+The static page `/travel-inspiration` calls the InsForge function with the user
+session. The `travel-inspiration` function verifies that session before calling the
+Travelpayouts Data API. The application and the Cloudflare Worker do not receive the
+Travelpayouts token.
 
-## Estado actual y bloqueos
+## Current state and blockers
 
-- **No se ha creado una cuenta de Travelpayouts ni se ha desplegado la función de InsForge.** No se
-  han configurado secretos ni se ha llamado al proveedor real.
-- Todas las pruebas y verificaciones de este cambio usan respuestas ficticias del proveedor. No
-  demuestran que la credencial, la API ni los enlaces funcionen con una cuenta real.
-- La aprobación del proyecto/programa en Travelpayouts es externa y sigue pendiente del propietario.
-  Hasta que el propietario complete el alta y obtenga la aprobación, quedan bloqueados las llamadas
-  reales, la comprobación de disponibilidad de datos y la validación de cualquier uso o atribución de
-  enlaces de afiliado.
-- Después del alta externa también hace falta que el propietario configure el secreto y el flag en
-  InsForge y despliegue la función. Hasta entonces la interfaz no puede consultar datos reales.
+- No Travelpayouts account has been created and the InsForge function has not been
+  deployed. No secrets have been configured and the real provider has never been
+  called.
+- Every test and verification of this change uses fabricated provider responses. They
+  do not prove that the credential, the API or the links work with a real account.
+- Approval of the project/program in Travelpayouts is external and still pending with
+  the owner. Until the owner completes sign-up and gets approval, real calls, data
+  availability checks and validation of any affiliate link use or attribution remain
+  blocked.
+- After external sign-up, the owner must also configure the secret and the flag in
+  InsForge and deploy the function. Until then the interface cannot query real data.
 
-## Alta y configuración en InsForge
+## Sign-up and configuration in InsForge
 
-Completar estos pasos solo después de que el propietario haya creado y aprobado el proyecto/programa
-en Travelpayouts:
+Complete these steps only after the owner has created and approved the project/program
+in Travelpayouts:
 
-1. En el proyecto de InsForge `travelpal`, guardar `TRAVELPAYOUTS_API_TOKEN` como **secreto de la
-   función**. No añadirlo a GitHub Actions, `.env.local`, el código, el bundle estático ni al entorno
-   de Cloudflare. No copiarlo en logs o capturas.
-2. En la configuración de entorno de la función de InsForge, establecer
-   `TRAVELPAYOUTS_ENABLED=true`. Este flag no es un secreto. El valor en GitHub Actions no cambia
-   el entorno de InsForge.
-3. Desde la raíz del repo, con Deno 2.9.7 y el proyecto de InsForge correcto enlazado en la CLI,
-   crear la configuración Deno temporal y empaquetar las dependencias locales en un único archivo.
-   El import npm del SDK queda externo para Deno Subhosting:
+1. In the `travelpal` InsForge project, store `TRAVELPAYOUTS_API_TOKEN` as a function
+   secret. Do not add it to GitHub Actions, `.env.local`, the code, the static bundle
+   or the Cloudflare environment. Do not copy it into logs or screenshots.
+2. In the function's InsForge environment configuration, set
+   `TRAVELPAYOUTS_ENABLED=true`. This flag is not a secret. The value in GitHub Actions
+   does not change the InsForge environment.
+3. From the repo root, with Deno 2.9.7 and the correct InsForge project linked in the
+   CLI, create the temporary Deno config and bundle the local dependencies into a
+   single file. The SDK npm import stays external for Deno Subhosting:
 
    ```bash
    tmpdir="$(mktemp -d)"
@@ -38,46 +40,48 @@ en Travelpayouts:
    deno bundle --config "$tmpdir/deno.json" --no-lock --platform deno --packages bundle --output "$tmpdir/travel-inspiration.js" --external="npm:@insforge/sdk" insforge/functions/travel-inspiration/index.ts
    ```
 
-4. Desplegar el slug `travel-inspiration` con el archivo empaquetado:
+4. Deploy the `travel-inspiration` slug with the bundled file:
 
    ```bash
    npx -y @insforge/cli functions deploy travel-inspiration --file "$tmpdir/travel-inspiration.js"
    ```
 
-5. Confirmar el estado en la lista de funciones:
+5. Confirm the state in the function list:
 
    ```bash
    npx -y @insforge/cli functions list
    ```
 
-   Continuar solo si `travel-inspiration` aparece con estado `active`. Un estado `draft` o `error`
-   requiere resolver el despliegue antes de habilitar el uso.
-6. Cuando el despliegue y la comprobación terminen, borrar solo el directorio temporal creado en el
-   paso 3: `rm -rf "$tmpdir"`.
+   Continue only if `travel-inspiration` appears with state `active`. A `draft` or
+   `error` state requires resolving the deployment before enabling use.
+6. When the deployment and the check are done, delete only the temporary directory
+   created in step 3: `rm -rf "$tmpdir"`.
 
-El secreto debe cargarse en el gestor de secretos de InsForge, no como argumento versionado ni como
-variable de build. La CLI también permite crear secretos, pero el valor nunca debe escribirse en
-este documento, en el historial del shell compartido ni en la salida de comandos.
+The secret must be loaded into the InsForge secret manager, not as a versioned
+argument or a build variable. The CLI can also create secrets, but the value must
+never be written in this document, in shared shell history or in command output.
 
-## Comprobación manual autenticada
+## Manual authenticated check
 
-Cuando el propietario haya completado el alta, la aprobación, la configuración y el despliegue:
+Once the owner has completed sign-up, approval, configuration and deployment:
 
-1. Iniciar sesión en TravelPal y abrir directamente `/travel-inspiration`.
-2. Confirmar que la comprobación inicial muestra el estado disponible y que una consulta válida
-   muestra resultados o el estado vacío esperado.
-3. Abrir «Planear este viaje» y verificar que `/create-trip` presenta origen, destino y fechas como
-   valores editables. Guardar solo después de pulsar explícitamente el botón del formulario.
-4. Si falla, revisar el estado `active` y la configuración de la función en InsForge. No imprimir ni
-   copiar el bearer de sesión, el secreto de Travelpayouts ni cabeceras de autorización en logs.
+1. Sign in to TravelPal and open `/travel-inspiration` directly.
+2. Confirm that the initial check shows the available state and that a valid query
+   returns results or the expected empty state.
+3. Open `Planear este viaje` and verify that `/create-trip` presents origin,
+   destination and dates as editable values. Save only after pressing the form button
+   explicitly.
+4. If it fails, check the `active` state and the function configuration in InsForge.
+   Do not print or copy the session bearer, the Travelpayouts secret or authorization
+   headers into logs.
 
-Los precios son orientativos y pueden estar almacenados por el proveedor; no equivalen a una búsqueda
-en vivo ni garantizan disponibilidad. Esta comprobación manual todavía no se ha ejecutado contra
-Travelpayouts real.
+Prices are indicative and may be cached by the provider; they are not a live search
+and do not guarantee availability. This manual check has not been run against real
+Travelpayouts yet.
 
 ## Hosting
 
-`/travel-inspiration` se exporta como HTML estático y el Worker de Cloudflare sigue siendo assets-only.
-No se añaden Route Handlers de Next.js ni lógica de aplicación al Worker. El workflow de Cloudflare
-no despliega la función ni configura sus variables; esas operaciones pertenecen al proyecto de
-InsForge.
+`/travel-inspiration` is exported as static HTML and the Cloudflare Worker remains
+assets-only. No Next.js Route Handlers or application logic are added to the Worker.
+The Cloudflare workflow does not deploy the function or configure its variables; those
+operations belong to the InsForge project.

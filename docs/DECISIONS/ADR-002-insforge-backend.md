@@ -1,31 +1,32 @@
-# ADR-002: Backend InsForge en lugar de Supabase
+# ADR-002: InsForge backend instead of Supabase
 
-## Contexto
+## Context
 
-La app se construyó sobre Supabase (Postgres, Auth, Storage). El proyecto de Supabase quedó
-retirado y su build fallaba en CI; además, la capa de datos usaba la forma de Supabase
-(`client.from(...)`, `auth.getSession()`, `@supabase/ssr`), acoplada a esa plataforma.
+The app was built on Supabase (Postgres, Auth, Storage). The Supabase project was retired and its
+build failed in CI; the data layer also used Supabase's shape (`client.from(...)`,
+`auth.getSession()`, `@supabase/ssr`), coupled to that platform.
 
-## Decisión
+## Decision
 
-Migrar el backend a InsForge (`@insforge/sdk`) conservando Postgres como base de datos:
+Migrate the backend to InsForge (`@insforge/sdk`), keeping Postgres as the database:
 
-- Datos: `createClient({ baseUrl, anonKey })` y acceso por `client.database.from(...)`.
-- Sesión de servidor: `@insforge/sdk/ssr` con `createServerClient({ cookies })`, `updateSession()`
-  en el proxy (`src/proxy.ts`) y ruta `/api/auth/refresh` con `createRefreshAuthRouter()`.
-- Auth: mutaciones en servidor con `createAuthActions` (el refresh token es httpOnly).
-- Admin: `createAdminClient({ apiKey })` en código de servidor.
-- Se eliminan `@supabase/supabase-js`, `@supabase/ssr` y `@supabase/auth-ui-*`.
+- Data: `createClient({ baseUrl, anonKey })` and access through `client.database.from(...)`.
+- Server session: `@insforge/sdk/ssr` with `createServerClient({ cookies })`, `updateSession()`
+  in the proxy (`src/proxy.ts`) and the `/api/auth/refresh` route with `createRefreshAuthRouter()`.
+- Auth: server mutations with `createAuthActions` (the refresh token is httpOnly).
+- Admin: `createAdminClient({ apiKey })` in server code.
+- `@supabase/supabase-js`, `@supabase/ssr` and `@supabase/auth-ui-*` are removed.
 
-## Consecuencias
+## Consequences
 
-- El SDK no expone `getSession()` ni `updateUser()`: `requireUser()` usa `getCurrentUser()` y el
-  reset de contraseña usa el flujo por token de InsForge.
-- InsForge no acepta enums de Postgres definidos a mano en el repo: el esquema usa `text + CHECK`.
-- Las credenciales viven en `.env.local` (`NEXT_PUBLIC_INSFORGE_URL`,
-  `NEXT_PUBLIC_INSFORGE_ANON_KEY`, `INSFORGE_API_KEY`); ninguna se versiona.
-- El esquema se replica en InsForge con `db migrations` (ver ADR-004).
+- The SDK exposes neither `getSession()` nor `updateUser()`: `requireUser()` uses
+  `getCurrentUser()` and password reset uses InsForge's token flow.
+- InsForge does not accept Postgres enums defined by hand in the repo: the schema uses
+  `text + CHECK`.
+- Credentials live in `.env.local` (`NEXT_PUBLIC_INSFORGE_URL`,
+  `NEXT_PUBLIC_INSFORGE_ANON_KEY`, `INSFORGE_API_KEY`); none of them is versioned.
+- The schema is replicated in InsForge with `db migrations` (see ADR-004).
 
-## Estado
+## Status
 
-Aprobado
+Accepted

@@ -1,109 +1,108 @@
-# Sentry del navegador
+# Browser Sentry
 
-TravelPal es un export estático de Next.js servido como assets-only Worker. Se usa
-`@sentry/browser` 10.76.2, sin SDK de servidor, route handlers, túnel ni
-`withSentryConfig`. `SentryInit` inicializa al evaluar el módulo cliente, antes del
-primer render de React. `ErrorBoundary` y los eventos globales `error` y
-`unhandledrejection` usan la misma captura. Un `WeakMap` evita enviar dos veces
-el mismo objeto de error; el fallback muestra su `event_id`, incluso con un
-fallback personalizado. Sin envío habilitado no se muestra una referencia ficticia.
-Errores primitivos distintos no tienen identidad de objeto para deduplicarse.
+TravelPal is a static Next.js export served as an assets-only Worker. It uses
+`@sentry/browser` 10.76.2, with no server SDK, route handlers, tunnel or
+`withSentryConfig`. `SentryInit` initializes when the client module is evaluated, before
+the first React render. `ErrorBoundary` and the global `error` and `unhandledrejection`
+events share the same capture path. A `WeakMap` prevents sending the same error object
+twice; the fallback shows its `event_id`, even with a custom fallback. With sending
+disabled no made-up reference is shown. Distinct primitive errors have no object
+identity to deduplicate on.
 
-## Privacidad
+## Privacy
 
-`sendDefaultPii: false`. No hay integraciones automáticas: ni breadcrumbs, sesiones,
-replay, logs, métricas ni instrumentación de fetch/XHR o rendimiento. El muestreo
-configurado queda disponible para instrumentación explícita futura; actualmente
-`beforeSendTransaction` descarta todas las transacciones.
+`sendDefaultPii: false`. There are no automatic integrations: no breadcrumbs, sessions,
+replay, logs, metrics or fetch/XHR and performance instrumentation. The configured
+sampling remains available for future explicit instrumentation; today
+`beforeSendTransaction` drops every transaction.
 
-`beforeSend` reconstruye el evento con una lista permitida: ID, fecha, plataforma,
-nivel, release, entorno, URL sin query/fragmento/credenciales, tipo de excepción y
-ubicaciones de stack (archivo sin query, función, línea, columna, `in_app`).
-Se conserva el mensaje de la excepción, que es lo que hace legible un issue, pero
-saneado en el navegador: se sustituyen emails, `Bearer`, claves `sk_`/`pk_`/`rk_`,
-tokens `sntry…`, JWT y secuencias de 9 o más dígitos por `[email]`, `[token]` o
-`[num]`; se colapsan los espacios y se recorta a 200 caracteres. Si tras el saneado
-queda vacío, se envía `Exception details omitted`. Se eliminan mensajes libres del
-evento, variables de stack, contexto de aplicación, extras, breadcrumbs, cabeceras
-(incluidas Authorization/Cookie), cuerpos y datos del usuario.
-El único usuario enviado es `anon-<UUID>` generado en memoria por carga de página:
-no es email, ID de InsForge ni una identidad persistente. La ruta permanece visible;
-no añadas datos privados al pathname ni a nombres de funciones/tipos de excepción.
-Sentry recibe además los metadatos de red inherentes al transporte HTTP; configura
-la retención y el filtrado de IP en la cuenta del propietario.
+`beforeSend` rebuilds the event from an allowlist: ID, date, platform, level, release,
+environment, URL without query/fragment/credentials, exception type and stack locations
+(file without query, function, line, column, `in_app`). The exception message is kept,
+since it is what makes an issue readable, but it is sanitized in the browser: emails,
+`Bearer`, `sk_`/`pk_`/`rk_` keys, `sntry…` tokens, JWTs and sequences of 9 or more digits
+are replaced by `[email]`, `[token]` or `[num]`; whitespace is collapsed and the result
+is trimmed to 200 characters. If sanitizing leaves it empty, `Exception details omitted`
+is sent. Free-form event messages, stack variables, application context, extras,
+breadcrumbs, headers (including Authorization/Cookie), bodies and user data are removed.
+The only user sent is `anon-<UUID>`, generated in memory per page load: not an email, not
+an InsForge ID and not a persistent identity. The route stays visible; do not add
+private data to pathnames or to function/exception type names. Sentry also receives the
+network metadata inherent to the HTTP transport; configure IP retention and filtering in
+the owner's account.
 
-El mensaje es el único texto libre que sale del navegador: si escribes un error con
-datos del usuario dentro del `Error(...)`, acabarán en Sentry salvo que encajen en
-los patrones anteriores. No metas nombres, direcciones ni contenido de notas en los
-mensajes de error.
+The message is the only free text leaving the browser: if an error is written with user
+data inside `Error(...)`, it will reach Sentry unless it matches the patterns above. Do
+not put names, addresses or note content into error messages.
 
-## Variables y CI
+## Variables and CI
 
-| Variable | Uso |
+| Variable | Use |
 | --- | --- |
-| `NEXT_PUBLIC_SENTRY_DSN` | DSN público de navegador, fijado durante build. Vacío: no inicializa, no instala handlers y no captura. Variable de repositorio GitHub `NEXT_PUBLIC_SENTRY_DSN` (no secret). |
-| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Opcional; por defecto `production`. |
-| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Opcional, entre 0 y 0.05; por defecto 0.01. No activa instrumentación automática. |
-| `NEXT_PUBLIC_SENTRY_RELEASE` | Lo calcula `next.config.js`: `GITHUB_SHA` válido o `git rev-parse HEAD`. Sin metadatos Git no se declara release. No introducir un valor inventado. |
-| `SENTRY_AUTH_TOKEN` | Secreto GitHub exclusivo de los pasos build/mapas. Nunca público ni en el Worker. Su ausencia omite generación/subida de mapas. |
-| `SENTRY_ORG`, `SENTRY_PROJECT` | Variables GitHub opcionales para sobrescribir los slugs; CI usa `pabloorgs` / `travelpal` por defecto. El script de subida necesita ambos valores en su entorno. |
+| `NEXT_PUBLIC_SENTRY_DSN` | Public browser DSN, set during build. Empty: does not initialize, install handlers or capture. GitHub repository variable `NEXT_PUBLIC_SENTRY_DSN` (not a secret). |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Optional; defaults to `production`. |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Optional, between 0 and 0.05; defaults to 0.01. Does not enable automatic instrumentation. |
+| `NEXT_PUBLIC_SENTRY_RELEASE` | Computed by `next.config.js`: valid `GITHUB_SHA` or `git rev-parse HEAD`. Without Git metadata no release is declared. Do not introduce a made-up value. |
+| `SENTRY_AUTH_TOKEN` | GitHub secret used only by the build/sourcemap steps. Never public, never in the Worker. Its absence skips sourcemap generation and upload. |
+| `SENTRY_ORG`, `SENTRY_PROJECT` | Optional GitHub variables to override the slugs; CI uses `pabloorgs` / `travelpal` by default. The upload script needs both values in its environment. |
 
-Cuenta/proyecto ya creados y verificados por el propietario: organización `pabloorgs`,
-región `de`, proyecto `travelpal`, plataforma `javascript-nextjs`. DSN público:
+Account and project already created and verified by the owner: organization
+`pabloorgs`, region `de`, project `travelpal`, platform `javascript-nextjs`. Public DSN:
 
 ```text
-https://bb04fbea9212639a4cb2ab52d3a39540@o4511064837062656.ingest.de.sentry.io/4512299836047440
+https://bb04fb...9540@o4511064837062656.ingest.de.sentry.io/4512299836047440
 ```
 
-El DSN se consume desde `process.env.NEXT_PUBLIC_SENTRY_DSN` durante el build;
-CI lo toma de `vars.NEXT_PUBLIC_SENTRY_DSN`, ya creada por el propietario.
-El único origen permitido por la validación del DSN y exigido por la CSP es
-`https://o4511064837062656.ingest.de.sentry.io`. No se permiten wildcards.
-El propietario debe provisionar el secreto CI `SENTRY_AUTH_TOKEN` con permiso de
-subida de artefactos (`org:ci` según Sentry). Este token de escritura es **distinto**
-del token de lectura para agentes.
+The DSN is read from `process.env.NEXT_PUBLIC_SENTRY_DSN` during the build; CI takes it
+from `vars.NEXT_PUBLIC_SENTRY_DSN`, already created by the owner. The only origin
+allowed by the DSN validation and required by the CSP is
+`https://o4511064837062656.ingest.de.sentry.io`. Wildcards are not allowed. The owner
+must provision the CI secret `SENTRY_AUTH_TOKEN` with artifact upload permission (`org:ci`
+per Sentry). This write token is different from the read token used for agents.
 
-Solo con `CI=true` y token, Next genera mapas de navegador. Después del build, CI
-ejecuta `node scripts/sentry-sourcemaps.mjs`: sin token informa y omite la subida;
-con token exige org/proyecto/SHA/mapas y ejecuta:
+Only with `CI=true` and a token does Next generate browser sourcemaps. After the build,
+CI runs `node scripts/sentry-sourcemaps.mjs`: without a token it reports and skips the
+upload; with a token it requires org/project/SHA/sourcemaps and runs:
 
 ```bash
 pnpm exec sentry-cli sourcemaps upload --release "$GITHUB_SHA" \
   --url-prefix '~/_next/static' --validate out/_next/static
 ```
 
-La asociación usa release + URL; no se inyectan debug IDs que alteren assets con
-hash e immutable cache. El script elimina todos los `.map` de `out/` en `finally`,
-incluso si la subida falla. CI falla si falla la subida y no entrega ese artefacto.
-La validación y el artefacto consumidos por worker/e2e/deploy van después de esa
-limpieza. No se añade otra vía de publicación. Fuera de CI no se generan mapas. Al probar varios builds, detener y reiniciar
-`wrangler dev` después de cada build: el watcher puede conservar temporalmente
-la plantilla `_headers` que Next copia antes de generar los hashes finales.
+The association uses release plus URL; no debug IDs are injected that would alter
+hashed, immutable-cache assets. The script deletes every `.map` from `out/` in
+`finally`, even if the upload fails. CI fails if the upload fails and does not deliver
+that artifact. The validation and the artifact consumed by worker/e2e/deploy run after
+that cleanup. No other publishing path is added. Outside CI no sourcemaps are generated.
+When testing several builds, stop and restart `wrangler dev` after each build: the
+watcher can temporarily keep the `_headers` template that Next copies before generating
+the final hashes.
 
 ## CSP
 
-`public/_headers` declara `https://o4511064837062656.ingest.de.sentry.io`
-exclusivamente en `connect-src`. El generador mantiene esa fuente y añade los hashes
-inline del export. El checker exige el host exacto y rechaza `*`, esquemas como
-`https:`/`wss:`, `https://*` y cualquier subdominio wildcard, incluidos los patrones
-Sentry genérico y alemán. No se permite código inline adicional ni scripts remotos.
+`public/_headers` declares `https://o4511064837062656.ingest.de.sentry.io` exclusively
+in `connect-src`. The generator keeps that source and adds the export's inline hashes.
+The checker requires the exact host and rejects `*`, schemes such as `https:`/`wss:`,
+`https://*` and any wildcard subdomain, including the generic and German Sentry
+patterns. No additional inline code or remote scripts are allowed.
 
-## Acceso de agentes: MCP oficial de solo lectura
+## Agent access: official read-only MCP
 
-Servidor oficial: <https://mcp.sentry.dev/mcp>. El propietario crea un token personal
-Sentry con **solo** `org:read`, `project:read`, `team:read`, `event:read` y acceso al
-proyecto necesario. Nunca dar `event:write`, `project:write`, `org:write` ni el token
-de CI a un agente. La cuenta del token también debe tener acceso limitado.
-La opción `skills=inspect` expone herramientas de inspección; la restricción real
-se refuerza con los scopes del token. No habilitar `triage` ni `project-management`.
+Official server: <https://mcp.sentry.dev/mcp>. The owner creates a personal Sentry token
+with `org:read`, `project:read`, `team:read`, `event:read` and access to the required
+project only. Never give an agent `event:write`, `project:write`, `org:write` or the CI
+token. The token's account must also have limited access. The `skills=inspect` option
+exposes inspection tools; the real restriction is enforced by the token scopes. Do not
+enable `triage` or `project-management`.
 
-El endpoint remoto distingue `Sentry-Bearer` (token Sentry explícito) de `Bearer`
-(token MCP OAuth), según el [toolkit oficial](https://github.com/getsentry/toolkit#sentry-mcp).
-El propietario provisiona las variables fuera del repositorio y de los mensajes
-a agentes. No copiar un token real a estos ejemplos ni a Git.
+The remote endpoint distinguishes `Sentry-Bearer` (explicit Sentry token) from `Bearer`
+(MCP OAuth token), per the
+[official toolkit](https://github.com/getsentry/toolkit#sentry-mcp). The owner provisions
+the variables outside the repository and outside messages to agents. Do not copy a real
+token into these examples or into Git.
 
-Hermes, `~/.hermes/config.yaml`, sección `mcp_servers`: este objeto JSON exacto es
-también YAML válido; fusionar la sección con las conexiones existentes:
+Hermes, `~/.hermes/config.yaml`, `mcp_servers` section: this exact JSON object is also
+valid YAML; merge the section with the existing connections:
 
 ```json
 {
@@ -116,8 +115,9 @@ también YAML válido; fusionar la sección con las conexiones existentes:
 }
 ```
 
-`SENTRY_ACCESS_TOKEN` contiene solo el token de lectura. Hermes admite interpolación
-`${VAR}` en cabeceras: [referencia de configuración](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/reference/mcp-config-reference.md#environment-variable-references).
+`SENTRY_ACCESS_TOKEN` holds the read token only. Hermes supports `${VAR}` interpolation
+in headers:
+[configuration reference](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/reference/mcp-config-reference.md#environment-variable-references).
 
 Codex, `~/.codex/config.toml`:
 
@@ -127,36 +127,40 @@ url = "https://mcp.sentry.dev/mcp?skills=inspect"
 env_http_headers = { Authorization = "SENTRY_MCP_AUTH" }
 ```
 
-`SENTRY_MCP_AUTH` contiene la cabecera completa `Sentry-Bearer <token-de-lectura>`;
-la [documentación oficial de Codex](https://developers.openai.com/codex/mcp) describe
-`env_http_headers`. La URL es literal, sin interpolación de slugs. Estos fragmentos
-son documentación: este cambio no modifica `~/.hermes` ni `~/.codex`.
-La conexión autenticada queda pendiente de que el propietario provisione el token.
+`SENTRY_MCP_AUTH` holds the full header `Sentry-Bearer <read-token>`; the
+[official Codex documentation](https://developers.openai.com/codex/mcp) describes
+`env_http_headers`. The URL is literal, with no slug interpolation. These fragments are
+documentation: this change modifies neither `~/.hermes` nor `~/.codex`. The
+authenticated connection remains pending until the owner provisions the token.
 
-Ejemplos de peticiones al agente conectado (sustituir slugs/SHA/URL/UUID reales):
+Example requests to the connected agent (replace real slugs/SHA/URL/UUID):
 
-- «En travelpal, busca issues sin resolver de la release `<SHA real>`; muestra ID, ruta y stack». Filtro Sentry: `is:unresolved release:<SHA>`.
-- «Busca errores cuyos eventos tengan URL `https://travelpal.prg-dev.workers.dev/trip` en las últimas 24 horas». Filtro: `url:"https://travelpal.prg-dev.workers.dev/trip"`.
-- «Busca eventos del usuario anónimo `anon-<UUID>` y agrúpalos por issue». Filtro: `user.id:anon-<UUID>`. No buscar por email ni ID de InsForge: no se envían.
-- «Busca el evento con la referencia visible `<event_id>` y muestra su release y stack». Solo consultar; no resolver, asignar ni comentar issues.
+- "In travelpal, find unresolved issues from release `<real SHA>`; show ID, route and
+  stack." Sentry filter: `is:unresolved release:<SHA>`.
+- "Find errors whose events have URL `https://travelpal.prg-dev.workers.dev/trip` in the
+  last 24 hours." Filter: `url:"https://travelpal.prg-dev.workers.dev/trip"`.
+- "Find events from the anonymous user `anon-<UUID>` and group them by issue." Filter:
+  `user.id:anon-<UUID>`. Do not search by email or InsForge ID: they are not sent.
+- "Find the event with the visible reference `<event_id>` and show its release and
+  stack." Query only; do not resolve, assign or comment on issues.
 
-Con `sentry-cli` instalado en este repo (3.8.1), el propietario puede provisionar
-`SENTRY_AUTH_TOKEN` **de lectura** para consultas en su entorno, además de
-`SENTRY_ORG` y `SENTRY_PROJECT`, y ejecutar:
+With `sentry-cli` installed in this repo (3.8.1), the owner can provision a read
+`SENTRY_AUTH_TOKEN` for queries in their environment, plus `SENTRY_ORG` and
+`SENTRY_PROJECT`, and run:
 
 ```bash
-pnpm exec sentry-cli issues list --query 'is:unresolved release:<SHA-real>'
+pnpm exec sentry-cli issues list --query 'is:unresolved release:<real-SHA>'
 pnpm exec sentry-cli issues list --query 'url:"https://travelpal.prg-dev.workers.dev/trip"'
 pnpm exec sentry-cli issues list --query 'user.id:anon-<UUID>'
 ```
 
-La sintaxis se comprobó con `pnpm exec sentry-cli issues list --help`; las consultas
-remotas requieren la cuenta y token del propietario. Nunca usar el token de subida
-para estas consultas de agentes.
+The syntax was checked with `pnpm exec sentry-cli issues list --help`; remote queries
+require the owner's account and token. Never use the upload token for these agent
+queries.
 
-## Referencias de implementación
+## Implementation references
 
-- Docs instaladas Next 16.3.8: `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`, `environment-variables.md` y `01-app/03-api-reference/05-config/01-next-config-js/productionBrowserSourceMaps.md`.
-- README y declaraciones instaladas: `node_modules/@sentry/browser/README.md`, `build/npm/types/sdk.d.ts`, `build/npm/types/exports.d.ts`.
-- [SDK browser exacto 10.76.2](https://github.com/getsentry/sentry-javascript/blob/10.76.2/packages/browser/src/sdk.ts): sin integraciones por defecto tampoco instala global handlers ni BrowserSession; aquí los handlers son propios.
-- [Privacidad/configuración de JavaScript](https://docs.sentry.io/platforms/javascript/configuration/options/), [Next SDK](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/), [permisos API](https://docs.sentry.io/api/permissions/).
+- Installed Next 16.3.8 docs: `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`, `environment-variables.md` and `01-app/03-api-reference/05-config/01-next-config-js/productionBrowserSourceMaps.md`.
+- Installed README and declarations: `node_modules/@sentry/browser/README.md`, `build/npm/types/sdk.d.ts`, `build/npm/types/exports.d.ts`.
+- [Exact browser SDK 10.76.2](https://github.com/getsentry/sentry-javascript/blob/10.76.2/packages/browser/src/sdk.ts): with no default integrations it installs no global handlers or BrowserSession either; here the handlers are our own.
+- [JavaScript privacy/configuration](https://docs.sentry.io/platforms/javascript/configuration/options/), [Next SDK](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/), [API permissions](https://docs.sentry.io/api/permissions/).

@@ -1,535 +1,414 @@
-# 🔄 Proceso de Pull Requests
+# Pull request process
 
-> **Guía completa para crear, revisar y mergear Pull Requests de calidad**
+A pull request is the only route into `main`. Pushing to `main` runs the full CI pipeline and, when
+every job passes, publishes the static export to production, so a merge is a deploy.
 
----
+## For authors
 
-## 🎯 Filosofía de PRs
+### Pre-PR checklist
 
-Los **Pull Requests** son el corazón de nuestro proceso de desarrollo colaborativo. Cada PR es una oportunidad para:
+Testing and quality:
 
-- 🔍 **Revisar código** con ojos frescos
-- 📚 **Compartir conocimiento** entre el equipo
-- 🛡️ **Mantener calidad** del código
-- 📖 **Documentar cambios** para el futuro
-- 🤝 **Colaborar efectivamente**
+- [ ] Tests pass locally: `pnpm test`
+- [ ] Lint reports no errors: `pnpm run lint`
+- [ ] Types check: `pnpm run type-check`
+- [ ] Build succeeds: `pnpm run build`
+- [ ] The change works in development: `pnpm run dev`
+- [ ] Responsive layout checked, if the change touches UI
+- [ ] Basic accessibility checked (labels, focus order, contrast)
 
----
+Documentation:
 
-## 👨‍💻 Para Autores de PRs
+- [ ] `README.md` updated if setup or commands changed
+- [ ] Comments on the non-obvious parts of the code
+- [ ] Technical docs under `docs/` updated
+- [ ] User-visible changes described in the PR body
 
-### 📋 **Checklist Pre-PR**
+Git:
 
-Antes de crear tu Pull Request, asegúrate de completar:
+- [ ] Branch up to date with `main`
+- [ ] Commit messages follow [`COMMITS.md`](./COMMITS.md)
+- [ ] History clean enough to squash into one commit
+- [ ] Branch name describes the change
 
-#### 🧪 **Testing y Calidad**
-- [ ] ✅ **Tests locales pasan**: `npm test`
-- [ ] 🎨 **Lint sin errores**: `npm run lint`
-- [ ] 🔧 **Build exitoso**: `npm run build`
-- [ ] 🌐 **Funciona en desarrollo**: `npm run dev`
-- [ ] 📱 **Responsive verificado** (si aplica)
-- [ ] ♿ **Accesibilidad básica** verificada
+### Title
 
-#### 📝 **Documentación**
-- [ ] 📚 **README actualizado** (si es necesario)
-- [ ] 💬 **Comentarios en código complejo**
-- [ ] 📖 **Docs técnicas actualizadas**
-- [ ] 🔄 **CHANGELOG.md actualizado** (si aplica)
-
-#### 🔄 **Git y Branching**
-- [ ] 🌿 **Rama actualizada** con `main`
-- [ ] 📝 **Commits semánticos** siguiendo convenciones
-- [ ] 🧹 **Historial limpio** (squash si es necesario)
-- [ ] 🏷️ **Nombre de rama descriptivo**
-
-### 📝 **Creando el PR**
-
-#### 🎯 **Título Efectivo**
+The title follows the commit convention, because the squash commit inherits it and
+`.github/workflows/commitlint.yml` validates the PR commits with `wagoid/commitlint-github-action`.
 
 ```
-tipo(scope): descripción clara y concisa
+type(scope): short description
+```
 
-✅ Ejemplos buenos:
-feat(auth): implementar login con Google OAuth
-fix(booking): corregir cálculo de precios con descuentos
-docs(api): actualizar documentación de endpoints
+```
+# Good
+feat(auth): implement Google OAuth login
+fix(booking): compute prices with discounts
+docs(api): update endpoint documentation
 
-❌ Ejemplos malos:
+# Avoid
 fix bug
 update code
 changes
 ```
 
-#### 📋 **Plantilla de Descripción**
+### Description
+
+Fill in `.github/PULL_REQUEST_TEMPLATE.md`:
 
 ```markdown
-## 🎯 Qué hace este PR
+## Description
 
-Descripción clara y concisa de los cambios implementados.
+What the change does and why.
 
-## 🔄 Tipo de cambio
+## Related
 
-- [ ] 🐛 Bug fix (cambio que corrige un issue)
-- [ ] ✨ Nueva feature (cambio que añade funcionalidad)
-- [ ] 💥 Breaking change (fix o feature que causa cambios incompatibles)
-- [ ] 📚 Documentación (cambios solo en documentación)
-- [ ] 🎨 Estilo (formateo, espacios, etc. sin cambios de lógica)
-- [ ] ♻️ Refactor (cambio de código que no corrige bug ni añade feature)
-- [ ] ⚡ Performance (cambio que mejora rendimiento)
-- [ ] ✅ Test (añadir tests faltantes o corregir existentes)
-- [ ] 🔧 Chore (cambios en build, herramientas, etc.)
+Closes #
 
-## 🧪 Cómo se ha probado
+## Checklist
 
-Describe las pruebas realizadas para verificar los cambios:
-
-- [ ] Tests unitarios
-- [ ] Tests de integración
-- [ ] Pruebas manuales
-- [ ] Tests en diferentes navegadores
-- [ ] Tests en dispositivos móviles
-
-## 📸 Screenshots (si aplica)
-
-Antes | Después
--------|--------
-![antes](url) | ![después](url)
-
-## 📋 Checklist
-
-- [ ] Mi código sigue las convenciones del proyecto
-- [ ] He realizado una auto-revisión de mi código
-- [ ] He comentado mi código, especialmente en áreas complejas
-- [ ] He actualizado la documentación correspondiente
-- [ ] Mis cambios no generan nuevos warnings
-- [ ] He añadido tests que prueban mi fix/feature
-- [ ] Tests nuevos y existentes pasan localmente
-- [ ] Cambios dependientes han sido mergeados
-
-## 🔗 Issues relacionados
-
-Fixes #123
-Closes #456
-Related to #789
-
-## 📝 Notas adicionales
-
-Cualquier información adicional que los reviewers deban conocer.
+- [ ] Lint passes (`pnpm run lint`)
+- [ ] Tests pass (`pnpm test`)
+- [ ] Documentation updated if needed
+- [ ] Review checklist completed (see `docs/code-review-checklist.md`)
 ```
 
-#### 🏷️ **Labels Importantes**
+Add these sections when they carry information the reviewer needs:
 
-| Label | Descripción | Cuándo usar |
+````markdown
+## Type of change
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation
+- [ ] Style or formatting, no logic change
+- [ ] Refactor
+- [ ] Performance
+- [ ] Tests
+- [ ] Build, dependencies or tooling
+
+## How it was tested
+
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Manual testing
+- [ ] Browsers checked
+- [ ] Mobile devices checked
+
+## Screenshots
+
+Before | After
+-------|------
+![before](url) | ![after](url)
+````
+
+### Labels
+
+The labels in use are defined in `.github/labels.json` and created by
+`.github/workflows/setup-labels.yml`. A label that is not in that file does not exist; add it there
+instead of typing it on one PR.
+
+| Label | Description | When to use |
 |-------|-------------|-------------|
-| `🚀 feature` | Nueva funcionalidad | Features nuevas |
-| `🐛 bug` | Corrección de errores | Bug fixes |
-| `📚 documentation` | Solo documentación | Cambios en docs |
-| `🔧 chore` | Mantenimiento | Deps, config, etc. |
-| `⚡ performance` | Mejoras de rendimiento | Optimizaciones |
-| `🚨 breaking-change` | Cambio incompatible | Breaking changes |
-| `🔥 priority-high` | Alta prioridad | Bugs críticos |
-| `👀 needs-review` | Necesita revisión | PR listo para review |
-| `🚧 work-in-progress` | En desarrollo | Draft PRs |
+| `bug` | Something is not working | Bug fixes |
+| `feature` | New functionality | New features |
+| `enhancement` | Improvement or refactor | Changes to existing behaviour |
+| `documentation` | Documentation only | Docs changes |
+| `needs-triage` | Maintainer has to evaluate it | New PR without an owner yet |
+| `needs-info` | Waiting on the author | Missing reproduction or context |
+| `ready-for-agent` | Fully specified, ready for an agent | Work an agent can take unattended |
+| `ready-for-human` | Requires human implementation | Design calls, credentials, judgement |
+| `good first issue` | Good for newcomers | Small, self-contained work |
+| `help wanted` | Extra attention needed | Work looking for an owner |
+| `question` | Further information requested | Unclear scope |
+| `duplicate` | Already exists | Repeat report or PR |
+| `invalid` | Does not apply | Off-topic or unreproducible |
+| `wontfix` | Will not be worked on | Rejected, with the reason in the thread |
 
-### 🎯 **Mejores Prácticas para Autores**
+### Author practices
 
-#### 📏 **Tamaño del PR**
-- ✅ **Ideal**: < 400 líneas de código
-- ⚠️ **Aceptable**: 400-800 líneas
-- ❌ **Evitar**: > 800 líneas (dividir en PRs más pequeños)
+Size:
 
-#### 🎯 **Enfoque**
-- 🎯 **Un objetivo por PR**: Una feature, un bug, una mejora
-- 🔄 **Cambios relacionados**: Solo cambios que contribuyen al objetivo
-- 📝 **Contexto claro**: Explicar el "por qué", no solo el "qué"
+- Under 400 changed lines: reviewable in one pass.
+- 400 to 800: state the reading order in the description.
+- Above 800: split. One PR per concern, or a stacked series.
 
-#### 💬 **Comunicación**
-- 📢 **Notificar cambios**: Mencionar a reviewers relevantes
-- 🤝 **Ser receptivo**: Responder a comentarios constructivamente
-- 🔄 **Iterar rápido**: Hacer cambios solicitados prontamente
+Focus:
 
----
+- One objective per PR: one feature, one bug, one improvement.
+- Only changes that serve that objective.
+- Explain the reason, not only the mechanism.
 
-## 👥 Para Reviewers
+Communication:
 
-### 🔍 **Checklist de Review**
+- Mention the reviewers who own the affected area.
+- Answer review comments; if you disagree, say why and propose an alternative.
+- Push requested changes promptly, or state when they will land.
 
-#### 🏗️ **Arquitectura y Diseño**
-- [ ] 🎯 **Solución apropiada** para el problema
-- [ ] 🏛️ **Arquitectura consistente** con el proyecto
-- [ ] 🔄 **Patrones establecidos** seguidos
-- [ ] 📦 **Separación de responsabilidades** clara
-- [ ] 🔧 **Reutilización** de código existente
+## For reviewers
 
-#### 💻 **Calidad del Código**
-- [ ] 📖 **Legibilidad** y claridad
-- [ ] 🎨 **Estilo consistente** con el proyecto
-- [ ] 💬 **Comentarios apropiados** en código complejo
-- [ ] 🏷️ **Nombres descriptivos** para variables y funciones
-- [ ] 🚫 **Sin código duplicado** innecesario
+### Review checklist
 
-#### 🛡️ **Seguridad y Performance**
-- [ ] 🔒 **Sin vulnerabilidades** evidentes
-- [ ] 🚫 **Sin hardcoded secrets** o credenciales
-- [ ] ⚡ **Performance aceptable**
-- [ ] 💾 **Uso eficiente de memoria**
-- [ ] 🌐 **Manejo de errores** apropiado
+Architecture and design:
 
-#### 🧪 **Testing**
-- [ ] ✅ **Tests apropiados** incluidos
-- [ ] 📊 **Cobertura adecuada** de casos
-- [ ] 🎯 **Tests enfocados** y claros
-- [ ] 🔄 **Tests pasan** consistentemente
+- [ ] The solution addresses the problem stated in the description
+- [ ] The structure matches the project (`src/app` for routes, `src/components`, `src/lib`)
+- [ ] Established patterns are followed
+- [ ] Responsibilities are separated
+- [ ] Existing code is reused where it already covers the case
 
-#### 📚 **Documentación**
-- [ ] 📖 **Documentación actualizada**
-- [ ] 💬 **Comentarios útiles** en código
-- [ ] 📝 **README actualizado** si es necesario
-- [ ] 🔄 **Changelog actualizado**
+Code quality:
 
-### 💬 **Tipos de Comentarios**
+- [ ] Readable without extra explanation
+- [ ] Style consistent with the file and the project
+- [ ] Comments where the logic is not self-evident
+- [ ] Variables and functions named for what they hold or do
+- [ ] No duplicated logic
 
-#### ✅ **Comentarios Constructivos**
+Security and performance:
 
-```markdown
-# 🎯 Sugerencia de mejora
-¿Has considerado usar `useMemo` aquí para optimizar el re-render?
+- [ ] No evident vulnerability
+- [ ] No hardcoded secrets or keys; values come from `.env.local` or CI secrets
+- [ ] No query or render cost that the change does not justify
+- [ ] Error paths handled: loading, empty and failure states
+- [ ] Data access respects the RLS policies
 
-# 🤔 Pregunta para entender
-¿Podrías explicar por qué elegiste este approach sobre X alternativa?
+Testing:
 
-# 🐛 Posible issue
-Este código podría fallar si `user` es null. ¿Qué te parece añadir un guard?
+- [ ] Tests cover the new behaviour
+- [ ] Edge cases are covered, not only the happy path
+- [ ] Tests are focused and their names state the expectation
+- [ ] The suite passes consistently
 
-# 👍 Reconocimiento
-¡Excelente solución! Me gusta cómo manejaste este edge case.
+Documentation:
 
-# 📚 Compartir conocimiento
-FYI: Hay una utility function `formatDate` en utils/ que podría ser útil aquí.
-```
+- [ ] Docs updated
+- [ ] Comments explain why, not what
+- [ ] `README.md` updated if commands or setup changed
 
-#### ❌ **Comentarios a Evitar**
+### Comment types
+
+Useful comments name the concern and propose a next step:
 
 ```markdown
-# ❌ Muy vago
-"Esto no se ve bien"
+# Suggestion
+Could this use `useMemo` to avoid the re-render on every keystroke?
 
-# ❌ Sin contexto
-"Cambiar esto"
+# Question
+What makes this approach preferable to the existing helper in `src/lib/utils.ts`?
 
-# ❌ Demasiado crítico
-"Este código es terrible"
+# Possible issue
+This throws when `user` is null. A guard before the access would cover it.
 
-# ❌ Sin sugerencia
-"Esto está mal" (sin explicar cómo mejorarlo)
+# Acknowledgement
+The empty state here is handled well; it was missing in the previous version.
+
+# Knowledge sharing
+`formatDate` in `src/lib/utils.ts` already handles this timezone case.
 ```
 
-### 🎯 **Proceso de Review**
+Avoid:
 
-#### 1️⃣ **Primera Pasada - Vista General**
-- 📖 Leer descripción del PR
-- 🎯 Entender el objetivo
-- 📏 Evaluar tamaño y scope
-- 🔍 Identificar áreas de enfoque
+```markdown
+# Vague
+This does not look right
 
-#### 2️⃣ **Segunda Pasada - Revisión Detallada**
-- 💻 Revisar código línea por línea
-- 🧪 Verificar tests
-- 📚 Revisar documentación
-- 🔍 Buscar posibles issues
+# No context
+Change this
 
-#### 3️⃣ **Tercera Pasada - Testing Local**
-- 📥 Hacer checkout de la rama
-- 🧪 Ejecutar tests
-- 🌐 Probar funcionalidad
-- 📱 Verificar en diferentes dispositivos
+# No suggestion
+This is wrong
 
-### ⏱️ **Tiempos de Response**
+# Personal
+This code is terrible
+```
 
-| Prioridad | Tiempo Objetivo | Descripción |
-|-----------|----------------|-------------|
-| 🔥 **Crítico** | < 2 horas | Hotfixes, bugs críticos |
-| ⚡ **Alto** | < 24 horas | Features importantes |
-| 📋 **Normal** | < 48 horas | Features regulares |
-| 📚 **Bajo** | < 72 horas | Docs, chores |
+### Review passes
 
----
+1. Overview: read the description, identify the objective, judge the scope, decide where to focus.
+2. Detail: read the diff line by line, check the tests, check the docs, look for regressions.
+3. Local run: check out the branch, run the suite, exercise the change in the browser.
 
-## 🔀 Proceso de Merge
+### Response times
 
-### ✅ **Criterios para Merge**
+| Priority | Target | Scope |
+|----------|--------|-------|
+| Critical | under 2 hours | Hotfixes, production bugs |
+| High | under 24 hours | Blocking features |
+| Normal | under 48 hours | Regular features |
+| Low | under 72 hours | Docs, chores |
 
-#### 📋 **Requisitos Obligatorios**
-- [ ] ✅ **Al menos 1 aprobación** de reviewer
-- [ ] 🧪 **Todos los checks pasan** (CI/CD)
-- [ ] 🔄 **Rama actualizada** con main
-- [ ] 📝 **Conversaciones resueltas**
-- [ ] 🏷️ **Labels apropiadas** asignadas
+## Merge
 
-#### 🎯 **Criterios de Calidad**
-- [ ] 📊 **Cobertura de tests** mantenida/mejorada
-- [ ] 🚫 **Sin conflictos** de merge
-- [ ] 📚 **Documentación completa**
-- [ ] 🔍 **No introduce regresiones**
+### Criteria
 
-### 🔀 **Estrategias de Merge**
+Required:
 
-#### 🎯 **Squash & Merge** (Recomendado)
+- [ ] At least one approval (team convention; GitHub does not enforce it)
+- [ ] Every CI job passes; `build`, `worker-build` and `lint-commits` are required checks
+- [ ] Branch rebased on `main` when the diff overlaps recent work
+- [ ] Review conversations resolved
+- [ ] Labels set
+
+Quality:
+
+- [ ] Test coverage maintained or improved
+- [ ] No merge conflict
+- [ ] Documentation complete
+- [ ] No regression introduced
+
+### Strategies
+
+Squash and merge is the default: one commit per PR on `main`, with the PR title as the subject.
+
 ```bash
-# Resultado: 1 commit limpio en main
-feat(auth): implementar login con Google OAuth (#123)
+# Result: one commit on main
+feat(auth): implement Google OAuth login (#123)
 
-- Añadir componente LoginButton
-- Integrar con Google OAuth API
-- Añadir tests para flujo de autenticación
-- Actualizar documentación de auth
+- Add LoginButton component
+- Integrate the Google OAuth API
+- Add tests for the authentication flow
+- Update the auth documentation
 
 Co-authored-by: Reviewer Name <email@example.com>
 ```
 
-**✅ Cuándo usar:**
-- Features completas
-- Bug fixes
-- Mantener historial limpio
-
-#### 🔄 **Merge Commit**
-```bash
-# Resultado: Preserva historial de la rama
-Merge pull request #123 from feature/google-auth
-
-feat(auth): implementar login con Google OAuth
-```
-
-**✅ Cuándo usar:**
-- Features muy complejas
-- Múltiples colaboradores
-- Historial de rama importante
-
-#### 📚 **Rebase & Merge**
-```bash
-# Resultado: Commits individuales en main
-feat(auth): añadir componente LoginButton
-feat(auth): integrar con Google OAuth API
-test(auth): añadir tests para flujo de autenticación
-```
-
-**✅ Cuándo usar:**
-- Commits ya están limpios
-- Historial lineal deseado
-- Commits individuales tienen valor
-
----
-
-## 🤖 Automatización y CI/CD
-
-### 🔧 **GitHub Actions**
-
-```yaml
-# .github/workflows/pr-checks.yml
-name: PR Checks
-on:
-  pull_request:
-    branches: [main]
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run linter
-        run: npm run lint
-      
-      - name: Run tests
-        run: npm test -- --coverage
-      
-      - name: Build project
-        run: npm run build
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-```
-
-### 🏷️ **Auto-labeling**
-
-```yaml
-# .github/labeler.yml
-'🐛 bug':
-  - any: ['**/fix/**', '**/bugfix/**']
-
-'✨ feature':
-  - any: ['**/feature/**', '**/feat/**']
-
-'📚 documentation':
-  - any: ['**/*.md', 'docs/**']
-
-'🧪 tests':
-  - any: ['**/*.test.*', '**/*.spec.*', 'tests/**']
-```
-
-### 🤖 **PR Templates**
-
-```markdown
-<!-- .github/pull_request_template.md -->
-## 🎯 Descripción
-
-Breve descripción de los cambios.
-
-## 🔄 Tipo de cambio
-
-- [ ] 🐛 Bug fix
-- [ ] ✨ Nueva feature
-- [ ] 💥 Breaking change
-- [ ] 📚 Documentación
-
-## 🧪 Testing
-
-- [ ] Tests unitarios añadidos/actualizados
-- [ ] Tests de integración verificados
-- [ ] Pruebas manuales realizadas
-
-## 📋 Checklist
-
-- [ ] Código sigue las convenciones del proyecto
-- [ ] Auto-revisión realizada
-- [ ] Documentación actualizada
-- [ ] Tests pasan localmente
-
-## 🔗 Issues relacionados
-
-Fixes #
-```
-
----
-
-## 📊 Métricas y KPIs
-
-### 📈 **Métricas de Proceso**
-
-| Métrica | Objetivo | Herramienta |
-|---------|----------|-------------|
-| **Tiempo de review** | < 24h | GitHub Insights |
-| **Tiempo de merge** | < 48h | GitHub API |
-| **Tamaño promedio de PR** | < 400 líneas | GitHub stats |
-| **Tasa de aprobación** | > 95% | Custom dashboard |
-| **Conflictos de merge** | < 5% | Git analytics |
-
-### 🔍 **Comandos de Análisis**
+Merge commit, when the branch history carries information the squash would lose:
 
 ```bash
-# PRs pendientes de review
-gh pr list --state open --label "needs-review"
+# Result: branch history preserved
+Merge pull request #123 from feature/google-login
 
-# Estadísticas de PRs
+feat(auth): implement Google OAuth login
+```
+
+Rebase and merge, when the branch already holds clean, individually meaningful commits:
+
+```bash
+# Result: individual commits on main
+feat(auth): add LoginButton component
+feat(auth): integrate the Google OAuth API
+test(auth): add tests for the authentication flow
+```
+
+After the merge, delete the branch. A merge into `main` triggers `deploy`; watch it until
+`e2e-produccion` passes.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to `main`, with Node
+22.22.3 and pnpm.
+
+| Job | Depends on | What it does |
+|-----|-----------|--------------|
+| `build` | - | Lint, type-check, Jest, RLS tests, timezone test, data-path guard, `pnpm run build`, static export validation, header and SEO checks, Storybook build, upload of `out/` |
+| `worker-build` | `build` | Downloads the artifact, validates it, runs `wrangler deploy --dry-run --no-autoconfig` |
+| `e2e` | `build` | Playwright against the exported artifact (`.github/workflows/e2e.yml`) |
+| `deploy` | `build`, `worker-build`, `e2e` | Only on push to `main`: publishes the artifact with `wrangler deploy --no-autoconfig` |
+| `e2e-produccion` | `deploy` | Only on push to `main`: Playwright against `https://travelpal.prg-dev.workers.dev` |
+
+A pull request therefore runs `build`, `worker-build` and `e2e`; `deploy` and `e2e-produccion` never
+run on a PR.
+
+Additional workflows: `commitlint.yml` validates the commit messages of a PR, `setup-labels.yml`
+creates the labels in `.github/labels.json` when that file changes on `main`.
+
+### Useful commands
+
+```bash
+# PRs where my review is still required
+gh pr list --state open --search "review:required"
+
+# Every PR with title, author and date
 gh pr list --state all --json number,title,author,createdAt
 
-# PRs por autor
+# PRs opened by me
 gh pr list --author @me --state all
 
-# Reviews pendientes
+# Reviews requested from me
 gh pr list --review-requested @me
+
+# Run the PR checks locally
+gh pr checks
+
+# Full pipeline before pushing
+pnpm run lint && pnpm run type-check && pnpm test && pnpm run build
 ```
 
----
+## Metrics
 
-## 🚨 Casos Especiales
+| Metric | Target | Source |
+|--------|--------|--------|
+| Review time | under 24 hours | GitHub Insights |
+| Merge time | under 48 hours | GitHub API |
+| Average PR size | under 400 lines | `gh pr list --json additions,deletions` |
+| Merge conflicts | under 5% | `git log` |
 
-### 🔥 **Hotfixes Críticos**
+## Special cases
 
-Para bugs críticos en producción:
+### Production hotfix
 
 ```markdown
-## 🚨 HOTFIX CRÍTICO
+## HOTFIX
 
-### 🎯 Problema
-Descripción del bug crítico en producción.
+### Problem
+Description of the production bug.
 
-### 🔧 Solución
-Cambios mínimos para resolver el issue.
+### Fix
+The minimal change that resolves it.
 
-### ⚡ Urgencia
-- [ ] Bug afecta a usuarios en producción
-- [ ] Solución mínima y enfocada
-- [ ] Tests críticos verificados
-- [ ] Deploy inmediato requerido
+### Urgency
 
-### 👥 Fast-track Review
-@reviewer1 @reviewer2 - Review urgente necesario
+- [ ] Users are affected in production
+- [ ] The fix is minimal and scoped
+- [ ] Critical tests pass
+- [ ] Deploy required immediately
 ```
 
-### 🧪 **PRs Experimentales**
+Branch from `main`, keep the diff to the fix, request a fast review from the maintainer, and watch
+`deploy` and `e2e-produccion` after the merge.
 
-Para features experimentales o POCs:
+### Experimental PR
 
 ```markdown
-## 🧪 EXPERIMENTAL
+## EXPERIMENTAL
 
-### 🎯 Objetivo
-Probar concepto X para evaluar viabilidad.
+### Objective
+Test concept X to judge whether it is viable.
 
-### ⚠️ Advertencias
-- Código experimental, no para producción
-- Puede requerir cambios significativos
-- Feedback y sugerencias bienvenidas
+### Warnings
 
-### 🔬 Métricas a evaluar
-- Performance impact
-- User experience
-- Technical feasibility
+- Not for production
+- May need substantial rework
+- Feedback welcome
 ```
 
----
+Mark the PR as a draft until the concept holds.
 
-## ❓ Preguntas Frecuentes
+## FAQ
 
-### 🤔 **¿Cuándo crear un Draft PR?**
-- 🚧 Trabajo en progreso que necesita feedback temprano
-- 🤝 Colaboración en features complejas
-- 📋 Mostrar progreso al equipo
-- 🔍 Validar approach antes de completar
+When to open a draft PR:
 
-### 🤔 **¿Cómo manejar feedback conflictivo?**
-1. 💬 **Discutir abiertamente** en el PR
-2. 🤝 **Buscar consenso** entre reviewers
-3. 📞 **Llamada si es necesario** para resolver
-4. 👨‍💼 **Escalate a tech lead** si no hay acuerdo
+- Work in progress that needs early feedback
+- A feature with more than one contributor
+- A change of approach that should be validated before the work is finished
 
-### 🤔 **¿Qué hacer con PRs obsoletos?**
-- 🔄 **Rebase con main** si es posible
-- 🗑️ **Cerrar si ya no es relevante**
-- 🔄 **Recrear** si los cambios son muy extensos
-- 📝 **Documentar** la razón del cierre
+Conflicting review feedback: discuss it in the PR, look for consensus between the reviewers, and
+escalate to the maintainer if they disagree.
 
----
+Obsolete PRs: rebase on `main` if the intent still holds, close it with the reason if it does not,
+and open a fresh PR if the diff has drifted too far to rebase.
 
-## 📚 Recursos Adicionales
+## Related documentation
 
-### 📖 **Documentación Relacionada**
-- 🌳 [`BRANCHING.md`](./BRANCHING.md) - Estrategia de branching
-- 📝 [`COMMITS.md`](./COMMITS.md) - Convenciones de commits
-- 🤝 [`CONTRIBUTING.md`](./CONTRIBUTING.md) - Guía de contribución
+- [`BRANCHING.md`](./BRANCHING.md) - branch strategy
+- [`COMMITS.md`](./COMMITS.md) - commit conventions
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) - contribution guide
+- [`code-review-checklist.md`](./code-review-checklist.md) - review checklist
 
-### 🔗 **Enlaces Útiles**
-- [GitHub PR Best Practices](https://github.com/features/code-review/)
-- [Code Review Guidelines](https://google.github.io/eng-practices/review/)
+External references:
+
+- [GitHub code review](https://github.com/features/code-review/)
+- [Google engineering practices: code review](https://google.github.io/eng-practices/review/)
 - [Conventional Comments](https://conventionalcomments.org/)
-
-### 🛠️ **Herramientas Recomendadas**
-- **GitHub CLI**: `gh` para gestión de PRs
-- **VS Code Extensions**: GitHub Pull Requests
-- **Browser Extensions**: Refined GitHub
-
----
-
-**🔄 Un proceso de PR eficiente para un desarrollo colaborativo de calidad**
-
-*Última actualización: Enero 2025*
