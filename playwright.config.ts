@@ -13,7 +13,7 @@ try {
 // Dos modos de la misma suite (issue 72): en el PR se prueba el export estatico
 // del codigo del PR servido por Wrangler y, tras el deploy de main, lo desplegado. El
 // destino lo elige E2E_BASE_URL y por defecto es localhost.
-const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000'
+const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:3000'
 const isLocalTarget = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(baseURL)
 
 export default defineConfig({
@@ -48,10 +48,13 @@ export default defineConfig({
   // Contra produccion no se arranca nada: se prueba lo desplegado.
   webServer: isLocalTarget
     ? {
-        command: 'env -u INSFORGE_API_KEY -u E2E_USER_EMAIL -u E2E_USER_PASSWORD pnpm exec wrangler dev --port 3000 --ip 127.0.0.1',
+        command: 'node scripts/e2e-server.mjs',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+        gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
       }
     : undefined,
 })
