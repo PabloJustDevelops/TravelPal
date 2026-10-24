@@ -4,6 +4,7 @@ import { Fragment, ReactNode } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import Button from './Button'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 interface ModalProps {
   isOpen: boolean
@@ -22,6 +23,7 @@ export default function Modal({
   size = 'md',
   showCloseButton = true,
 }: ModalProps) {
+  const { t } = useI18n()
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -74,7 +76,7 @@ export default function Modal({
                         size="sm"
                         onClick={onClose}
                         className="p-2"
-                        aria-label="Cerrar"
+                        aria-label={t('close')}
                       >
                         <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                       </Button>

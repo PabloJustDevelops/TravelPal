@@ -124,7 +124,7 @@ describe("JournalPhotos", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Todavia no hay fotos del viaje"),
+        screen.getByText("Todavía no hay fotos del viaje"),
       ).toBeInTheDocument();
     });
 
@@ -252,12 +252,12 @@ describe("JournalPhotos", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Todavia no hay fotos del viaje"),
+        screen.getByText("Todavía no hay fotos del viaje"),
       ).toBeInTheDocument();
     });
 
     const file = new File(["x"], "foto.jpg", { type: "image/jpeg" });
-    fireEvent.change(screen.getByLabelText("Anadir foto al diario"), {
+    fireEvent.change(screen.getByLabelText("Añadir foto al diario"), {
       target: { files: [file] },
     });
 

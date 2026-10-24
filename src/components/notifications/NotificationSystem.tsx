@@ -23,14 +23,14 @@ import {
   withQueryTimeout,
 } from "../../lib/insforge-query";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
-  formatDate,
   getErrorMessage,
   isAbortError,
 } from "../../lib/utils";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { formatNumber } from "@/lib/i18n";
 
 interface Notification {
   id: string;
@@ -163,6 +163,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   panelPlacement = "bottom-end",
 }) => {
   const { user } = useAuth();
+  const { t, locale } = useI18n();
   // La campana se monta a la vez en la barra de escritorio y en la de movil (una de las dos
   // oculta por CSS), asi que los identificadores del panel tienen que ser unicos por instancia.
   const panelId = useId();
@@ -211,15 +212,53 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         );
 
         const alertNotifications: Notification[] = pendingAlerts.map(
-          (alert: Alert) => ({
-            id: `alert_${alert.id}`,
-            title: alert.title,
-            message: alert.message,
-            type: (alert.type as Notification["type"]) ?? "info",
-            timestamp: alert.alert_date ?? alert.created_at,
-            read: alert.is_read,
-            actionLabel: "Marcar como leído",
-          })
+          (alert: Alert) => {
+            let title = alert.title;
+            let message = alert.message;
+
+            if (locale === "en") {
+              const task = /^Tarea por vencer: (.*)$/.exec(title);
+              const taskDate = /^Vence el (\d{4}-\d{2}-\d{2})\.$/.exec(message);
+              const booking = /^Reserva proxima: (.*)$/.exec(title);
+              const bookingDate = /^Empieza el (\d{4}-\d{2}-\d{2})\.$/.exec(message);
+              const budget = /^Presupuesto superado: (.*)$/.exec(title);
+              const spent = /^Has gastado ([\d.]+) de ([\d.]+) ([A-Z]{3})\.$/.exec(message);
+              const formatAlertDate = (value: string) => {
+                const [year, month, day] = value.split("-").map(Number);
+                return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" })
+                  .format(new Date(Date.UTC(year, month - 1, day)));
+              };
+
+              if (task) title = t("taskDueTitle").replace("{title}", task[1]);
+              if (taskDate) message = t("taskDueMessage").replace("{date}", formatAlertDate(taskDate[1]));
+              if (booking) title = t("bookingSoonTitle").replace("{title}", booking[1]);
+              if (bookingDate) message = t("bookingSoonMessage").replace("{date}", formatAlertDate(bookingDate[1]));
+              if (budget) title = t("budgetExceededTitle").replace("{name}", budget[1]);
+              if (budget && spent) {
+                const formatMoney = (value: string) => {
+                  const amount = Number(value);
+                  try {
+                    return new Intl.NumberFormat("en-US", { style: "currency", currency: spent[3] }).format(amount);
+                  } catch {
+                    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(amount)} ${spent[3]}`;
+                  }
+                };
+                message = t("budgetSpentMessage")
+                  .replace("{spent}", formatMoney(spent[1]))
+                  .replace("{total}", formatMoney(spent[2]));
+              }
+            }
+
+            return {
+              id: `alert_${alert.id}`,
+              title,
+              message,
+              type: (alert.type as Notification["type"]) ?? "info",
+              timestamp: alert.alert_date ?? alert.created_at,
+              read: alert.is_read,
+              actionLabel: t("markAsRead"),
+            };
+          }
         );
 
         setNotifications((prev) => {
@@ -245,15 +284,15 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         if (queryErrorKind(err) === "timeout") {
           showToast({
             type: "error",
-            title: "Error al cargar las notificaciones",
-            message: CONNECTION_TIMEOUT_MESSAGE,
+            title: t("notificationLoadError"),
+            message: t("connectionTimeout"),
           });
         }
       } finally {
         setIsLoading(false);
       }
     },
-    [user]
+    [user, t]
   );
 
   // Cargar notificaciones al montar el componente con cancelación
@@ -300,11 +339,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         .select();
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudo marcar la alerta como leída");
+      assertRowsAffected(updatedRows, t("markAlertReadError"));
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking alert as read", { error: message });
-      showToast({ type: "error", title: "Error al marcar como leída", message });
+      showToast({ type: "error", title: t("notificationReadError"), message });
       return;
     }
 
@@ -325,11 +364,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         .select();
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudo descartar la alerta");
+      assertRowsAffected(updatedRows, t("dismissAlertError"));
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error dismissing alert", { error: message });
-      showToast({ type: "error", title: "Error al descartar", message });
+      showToast({ type: "error", title: t("notificationDismissError"), message });
       return;
     }
 
@@ -348,11 +387,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         .select();
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudieron marcar como leídas");
+      assertRowsAffected(updatedRows, t("markAlertsReadError"));
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       logger.error("NotificationSystem: Error marking all alerts as read", { error: message });
-      showToast({ type: "error", title: "Error al marcar todas", message });
+      showToast({ type: "error", title: t("notificationMarkAllError"), message });
       return;
     }
 
@@ -405,8 +444,8 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
         className="relative p-2 text-muted hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded-lg"
         aria-label={
           unreadCount > 0
-            ? `Notificaciones, ${unreadCount} sin leer`
-            : "Notificaciones"
+            ? t("unreadNotifications").replace("{count}", formatNumber(unreadCount, locale))
+            : t("notifications")
         }
         aria-haspopup="true"
         aria-expanded={isOpen}
@@ -439,7 +478,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
               id={`${panelId}-titulo`}
               className="text-lg font-semibold text-ink"
             >
-              Notificaciones
+              {t("notifications")}
             </h3>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
@@ -447,13 +486,13 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
                   onClick={markAllAsRead}
                   className="text-sm text-accent hover:text-accent-hover"
                 >
-                  Marcar todas
+                  {t("markAllRead")}
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
                 className="text-muted hover:text-ink"
-                aria-label="Cerrar notificaciones"
+                aria-label={t("closeNotifications")}
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -466,13 +505,13 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
               <div className="p-4 text-center">
                 <LoadingSpinner size="sm" />
                 <p className="text-sm text-muted mt-2">
-                  Cargando notificaciones...
+                  {t("loadingNotifications")}
                 </p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <BellIcon className="h-12 w-12 text-muted mx-auto mb-4" />
-                <p className="text-muted">No hay notificaciones</p>
+                <p className="text-muted">{t("noNotifications")}</p>
               </div>
             ) : (
               <div className="divide-y divide-line">
@@ -511,11 +550,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
                               {notification.message}
                             </p>
                             <p className="text-xs text-muted mt-2">
-                              {formatDate(new Date(notification.timestamp))} a
-                              las{" "}
-                              {new Date(
-                                notification.timestamp
-                              ).toLocaleTimeString()}
+                              {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(notification.timestamp))}
                             </p>
                           </div>
 
@@ -524,8 +559,8 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
                               <button
                                 onClick={() => markAsRead(notification.id)}
                                 className="text-accent hover:text-accent-hover text-xs"
-                                title="Marcar como leída"
-                                aria-label={`Marcar como leída: ${notification.title}`}
+                                title={t("markRead")}
+                                aria-label={`${t("markRead")}: ${notification.title}`}
                               >
                                 <CheckIcon className="h-4 w-4" aria-hidden="true" />
                               </button>
@@ -535,8 +570,8 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
                                 dismissNotification(notification.id)
                               }
                               className="text-muted hover:text-ink text-xs"
-                              title="Descartar"
-                              aria-label={`Descartar: ${notification.title}`}
+                              title={t("dismiss")}
+                              aria-label={`${t("dismiss")}: ${notification.title}`}
                             >
                               <XMarkIcon className="h-4 w-4" aria-hidden="true" />
                             </button>
@@ -568,7 +603,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
                 onClick={clearAll}
                 className="text-sm text-muted hover:text-ink w-full text-center"
               >
-                Limpiar todas las notificaciones
+                {t("clearAllNotifications")}
               </button>
             </div>
           )}

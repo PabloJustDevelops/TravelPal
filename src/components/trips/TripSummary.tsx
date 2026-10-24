@@ -18,14 +18,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { CurrencyDollarIcon, TicketIcon } from "@heroicons/react/24/outline";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { formatNumber } from "@/lib/i18n";
 
 interface TripSummaryProps {
   tripId: string;
 }
 
-const LOAD_ERROR = "No se pudo cargar el resumen del viaje";
+
 
 export default function TripSummary({ tripId }: TripSummaryProps) {
+  const { locale, t } = useI18n();
   const [summary, setSummary] = useState<TripSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{
@@ -69,8 +72,8 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
   }, [load]);
 
   const loadErrorMessage = getLoadErrorMessage(loadError, {
-    timeout: "La carga del resumen ha tardado demasiado.",
-    request: LOAD_ERROR,
+    timeout: t("summaryTimeout"),
+    request: t("summaryLoadRequest"),
   });
 
   if (loading) {
@@ -78,7 +81,7 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
       <Card className="rounded-none border-0 bg-transparent">
         <CardContent
           role="status"
-          aria-label="Cargando el resumen del viaje"
+          aria-label={t("summaryLoading")}
           className="flex justify-center border-t border-line px-0 py-8"
         >
           <LoadingSpinner />
@@ -92,9 +95,9 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
       <Card className="rounded-none border-0 bg-transparent">
         <CardContent className="border-t border-line px-0 py-5">
           <div role="alert" className="py-8 text-center">
-            <h3 className="font-sans text-lg font-semibold text-ink">Resumen temporalmente no disponible</h3>
+            <h3 className="font-sans text-lg font-semibold text-ink">{t("summaryUnavailable")}</h3>
             <p className="mt-2 text-sm leading-reading text-muted">{loadErrorMessage}</p>
-            <Button onClick={load} className="mt-4">Reintentar</Button>
+            <Button onClick={load} className="mt-4">{t("retry")}</Button>
           </div>
         </CardContent>
       </Card>
@@ -110,15 +113,15 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
       <CardHeader className="border-b border-line px-0 pt-0 pb-4">
         <CardTitle className="flex items-center gap-2 font-sans text-lg font-semibold">
           <TicketIcon className="h-5 w-5 text-muted" aria-hidden="true" />
-          Resumen del viaje
+          {t("tripSummary")}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-0 py-5">
         {isEmpty ? (
           <div className="py-8 text-center">
-            <h3 className="font-sans text-lg font-semibold text-ink">Sin gastos ni reservas todavia</h3>
+            <h3 className="font-sans text-lg font-semibold text-ink">{t("noExpensesOrBookings")}</h3>
             <p className="mt-2 text-sm leading-reading text-muted">
-              Cuando registres gastos o reservas, aqui veras el resumen del viaje.
+              {t("summaryEmptyHint")}
             </p>
           </div>
         ) : (
@@ -126,22 +129,22 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
             <div>
               <p className="flex items-center gap-1.5 text-sm text-muted">
                 <CurrencyDollarIcon className="h-4 w-4" aria-hidden="true" />
-                Gastos
+                {t("expenses")}
               </p>
               <p className="mt-1 font-sans text-2xl font-semibold leading-snug text-ink">
-                {summary.expenseCount}
+                {formatNumber(summary.expenseCount, locale)}
               </p>
               {summary.expensesByCurrency.length > 0 ? (
                 <ul className="mt-1 space-y-1 text-sm text-ink">
                   {summary.expensesByCurrency.map((total) => (
                     <li key={total.currency}>
-                      {formatCurrency(total.total, total.currency)}
+                      {formatCurrency(total.total, total.currency, locale)}
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="mt-1 text-sm text-muted">
-                  Sin importes registrados
+                  {t("noAmounts")}
                 </p>
               )}
             </div>
@@ -149,22 +152,22 @@ export default function TripSummary({ tripId }: TripSummaryProps) {
             <div>
               <p className="flex items-center gap-1.5 text-sm text-muted">
                 <TicketIcon className="h-4 w-4" aria-hidden="true" />
-                Reservas
+                {t("bookings")}
               </p>
               <p className="mt-1 font-sans text-2xl font-semibold leading-snug text-ink">
-                {summary.bookingCount}
+                {formatNumber(summary.bookingCount, locale)}
               </p>
               {summary.bookingsByCurrency.length > 0 ? (
                 <ul className="mt-1 space-y-1 text-sm text-ink">
                   {summary.bookingsByCurrency.map((total) => (
                     <li key={total.currency}>
-                      {formatCurrency(total.total, total.currency)}
+                      {formatCurrency(total.total, total.currency, locale)}
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="mt-1 text-sm text-muted">
-                  Sin importes registrados
+                  {t("noAmounts")}
                 </p>
               )}
             </div>

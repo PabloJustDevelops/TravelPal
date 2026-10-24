@@ -1,9 +1,9 @@
 import { Skeleton, SkeletonCard, SkeletonText, SKELETON_TEST_IDS } from './Skeleton'
 import slots from './interiorSlots.module.css'
 import nextTripStyles from '@/components/dashboard/nextTrip.module.css'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 export type InteriorScreen = 'dashboard' | 'trips' | 'trip' | 'create-trip' | 'planning' | 'tasks' | 'expenses' | 'expenses/new' | 'expense-edit' | 'notes' | 'profile' | 'settings'
-const labels: Record<InteriorScreen, string> = { dashboard: 'dashboard', trips: 'viajes', trip: 'viaje', 'create-trip': 'nuevo viaje', planning: 'planificación', tasks: 'tareas', expenses: 'gastos', 'expenses/new': 'nuevo gasto', 'expense-edit': 'gasto', notes: 'notas', profile: 'perfil', settings: 'ajustes' }
 
 const titleSlots: Partial<Record<InteriorScreen, string>> = { dashboard: slots.dashboardTitle, expenses: slots.expensesTitle, trips: slots.tripsTitle, notes: slots.notesTitle, planning: slots.planningTitle, tasks: slots.tasksTitle }
 
@@ -18,9 +18,10 @@ function Fields() {
 
 /** Formas de la composición real; nunca contienen datos de ejemplo. */
 export default function InteriorSkeleton({ screen, visible = true, view }: Props) {
+  const { t } = useI18n()
   return (
-    <div role="status" aria-label={`Cargando ${labels[screen]}`} aria-busy="true">
-      <span className="sr-only">Cargando contenido</span>
+    <div role="status" aria-label={t("loadingScreen").replace("{screen}", t((({dashboard: "navDashboard", trips: "navTrips", trip: "tripSummary", "create-trip": "newTrip", planning: "navPlanning", tasks: "navTasks", expenses: "navExpenses", "expenses/new": "newExpense", "expense-edit": "navExpenses", notes: "navNotes", profile: "myProfile", settings: "settings"} as const)[screen])))} aria-busy="true">
+      <span className="sr-only">{t("loadingContent")}</span>
       <div data-testid={visible ? SKELETON_TEST_IDS.page : undefined} data-screen={screen} aria-hidden="true" className={`${screen === 'trips' ? 'space-y-7' : 'space-y-6'} ${screen === 'tasks' ? slots.tasksScreen : ''} ${visible ? '' : 'invisible'}`}>
         <div data-loading-slot="title" className={`flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between ${titleSlots[screen] ?? ''}`}>
           <div className="w-full max-w-xl space-y-2"><Skeleton className="h-8 w-2/3 sm:h-[44px]" /><Skeleton className="h-6 w-full sm:h-7" /></div>

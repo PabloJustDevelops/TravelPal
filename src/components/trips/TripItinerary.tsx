@@ -22,7 +22,8 @@ import {
   type QueryErrorKind,
 } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
-import { CONNECTION_TIMEOUT_MESSAGE, getLoadErrorMessage } from "@/lib/utils";
+import { getLoadErrorMessage } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 interface TripItineraryProps {
   tripId: string;
@@ -65,6 +66,7 @@ export default function TripItinerary({
   endDate,
   userId,
 }: TripItineraryProps) {
+  const { t } = useI18n();
   const [activities, setActivities] = useState<ItineraryActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<QueryErrorKind | null>(null);
@@ -138,7 +140,7 @@ export default function TripItinerary({
         { label: "activities:insert" },
       );
       if (error) throw error;
-      assertRowsAffected(data, "No se pudo guardar la actividad");
+      assertRowsAffected(data, t("activitySaveError"));
       refetch();
     },
     [activities, refetch, tripId, userId],
@@ -167,7 +169,7 @@ export default function TripItinerary({
         { label: "activities:update" },
       );
       if (error) throw error;
-      assertRowsAffected(data, "No se pudo actualizar la actividad");
+      assertRowsAffected(data, t("activityUpdateError"));
       refetch();
     },
     [refetch],
@@ -184,7 +186,7 @@ export default function TripItinerary({
         { label: "activities:delete" },
       );
       if (error) throw error;
-      assertRowsAffected(data, "No se pudo eliminar la actividad");
+      assertRowsAffected(data, t("activityDeleteError"));
       refetch();
     },
     [refetch],
@@ -193,8 +195,8 @@ export default function TripItinerary({
   const errorMessage = getLoadErrorMessage(
     loadError ? { kind: loadError } : null,
     {
-      timeout: CONNECTION_TIMEOUT_MESSAGE,
-      request: "No se pudo cargar el itinerario del viaje",
+      timeout: t("connectionTimeout"),
+      request: t("itineraryUnavailable"),
     },
   );
 
@@ -203,38 +205,38 @@ export default function TripItinerary({
       <CardHeader className="flex-row items-center justify-between gap-4 border-b border-line px-0 pb-4 pt-0">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            Plan del viaje
+            {t("itineraryPlan")}
           </p>
           <h2 className="mt-1 font-sans text-xl font-semibold text-ink">
-            Itinerario
+            {t("itinerary")}
           </h2>
         </div>
         <Link
           href="/planning"
           className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          Planificación <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+          {t("planning")} <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
         </Link>
       </CardHeader>
       <CardContent className="px-0 py-5">
         {loading ? (
-          <div role="status" aria-label="Cargando itinerario" className="py-8">
+          <div role="status" aria-label={t("itineraryLoading")} className="py-8">
             <LoadingSpinner />
           </div>
         ) : errorMessage ? (
           <div role="alert" className="py-8 text-center">
-            <h3 className="font-sans text-lg font-semibold text-ink">Itinerario temporalmente no disponible</h3>
+            <h3 className="font-sans text-lg font-semibold text-ink">{t("itineraryUnavailable")}</h3>
             <p className="mt-2 text-sm leading-reading text-muted">{errorMessage}</p>
-            <Button onClick={retry} className="mt-4">Reintentar</Button>
+            <Button onClick={retry} className="mt-4">{t("retry")}</Button>
           </div>
         ) : (
           <>
             {activities.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <MapIcon className="mb-3 h-8 w-8 text-muted" aria-hidden="true" />
-                <h3 className="font-sans text-lg font-semibold text-ink">Tu itinerario empieza aquí</h3>
+                <h3 className="font-sans text-lg font-semibold text-ink">{t("itineraryStart")}</h3>
                 <p className="mt-2 max-w-prose text-sm leading-reading text-muted">
-                  Añade actividades por día y mantén el plan de este viaje en un solo lugar.
+                  {t("itineraryEmptyHint")}
                 </p>
               </div>
             )}

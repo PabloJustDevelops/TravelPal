@@ -5,6 +5,7 @@ import type { JournalEntry } from "@/lib/insforge";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { selectClassName, textareaClassName } from "@/components/ui/fieldStyles";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 export interface JournalEntryValues {
   entry_date: string;
@@ -29,6 +30,7 @@ export default function JournalEntryForm({
   onCancel,
   loading = false,
 }: JournalEntryFormProps) {
+  const { t } = useI18n();
   const [entryDate, setEntryDate] = useState(
     entry?.entry_date ? entry.entry_date.slice(0, 10) : today(),
   );
@@ -41,7 +43,7 @@ export default function JournalEntryForm({
     setError("");
 
     if (!content.trim()) {
-      setError("Escribe algo en la entrada");
+      setError(t("writeEntry"));
       return;
     }
 
@@ -52,7 +54,7 @@ export default function JournalEntryForm({
         rating: rating ? Number(rating) : undefined,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar la entrada");
+      setError(err instanceof Error ? err.message : t("entrySaveError"));
     }
   };
 
@@ -65,7 +67,7 @@ export default function JournalEntryForm({
       )}
 
       <Input
-        label="Fecha"
+        label={t("journalDate")}
         type="date"
         name="entry_date"
         value={entryDate}
@@ -79,7 +81,7 @@ export default function JournalEntryForm({
           htmlFor="journal-content"
           className="block text-sm font-medium text-ink"
         >
-          Como fue
+          {t("journalPrompt")}
         </label>
         <textarea
           id="journal-content"
@@ -88,7 +90,7 @@ export default function JournalEntryForm({
           onChange={(event) => setContent(event.target.value)}
           rows={6}
           className={textareaClassName}
-          placeholder="Que hiciste, que viste, que te llevas del dia..."
+          placeholder={t("journalPlaceholder")}
           required
         />
       </div>
@@ -98,7 +100,7 @@ export default function JournalEntryForm({
           htmlFor="journal-rating"
           className="block text-sm font-medium text-ink"
         >
-          Valoracion del dia
+          {t("journalRating")}
         </label>
         <select
           id="journal-rating"
@@ -107,18 +109,18 @@ export default function JournalEntryForm({
           onChange={(event) => setRating(event.target.value)}
           className={selectClassName}
         >
-          <option value="">Sin valoracion</option>
-          <option value="1">1 - Mal dia</option>
+          <option value="">{t("noRating")}</option>
+          <option value="1">{t("badDay")}</option>
           <option value="2">2</option>
           <option value="3">3</option>
           <option value="4">4</option>
-          <option value="5">5 - Dia redondo</option>
+          <option value="5">{t("greatDay")}</option>
         </select>
       </div>
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <Button type="submit" loading={loading} className="flex-1 sm:flex-none">
-          {entry ? "Guardar cambios" : "Guardar entrada"}
+          {entry ? t("saveChanges") : t("saveEntry")}
         </Button>
         <Button
           type="button"
@@ -126,7 +128,7 @@ export default function JournalEntryForm({
           onClick={onCancel}
           className="flex-1 sm:flex-none"
         >
-          Cancelar
+          {t("cancel")}
         </Button>
       </div>
     </form>

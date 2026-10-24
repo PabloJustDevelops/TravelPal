@@ -23,8 +23,8 @@ export function formatDateTime(date: string | Date) {
   }).format(new Date(date))
 }
 
-export function formatCurrency(amount: number, currency = 'USD') {
-  return new Intl.NumberFormat('es-ES', {
+export function formatCurrency(amount: number, currency = 'USD', locale = 'es' as 'es' | 'en') {
+  return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', {
     style: 'currency',
     currency,
   }).format(amount)
