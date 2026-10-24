@@ -6,8 +6,8 @@ import AuthShell from '@/components/auth/AuthShell'
 
 export const metadata: Metadata = {
   title: 'Recuperar contraseña',
-  robots: { index: true, follow: true },
-  alternates: { canonical: '/forgot-password' },
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/es/forgot-password/' },
 }
 
 export default function ForgotPasswordPage() {

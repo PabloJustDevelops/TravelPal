@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
 import { fieldClassName } from '@/components/ui/fieldStyles'
 import { cn } from '@/lib/utils'
+import { localePath } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 const CODE_LENGTH = 6
 // El backend no manda otro correo hasta pasado este tiempo (min_interval_seconds),
@@ -21,6 +23,8 @@ const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 60
 
 export default function VerifyEmailStep({ email }: { email: string }) {
+  const { locale } = useI18n()
+  const english = locale === 'en'
   const [digits, setDigits] = useState<string[]>(() =>
     Array<string>(CODE_LENGTH).fill(''),
   )
@@ -99,7 +103,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!isComplete) {
-      setError('Introduce los 6 dígitos del código')
+      setError(english ? 'Enter all 6 digits of the code' : 'Introduce los 6 dígitos del código')
       return
     }
 
@@ -111,7 +115,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
       await verifyEmail(email, code)
       router.replace('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo verificar el código')
+      setError(english ? 'Could not verify the code. Please try again.' : (err instanceof Error ? err.message : 'No se pudo verificar el código'))
     } finally {
       setIsSubmitting(false)
     }
@@ -123,10 +127,10 @@ export default function VerifyEmailStep({ email }: { email: string }) {
     setIsResending(true)
     try {
       await resendVerificationEmail(email)
-      setNotice('Te hemos enviado un código nuevo.')
+      setNotice(english ? 'We sent you a new code.' : 'Te hemos enviado un código nuevo.')
       setCooldown(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo reenviar el código')
+      setError(english ? 'Could not resend the code. Please try again.' : (err instanceof Error ? err.message : 'No se pudo reenviar el código'))
     } finally {
       setIsResending(false)
     }
@@ -136,12 +140,11 @@ export default function VerifyEmailStep({ email }: { email: string }) {
     <div className={styles.form}>
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
-          Verifica tu email
+          {english ? 'Verify your email' : 'Verifica tu email'}
         </h1>
         <p className={styles.description}>
-          Hemos enviado un código de 6 dígitos a{' '}
-          <span className="font-medium text-ink">{email}</span>. Escríbelo
-          aquí para activar tu cuenta.
+          {english ? 'We sent a 6-digit code to' : 'Hemos enviado un código de 6 dígitos a'}{' '}
+          <span className="font-medium text-ink">{email}</span>{english ? '. Enter it here to activate your account.' : '. Escríbelo aquí para activar tu cuenta.'}
         </p>
       </div>
 
@@ -163,7 +166,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
             htmlFor="verify-code-1"
             className="block text-sm font-medium text-ink"
           >
-            Código de verificación
+            {english ? 'Verification code' : 'Código de verificación'}
           </label>
           <div className="mt-2 flex justify-between gap-2">
             {digits.map((digit, index) => (
@@ -183,7 +186,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
                 aria-describedby={error ? "verify-error" : undefined}
                 autoComplete={index === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
-                aria-label={`Dígito ${index + 1} del código`}
+                aria-label={english ? `Code digit ${index + 1}` : `Dígito ${index + 1} del código`}
                 className={cn(
                   fieldClassName,
                   'min-w-0 h-12 px-1 text-center text-lg tracking-widest',
@@ -200,7 +203,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
             disabled={!isComplete}
             className="w-full min-h-12"
           >
-            Verificar cuenta
+            {english ? 'Verify account' : 'Verificar cuenta'}
           </Button>
 
           <Button
@@ -212,18 +215,18 @@ export default function VerifyEmailStep({ email }: { email: string }) {
             className="w-full min-h-12"
           >
             {cooldown > 0
-              ? `Reenviar código en ${cooldown} s`
-              : 'Reenviar código'}
+              ? (english ? `Resend code in ${cooldown}s` : `Reenviar código en ${cooldown} s`)
+              : (english ? 'Resend code' : 'Reenviar código')}
           </Button>
         </div>
 
         <p className="text-center text-sm text-muted">
-          ¿Ya tienes cuenta?{' '}
+          {english ? 'Already have an account?' : '¿Ya tienes cuenta?'}{' '}
           <Link
-            href="/signin"
+            href={localePath(locale, '/signin')}
             className="inline-flex min-h-11 items-center font-medium text-accent hover:text-accent-hover"
           >
-            Inicia sesión
+            {english ? 'Sign in' : 'Inicia sesión'}
           </Link>
         </p>
       </form>

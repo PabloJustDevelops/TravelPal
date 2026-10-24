@@ -14,7 +14,7 @@ it.each([SignInPage, SignUpPage, ForgotPasswordPage, ResetPasswordPage])(
   (Page) => {
     render(<Page />)
     expect(screen.getByRole('main')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /TravelPal/ })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /TravelPal/ })).toHaveAttribute('href', '/es')
   },
 )
 
@@ -22,7 +22,7 @@ it.each([SignInPage, SignUpPage])('usa la mesa de viaje en acceso y registro', P
   render(<Page />)
   expect(screen.getByText(/El viaje empieza mucho antes de salir/)).toBeInTheDocument()
   expect(screen.getByRole('img', { name: /cuaderno/ })).toHaveAttribute('src', expect.stringContaining('auth-travel-notebook'))
-  expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/')
+  expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/es')
 })
 
 it.each([ForgotPasswordPage, ResetPasswordPage])('mantiene la composición de recuperación', Page => {

@@ -7,11 +7,13 @@ const mockReplace = jest.fn()
 const mockSignIn = jest.fn()
 const mockResendVerificationEmail = jest.fn()
 const mockSignInWithGoogle = jest.fn()
+const mockPathname = '/es/signin'
 
 let mockSearch = new URLSearchParams()
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  usePathname: () => mockPathname,
   useSearchParams: () => mockSearch,
 }))
 
@@ -190,7 +192,7 @@ describe('LoginForm', () => {
       await screen.findByText(/contraseña se ha actualizado/i),
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/signin')
+      expect(mockReplace).toHaveBeenCalledWith('/es/signin')
     })
   })
 
@@ -202,7 +204,7 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/signin?redirectTo=%2Fsettings')
+      expect(mockReplace).toHaveBeenCalledWith('/es/signin?redirectTo=%2Fsettings')
     })
   })
 
@@ -226,7 +228,7 @@ describe('LoginForm', () => {
       await screen.findByText(/no se pudo iniciar sesión con google/i),
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/signin')
+      expect(mockReplace).toHaveBeenCalledWith('/es/signin')
     })
   })
 

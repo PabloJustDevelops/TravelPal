@@ -8,17 +8,19 @@ import CTA from '@/components/landing/CTA';
 import Footer from '@/components/landing/Footer';
 import LandingMotion from '@/components/landing/LandingMotion';
 import styles from '@/components/landing/landing.module.css';
+import LocaleBootstrap from '@/lib/i18n/LocaleBootstrap'
 
 export const metadata: Metadata = {
   title: { absolute: 'TravelPal - Todos tus planes, un solo viaje' },
-  robots: { index: true, follow: true },
-  alternates: { canonical: '/' },
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/es' },
   description: 'Organiza itinerarios, reservas, gastos y recuerdos en un solo lugar. Dale forma a tu próximo viaje con TravelPal.',
 };
 
 export default function Home() {
   return (
     <div className={styles.landing}>
+      <LocaleBootstrap />
       <main className="min-h-screen bg-background text-ink">
         <Navbar />
         <Hero />

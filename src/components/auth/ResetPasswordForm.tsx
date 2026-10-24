@@ -11,22 +11,15 @@ import Button from "@/components/ui/Button";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { fieldClassName } from "@/components/ui/fieldStyles";
 import { cn } from "@/lib/utils";
+import { localePath } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
-const resetPasswordSchema = z
-  .object({
-    password: z
-      .string()
-      .min(6, "La contraseña debe tener al menos 6 caracteres"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
-  });
-
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+type ResetPasswordFormData = { password: string; confirmPassword: string }
 
 export default function ResetPasswordForm() {
+  const { locale } = useI18n()
+  const english = locale === 'en'
+  const resetPasswordSchema = z.object({ password: z.string().min(6, english ? 'Password must be at least 6 characters' : 'La contraseña debe tener al menos 6 caracteres'), confirmPassword: z.string() }).refine(data => data.password === data.confirmPassword, { message: english ? 'Passwords do not match' : 'Las contraseñas no coinciden', path: ['confirmPassword'] })
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +47,7 @@ export default function ResetPasswordForm() {
       // InsForge redirige aquí con ?token=...&insforge_status=ready tras
       // validar el enlace de recuperación, o con insforge_status=error.
       if (status === "error") {
-        setError(flowError || "El enlace de recuperación es inválido o ha expirado.");
+        setError(english ? 'The password reset link is invalid or has expired.' : (flowError || 'El enlace de recuperación es inválido o ha expirado.'));
         return;
       }
 
@@ -65,16 +58,16 @@ export default function ResetPasswordForm() {
       }
 
       // Sin token no hay forma de autorizar el cambio de contraseña.
-      setError("Enlace de recuperación inválido o incompleto.");
+      setError(english ? 'The password reset link is invalid or incomplete.' : 'Enlace de recuperación inválido o incompleto.');
     };
 
     handleResetLink();
-  }, [searchParams]);
+  }, [searchParams, english]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!isSessionReady || !resetToken) {
       setError(
-        "No se ha podido verificar tu identidad. Por favor, solicita un nuevo enlace.",
+        english ? 'We could not verify your identity. Please request a new link.' : 'No se ha podido verificar tu identidad. Por favor, solicita un nuevo enlace.',
       );
       return;
     }
@@ -90,13 +83,11 @@ export default function ResetPasswordForm() {
       window.history.replaceState(window.history.state, "", window.location.pathname);
 
       // Redirigir al login con mensaje de éxito
-      router.replace("/signin?message=password-updated");
+      router.replace(`${localePath(locale, '/signin')}?message=password-updated`);
     } catch (err) {
       console.error("Error al actualizar contraseña:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Error al actualizar la contraseña. Inténtalo de nuevo.",
+        english ? 'Could not update your password. Please try again.' : (err instanceof Error ? err.message : 'Error al actualizar la contraseña. Inténtalo de nuevo.'),
       );
     } finally {
       setIsLoading(false);
@@ -108,7 +99,7 @@ export default function ResetPasswordForm() {
       <div className="space-y-4">
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink">
-            Nueva contraseña
+            {english ? 'New password' : 'Nueva contraseña'}
           </label>
           <div className="relative">
             <input
@@ -118,12 +109,12 @@ export default function ResetPasswordForm() {
               autoComplete="new-password"
               required
               className={cn(fieldClassName, 'pr-10')}
-              placeholder="Nueva contraseña"
+              placeholder={english ? 'New password' : 'Nueva contraseña'}
             />
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-label={showPassword ? (english ? 'Hide password' : 'Ocultar contraseña') : (english ? 'Show password' : 'Mostrar contraseña')}
               aria-pressed={showPassword}
               onClick={() => setShowPassword(!showPassword)}
             >
@@ -143,7 +134,7 @@ export default function ResetPasswordForm() {
 
         <div>
           <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-ink">
-            Confirmar contraseña
+            {english ? 'Confirm password' : 'Confirmar contraseña'}
           </label>
           <div className="relative">
             <input
@@ -153,12 +144,12 @@ export default function ResetPasswordForm() {
               autoComplete="new-password"
               required
               className={cn(fieldClassName, 'pr-10')}
-              placeholder="Confirmar contraseña"
+              placeholder={english ? 'Confirm password' : 'Confirmar contraseña'}
             />
             <button
               type="button"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              aria-label={showConfirmPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+              aria-label={showConfirmPassword ? (english ? 'Hide password confirmation' : 'Ocultar confirmación de contraseña') : (english ? 'Show password confirmation' : 'Mostrar confirmación de contraseña')}
               aria-pressed={showConfirmPassword}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
@@ -224,7 +215,7 @@ export default function ResetPasswordForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <h2 className="text-sm font-medium text-red-800">Error</h2>
+              <h2 className="text-sm font-medium text-red-800">{english ? 'Error' : 'Error'}</h2>
               <div className="mt-1 text-sm text-red-700">
                 <p>{error}</p>
               </div>
@@ -240,16 +231,16 @@ export default function ResetPasswordForm() {
           disabled={!isSessionReady && !error} // Deshabilitar mientras se verifica la sesión
           className="w-full"
         >
-          {isSessionReady ? "Actualizar contraseña" : "Verificando enlace..."}
+          {isSessionReady ? (english ? 'Update password' : 'Actualizar contraseña') : (english ? 'Verifying link...' : 'Verificando enlace...')}
         </Button>
       </div>
 
       <div className="text-center">
         <Link
-          href="/signin"
+          href={localePath(locale, '/signin')}
           className="font-medium text-accent hover:text-accent-hover"
         >
-          Volver al inicio de sesión
+          {english ? 'Back to sign in' : 'Volver al inicio de sesión'}
         </Link>
       </div>
     </form>

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import styles from "./authStyles.module.css";
 import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
@@ -15,35 +15,25 @@ import { fieldClassName } from "@/components/ui/fieldStyles";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import type { AuthFailureCode } from "@/lib/insforge/auth-error-codes";
+import { localePath } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
-const loginSchema = z.object({
-  email: z.string().email("Ingresa un email válido"),
-  password: z.string().min(1, "La contraseña es requerida"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = { email: string; password: string };
 
 // Mensajes de los códigos que el login sí puede devolver. El de email sin
 // verificar no va aquí: lleva su propio aviso con el reenvío del código.
-const SIGN_IN_ERROR_MESSAGES: Partial<Record<AuthFailureCode, string>> = {
-  invalid_credentials: "Email o contraseña incorrectos.",
-  rate_limited: "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
-};
-
-const SIGN_IN_FALLBACK_MESSAGE = "No se pudo iniciar sesión. Inténtalo de nuevo.";
-
-const PASSWORD_UPDATED_MESSAGE =
-  "Tu contraseña se ha actualizado. Ya puedes iniciar sesión.";
-
 // Fallos del OAuth de Google que escribe el callback
 // (src/app/api/auth/callback/route.ts) reutilizando este mismo sistema de
 // mensajes por URL.
-const OAUTH_FAILED_MESSAGE =
-  "No se pudo iniciar sesión con Google. Inténtalo de nuevo.";
-const OAUTH_EXPIRED_MESSAGE =
-  "El acceso con Google caducó antes de completarse. Vuelve a empezar.";
-
 export default function LoginForm() {
+  const { locale } = useI18n()
+  const english = locale === 'en'
+  const loginSchema = z.object({ email: z.string().email(english ? 'Enter a valid email address' : 'Ingresa un email válido'), password: z.string().min(1, english ? 'Password is required' : 'La contraseña es requerida') })
+  const errorMessages: Partial<Record<AuthFailureCode, string>> = {
+    invalid_credentials: english ? 'Incorrect email or password.' : 'Email o contraseña incorrectos.',
+    rate_limited: english ? 'Too many attempts. Wait a moment and try again.' : 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
+  }
+  const fallbackMessage = english ? 'Could not sign in. Please try again.' : 'No se pudo iniciar sesión. Inténtalo de nuevo.'
   const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +46,7 @@ export default function LoginForm() {
   const [isResending, setIsResending] = useState(false);
   const { signIn, resendVerificationEmail } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -71,20 +62,23 @@ export default function LoginForm() {
     if (!message) return;
 
     if (message === "password-updated") {
-      setNotice(PASSWORD_UPDATED_MESSAGE);
+      setNotice(english ? 'Your password has been updated. You can sign in now.' : 'Tu contraseña se ha actualizado. Ya puedes iniciar sesión.');
     } else if (message === "oauth-failed") {
-      setError(OAUTH_FAILED_MESSAGE);
+      setError(english ? 'Could not sign in with Google. Please try again.' : 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
     } else if (message === "oauth-expired") {
-      setError(OAUTH_EXPIRED_MESSAGE);
+      setError(english ? 'Google sign-in expired before it could finish. Please start again.' : 'El acceso con Google caducó antes de completarse. Vuelve a empezar.');
     }
 
-    const redirectTo = searchParams.get("redirectTo");
-    router.replace(
-      redirectTo
-        ? `/signin?redirectTo=${encodeURIComponent(redirectTo)}`
-        : "/signin",
-    );
-  }, [searchParams, router]);
+    const localizedSignIn = localePath(locale, '/signin');
+    const cleanedSearch = new URLSearchParams(searchParams.toString());
+    cleanedSearch.delete('message');
+    const remainingQuery = cleanedSearch.toString();
+    if (!pathname.startsWith('/es/') && !pathname.startsWith('/en/')) {
+      router.replace(`${localizedSignIn}?${searchParams.toString()}`);
+    } else {
+      router.replace(remainingQuery ? `${localizedSignIn}?${remainingQuery}` : localizedSignIn);
+    }
+  }, [searchParams, router, pathname, english, locale]);
 
   const {
     register,
@@ -108,7 +102,7 @@ export default function LoginForm() {
       // Añadir timeout para evitar que se quede colgado
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
-          () => reject(new Error("Timeout: El login tardó demasiado")),
+          () => reject(new Error(english ? 'Sign-in timed out' : 'Timeout: El login tardó demasiado')),
           10000
         );
       });
@@ -128,7 +122,7 @@ export default function LoginForm() {
           setPendingEmail(data.email);
         } else {
           setError(
-            SIGN_IN_ERROR_MESSAGES[result.code] ?? SIGN_IN_FALLBACK_MESSAGE,
+            errorMessages[result.code] ?? fallbackMessage,
           );
         }
         return;
@@ -145,9 +139,7 @@ export default function LoginForm() {
       logger.error("LoginForm: Error en onSubmit:", err);
 
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : SIGN_IN_FALLBACK_MESSAGE,
+        english ? fallbackMessage : (err instanceof Error && err.message ? err.message : fallbackMessage),
       );
     } finally {
       logger.debug("LoginForm: Finalizando onSubmit");
@@ -164,12 +156,12 @@ export default function LoginForm() {
 
     try {
       await resendVerificationEmail(pendingEmail);
-      setResendNotice("Te hemos enviado un código nuevo.");
+      setResendNotice(english ? 'We sent you a new code.' : 'Te hemos enviado un código nuevo.');
     } catch (err: unknown) {
       // El reenvío sí puede contar lo que diga el backend: no revela si existe
       // otro email, solo si puedes pedir otro código ahora.
       setError(
-        err instanceof Error ? err.message : "No se pudo reenviar el código",
+        err instanceof Error ? err.message : (english ? 'Could not resend the code' : 'No se pudo reenviar el código'),
       );
     } finally {
       setIsResending(false);
@@ -180,9 +172,9 @@ export default function LoginForm() {
     <div className={styles.form}>
       <div>
         <h1>
-          Inicia sesión en tu cuenta
+          {english ? 'Sign in to your account' : 'Inicia sesión en tu cuenta'}
         </h1>
-        <p className={styles.description}>Tus planes, listos para seguir el viaje.</p>
+        <p className={styles.description}>{english ? 'Your plans are ready for the journey ahead.' : 'Tus planes, listos para seguir el viaje.'}</p>
       </div>
 
       <form noValidate className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
@@ -201,8 +193,7 @@ export default function LoginForm() {
         {pendingEmail && (
           <div role="status" className="rounded-md border border-warning/30 bg-warning/10 p-4">
             <p className="text-sm text-warning">
-              Tu email aún no está verificado. Revisa tu bandeja de entrada y
-              confirma tu cuenta antes de iniciar sesión.
+              {english ? 'Your email has not been verified yet. Check your inbox and confirm your account before signing in.' : 'Tu email aún no está verificado. Revisa tu bandeja de entrada y confirma tu cuenta antes de iniciar sesión.'}
             </p>
             {resendNotice && (
               <p role="status" className="mt-2 text-sm text-success">{resendNotice}</p>
@@ -214,7 +205,7 @@ export default function LoginForm() {
               onClick={handleResendVerification}
               className="mt-3 w-full"
             >
-              Reenviar código de verificación
+              {english ? 'Resend verification code' : 'Reenviar código de verificación'}
             </Button>
           </div>
         )}
@@ -235,7 +226,7 @@ export default function LoginForm() {
                 type="email"
                 autoComplete="email"
                 className={cn(fieldClassName, styles.input, 'mt-1')}
-                placeholder="tu@email.com"
+                placeholder={english ? 'you@email.com' : 'tu@email.com'}
               />
               {errors.email && (
                 <p id="email-error" role="alert" className="mt-1 text-sm text-danger">
@@ -249,7 +240,7 @@ export default function LoginForm() {
                 htmlFor="password"
                 className="block text-sm font-medium text-ink"
               >
-                Contraseña
+                {english ? 'Password' : 'Contraseña'}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -260,12 +251,12 @@ export default function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   className={cn(fieldClassName, styles.input, styles.passwordInput)}
-                  placeholder="Tu contraseña"
+                  placeholder={english ? 'Your password' : 'Tu contraseña'}
                 />
                 {isClient && (
                   <button
                     type="button"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={showPassword ? (english ? 'Hide password' : 'Ocultar contraseña') : (english ? 'Show password' : 'Mostrar contraseña')}
                     aria-pressed={showPassword}
                     className={styles.toggle}
                     onClick={() => setShowPassword(!showPassword)}
@@ -288,25 +279,25 @@ export default function LoginForm() {
 
           <div className="flex items-center justify-between">
             <Link
-              href="/forgot-password"
+              href={localePath(locale, '/forgot-password')}
               className="inline-flex min-h-11 items-center text-sm text-accent hover:text-accent-hover"
             >
-              ¿Olvidaste tu contraseña?
+              {english ? 'Forgot your password?' : '¿Olvidaste tu contraseña?'}
             </Link>
           </div>
 
           <div>
             <Button type="submit" loading={isLoading} className={cn("w-full", styles.submit)}>
-              Iniciar sesión
+              {english ? 'Sign in' : 'Iniciar sesión'}
             </Button>
           </div>
 
           <div>
-            <div className={styles.divider} aria-hidden="true">o</div>
+            <div className={styles.divider} aria-hidden="true">{english ? 'or' : 'o'}</div>
             <GoogleButton />
           </div>
         </form>
-        <p className={styles.switchAccount}>¿Aún no tienes cuenta? <Link href="/signup">Crea tu cuenta</Link></p>
+        <p className={styles.switchAccount}>{english ? 'New to TravelPal?' : '¿Aún no tienes cuenta?'} <Link href={localePath(locale, '/signup')}>{english ? 'Create an account' : 'Crea tu cuenta'}</Link></p>
     </div>
   );
 }

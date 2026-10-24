@@ -4,6 +4,8 @@ import CurrentYear from '../CurrentYear'
 import LandingMotion from '../LandingMotion'
 import type { ImgHTMLAttributes } from 'react'
 
+jest.mock('@/lib/i18n/LocaleBootstrap', () => ({ __esModule: true, default: () => null }))
+
 jest.mock('next/image', () => ({
   __esModule: true,
   default: ({ preload, ...props }: ImgHTMLAttributes<HTMLImageElement> & { preload?: boolean }) => {
@@ -15,15 +17,15 @@ jest.mock('next/image', () => ({
 
 it('reproduce la portada seleccionada y conecta la acción con el registro', () => {
   render(<Home />)
-  const brand = within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', {
+  const brand = within(screen.getByRole('navigation', { name: 'Inicio' })).getByRole('link', {
     name: 'TravelPal',
   })
-  expect(brand).toHaveAttribute('href', '/')
+  expect(brand).toHaveAttribute('href', '/es')
   expect(brand.querySelector('[aria-hidden="true"]')).toHaveStyle({
     maskImage: 'url("/brand/travelpal-mark.svg")',
   })
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tu viaje, de principio a fin.')
-  expect(screen.getByRole('link', { name: 'Crear mi viaje' })).toHaveAttribute('href', '/signup')
+  expect(screen.getByRole('link', { name: 'Crear mi viaje' })).toHaveAttribute('href', '/es/signup')
   expect(screen.getByRole('link', { name: 'Ver un ejemplo' })).toHaveAttribute('href', '#example')
   for (const image of screen.getAllByRole('img')) expect(image.getAttribute('src')).not.toMatch(/^https?:/)
 })

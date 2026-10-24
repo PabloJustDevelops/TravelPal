@@ -4,11 +4,8 @@ import path from 'node:path'
 const outputDirectory = path.resolve(process.argv[2] ?? 'out')
 const criticalRoutes = [
   '/',
-  '/signin',
-  '/signup',
+  ...['es', 'en'].flatMap((locale) => ['', 'signin', 'signup', 'forgot-password', 'reset-password', 'aviso-legal', 'privacidad'].map((route) => `/${locale}${route ? `/${route}` : ''}`)),
   '/auth/callback',
-  '/reset-password',
-  '/forgot-password',
   '/create-trip',
   '/travel-inspiration',
   '/dashboard',
@@ -50,15 +47,22 @@ const missingRoutes = criticalRoutes.filter((route) => {
   if (route === '/') return !relativeFiles.has('index.html')
 
   const routePath = route.slice(1)
-  return !(
-    relativeFiles.has(`${routePath}.html`) ||
-    relativeFiles.has(`${routePath}/index.html`)
-  )
+  return !relativeFiles.has(`${routePath}/index.html`) && !relativeFiles.has(`${routePath}.html`)
 })
 
 if (!relativeFiles.has('_redirects')) {
   console.error('Static export is missing public/_redirects')
   process.exitCode = 1
+} else {
+  const redirects = await readFile(path.join(outputDirectory, '_redirects'), 'utf8')
+  for (const route of ['/signin', '/signup', '/forgot-password', '/reset-password', '/aviso-legal', '/privacidad']) {
+    for (const source of [route, `${route}/`]) {
+      if (!redirects.split(/\r?\n/).some((line) => line.trim() === `${source} /es${route} 301`)) {
+        console.error(`Static export is missing the Spanish compatibility redirect: ${source} -> /es${route}`)
+        process.exitCode = 1
+      }
+    }
+  }
 }
 
 if (missingRoutes.length > 0) {

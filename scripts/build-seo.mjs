@@ -6,10 +6,14 @@ const require = createRequire(import.meta.resolve('next'))
 const sharp = require('sharp')
 const origin = 'https://travelpal.prg-dev.workers.dev'
 // Callback is public for authentication, but intentionally excluded from discovery.
-const routes = ['/', '/signin', '/signup', '/forgot-password', '/reset-password']
+const publicRoutes = ['/', '/signin', '/signup', '/forgot-password', '/reset-password', '/aviso-legal', '/privacidad']
+const routes = publicRoutes.flatMap((route) => ['es', 'en'].map((locale) => ({ locale, route, url: `${origin}/${locale}${route === '/' ? '' : route}` })))
 // No authoritative per-page modification dates exist: use this build's timestamp.
 const lastmod = new Date().toISOString()
-await writeFile('public/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((route) => `  <url><loc>${origin}${route}</loc><lastmod>${lastmod}</lastmod></url>`).join('\n')}\n</urlset>\n`)
+await writeFile('public/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${routes.map(({ route, url }) => {
+  const alternates = ['es', 'en'].map((locale) => `    <xhtml:link rel="alternate" hreflang="${locale}" href="${origin}/${locale}${route === '/' ? '' : route}"/>`).join('\n')
+  return `  <url>\n    <loc>${url}</loc>\n${alternates}\n    <lastmod>${lastmod}</lastmod>\n  </url>`
+}).join('\n')}\n</urlset>\n`)
 
 const panorama = await sharp('public/images/atlas/coastal-panorama.webp').resize(1200, 600).toBuffer()
 // Reuse the published TP ligature with explicit light-theme colors for raster output.

@@ -5,8 +5,8 @@ import AuthShell from '@/components/auth/AuthShell'
 
 export const metadata: Metadata = {
   title: 'Crear cuenta',
-  robots: { index: true, follow: true },
-  alternates: { canonical: '/signup' },
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/es/signup/' },
 }
 
 export default function SignUpPage() {

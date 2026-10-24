@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/lib/auth'
+import { localePath, resolveLocale } from '@/lib/i18n'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
   const [failed, setFailed] = useState(false)
+  const [locale] = useState(() => typeof window === 'undefined'
+    ? 'es'
+    : resolveLocale(new URLSearchParams(window.location.search).get('locale')))
 
   useEffect(() => {
     let active = true
@@ -17,17 +21,17 @@ export default function AuthCallbackPage() {
       if (user) router.replace('/dashboard')
       else {
         setFailed(true)
-        router.replace('/signin?message=oauth-failed')
+        router.replace(`${localePath(locale, '/signin')}?message=oauth-failed`)
       }
     }).catch(() => {
       if (!active) return
       setFailed(true)
-      router.replace('/signin?message=oauth-failed')
+      router.replace(`${localePath(locale, '/signin')}?message=oauth-failed`)
     })
     return () => {
       active = false
     }
-  }, [router])
+  }, [router, locale])
 
   return (
     <main className="flex min-h-screen items-center justify-center">

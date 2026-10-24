@@ -36,7 +36,7 @@ export default defineConfig({
     {
       name: 'smoke',
       testMatch: 'smoke/**/*.spec.ts',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], locale: 'es-ES' },
     },
     {
       name: 'flows',

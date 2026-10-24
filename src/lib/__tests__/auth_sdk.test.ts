@@ -76,8 +76,14 @@ describe('AuthService con el cliente browser de InsForge', () => {
     auth.resetPassword.mockResolvedValue({ data: {}, error: null })
     await service.resetPassword('ANA@example.com')
     await service.updatePassword('new-password', 'reset-token')
-    expect(auth.sendResetPasswordEmail).toHaveBeenCalledWith({ email: 'ana@example.com', redirectTo: 'http://localhost/reset-password' })
+    expect(auth.sendResetPasswordEmail).toHaveBeenCalledWith({ email: 'ana@example.com', redirectTo: 'http://localhost/es/reset-password' })
     expect(auth.resetPassword).toHaveBeenCalledWith({ newPassword: 'new-password', otp: 'reset-token' })
+  })
+
+  it('mantiene el locale inglés en el enlace de recuperación', async () => {
+    auth.sendResetPasswordEmail.mockResolvedValue({ data: { success: true }, error: null })
+    await service.resetPassword('ana@example.com', 'en')
+    expect(auth.sendResetPasswordEmail).toHaveBeenCalledWith({ email: 'ana@example.com', redirectTo: 'http://localhost/en/reset-password' })
   })
 
   it('cierra sesión y propaga errores del SDK', async () => {
@@ -107,5 +113,11 @@ describe('AuthService con el cliente browser de InsForge', () => {
     expect(auth.signInWithOAuth).toHaveBeenCalledWith('google', { redirectTo: 'http://localhost/auth/callback' })
     auth.signInWithOAuth.mockResolvedValueOnce({ data: null, error: { message: 'access_denied', statusCode: 400 } })
     await expect(service.signInWithGoogle()).rejects.toThrow('access_denied')
+  })
+
+  it('conserva el locale inglés en el callback OAuth', async () => {
+    auth.signInWithOAuth.mockResolvedValueOnce({ data: { url: 'https://accounts.google.test', provider: 'google' }, error: null })
+    await service.signInWithGoogle('en')
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith('google', { redirectTo: 'http://localhost/auth/callback?locale=en' })
   })
 })

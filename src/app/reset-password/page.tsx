@@ -5,8 +5,8 @@ import AuthShell from '@/components/auth/AuthShell'
 
 export const metadata: Metadata = {
   title: 'Restablecer contraseña',
-  robots: { index: true, follow: true },
-  alternates: { canonical: '/reset-password' },
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/es/reset-password/' },
 }
 
 export default function ResetPasswordPage() {

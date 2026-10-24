@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
 import { FlightIdea, ideaToTripHref, isFlightIdeaCurrent, parseInspirationQuery } from "@/lib/travel-inspiration";
 import Button from "@/components/ui/Button";
+import Link from "next/link";
 import Input from "@/components/ui/Input";
 import { Card, CardContent } from "@/components/ui/Card";
 
@@ -214,7 +215,7 @@ export default function FlightInspiration() {
           </CardContent>
         </Card>)}
       </div>}
-      <p className="text-xs text-muted">También puedes <a className="font-medium text-accent underline" href="/create-trip">crear un viaje manualmente</a>. No se guarda nada hasta que envíes el formulario.</p>
+      <p className="text-xs text-muted">También puedes <Link className="font-medium text-accent underline" href="/create-trip">crear un viaje manualmente</Link>. No se guarda nada hasta que envíes el formulario.</p>
     </section>
   );
 }

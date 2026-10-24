@@ -39,7 +39,7 @@ describe('ResetPasswordForm', () => {
 
     await waitFor(() => expect(mockUpdatePassword).toHaveBeenCalledWith('NuevaPassword123', 'secret-reset-token'))
     await waitFor(() => expect(window.location.search).toBe(''))
-    expect(mockReplace).toHaveBeenCalledWith('/signin?message=password-updated')
+    expect(mockReplace).toHaveBeenCalledWith('/es/signin?message=password-updated')
   })
 
   it('conserva el token si falla el cambio para permitir reintentar', async () => {
