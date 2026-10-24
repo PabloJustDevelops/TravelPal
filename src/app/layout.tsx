@@ -20,6 +20,7 @@ const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', dis
 // un parpadeo claro hasta que monta el proveedor de tema. Usa la misma clave y la misma
 // semantica que ThemeContext.
 const themeInitScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})()`
+const localeInitScript = `(function(){var m=window.location.pathname.match(/^\\/(en|es)(?:\\/|$)/);if(m)document.documentElement.lang=m[1]})()`
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://travelpal.prg-dev.workers.dev'),
@@ -61,6 +62,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>

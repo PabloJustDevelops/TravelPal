@@ -36,7 +36,7 @@ describe('ForgotPasswordForm', () => {
     submit()
 
     expect(await screen.findByText(/email enviado/i)).toBeInTheDocument()
-    expect(mockResetPassword).toHaveBeenCalledWith('ana@example.com')
+    expect(mockResetPassword).toHaveBeenCalledWith('ana@example.com', 'es')
   })
 
   it('no revela si el email existe ni filtra el texto del backend', async () => {

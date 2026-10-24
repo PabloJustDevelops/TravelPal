@@ -1,6 +1,7 @@
 import { createInsforgeClient } from './insforge'
 import { logger } from '@/lib/logger'
 import { getErrorMessage } from '@/lib/utils'
+import { localePath, type Locale } from '@/lib/i18n'
 import {
   classifySignInError,
   classifySignUpError,
@@ -102,11 +103,12 @@ export class AuthService {
     return { ok: true, user: { id: data.user.id, email: data.user.email } }
   }
 
-  async signInWithGoogle() {
+  async signInWithGoogle(locale: Locale = 'es') {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     if (!origin) throw new Error('El acceso con Google requiere un navegador')
+    const localeQuery = locale === 'en' ? '?locale=en' : ''
     const { error } = await this.insforge.auth.signInWithOAuth('google', {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback${localeQuery}`,
     })
     throwSdkError(error, 'No se pudo iniciar el acceso con Google')
   }
@@ -116,7 +118,7 @@ export class AuthService {
     throwSdkError(error, 'No se pudo cerrar la sesión')
   }
 
-  async resetPassword(email: string) {
+  async resetPassword(email: string, locale: Locale = 'es') {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) throw new Error('El formato del email no es válido')
     const normalizedEmail = email.trim().toLowerCase()
@@ -124,7 +126,7 @@ export class AuthService {
     try {
       const { error } = await this.insforge.auth.sendResetPasswordEmail({
         email: normalizedEmail,
-        redirectTo: `${origin}/reset-password`,
+        redirectTo: `${origin}${localePath(locale, '/reset-password')}`,
       })
       throwSdkError(error, 'No se pudo enviar el email de recuperación')
     } catch (err) {

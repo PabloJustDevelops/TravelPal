@@ -50,9 +50,9 @@ test('registro tiene marca coherente y controles accesibles', async ({ page }) =
 
 test('rutas públicas de autenticación no introducen violaciones axe', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  for (const route of ['/', '/signin', '/forgot-password', '/reset-password']) {
+    for (const route of ['/es/', '/signin', '/forgot-password', '/reset-password']) {
     await page.goto(route)
-    if (route === '/') {
+    if (route === '/es/') {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
       await page.screenshot({
@@ -74,7 +74,7 @@ test('rutas públicas de autenticación no introducen violaciones axe', async ({
 test('portada mantiene su composición de viaje y no desborda en móvil', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/es/')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Tu viaje, de principio a fin.' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
@@ -103,7 +103,7 @@ test('portada mantiene su composición de viaje y no desborda en móvil', async 
 test('portada conserva contraste con el tema oscuro', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('theme', 'dark'))
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/es/')
   await expect(page.locator('html')).toHaveClass(/dark/)
   await expect(page.getByRole('img', { name: /Ilustración de un viajero siguiendo/ })).toBeVisible()
   await expect(page.getByRole('main')).toHaveCSS('background-color', 'rgb(16, 24, 39)')

@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { usePathname } from 'next/navigation'
 import { AuthUser, authService as defaultAuthService } from '@/lib/auth'
 import type { SignInActionResult, SignUpActionResult } from '@/lib/auth'
+import type { Locale } from '@/lib/i18n'
 import { logger as defaultLogger } from '@/lib/logger'
 
 interface AuthContextType {
@@ -26,8 +27,8 @@ interface AuthContextType {
     fullName: string,
   ) => Promise<SignUpActionResult>
   signOut: () => Promise<void>
-  signInWithGoogle: () => Promise<void>
-  resetPassword: (email: string) => Promise<void>
+  signInWithGoogle: (locale?: Locale) => Promise<void>
+  resetPassword: (email: string, locale?: Locale) => Promise<void>
   verifyEmail: (email: string, otp: string) => Promise<AuthUser | null>
   resendVerificationEmail: (email: string) => Promise<void>
   updateProfile: (updates: { full_name?: string; avatar_url?: string }) => Promise<void>
@@ -242,12 +243,12 @@ export function AuthProvider({ children, deps }: { children: React.ReactNode; de
     }
   }
 
-  const signInWithGoogle = async () => {
-    await authService.signInWithGoogle()
+  const signInWithGoogle = async (locale?: Locale) => {
+    await authService.signInWithGoogle(locale)
   }
 
-  const resetPassword = async (email: string) => {
-    await authService.resetPassword(email)
+  const resetPassword = async (email: string, locale?: Locale) => {
+    await authService.resetPassword(email, locale)
   }
 
   const updateProfile = async (updates: { full_name?: string; avatar_url?: string }) => {

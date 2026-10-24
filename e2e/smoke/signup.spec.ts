@@ -8,6 +8,10 @@ const password = process.env.E2E_SIGNUP_PASSWORD ?? 'Prueba-e2e-2026!'
 test('el registro llega al paso de verificacion con el email pendiente', async ({
   page,
 }) => {
+  test.skip(
+    !process.env.NEXT_PUBLIC_INSFORGE_URL || !process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY,
+    'Este smoke crea un usuario y requiere credenciales de InsForge configuradas.',
+  )
   const email = `e2e-signup-${Date.now()}@example.com`
 
   await page.goto('/signup')

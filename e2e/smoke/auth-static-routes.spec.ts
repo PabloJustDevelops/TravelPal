@@ -20,7 +20,7 @@ test('el estado ready de un enlace de recuperación muestra el formulario de nue
 test('la denegación OAuth vuelve al acceso con un mensaje de fallo observable', async ({ page }) => {
   await page.goto('/auth/callback?error=access_denied&error_description=e2e-denial')
 
-  await expect(page).toHaveURL(/\/signin(?:\?|$)/)
+  await expect(page).toHaveURL(/\/es\/signin(?:\?|$)/)
   await expect(page.getByRole('heading', { name: 'Inicia sesión en tu cuenta' })).toBeVisible()
   await expect(
     page.getByText('No se pudo iniciar sesión con Google. Inténtalo de nuevo.', { exact: true }),

@@ -14,24 +14,20 @@ import GoogleButton from '@/components/auth/GoogleButton'
 import { fieldClassName } from '@/components/ui/fieldStyles'
 import { cn } from '@/lib/utils'
 import VerifyEmailStep from './VerifyEmailStep'
+import { localePath } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
-const registerSchema = z.object({
-  fullName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Ingresa un email válido'),
-  password: z.string()
-    .min(8, 'La contraseña debe tener al menos 8 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una letra minúscula')
-    .regex(/\d/, 'Debe contener al menos un número'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-})
-
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = { fullName: string; email: string; password: string; confirmPassword: string }
 
 export default function RegisterForm() {
+  const { locale } = useI18n()
+  const english = locale === 'en'
+  const registerSchema = z.object({
+    fullName: z.string().min(2, english ? 'Name must be at least 2 characters' : 'El nombre debe tener al menos 2 caracteres'),
+    email: z.string().email(english ? 'Enter a valid email address' : 'Ingresa un email válido'),
+    password: z.string().min(8, english ? 'Password must be at least 8 characters' : 'La contraseña debe tener al menos 8 caracteres').regex(/[A-Z]/, english ? 'Must include at least one uppercase letter' : 'Debe contener al menos una letra mayúscula').regex(/[a-z]/, english ? 'Must include at least one lowercase letter' : 'Debe contener al menos una letra minúscula').regex(/\d/, english ? 'Must include at least one number' : 'Debe contener al menos un número'),
+    confirmPassword: z.string(),
+  }).refine(data => data.password === data.confirmPassword, { message: english ? 'Passwords do not match' : 'Las contraseñas no coinciden', path: ['confirmPassword'] })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -80,10 +76,10 @@ export default function RegisterForm() {
   };
 
   const getStrengthText = (score: number) => {
-    if (score <= 1) return 'Débil';
-    if (score === 2) return 'Regular';
-    if (score === 3) return 'Buena';
-    return 'Fuerte';
+    if (score <= 1) return english ? 'Weak' : 'Débil';
+    if (score === 2) return english ? 'Fair' : 'Regular';
+    if (score === 3) return english ? 'Good' : 'Buena';
+    return english ? 'Strong' : 'Fuerte';
   };
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -99,8 +95,8 @@ export default function RegisterForm() {
         // otro fallo se queda en un mensaje genérico, sin el texto del backend.
         setError(
           result.code === 'email_exists'
-            ? 'Este email ya está registrado'
-            : 'No se pudo crear la cuenta. Inténtalo de nuevo.',
+            ? (english ? 'This email is already registered' : 'Este email ya está registrado')
+            : (english ? 'Could not create your account. Please try again.' : 'No se pudo crear la cuenta. Inténtalo de nuevo.'),
         )
         return
       }
@@ -113,7 +109,7 @@ export default function RegisterForm() {
       }
     } catch {
       // Un fallo de transporte al hablar con el servidor, no un alta rechazada.
-      setError('No se pudo crear la cuenta. Inténtalo de nuevo.')
+      setError(english ? 'Could not create your account. Please try again.' : 'No se pudo crear la cuenta. Inténtalo de nuevo.')
     } finally {
       setIsLoading(false)
     }
@@ -127,9 +123,9 @@ export default function RegisterForm() {
     <div className={styles.form}>
       <div>
         <h1>
-          Crea tu cuenta
+          {english ? 'Create your account' : 'Crea tu cuenta'}
         </h1>
-        <p className={styles.description}>Tu espacio para organizar el próximo viaje.</p>
+        <p className={styles.description}>{english ? 'Your space to plan your next trip.' : 'Tu espacio para organizar el próximo viaje.'}</p>
       </div>
 
       <form noValidate className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
@@ -142,7 +138,7 @@ export default function RegisterForm() {
           <div className={styles.fields}>
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-ink">
-                Nombre completo
+                {english ? 'Full name' : 'Nombre completo'}
               </label>
               <input
                 {...register('fullName')}
@@ -152,7 +148,7 @@ export default function RegisterForm() {
                 type="text"
                 autoComplete="name"
                 className={cn(fieldClassName, styles.input, 'mt-1')}
-                placeholder="Tu nombre y apellidos"
+                placeholder={english ? 'Your full name' : 'Tu nombre y apellidos'}
               />
               {errors.fullName && (
                 <p id="fullName-error" role="alert" className="mt-1 text-sm text-danger">{errors.fullName.message}</p>
@@ -171,7 +167,7 @@ export default function RegisterForm() {
                 type="email"
                 autoComplete="email"
                 className={cn(fieldClassName, styles.input, 'mt-1')}
-                placeholder="tu@email.com"
+                placeholder={english ? 'you@email.com' : 'tu@email.com'}
               />
               {errors.email && (
                 <p id="email-error" role="alert" className="mt-1 text-sm text-danger">{errors.email.message}</p>
@@ -180,7 +176,7 @@ export default function RegisterForm() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-ink">
-                Contraseña
+                {english ? 'Password' : 'Contraseña'}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -191,12 +187,12 @@ export default function RegisterForm() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={cn(fieldClassName, styles.input, styles.passwordInput)}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={english ? 'At least 8 characters' : 'Mínimo 8 caracteres'}
                 />
                 {isClient && (
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={showPassword ? (english ? 'Hide password' : 'Ocultar contraseña') : (english ? 'Show password' : 'Mostrar contraseña')}
                     aria-pressed={showPassword}
                     className={styles.toggle}
                     onClick={() => setShowPassword(!showPassword)}
@@ -213,12 +209,12 @@ export default function RegisterForm() {
                 <p id="password-error" role="alert" className="mt-1 text-sm text-danger">{errors.password.message}</p>
               )}
 
-              <p id="password-hint" className={styles.hint}>Usa 8+ caracteres, mayúsculas, minúsculas y números.</p>
+              <p id="password-hint" className={styles.hint}>{english ? 'Use 8+ characters, uppercase and lowercase letters, and numbers.' : 'Usa 8+ caracteres, mayúsculas, minúsculas y números.'}</p>
               {/* Password strength indicator */}
               {password && (
                 <div className="mt-2 space-y-1">
                   <div className="flex justify-between items-center mb-1">
-                    <div className="text-xs text-muted">Fortaleza de la contraseña:</div>
+                    <div className="text-xs text-muted">{english ? 'Password strength:' : 'Fortaleza de la contraseña:'}</div>
                     <div className={`text-xs font-medium ${
                         strengthScore <= 1 ? 'text-danger' :
                         strengthScore === 2 ? 'text-warning' :
@@ -244,7 +240,7 @@ export default function RegisterForm() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink">
-                Confirmar contraseña
+                {english ? 'Confirm password' : 'Confirmar contraseña'}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -255,12 +251,12 @@ export default function RegisterForm() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={cn(fieldClassName, styles.input, styles.passwordInput)}
-                  placeholder="Repite tu contraseña"
+                  placeholder={english ? 'Enter your password again' : 'Repite tu contraseña'}
                 />
                 {isClient && (
                   <button
                     type="button"
-                    aria-label={showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'}
+                    aria-label={showConfirmPassword ? (english ? 'Hide password confirmation' : 'Ocultar confirmación de contraseña') : (english ? 'Show password confirmation' : 'Mostrar confirmación de contraseña')}
                     aria-pressed={showConfirmPassword}
                     className={styles.toggle}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -281,16 +277,16 @@ export default function RegisterForm() {
 
           <div>
             <Button type="submit" loading={isLoading} className={cn("w-full", styles.submit)}>
-              Crear cuenta
+              {english ? 'Create account' : 'Crear cuenta'}
             </Button>
           </div>
 
           <div>
-            <div className={styles.divider} aria-hidden="true">o</div>
+            <div className={styles.divider} aria-hidden="true">{english ? 'or' : 'o'}</div>
             <GoogleButton />
           </div>
         </form>
-        <p className={styles.switchAccount}>¿Ya tienes cuenta? <Link href="/signin">Inicia sesión</Link></p>
+        <p className={styles.switchAccount}>{english ? 'Already have an account?' : '¿Ya tienes cuenta?'} <Link href={localePath(locale, '/signin')}>{english ? 'Sign in' : 'Inicia sesión'}</Link></p>
     </div>
   )
 }

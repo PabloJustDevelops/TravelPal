@@ -5,8 +5,8 @@ import AuthShell from '@/components/auth/AuthShell'
 
 export const metadata: Metadata = {
   title: 'Iniciar sesión',
-  robots: { index: true, follow: true },
-  alternates: { canonical: '/signin' },
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/es/signin/' },
 }
 
 export default function SignInPage() {

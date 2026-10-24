@@ -4,26 +4,27 @@ import { useRef, useState } from 'react'
 import { PaperAirplaneIcon, MapPinIcon, HomeModernIcon } from '@heroicons/react/24/outline'
 import styles from './landing.module.css'
 import Button from '@/components/ui/Button'
-
-const stops = [
-  { title: 'Llegada', summary: 'Traslado al alojamiento y primer paseo.', icon: PaperAirplaneIcon, detailTitle: 'El comienzo, organizado', detail: 'Reúne los detalles de transporte y las notas de llegada junto al itinerario.' },
-  { title: 'Paseo por el pueblo', summary: 'Calles con encanto, vistas al mar.', icon: MapPinIcon, detailTitle: 'Cada día, con su recorrido', detail: 'Añade actividades al itinerario y consulta qué tienes previsto para cada día.' },
-  { title: 'Alojamiento', summary: 'Noche en el centro histórico.', icon: HomeModernIcon, detailTitle: 'La reserva, localizada', detail: 'Guarda el alojamiento y sus detalles dentro del viaje para encontrarlos cuando los necesites.' },
-]
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 export default function ExampleJourney() {
+  const { t } = useI18n()
+  const stops = [
+    { title: t('arrival'), summary: t('arrivalSummary'), icon: PaperAirplaneIcon, detailTitle: t('arrivalTitle'), detail: t('arrivalDetail') },
+    { title: t('townWalk'), summary: t('townSummary'), icon: MapPinIcon, detailTitle: t('townTitle'), detail: t('townDetail') },
+    { title: t('lodging'), summary: t('lodgingSummary'), icon: HomeModernIcon, detailTitle: t('lodgingTitle'), detail: t('lodgingDetail') },
+  ]
   const [selected, setSelected] = useState(0)
   const tabs = useRef<Array<HTMLButtonElement | null>>([])
   const active = stops[selected]
 
   return (
-    <section id="example" aria-label="Viaje de ejemplo: Costa mediterránea" className={styles.example}>
+    <section id="example" aria-label={`${t('exampleJourney')}: ${t('coast')}`} className={styles.example}>
       <div className={styles.route}>
         <div className={styles.destination}>
-          <p>Viaje de ejemplo</p>
-          <h2>Costa mediterránea</h2>
+          <p>{t('exampleJourney')}</p>
+          <h2>{t('coast')}</h2>
         </div>
-        <div role="tablist" aria-label="Paradas del viaje de ejemplo" className={styles.stops}>
+        <div role="tablist" aria-label={t('exampleStops')} className={styles.stops}>
           {stops.map((stop, index) => (
             <Button
               key={stop.title}

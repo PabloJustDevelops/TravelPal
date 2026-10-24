@@ -11,14 +11,15 @@ import { fieldClassName } from '@/components/ui/fieldStyles'
 import { accentLinkClassName } from '@/components/ui/actionStyles'
 import { cn } from '@/lib/utils'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
+import { localePath } from '@/lib/i18n'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Ingresa un email válido'),
-})
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+type ForgotPasswordFormData = { email: string }
 
 export default function ForgotPasswordForm() {
+  const { locale } = useI18n()
+  const english = locale === 'en'
+  const forgotPasswordSchema = z.object({ email: z.string().email(english ? 'Enter a valid email address' : 'Ingresa un email válido') })
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,10 +41,10 @@ export default function ForgotPasswordForm() {
       // Validar formato de email antes de enviar
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(data.email)) {
-        throw new Error('El formato del email no es válido')
+        throw new Error(english ? 'The email address is invalid' : 'El formato del email no es válido')
       }
 
-      await resetPassword(data.email)
+      await resetPassword(data.email, locale)
       setIsSuccess(true)
     } catch (err) {
       // Nada del texto del backend: si el error fuese "no existe ese email", o
@@ -51,7 +52,7 @@ export default function ForgotPasswordForm() {
       // averiguar desde fuera qué direcciones están registradas.
       console.error('Error al enviar recuperación de contraseña:', err)
       setError(
-        'No hemos podido enviar el email de recuperación. Inténtalo de nuevo.'
+        english ? 'We could not send the password reset email. Please try again.' : 'No hemos podido enviar el email de recuperación. Inténtalo de nuevo.'
       )
     } finally {
       setIsLoading(false)
@@ -65,22 +66,21 @@ export default function ForgotPasswordForm() {
           <EnvelopeIcon className="h-6 w-6 text-green-600" />
         </div>
         <h3 className="text-lg font-medium text-green-900 mb-2">
-          ¡Email enviado!
+          {english ? 'Email sent!' : '¡Email enviado!'}
         </h3>
         <p className="text-sm text-green-700 mb-6">
-          Hemos enviado un enlace de recuperación a tu correo electrónico. 
-          Por favor, revisa tu bandeja de entrada (y spam) y sigue las instrucciones.
+          {english ? 'We sent a reset link to your email address. Check your inbox (and spam folder) and follow the instructions.' : 'Hemos enviado un enlace de recuperación a tu correo electrónico. Por favor, revisa tu bandeja de entrada (y spam) y sigue las instrucciones.'}
         </p>
         <div className="space-y-3">
-          <Link href="/signin" className={`${accentLinkClassName} w-full`}>
-            Volver al inicio de sesión
+          <Link href={localePath(locale, '/signin')} className={`${accentLinkClassName} w-full`}>
+            {english ? 'Back to sign in' : 'Volver al inicio de sesión'}
           </Link>
           <button
             type="button"
             onClick={() => setIsSuccess(false)}
             className="text-sm text-green-700 hover:text-green-800 font-medium underline"
           >
-            Probar con otro email
+            {english ? 'Try another email' : 'Probar con otro email'}
           </button>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function ForgotPasswordForm() {
       <div className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-ink mb-1">
-            Correo electrónico
+            {english ? 'Email address' : 'Correo electrónico'}
           </label>
           <div className="relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -105,7 +105,7 @@ export default function ForgotPasswordForm() {
               autoComplete="email"
               required
               className={cn(fieldClassName, 'pl-10')}
-              placeholder="tu@email.com"
+              placeholder={english ? 'you@email.com' : 'tu@email.com'}
             />
           </div>
           {errors.email && (
@@ -124,7 +124,7 @@ export default function ForgotPasswordForm() {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-800">
-                Error al enviar
+                {english ? 'Could not send' : 'Error al enviar'}
               </h3>
               <div className="mt-1 text-sm text-red-700">
                 <p>{error}</p>
@@ -140,7 +140,7 @@ export default function ForgotPasswordForm() {
           loading={isLoading}
           className="w-full"
         >
-          Enviar enlace de recuperación
+          {english ? 'Send password reset link' : 'Enviar enlace de recuperación'}
         </Button>
       </div>
     </form>
