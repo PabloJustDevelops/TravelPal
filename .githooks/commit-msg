@@ -1,0 +1,22 @@
+#!/bin/sh
+# Quita la atribución de CommandCodeBot del mensaje de commit.
+#
+# El CLI de Command Code añade `Co-authored-by: CommandCodeBot <noreply@commandcode.ai>`
+# a cada commit que crea, y eso lo mete como contribuidor del repo. Este repo no la
+# quiere: el trabajo lo firma Pablo. Se filtra aquí, en el único punto por el que pasa
+# todo mensaje de commit (commit, amend, merge, rebase -i).
+#
+# Activar en cada clon:  git config core.hooksPath .githooks
+set -eu
+
+message_file="$1"
+pattern='^[Cc][Oo]-[Aa][Uu][Tt][Hh][Oo][Rr][Ee][Dd]-[Bb][Yy]: *[Cc]ommand[Cc]ode[Bb]ot *<noreply@commandcode\.ai> *$'
+
+grep -qE "$pattern" "$message_file" || exit 0
+
+tmp_file="${message_file}.tmp.$$"
+grep -vE "$pattern" "$message_file" > "$tmp_file"
+# Si al quitar la línea queda un hueco doble al final del mensaje, se recorta.
+awk 'BEGIN{RS="\0"} {gsub(/\n\n+$/, "\n"); printf "%s", $0}' "$tmp_file" > "${tmp_file}.clean"
+mv "${tmp_file}.clean" "$message_file"
+rm -f "$tmp_file"
