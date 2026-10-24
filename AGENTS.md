@@ -12,6 +12,12 @@ Five canonical triage roles, label strings unchanged (`needs-triage`, `needs-inf
 
 Single-context: `CONTEXT.md` at the repo root, ADRs in `docs/DECISIONS/`. See `docs/agents/domain.md`.
 
+### Hooks de git
+
+`.githooks/commit-msg` borra la atribución `Co-authored-by: CommandCodeBot` que el CLI de Command Code
+añade a los commits que crea: ese trailer metía al bot como contribuidor del repo. Actívalo en cada clon
+con `git config core.hooksPath .githooks` (no se activa solo). Cualquier otro `Co-authored-by` se respeta.
+
 <!-- INSFORGE:START -->
 ## InsForge backend
 
