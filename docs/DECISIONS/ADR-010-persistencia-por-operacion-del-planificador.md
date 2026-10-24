@@ -1,76 +1,76 @@
-# ADR-010: El planificador persiste por operación, sin botón de guardado
+# ADR-010: The planner persists per operation, with no save button
 
-## Contexto
+## Context
 
-El botón «Guardar Itinerario» del planificador prometía guardar y no guardaba: su `onSave`
-terminaba en un `logger.debug` con un TODO de comentario. El triaje del [#60] midió el alcance real:
-**no existía ningún `insert` en `itinerary_activities` en toda la app**. La tabla solo se leía, se
-movía (arrastre de fecha en el calendario) y se borraba; para un usuario nuevo las actividades no
-podían nacer. El alta existió como código en `insforge-functions.ts`, nunca se cableó a la UI y se
-retiró con el rework (commit `bf2b32f`), así que la superficie del itinerario quedó a medias.
+The planner's "Guardar Itinerario" button promised to save and did not save: its `onSave` ended in
+a `logger.debug` with a TODO comment. Triage of [#60] measured the real scope: there was no `insert`
+into `itinerary_activities` anywhere in the app. The table was only read, moved (date drag in the
+calendar) and deleted; for a new user, activities could not be born. The insert existed as code in
+`insforge-functions.ts`, was never wired to the UI and was removed with the rework (commit
+`bf2b32f`), so the itinerary surface was left half done.
 
-El triaje dejó la salida como decisión de producto, con tres vías: **persistir el itinerario
-completo** con el botón, **retirar la superficie**, o una **vía intermedia**. La primera arrastra
-cuatro problemas que el propio triaje enumeró:
+The triage left the outcome as a product decision, with three routes: persist the whole itinerary
+with the button, retire the surface, or an intermediate route. The first drags along four problems
+that the triage itself listed:
 
-- **Notas de día sin columna**: se editaban y se pintaban, pero no hay tabla ni columna donde
-  vivan; `getTripItinerary` las forzaba a `""`. Guardar el itinerario entero las perdería en
-  silencio o exigiría migración.
-- **Dos vocabularios de id**: el planificador inventaba ids (`activity_<ts>_<rand>`) mientras las
-  filas de la base tienen uuid; guardar todo sin distinguirlos manda ids sintéticos como uuid.
-- **Estado local desincronizado**: `useState(itinerary)` con un efecto que solo rellenaba si estaba
-  vacío; con «guardar todo», eso resucita filas borradas desde el calendario y se salta recargas.
-- **Round-trip con pérdidas**: el mapeo no lee `address` ni `order_index` y el modal no recoge
-  dirección (columnas muertas del esquema).
+- Day notes without a column: they were edited and rendered, but there is no table or column where
+  they live; `getTripItinerary` forced them to `""`. Saving the whole itinerary would lose them
+  silently or require a migration.
+- Two id vocabularies: the planner invented ids (`activity_<ts>_<rand>`) while database rows have
+  uuids; saving everything without distinguishing them sends synthetic ids as uuid.
+- Local state out of sync: `useState(itinerary)` with an effect that only filled it when empty; with
+  "save everything", that resurrects rows deleted from the calendar and skips reloads.
+- Lossy round-trip: the mapping reads neither `address` nor `order_index` and the modal does not
+  collect an address (dead columns in the schema).
 
-## Decisión
+## Decision
 
-Se adopta la **vía intermedia: persistencia por operación**. Cada alta, edición y borrado del
-planificador escribe su fila en `itinerary_activities` en el momento, y el botón «Guardar
-Itinerario» desaparece con su promesa. No se persiste «el itinerario completo» de golpe.
+The intermediate route is adopted: persistence per operation. Each create, edit and delete in the
+planner writes its row into `itinerary_activities` at that moment, and the "Guardar Itinerario"
+button disappears with its promise. The whole itinerary is not persisted in one go.
 
-1. **Una escritura por operación**, con el patrón que la propia página ya usaba para el borrado y
-   el arrastre del calendario: `withQueryTimeout` (techo de 15 s, [#56]) + `assertRowsAffected`
-   (cero filas es fallo tipado, [#53]) + `refetch`. El alta usa `insert([{ ... }])` (el SDK toma
-   array), `.select()` y rellena `user_id`, `trip_id`, `date`, `title`, `description`, `start_time`,
-   `end_time`, `location`, `category`, `cost`, `currency`, `notes`, `completed` y `order_index`.
-2. **El padre ejecuta el SDK; el planificador no.** Los callbacks `onCreateActivity`,
-   `onUpdateActivity` y `onDeleteActivity` son `Promise<void>`: la página hace la consulta y lanza
-   el error; el planificador gestiona el estado de guardado por operación y traduce el fallo con
-   los helpers existentes (`queryErrorKind`, `CONNECTION_TIMEOUT_MESSAGE`, `getErrorMessage`).
-   Nada de `Promise<void>` sueltos ni errores tragados. Se mantiene el camino único del [ADR-009]:
-   el SDK directo, sin endpoints nuevos.
-3. **Un solo vocabulario de id.** Se elimina la generación sintética: `id` es siempre el uuid de la
-   fila persistida. Editar y borrar mandan ese uuid; el alta no manda id (lo genera la base y llega
-   por el `refetch`).
-4. **La fuente de verdad es el servidor.** El planificador deja de guardar copia local de las
-   actividades (`currentItinerary` desaparece) y pinta el `itinerary` que recibe. Su estado local
-   queda para la UI efímera: día seleccionado, modal abierto y formulario. Así una recarga se
-   refleja y una fila borrada desde el calendario no resucita.
-5. **El día se identifica en ISO.** `generateTripDays` usaba `formatDate` (fecha localizada en
-   español) como clave de día, mientras el esquema (`date date`) y el mapeo de la página usan
-   `yyyy-MM-dd`; sin corregirlo ni la carga casaba ni el `insert` de `date` era válido. Las claves
-   pasan a `yyyy-MM-dd` y se parsean en local con `parseISO`.
-6. **Las notas de día salen de la UI.** No tienen columna ni tabla y este ADR **no crea migración**:
-   se retira el área de texto del planificador para no prometer lo que no se guarda.
+1. One write per operation, with the pattern the page already used for deletion and calendar drag:
+   `withQueryTimeout` (15 s ceiling, [#56]) + `assertRowsAffected` (zero rows is a typed failure,
+   [#53]) + `refetch`. The create uses `insert([{ ... }])` (the SDK takes an array), `.select()` and
+   fills `user_id`, `trip_id`, `date`, `title`, `description`, `start_time`, `end_time`, `location`,
+   `category`, `cost`, `currency`, `notes`, `completed` and `order_index`.
+2. The parent executes the SDK; the planner does not. The `onCreateActivity`, `onUpdateActivity` and
+   `onDeleteActivity` callbacks are `Promise<void>`: the page runs the query and throws the error; the
+   planner manages per-operation save state and translates the failure with the existing helpers
+   (`queryErrorKind`, `CONNECTION_TIMEOUT_MESSAGE`, `getErrorMessage`). No loose `Promise<void>` and no
+   swallowed errors. The single path of [ADR-009] is kept: the SDK directly, with no new endpoints.
+3. A single id vocabulary. Synthetic generation is removed: `id` is always the uuid of the persisted
+   row. Edit and delete send that uuid; create sends no id (the database generates it and it arrives
+   through `refetch`).
+4. The source of truth is the server. The planner stops keeping a local copy of the activities
+   (`currentItinerary` disappears) and renders the `itinerary` it receives. Its local state is left
+   for ephemeral UI: selected day, open modal and form. That way a reload is reflected and a row
+   deleted from the calendar does not come back.
+5. The day is identified in ISO. `generateTripDays` used `formatDate` (a localised Spanish date) as
+   the day key, while the schema (`date date`) and the page mapping use `yyyy-MM-dd`; without fixing
+   it, neither the load matched nor was the `date` insert valid. Keys become `yyyy-MM-dd` and are
+   parsed locally with `parseISO`.
+6. Day notes leave the UI. They have no column and no table and this ADR creates no migration: the
+   planner's text area is removed so as not to promise what is not saved.
 
-## Consecuencias
+## Consequences
 
-- **`itinerary_activities` deja de ser una tabla sin escritor**: se cierra el tercer caso que la
-  [auditoría de utilidad y rework](../audits/auditoria-utilidad-y-rework.md) había anotado (tras
-  `alerts` y `reminders`/`calendar_events`).
-- **Se pierde el flujo «reviso el borrador y luego guardo»**: cada operación es inmediata. Es el
-  precio de la vía elegida y la razón de elegirla: menos superficie y ninguna promesa en falso.
-- **Se pierden las notas de día en la UI** hasta que se decida si merecen tabla propia. No se
-  pierden datos: hoy no se persistían.
-- **`address` y `order_index` siguen sin superficie en el modal** (no los recoge). `order_index` se
-  rellena al dar de alta con la posición del día; `address` queda como columna sin escritor.
-- **La divisa por defecto del modal pasa de `USD` a `EUR`**, que es el defecto del esquema, para no
-  guardar una moneda distinta a la declarada.
+- `itinerary_activities` stops being a table without a writer: the third case noted by the
+  [utility and rework audit](../audits/auditoria-utilidad-y-rework.md) is closed (after `alerts` and
+  `reminders`/`calendar_events`).
+- The "review the draft and then save" flow is lost: every operation is immediate. That is the price
+  of the chosen route and the reason for choosing it: less surface and no false promises.
+- Day notes are lost in the UI until it is decided whether they deserve their own table. No data is
+  lost: they were not persisted.
+- `address` and `order_index` still have no surface in the modal (it does not collect them).
+  `order_index` is filled on create with the position in the day; `address` remains a column without
+  a writer.
+- The modal's default currency goes from `USD` to `EUR`, which is the schema default, so as not to
+  save a currency different from the declared one.
 
-## Estado
+## Status
 
-Aprobado
+Accepted
 
 [#53]: https://github.com/PabloJustDevelops/TravelPal/issues/53
 [#56]: https://github.com/PabloJustDevelops/TravelPal/issues/56

@@ -1,33 +1,33 @@
-# ADR-004: El esquema se deriva del modelo TypeScript de la app
+# ADR-004: The schema is derived from the app's TypeScript model
 
-## Contexto
+## Context
 
-Los `.sql` del repo eran de la etapa Supabase y no eran una fuente de verdad utilizable:
-`supabase-schema.sql` avisaba de que "no está pensado para ejecutarse" y usaba un enum
-`trip_status` que ningún fichero define; `src/lib/supabase-schema.sql` creaba claves foráneas a
-`trips(id)` sin crear `trips`; `create_profiles_table.sql` usaba `raw_user_meta_data` (columna de
-Supabase) y tocaba el esquema `auth`. El esquema real de la app estaba en el modelo TypeScript y
-en las consultas de las rutas API y las páginas.
+The `.sql` files in the repo came from the Supabase stage and were not a usable source of truth:
+`supabase-schema.sql` warned that it "is not meant to be executed" and used a `trip_status` enum
+that no file defines; `src/lib/supabase-schema.sql` created foreign keys to `trips(id)` without
+creating `trips`; `create_profiles_table.sql` used `raw_user_meta_data` (a Supabase column) and
+touched the `auth` schema. The app's real schema lived in the TypeScript model and in the queries
+of the API routes and pages.
 
-## Decisión
+## Decision
 
-Derivar el esquema de las consultas reales (tipos de `src/lib` + rutas API + páginas) y dejarlo en
-**una sola fuente de verdad**: `migrations/20260913181842_create-app-schema.sql`.
+Derive the schema from the real queries (types in `src/lib` + API routes + pages) and keep it in
+a single source of truth: `migrations/20260913181842_create-app-schema.sql`.
 
-- `text + CHECK` en lugar de enums de Postgres (encaja con las uniones de strings del TS y evita
-  el enum no definido).
-- FKs solo donde una consulta las usa (`auth.users(id)`, `trips(id)`, etc.).
-- RLS de propietario con `auth.uid()` en cada tabla con `user_id` (y por `id` en `users`/`profiles`).
-- Índices solo para filtros/órdenes reales; `updated_at` con `system.update_updated_at()`.
-- Los avatares son Storage: el bucket se crea con el CLI, no con DDL.
-- Se borran los `.sql` de Supabase que se contradecían (quedan en el historial de git).
+- `text + CHECK` instead of Postgres enums (it matches the TS string unions and avoids the
+  undefined enum).
+- FKs only where a query uses them (`auth.users(id)`, `trips(id)`, and so on).
+- Owner RLS with `auth.uid()` on every table with `user_id` (and by `id` in `users`/`profiles`).
+- Indexes only for real filters and orderings; `updated_at` with `system.update_updated_at()`.
+- Avatars are Storage: the bucket is created with the CLI, not with DDL.
+- The contradicting Supabase `.sql` files are deleted (they remain in git history).
 
-## Consecuencias
+## Consequences
 
-- Un cambio de esquema se hace con `db migrations new` + `up`, no editando SQL suelto.
-- Si el modelo TS cambia, la migración debe reflejarlo; el código manda sobre la documentación.
-- Al no haber enums, los valores válidos se validan por `CHECK` y por los tipos TS.
+- A schema change is made with `db migrations new` + `up`, not by editing loose SQL.
+- If the TS model changes, the migration must reflect it; code rules over documentation.
+- With no enums, valid values are enforced by `CHECK` and by the TS types.
 
-## Estado
+## Status
 
-Aprobado
+Accepted

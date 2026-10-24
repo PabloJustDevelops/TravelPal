@@ -1,49 +1,48 @@
-# ADR-014: Publicar el export estático como Cloudflare Worker de assets
+# ADR-014: Publishing the static export as a Cloudflare assets Worker
 
-## Contexto
+## Context
 
-El límite de CPU del plan Free de Cloudflare no permite ejecutar de forma fiable un servidor Next.js
-en un Worker. La aplicación ya puede compilarse como export estático (`output: "export"`) y la
-autenticación y el acceso a datos funcionan desde el navegador con el SDK de InsForge. El Worker de
-producción solo necesita servir los archivos exportados.
+The Free plan's CPU limit on Cloudflare does not allow running a Next.js server reliably in a Worker.
+The application can already build as a static export (`output: "export"`) and authentication and data
+access work from the browser with the InsForge SDK. The production Worker only needs to serve the
+exported files.
 
-## Decisión
+## Decision
 
-- Next.js genera el sitio estático en `out/`; el workflow y el script local verifican el export con
-  `pnpm run validate:static-export`.
-- `wrangler.jsonc` declara únicamente `assets.directory: "./out"` y no configura un entrypoint de
-  aplicación. Wrangler publica un Worker de assets estáticos, sin servidor Next.js ni lógica de
-  aplicación ejecutada en CPU del Worker.
-- GitHub Actions es la única vía automática de publicación. En push a `main`, el job `build` corre
-  lint, type-check, Jest, la prueba RLS, timezone, la comprobación de caminos de datos, el build
-  estático y Storybook; valida y sube `out/`. El job `worker` descarga el mismo artefacto, lo vuelve
-  a validar y ejecuta `wrangler deploy --dry-run --no-autoconfig`. El E2E predeploy prueba el export.
-  `deploy` depende de `build`, `worker` y `e2e`, descarga ese artefacto y ejecuta
-  `wrangler deploy --no-autoconfig`; `e2e-produccion` comprueba el sitio después de publicarlo.
-- No se configuran Cloudflare Workers Builds. Los triggers de ese servicio se retiraron; no deben
-  volver a crearse.
-- `pnpm run preview` ejecuta solo `wrangler dev` y sirve el contenido de `out/` ya generado. Para
-  generar y comprobarlo localmente se ejecuta `pnpm run build` y `pnpm run validate:static-export`
-  antes de `pnpm run preview`.
-- `pnpm run deploy` ejecuta `pnpm run build`, valida el export y luego
-  `wrangler deploy --no-autoconfig`. `pnpm run upload` repite build y validación y llama a Wrangler
-  con `--dry-run`; no publica cambios.
-- `@opennextjs/cloudflare` y `open-next.config.ts` permanecen en el repositorio, pero no forman
-  parte de los scripts ni del workflow de producción.
+- Next.js generates the static site into `out/`; the workflow and the local script verify the export
+  with `pnpm run validate:static-export`.
+- `wrangler.jsonc` declares only `assets.directory: "./out"` and configures no application entrypoint.
+  Wrangler publishes a static assets Worker, with no Next.js server and no application logic running
+  on Worker CPU.
+- GitHub Actions is the only automatic publication path. On a push to `main`, the `build` job runs
+  lint, type-check, Jest, the RLS test, timezone, the data-paths check, the static build and
+  Storybook; it validates and uploads `out/`. The `worker` job downloads that same artifact, validates
+  it again and runs `wrangler deploy --dry-run --no-autoconfig`. The pre-deploy E2E tests the export.
+  `deploy` depends on `build`, `worker` and `e2e`, downloads that artifact and runs
+  `wrangler deploy --no-autoconfig`; `e2e-produccion` checks the site after publication.
+- Cloudflare Workers Builds is not configured. That service's triggers were removed; they must not be
+  created again.
+- `pnpm run preview` runs only `wrangler dev` and serves the content of an already generated `out/`.
+  To generate and check it locally, run `pnpm run build` and `pnpm run validate:static-export` before
+  `pnpm run preview`.
+- `pnpm run deploy` runs `pnpm run build`, validates the export and then
+  `wrangler deploy --no-autoconfig`. `pnpm run upload` repeats the build and validation and calls
+  Wrangler with `--dry-run`; it publishes no changes.
+- `@opennextjs/cloudflare` and `open-next.config.ts` stay in the repository, but they are not part of
+  the scripts or the production workflow.
 
-## Consecuencias
+## Consequences
 
-- El Worker no ejecuta SSR, Route Handlers ni Server Actions de Next.js. Las rutas de la app se
-  exportan como archivos estáticos y las operaciones de usuario se realizan desde el navegador
-  contra InsForge; RLS sigue siendo la frontera de autorización de datos.
-- Las variables `NEXT_PUBLIC_INSFORGE_URL` y `NEXT_PUBLIC_INSFORGE_ANON_KEY` se incorporan durante
-  el build. La publicación solo necesita `CLOUDFLARE_API_TOKEN` y el `CLOUDFLARE_ACCOUNT_ID` del
-  workflow; no se configura `INSFORGE_API_KEY` como secreto del Worker.
-- El job `worker` y el E2E predeploy son gates antes de publicar. `e2e-produccion` es una
-  comprobación posterior al deploy y confirma que el artefacto sirve correctamente bajo la URL de
-  producción.
-- La vista previa local requiere un `out/` reciente; `pnpm run preview` no lo construye.
+- The Worker runs no SSR, Route Handlers or Server Actions from Next.js. The app's routes are exported
+  as static files and user operations are performed from the browser against InsForge; RLS remains the
+  data authorisation boundary.
+- `NEXT_PUBLIC_INSFORGE_URL` and `NEXT_PUBLIC_INSFORGE_ANON_KEY` are inlined during the build.
+  Publication only needs `CLOUDFLARE_API_TOKEN` and the workflow's `CLOUDFLARE_ACCOUNT_ID`;
+  `INSFORGE_API_KEY` is not configured as a Worker secret.
+- The `worker` job and the pre-deploy E2E are gates before publishing. `e2e-produccion` is a
+  post-deploy check and confirms that the artifact is served correctly under the production URL.
+- Local preview requires a recent `out/`; `pnpm run preview` does not build it.
 
-## Estado
+## Status
 
-Aprobado y en producción. Sustituye ADR-003.
+Accepted and in production. It supersedes ADR-003.

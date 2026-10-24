@@ -1,31 +1,31 @@
-# ADR-003: Hosting en Cloudflare Workers con OpenNext (retirado)
+# ADR-003: Cloudflare Workers hosting with OpenNext (retired)
 
-## Contexto
+## Context
 
-El despliegue se hacía en Vercel. Se decide pasar el hosting a Cloudflare Workers usando el
-adaptador oficial `@opennextjs/cloudflare`. La app usa Next.js 16; la vía antigua
-`@cloudflare/next-on-pages` solo cubre Next <= 15.5.2, así que se descarta.
+Deployment ran on Vercel. Hosting moves to Cloudflare Workers through the official adapter
+`@opennextjs/cloudflare`. The app uses Next.js 16; the older route, `@cloudflare/next-on-pages`,
+only covers Next <= 15.5.2, so it is discarded.
 
-## Decisión
+## Decision
 
-- Adoptar `@opennextjs/cloudflare` (devDependency) con `wrangler` y `rclone.js`.
+- Adopt `@opennextjs/cloudflare` (devDependency) with `wrangler` and `rclone.js`.
 - Config: `open-next.config.ts`, `wrangler.jsonc` (`nodejs_compat` +
-  `global_fetch_strictly_public`), `public/_headers` y `.dev.vars` local (ignorado).
-- Scripts: `preview`, `deploy`, `upload` (build de OpenNext + wrangler) y `cf-typegen`.
-- Retirar Vercel del repo: fuera `vercel.json` y las entradas `.vercel` del `.gitignore`.
-  Desconectar la integración de Vercel con el repo es una acción de dashboard (login de Pablo).
+  `global_fetch_strictly_public`), `public/_headers` and a local, ignored `.dev.vars`.
+- Scripts: `preview`, `deploy`, `upload` (OpenNext build + wrangler) and `cf-typegen`.
+- Remove Vercel from the repo: `vercel.json` and the `.vercel` entries in `.gitignore` are gone.
+  Disconnecting the Vercel integration from the repo is a dashboard action (Pablo's login).
 
-## Consecuencias
+## Consequences
 
-- `build` sigue siendo `next build`; el adaptador lo invoca y luego genera `.open-next/worker.js`.
-- Se quitó `experimental.optimizeCss`: hacía que el adaptador buscara
-  `.next/standalone/.next/static/css`, que Next 16 ya no genera.
-- `NEXT_PUBLIC_*` se inlinean en build; solo `INSFORGE_API_KEY` es secreto de runtime
+- `build` stays `next build`; the adapter invokes it and then generates `.open-next/worker.js`.
+- `experimental.optimizeCss` was removed: it made the adapter look for
+  `.next/standalone/.next/static/css`, which Next 16 no longer generates.
+- `NEXT_PUBLIC_*` are inlined at build time; only `INSFORGE_API_KEY` is a runtime secret
   (`wrangler secret put`).
-- El CI añade un job `worker-build` (`npx opennextjs-cloudflare build`, sin deploy).
+- CI adds a `worker-build` job (`npx opennextjs-cloudflare build`, no deploy).
 
-## Estado
+## Status
 
-Retirado y sustituido por [ADR-014](ADR-014-cloudflare-static-assets-worker.md). Este ADR se
-conserva como registro de la decisión anterior; sus instrucciones de build y deploy ya no describen
-la configuración vigente.
+Retired and superseded by [ADR-014](ADR-014-cloudflare-static-assets-worker.md). This ADR is kept
+as a record of the previous decision; its build and deploy instructions no longer describe the
+current configuration.

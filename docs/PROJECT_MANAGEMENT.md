@@ -1,17 +1,23 @@
-# Organización del Proyecto
+# Project management
 
 ## Issues
-- Categorías: `bug`, `feature`, `enhancement` (plantillas en `.github/ISSUE_TEMPLATE/`).
-- Usa títulos claros y criterios de aceptación.
+
+- Types: `bug`, `feature`, `enhancement`, with templates in `.github/ISSUE_TEMPLATE/`.
+- Clear titles, and acceptance criteria in the body.
+- Triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`; see
+  [`docs/agents/triage-labels.md`](./agents/triage-labels.md).
 
 ## Milestones
-- Crear sprints/releases y asignar issues.
-- Nombrado sugerido: `Sprint-YYYY-MM-DD` o `Release-vX.Y`.
+
+- One milestone per sprint or release; assign the issues that belong to it.
+- Suggested naming: `Sprint-YYYY-MM-DD` or `Release-vX.Y`.
 
 ## Project board
-- Columnas: `To Do`, `In Progress`, `Done`.
-- Automatiza con reglas de estado de issues si se desea.
+
+- Columns: `To Do`, `In Progress`, `Done`.
+- Built-in issue status automation can move cards; no custom rules are required.
 
 ## Wiki
-- Habilita la Wiki de GitHub para documentación extendida.
-- Referencia a `docs/*` como fuente canon.
+
+The GitHub Wiki is not enabled. `docs/` is the canonical documentation, with ADRs in
+`docs/DECISIONS/` and the project context in `CONTEXT.md`.

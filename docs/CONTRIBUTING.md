@@ -1,247 +1,224 @@
-# 🤝 Guía de Contribución
+# Contributing
 
-> **¡Bienvenido/a! Gracias por tu interés en contribuir al proyecto App Viajes**
+## First steps
 
----
+Read these before changing anything:
 
-## 🚀 Primeros Pasos
+- [`README.md`](../README.md) - project overview
+- [`docs/TECHNICAL.md`](./TECHNICAL.md) - technical setup
+- [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) - system architecture
 
-### 📚 **Lectura Obligatoria**
+Local setup:
 
-Antes de empezar, asegúrate de leer:
+1. Fork the repository.
+2. Clone your fork.
+3. Create `.env.local` (see `TECHNICAL.md` for the required variables).
+4. Install dependencies: `pnpm install`.
+5. Check that it runs: `pnpm run dev`.
 
-- 📖 [`README.md`](../README.md) - Visión general del proyecto
-- 🛠️ [`docs/TECHNICAL.md`](./TECHNICAL.md) - Configuración técnica
-- 🏗️ [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) - Arquitectura del sistema
+## Workflow
 
-### ⚙️ **Configuración Inicial**
-
-1. **Fork** el repositorio
-2. **Clona** tu fork localmente
-3. **Configura** `.env.local` (ver `TECHNICAL.md`)
-4. **Instala** dependencias: `pnpm install`
-5. **Verifica** que todo funciona: `pnpm run dev`
-
----
-
-## 🔄 Flujo de Trabajo
-
-### 1️⃣ **Crear una Rama**
+### 1. Create a branch
 
 ```bash
-# Desde la rama main
 git checkout main
 git pull origin main
 
-# Crear nueva rama con nomenclatura correcta
-git checkout -b feature/nombre-descriptivo
-git checkout -b fix/descripcion-del-bug
-git checkout -b chore/tarea-mantenimiento
+git checkout -b feature/descriptive-name
+git checkout -b fix/bug-description
+git checkout -b chore/maintenance-task
 ```
 
-### 2️⃣ **Desarrollar**
+Branch naming and the full flow are in [`BRANCHING.md`](./BRANCHING.md).
 
-- 💻 Escribe código siguiendo las convenciones del proyecto
-- 🧪 Añade tests para nuevas funcionalidades
-- 📝 Actualiza documentación si es necesario
-- 🔍 Ejecuta `pnpm run lint` regularmente
+### 2. Develop
 
-### 3️⃣ **Commits Semánticos**
+- Follow [`CODE_STYLE.md`](./CODE_STYLE.md).
+- Add tests for new behaviour.
+- Update documentation when behaviour or setup changes.
+- Run `pnpm run lint` as you go.
 
-Sigue la guía de [`docs/COMMITS.md`](./COMMITS.md):
+### 3. Commit
+
+Follow [`COMMITS.md`](./COMMITS.md). Commitlint accepts `feat`, `fix`, `docs`, `chore`, `refactor`,
+`test` and `style`; the subject is lowercase or sentence case.
 
 ```bash
-# Ejemplos de commits correctos
-git commit -m "feat(auth): añadir login con Google"
-git commit -m "fix(budget): corregir cálculo de totales"
-git commit -m "docs(readme): actualizar instrucciones de instalación"
+git commit -m "feat(auth): add Google login"
+git commit -m "fix(budget): correct total calculation"
+git commit -m "docs(readme): update installation steps"
 ```
 
-### 4️⃣ **Pull Request**
+### 4. Pull request
 
-1. **Push** tu rama: `git push origin nombre-de-tu-rama`
-2. **Abre** un PR hacia `main`
-3. **Completa** la plantilla del PR
-4. **Solicita** review de los maintainers
+1. Push the branch: `git push origin your-branch-name`.
+2. Open the PR against `main`.
+3. Fill in the template.
+4. Request a review.
 
----
+## Quality standards
 
-## ✅ Estándares de Calidad
+Before pushing:
 
-### 🔍 **Antes de Hacer Push**
+| Check | Command | Expected |
+|-------|---------|----------|
+| Lint | `pnpm run lint` | No errors |
+| Types | `pnpm run type-check` | No errors |
+| Tests | `pnpm test` | All pass |
+| Build | `pnpm run build` | Succeeds |
+| Autofix | `pnpm exec eslint --fix` | Fixes what it can |
 
-| Verificación                | Comando              | Estado           |
-| ---------------------------- | -------------------- | ---------------- |
-| **Lint sin errores**   | `pnpm run lint`     | ✅ Debe pasar    |
-| **Tests funcionando**  | `pnpm test`         | ✅ Debe pasar    |
-| **Build exitoso**      | `pnpm run build`    | ✅ Debe pasar    |
-| **Formato de código** | `pnpm exec eslint --fix` | 🔧 Auto-corregir |
+Not every one of these runs on save, so run them by hand before opening the PR. The same commands
+run in CI, plus the RLS, timezone, static export, header and SEO checks.
 
-### 📝 **Convenciones de Código**
+### Code conventions
 
-- **TypeScript**: Usa tipos explícitos siempre que sea posible
-- **Componentes**: PascalCase para nombres de componentes
-- **Archivos**: kebab-case para archivos y carpetas
-- **Funciones**: camelCase para funciones y variables
-- **Constantes**: UPPER_SNAKE_CASE para constantes
+- TypeScript: explicit types wherever the inference is not obvious.
+- Components: PascalCase.
+- Files and folders: kebab-case.
+- Functions and variables: camelCase.
+- Constants: UPPER_SNAKE_CASE.
 
-### 🧪 **Testing**
+### Testing
 
 ```bash
-# Ejecutar todos los tests
+# All tests
 pnpm test
 
-# Ejecutar tests en modo watch
+# Watch mode
 pnpm run test:watch
 
-# Ejecutar tests con coverage
+# With coverage
 pnpm run test:coverage
 ```
 
-**Requisitos de testing:**
+Requirements:
 
-- ✅ Nuevas funcionalidades deben incluir tests
-- ✅ Coverage mínimo del 80%
-- ✅ Tests unitarios para lógica de negocio
-- ✅ Tests de integración para componentes complejos
+- New behaviour ships with tests.
+- Unit tests for business logic.
+- Component tests for interactive UI.
+- Coverage thresholds live in `jest.config.js` and are set to the current baseline (global:
+  branches 2, functions 2, lines 5, statements 5). They are raised as coverage grows; a change that
+  lowers coverage fails the run.
 
----
+## Contribution types
 
-## 🏷️ Tipos de Contribuciones
+### Report a bug
 
-### 🐛 **Reportar Bugs**
+1. Search the existing issues first.
+2. Open an issue with the `bug` template (`.github/ISSUE_TEMPLATE/bug.yml`) and the `bug` label.
+3. Include:
+   - What happens, and where
+   - Steps to reproduce
+   - Expected behaviour against actual behaviour
+   - Screenshots if they help
+   - Environment: OS, Node version, browser
 
-1. **Busca** si el bug ya fue reportado
-2. **Crea** un nuevo issue con la etiqueta `bug`
-3. **Incluye**:
-   - Descripción clara del problema
-   - Pasos para reproducir
-   - Comportamiento esperado vs actual
-   - Screenshots si aplica
-   - Información del entorno (OS, browser, etc.)
+### Propose a feature
 
-### ✨ **Proponer Features**
+1. Open an issue with the `feature` template and the `feature` label.
+2. Describe:
+   - The problem it solves
+   - The proposed solution
+   - Alternatives considered
+   - Mockups or wireframes if they exist
 
-1. **Abre** un issue con la etiqueta `feature`
-2. **Describe**:
-   - Problema que resuelve
-   - Solución propuesta
-   - Alternativas consideradas
-   - Mockups o wireframes si aplica
+### Improve documentation
 
-### 📚 **Mejorar Documentación**
+- Use the `documentation` label.
+- Keep the tone plain and concise.
+- Add examples where they shorten the explanation.
+- Check that the links resolve.
 
-- Usa la etiqueta `documentation`
-- Mantén el tono claro y conciso
-- Incluye ejemplos cuando sea útil
-- Verifica que los enlaces funcionen
+### Maintenance
 
-### 🔧 **Tareas de Mantenimiento**
+- Dependency updates
+- Performance work
+- Refactoring
+- Tooling configuration
 
-- Actualización de dependencias
-- Mejoras de performance
-- Refactoring de código
-- Configuración de herramientas
+## Review
 
----
+### Author checklist
 
-## 👥 Proceso de Review
+Before requesting review:
 
-### 📋 **Checklist del Autor**
+- [ ] The description states what changed and why
+- [ ] Related issues are referenced
+- [ ] Tests and lint pass
+- [ ] Documentation updated if needed
+- [ ] Branch rebased on `main`
+- [ ] The change was exercised manually
 
-Antes de solicitar review, verifica:
+### Reviewer checklist
 
-- [ ] 📝 Descripción clara del cambio
-- [ ] 🔗 Referencia a issues relacionados
-- [ ] ✅ Tests y lint en verde
-- [ ] 📖 Documentación actualizada si aplica
-- [ ] 🔄 Rama actualizada con `main`
-- [ ] 🧪 Funcionalidad probada manualmente
+- [ ] The code follows the project conventions
+- [ ] Public APIs are not broken without a `BREAKING CHANGE` note
+- [ ] Error paths are handled
+- [ ] Names and structure are consistent with the surrounding code
+- [ ] Performance cost is justified
+- [ ] Security considered: no secrets, RLS respected
 
-### 👀 **Checklist de Revisión**
+Full process: [`docs/PR_PROCESS.md`](./PR_PROCESS.md). Item-by-item list:
+[`docs/code-review-checklist.md`](./code-review-checklist.md).
 
-Los reviewers verificarán:
+## Labels
 
-- [ ] 📏 Cumple guidelines de código
-- [ ] 🔒 No rompe APIs públicas
-- [ ] ⚠️ Manejo de errores adecuado
-- [ ] 🏗️ Nombres y estructura consistentes
-- [ ] 🚀 Performance aceptable
-- [ ] 🔐 Consideraciones de seguridad
+The labels in use are defined in `.github/labels.json` and loaded by
+`.github/workflows/setup-labels.yml`.
 
-> 📖 **Detalle completo**: [`docs/PR_PROCESS.md`](./PR_PROCESS.md)
+| Label | Description | Colour |
+|-------|-------------|--------|
+| `bug` | Error or problem | `#d73a4a` |
+| `feature` | New functionality | `#a2eeef` |
+| `enhancement` | Improvement or refactor | `#a2eeef` |
+| `documentation` | Documentation changes | `#0075ca` |
+| `needs-triage` | Maintainer has to evaluate it | `#fbca04` |
+| `needs-info` | Waiting on the reporter | `#d876e3` |
+| `ready-for-agent` | Fully specified, ready for an agent | `#0e8a16` |
+| `ready-for-human` | Requires human implementation | `#1d76db` |
+| `wontfix` | Will not be actioned | `#ffffff` |
+| `good first issue` | Good for newcomers | `#7057ff` |
+| `help wanted` | Extra attention needed | `#008672` |
+| `question` | Further information requested | `#d876e3` |
 
----
+Issue triage roles are described in [`docs/agents/triage-labels.md`](./agents/triage-labels.md).
 
-## 🏷️ Sistema de Etiquetas
+## Communication
 
-| Etiqueta             | Descripción                            | Color       |
-| -------------------- | --------------------------------------- | ----------- |
-| `bug`              | 🐛 Errores y problemas                  | `#d73a4a` |
-| `feature`          | ✨ Nuevas funcionalidades               | `#a2eeef` |
-| `enhancement`      | 🚀 Mejoras a funcionalidades existentes | `#84b6eb` |
-| `documentation`    | 📚 Mejoras en documentación            | `#0075ca` |
-| `good first issue` | 👶 Ideal para nuevos contribuidores     | `#7057ff` |
-| `help wanted`      | 🙋 Se necesita ayuda                    | `#008672` |
-| `priority: high`   | 🔥 Alta prioridad                       | `#b60205` |
-| `priority: low`    | 🔽 Baja prioridad                       | `#0e8a16` |
+- Issues: technical discussion and bug reports.
+- Pull requests: code review.
+- GitHub Discussions is not enabled on this repository.
 
----
+Guidelines:
 
-## 💬 Comunicación
+- Be specific: state what you expected and what happens.
+- Keep the tone factual. Critique the change, not the author.
+- Search the issues and the docs before asking.
+- Include context: links, screenshots, logs.
+- Write in English, matching the documentation.
 
-### 🗣️ **Canales de Comunicación**
+## Recognition
 
-- **Issues**: Para discusiones técnicas y reportes
-- **Pull Requests**: Para review de código
-- **Discussions**: Para ideas y preguntas generales
+Contributors are listed on the repository's GitHub contributors page and in the commit history.
+There is no separate contributors file or bot.
 
-### 📝 **Mejores Prácticas**
+## Getting help
 
-- 🎯 Sé específico y claro en tus mensajes
-- 🤝 Mantén un tono respetuoso y constructivo
-- 🔍 Busca antes de preguntar
-- 📎 Incluye contexto relevante (links, screenshots, etc.)
-- 🌍 Usa español neutro para mantener consistencia
+- Issues: [github.com/PabloJustDevelops/TravelPal/issues](https://github.com/PabloJustDevelops/TravelPal/issues)
+- Pull requests: [github.com/PabloJustDevelops/TravelPal/pulls](https://github.com/PabloJustDevelops/TravelPal/pulls)
+- Maintainer: [@PabloJustDevelops](https://github.com/PabloJustDevelops)
 
----
+New contributors:
 
-## 🎉 Reconocimiento
+1. Pick an issue labelled `good first issue`.
+2. Read the documentation in `docs/`.
+3. Set up the environment.
+4. Open the PR.
 
-### 🏆 **Contribuidores**
+## Related documentation
 
-Todos los contribuidores son reconocidos en:
-
-- 📄 README principal del proyecto
-- 🎖️ Sección de contribuidores en GitHub
-- 📊 All Contributors bot (próximamente)
-
-### 🎁 **Beneficios**
-
-- 🌟 Reconocimiento público de tus contribuciones
-- 📈 Experiencia en proyectos reales
-- 🤝 Networking con otros desarrolladores
-- 📚 Aprendizaje de nuevas tecnologías
-
----
-
-## ❓ ¿Necesitas Ayuda?
-
-### 🆘 **Recursos de Apoyo**
-
-- 🐛 **Issues**: [GitHub Issues](https://github.com/PabloJustDevelops/TravelPal/issues)
-- 💬 **Pull requests**: [Pull Requests](https://github.com/PabloJustDevelops/TravelPal/pulls)
-- 👤 **Mantenedor**: [@PabloJustDevelops](https://github.com/PabloJustDevelops)
-
-### 🚀 **Para Nuevos Contribuidores**
-
-1. Busca issues con la etiqueta `good first issue`
-2. Lee toda la documentación en `docs/`
-3. Configura tu entorno de desarrollo
-4. ¡Haz tu primera contribución!
-
----
-
-**¡Gracias por contribuir al proyecto App Viajes! 🚀✈️**
-
-*Última actualización: Enero 2025*
+- [`BRANCHING.md`](./BRANCHING.md) - branch strategy
+- [`COMMITS.md`](./COMMITS.md) - commit conventions
+- [`PR_PROCESS.md`](./PR_PROCESS.md) - pull request process
+- [`CODE_STYLE.md`](./CODE_STYLE.md) - code style

@@ -1,13 +1,13 @@
-# ADR-000: Título de la decisión
+# ADR-000: Decision title
 
-## Contexto
-Describe el contexto y problema a resolver.
+## Context
+Describe the context and the problem to solve.
 
-## Decisión
-Explica la decisión tomada y alternativas consideradas.
+## Decision
+Explain the decision taken and the alternatives considered.
 
-## Consecuencias
-Impactos positivos y negativos, cambios requeridos.
+## Consequences
+Positive and negative impacts, required changes.
 
-## Estado
-Propuesto | Aprobado | Obsoleto
+## Status
+Proposed | Accepted | Obsolete

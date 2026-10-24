@@ -1,38 +1,37 @@
-# ADR-015: Inspiración de viajes mediante función de InsForge
+# ADR-015: Travel inspiration through an InsForge function
 
-## Contexto
+## Context
 
-TravelPal se publica como export estático de Next.js servido por un Worker assets-only de Cloudflare.
-El Worker no ejecuta un servidor Next.js ni Route Handlers. La sesión de usuario ya está disponible
-en el navegador mediante el SDK de InsForge. Las consultas de inspiración necesitan además proteger
-la credencial privada de Travelpayouts y validar la sesión antes de usarla.
+TravelPal is published as a static Next.js export served by a Cloudflare assets-only Worker. The
+Worker runs no Next.js server and no Route Handlers. The user session is already available in the
+browser through the InsForge SDK. Inspiration queries also need to protect the private Travelpayouts
+credential and to validate the session before using it.
 
-## Decisión
+## Decision
 
-- Publicar `/travel-inspiration` como una ruta estática y llamar a la función de InsForge
-  `travel-inspiration` mediante `insforge.functions.invoke`.
-- La función verifica el bearer de sesión con InsForge y es la única pieza que lee
-  `TRAVELPAYOUTS_API_TOKEN`, guardado como secreto de función. `TRAVELPAYOUTS_ENABLED` se configura
-  en el entorno de esa función.
-- Mantener el Worker de Cloudflare como assets-only y el export estático como artefacto de
-  publicación. **No añadir Route Handlers de Next.js ni un servidor de aplicación al Worker.**
-- Empaquetar la función con Deno y desplegar su slug mediante la CLI de InsForge, de forma separada
-  del workflow de publicación del sitio.
-- Tratar las pruebas con respuestas ficticias como verificación de contrato y comportamiento, no
-  como validación del proveedor real. La aprobación del proyecto/programa en Travelpayouts es
-  externa y queda pendiente del propietario.
+- Publish `/travel-inspiration` as a static route and call the InsForge function
+  `travel-inspiration` through `insforge.functions.invoke`.
+- The function verifies the session bearer with InsForge and is the only piece that reads
+  `TRAVELPAYOUTS_API_TOKEN`, stored as a function secret. `TRAVELPAYOUTS_ENABLED` is configured in
+  that function's environment.
+- Keep the Cloudflare Worker assets-only and the static export as the publication artifact. Do not add
+  Next.js Route Handlers or an application server to the Worker.
+- Bundle the function with Deno and deploy its slug through the InsForge CLI, separately from the
+  site's publication workflow.
+- Treat tests with mock responses as contract and behaviour verification, not as validation against
+  the real provider. Project/program approval in Travelpayouts is external and remains pending with
+  the owner.
 
-## Consecuencias
+## Consequences
 
-- La credencial de Travelpayouts no forma parte del cliente, el export estático ni la configuración
-  del Worker.
-- La página puede existir y superar las verificaciones locales antes del alta externa; las llamadas
-  reales seguirán bloqueadas hasta que el propietario complete el alta y aprobación, configure el
-  secreto y el flag, y despliegue la función activa en InsForge.
-- No se ha creado una cuenta de Travelpayouts, configurado credenciales ni desplegado la función.
-  Por tanto, este ADR registra la arquitectura elegida, no una integración verificada con el
-  proveedor.
+- The Travelpayouts credential is not part of the client, the static export or the Worker
+  configuration.
+- The page can exist and pass local checks before the external sign-up; real calls stay blocked until
+  the owner completes the sign-up and approval, configures the secret and the flag, and deploys the
+  active function in InsForge.
+- No Travelpayouts account has been created, no credentials configured and no function deployed.
+  Therefore this ADR records the chosen architecture, not a verified integration with the provider.
 
-## Estado
+## Status
 
-Aprobado como decisión de arquitectura; operación con el proveedor pendiente del propietario.
+Accepted as an architecture decision; operation against the provider is pending with the owner.

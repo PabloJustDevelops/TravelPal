@@ -1,18 +1,19 @@
-# Tester Army en TravelPal
+# Tester Army in TravelPal
 
-## Alcance inicial
+## Initial scope
 
-Se añade `e2e@0.19.0` y `@e2e-dev/web@0.14.0` como suite complementaria. Playwright sigue
-cubriendo los flujos con datos y axe; Jest conserva unidad/componente. No se migran los tests
-existentes a un runner con APIs distintas.
+`e2e@0.19.0` and `@e2e-dev/web@0.14.0` are added as a complementary suite. Playwright
+still covers flows with data and axe; Jest keeps unit and component tests. Existing
+tests are not migrated to a runner with different APIs.
 
-`e2e.config.ts` ejecuta `tests/*.e2e.ts` en Chromium a 1440×900 y 390×844. Son tres casos:
-acceso a ruta protegida, opciones de login y recuperación de contraseña. Usan locators y
-assertions exactos. No hay pasos `agent.*`, autenticación de IA ni llamadas al modelo.
+`e2e.config.ts` runs `tests/**/*.e2e.ts` in Chromium at 1440×900 and 390×844. There are
+three cases: access to a protected route, login options and password recovery. They use
+exact locators and assertions. There are no `agent.*` steps, no AI authentication and
+no model calls.
 
-## Ejecución
+## Running
 
-Requiere Node 22.22.3+ en la rama 22 o Node 24.8+. CI fija 22.22.3.
+Requires Node 22.22.3+ on the 22 line or Node 24.8+. CI pins 22.22.3.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -23,43 +24,47 @@ pnpm run test:tester
 E2E_BASE_URL=https://travelpal.prg-dev.workers.dev pnpm run test:tester
 ```
 
-Sin `E2E_BASE_URL`, el runner inicia o reutiliza Wrangler en localhost:3000 para servir `out/`;
-por eso la exportación estática debe existir antes de ejecutar la suite local. Los dos valores
-públicos de InsForge se pasan al proceso de Wrangler, que sirve los archivos ya construidos y no
-necesita una clave privada. En CI, el workflow descarga el artifact `out/` del build antes de
-iniciar las suites. Contra una URL remota no arranca servidor ni requiere un build local.
+Without `E2E_BASE_URL`, the runner starts or reuses Wrangler on localhost:3000 to serve
+`out/`; the static export must therefore exist before running the suite locally. The
+two public InsForge values are passed to the Wrangler process, which serves the already
+built files and needs no private key. In CI, the workflow downloads the `out/` artifact
+from the build before starting the suites. Against a remote URL it starts no server and
+requires no local build.
 
-Los informes viven en `.e2e/` (ignorado). `pnpm run test:tester` desactiva telemetría; CI conserva
-el informe siete días. El gate corre después de Playwright y forma parte del requisito previo
-al deploy. No actualizar snapshots automáticamente en CI.
+Reports live in `.e2e/` (ignored). `pnpm run test:tester` disables telemetry; CI keeps
+the report for seven days. The gate runs after Playwright and is part of the
+precondition for deploy. Do not update snapshots automatically in CI.
 
-## Qué permite y qué falta evaluar
+## What it allows and what remains to be assessed
 
-- Pruebas exactas sin IA, objetivos con `agent.act`, assertions con agente, exploración y bug bash.
-- Caché de acciones verificadas: `act` puede reproducirse; `assert`, `waitFor` y `extract` con
-  el agente integrado siguen consultando al modelo.
-- Comparación visual con baselines generados y revisados en el mismo sistema que CI (Linux).
-- Suscripción de ChatGPT mediante OAuth propio (`e2e login openai`), o proveedores con API key.
-  No se ha configurado ninguno, ni se usa el archivo de autenticación de Codex.
+- Exact tests without AI, goals with `agent.act`, assertions with an agent, exploration
+  and bug bash.
+- Cache of verified actions: `act` can be replayed; `assert`, `waitFor` and `extract`
+  with the integrated agent still query the model.
+- Visual comparison with baselines generated and reviewed on the same system as CI
+  (Linux).
+- ChatGPT subscription through its own OAuth (`e2e login openai`), or providers with an
+  API key. Neither has been configured, and the Codex auth file is not used.
 
-El viewport estrecho comprueba responsive en Chromium de escritorio: no prueba Safari/iOS,
-interacciones táctiles ni push real. La exploración con modelos requiere proveedor y presupuesto
-explícitos; no se incorpora a un gate determinista. Para explorar flujos que escriben, usar una
-cuenta y datos de pruebas con limpieza, nunca datos personales del propietario.
+The narrow viewport checks responsive behavior in desktop Chromium: it does not test
+Safari/iOS, touch interactions or real push. Exploration with models requires an
+explicit provider and budget; it is not part of a deterministic gate. To explore flows
+that write, use a test account and test data with cleanup, never the owner's personal
+data.
 
-La redacción de secretos del runner no sustituye la revisión de artefactos: vídeos y descargas
-binarias pueden conservar datos visibles. Las pruebas iniciales solo navegan pantallas públicas.
+Secret redaction in the runner does not replace artifact review: videos and binary
+downloads can keep visible data. The initial tests only navigate public screens.
 
-## Documentación consultada
+## Documentation consulted
 
-- [Índice completo](https://e2e.tester.army/docs/llms.txt)
+- [Full index](https://e2e.tester.army/docs/llms.txt)
 - [Quickstart](https://e2e.tester.army/docs/quickstart)
-- [Web y viewports](https://e2e.tester.army/docs/web)
-- [Configuración](https://e2e.tester.army/docs/reference/config)
+- [Web and viewports](https://e2e.tester.army/docs/web)
+- [Configuration](https://e2e.tester.army/docs/reference/config)
 - [GitHub Actions](https://e2e.tester.army/docs/ci/github-actions)
-- [Migración de Playwright](https://e2e.tester.army/docs/migrate/playwright)
-- [Autenticación de la app](https://e2e.tester.army/docs/authentication)
-- [Comparación visual](https://e2e.tester.army/docs/visual-testing)
-- [Exploración](https://e2e.tester.army/docs/explore) y [bug bash](https://e2e.tester.army/docs/bug-bash)
-- [Modelos](https://e2e.tester.army/docs/models) y [suscripciones](https://e2e.tester.army/docs/subscriptions)
-- [Seguridad](https://e2e.tester.army/docs/security) y [telemetría](https://e2e.tester.army/docs/telemetry)
+- [Playwright migration](https://e2e.tester.army/docs/migrate/playwright)
+- [App authentication](https://e2e.tester.army/docs/authentication)
+- [Visual comparison](https://e2e.tester.army/docs/visual-testing)
+- [Exploration](https://e2e.tester.army/docs/explore) and [bug bash](https://e2e.tester.army/docs/bug-bash)
+- [Models](https://e2e.tester.army/docs/models) and [subscriptions](https://e2e.tester.army/docs/subscriptions)
+- [Security](https://e2e.tester.army/docs/security) and [telemetry](https://e2e.tester.army/docs/telemetry)

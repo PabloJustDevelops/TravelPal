@@ -1,70 +1,68 @@
-# ADR-006: Se retira Amadeus y el vuelo se registra a mano
+# ADR-006: Amadeus is retired and flights are entered by hand
 
-## Contexto
+## Context
 
-La app tenía una búsqueda de vuelos en vivo: `GET /api/flights/search`, un route handler que
-validaba los parámetros con zod y llamaba a la API de Amadeus (`src/lib/amadeus.ts`, token OAuth de
-`client_credentials`, endpoint `v2/shopping/flight-offers`). La UI era `TravelSearch`, un modal
-montado en la barra de navegación que pintaba hasta cinco ofertas y no persistía nada: el botón
-"Ver Oferta" no tenía `onClick` y ninguna oferta llegaba a `trips` ni a `bookings`.
+The app had a live flight search: `GET /api/flights/search`, a route handler that validated the
+parameters with zod and called the Amadeus API (`src/lib/amadeus.ts`, OAuth token from
+`client_credentials`, endpoint `v2/shopping/flight-offers`). The UI was `TravelSearch`, a modal
+mounted in the navigation bar that rendered up to five offers and persisted nothing: the
+"Ver Oferta" button had no `onClick` and no offer ever reached `trips` or `bookings`.
 
-Dos hechos cierran la vida de esa integración:
+Two facts end the life of that integration:
 
-- **El handler no pide sesión.** No llama a `requireUser()`; con parámetros inválidos responde 400,
-  nunca 401. Es un proxy abierto: cualquiera puede gastar la cuota del proveedor.
-- **El proveedor ya no existe para este proyecto.** Amadeus retiró su portal *self-service*
-  (gratuito) el 17 de julio; solo queda el portal Enterprise, comercial. Las alternativas
-  comprobadas no sirven: Aviationstack da 100 peticiones/mes gratis (inservible) y 49,99 $/mes por
-  10.000; AirLabs no tiene tramo gratuito serio.
+- The handler does not require a session. It never calls `requireUser()`; with invalid parameters
+  it answers 400, never 401. It is an open proxy: anyone could spend the provider's quota.
+- The provider no longer exists for this project. Amadeus retired its (free) self-service portal
+  on 17 July; only the commercial Enterprise portal remains. The alternatives checked do not work:
+  Aviationstack gives 100 requests/month free (useless) and 49.99 $/month for 10,000; AirLabs has
+  no serious free tier.
 
-Además, la [auditoría SPA vs Next](../audits/auditoria-spa-vs-next.md) y el issue #38 contaban
-`flights/search` entre los endpoints que debían **sobrevivir** (por usar un secreto de servidor), y
-el #38 fijaba como "Etapa 1" añadirle `requireUser()`. Esa premisa deja de ser cierta: proteger un
-proxy a un proveedor retirado no arregla nada.
+In addition, the [SPA vs Next audit](../audits/auditoria-spa-vs-next.md) and issue #38 counted
+`flights/search` among the endpoints that had to survive (because it used a server secret), and
+#38 set "Stage 1" as adding `requireUser()` to it. That premise no longer holds: protecting a proxy
+to a retired provider fixes nothing.
 
-## Decisión
+## Decision
 
-1. **Se borra el proxy, no se autentica.** Desaparecen `src/app/api/flights/search/route.ts`,
-   `src/lib/amadeus.ts`, `src/lib/flightService.ts` y `TravelSearch`, junto con su montaje en la
-   barra de navegación y las variables `AMADEUS_*` de `src/lib/env.ts` y `.env.example`. Un test
-   guardia falla si el proxy o su cliente reaparecen.
-2. **El vuelo se registra a mano como una reserva.** Se reutiliza `bookings` con `type = 'flight'`,
-   que ya tiene coste, moneda, fecha, hora, confirmación, FK a `trips` y RLS de propietario. Se
-   añaden cuatro columnas nullable (`airline`, `flight_number`, `origin`, `destination`) en una
-   migración nueva. No se crea tabla nueva ni se toca `trips`.
-3. **El autocompletado no llama a nadie.** Aerolíneas y aeropuertos salen de un juego de datos
-   abierto empaquetado como fichero estático: aeropuertos de OurAirports (dominio público) y
-   aerolíneas de OpenFlights (ODbL, con atribución). Sin claves y sin red en tiempo de ejecución.
-4. **La inspiración de precios queda escrita, no implementada.** Travelpayouts (Aviasales) Data API
-   es gratuita pero necesita cuenta y token del propietario: va en su propia spec (#41).
+1. The proxy is deleted, not authenticated. `src/app/api/flights/search/route.ts`,
+   `src/lib/amadeus.ts`, `src/lib/flightService.ts` and `TravelSearch` disappear, along with its
+   mounting in the navigation bar and the `AMADEUS_*` variables in `src/lib/env.ts` and
+   `.env.example`. A guard test fails if the proxy or its client reappears.
+2. The flight is entered by hand as a booking. `bookings` is reused with `type = 'flight'`, which
+   already has cost, currency, date, time, confirmation, an FK to `trips` and owner RLS. Four
+   nullable columns are added (`airline`, `flight_number`, `origin`, `destination`) in a new
+   migration. No new table is created and `trips` is not touched.
+3. Autocomplete calls no one. Airlines and airports come from an open dataset packaged as a static
+   file: airports from OurAirports (public domain) and airlines from OpenFlights (ODbL, with
+   attribution). No keys and no network at runtime.
+4. Price inspiration is written down, not implemented. The Travelpayouts (Aviasales) Data API is
+   free but needs an account and a token from the owner: it belongs in its own spec (#41).
 
-### Alternativas consideradas
+### Alternatives considered
 
-- **Añadir `requireUser()` al proxy** (lo que decía el #38): cierra el agujero pero deja un endpoint
-  que llama a un proveedor que ya no existe. Se descarta.
-- **Guardar el vuelo en `trips` sin migración**: el formulario de viaje ya pide aerolínea, número de
-  vuelo, origen, destino y fecha/hora, pero `trips` no tiene precio y un vuelo no es un viaje:
-  perderíamos el coste y la reserva no aparecería en planning ni en el calendario.
-- **Tabla `flights` propia**: más limpia para varios tramos, pero exige tabla, políticas RLS, UI y
-  endpoints nuevos para un único tramo. Se descarta por coste.
-- **API de vuelos de pago** (Aviationstack, AirLabs): descartada por coste y por cuota.
+- Adding `requireUser()` to the proxy (what #38 said): it closes the hole but leaves an endpoint
+  calling a provider that no longer exists. Discarded.
+- Storing the flight in `trips` without a migration: the trip form already asks for airline, flight
+  number, origin, destination and date/time, but `trips` has no price and a flight is not a trip:
+  the cost would be lost and the booking would not appear in planning or the calendar.
+- A dedicated `flights` table: cleaner for several legs, but it requires a table, RLS policies, UI
+  and new endpoints for a single leg. Discarded on cost.
+- A paid flight API (Aviationstack, AirLabs): discarded on cost and quota.
 
-## Consecuencias
+## Consequences
 
-- La app **pierde la búsqueda de vuelos en vivo**. Es una pérdida real de funcionalidad, asumida:
-  no era un planificador de vuelos y no persistía nada.
-- `bookings` gana cuatro columnas nullable. **No hacen falta políticas ni grants nuevos**: las
-  políticas de `bookings` son por fila (`auth.uid() = user_id`) y los grants de tabla ya cubren las
-  columnas nuevas.
-- El issue #38 debe actualizarse: su Etapa 1 pasa de "añadir `requireUser()`" a "borrar el
-  endpoint", y `flights/search` sale de su tabla de endpoints supervivientes. Sobrevive
-  `auth/refresh` (el proxy `chat` se retira también; ver
-  [ADR-008](ADR-008-retirada-del-asistente.md)).
-- Los documentos que citaban Amadeus (`README.md`, `docs/ARCHITECTURE.md`, `docs/TECHNICAL.md`,
-  `docs/MCPs.md`) se corrigen. La auditoría se deja como historia y se anota al final.
-- Cualquier precio de vuelo futuro que no sea el que teclea el usuario saldrá de una fuente de
-  caché (Travelpayouts) y vivirá en el servidor, con su propio secreto y su propia decisión.
+- The app loses live flight search. It is a real loss of functionality, accepted: it was not a
+  flight planner and it persisted nothing.
+- `bookings` gains four nullable columns. No new policies or grants are needed: the `bookings`
+  policies are per row (`auth.uid() = user_id`) and the table grants already cover the new columns.
+- Issue #38 must be updated: its Stage 1 goes from "add `requireUser()`" to "delete the endpoint",
+  and `flights/search` leaves its table of surviving endpoints. `auth/refresh` survives (the `chat`
+  proxy is also retired; see [ADR-008](ADR-008-retirada-del-asistente.md)).
+- The documents that cited Amadeus (`README.md`, `docs/ARCHITECTURE.md`, `docs/TECHNICAL.md`,
+  `docs/MCPs.md`) are corrected. The audit is left as history with a note at the end.
+- Any future flight price that is not the one the user types will come from a cached source
+  (Travelpayouts) and will live on the server, with its own secret and its own decision.
 
-## Estado
+## Status
 
-Aprobado
+Accepted

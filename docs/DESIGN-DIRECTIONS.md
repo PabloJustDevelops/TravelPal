@@ -1,169 +1,228 @@
-# 🎨 Rumbos visuales
+# Visual directions
 
-> Comparación histórica anterior a Atlas. ADR-007 fue sustituido por
-> [ADR-008](DECISIONS/ADR-008-atlas-claro.md). Las descripciones de tokens y pantallas
-> de este documento reflejan aquel punto de partida, no el código actual.
-> La guía vigente para continuar el diseño está en [DESIGN.md](../DESIGN.md).
+> Historical comparison, prior to Atlas. ADR-007 was superseded by
+> [ADR-008](DECISIONS/ADR-008-atlas-claro.md). The token and screen descriptions in
+> this document reflect that starting point, not the current code. The guide in force
+> to continue the design work is [DESIGN.md](../DESIGN.md).
 
-## De dónde partimos
+## Starting point
 
-El sistema acaba de cerrarse. Lo que hay hoy, y que condiciona las tres direcciones:
+The system has just been closed. This is what exists today, and it conditions the
+three directions:
 
-| Pieza | Estado actual |
+| Piece | Current state |
 |---|---|
-| Tokens | Solo `--background` y `--foreground`. **No hay escala de color propia**: cada color es una utilidad cruda de Tailwind escrita en el componente (`gray-*`, `blue-600`, `red-600`). |
-| Tipografía | **Inter**, declarada una sola vez en `src/app/layout.tsx` con `next/font`. |
-| Piel | Tarjetas `rounded-lg` con borde 1px y `shadow-sm`; radios pequeños; un único acento azul (`blue-600`). |
-| Modo oscuro | Clase `.dark`, resuelto en `ThemeContext`. **9 de 22 páginas** tienen clases `dark:` propias; las 13 restantes solo heredan lo que traigan sus componentes. |
-| Guardia | `src/__tests__/design-system.test.ts` fija el contrato: un spinner, una clase de campo, un botón primario, una librería de iconos, una tipografía. |
+| Tokens | Only `--background` and `--foreground`. No color scale of its own: every color is a raw Tailwind utility written in the component (`gray-*`, `blue-600`, `red-600`). |
+| Typography | Inter, declared once in `src/app/layout.tsx` with `next/font`. |
+| Skin | `rounded-lg` cards with a 1px border and `shadow-sm`; small radii; a single blue accent (`blue-600`). |
+| Dark mode | `.dark` class, resolved in `ThemeContext`. 9 of 22 pages have their own `dark:` classes; the other 13 only inherit whatever their components bring. |
+| Guard | `src/__tests__/design-system.test.ts` fixes the contract: one spinner, one field class, one primary button, one icon library, one typeface. |
 
-Dos consecuencias que valen para las tres direcciones:
+Two consequences that apply to all three directions:
 
-- **La guardia está atada a los valores, no solo a la forma.** El test exige que la lista de ficheros con la línea `bg-blue-600` + `hover:bg-blue-700` sea exactamente `["src/components/ui/Button.tsx"]`. Cambiar el acento obliga a editar el test *a la vez* que el botón, no después.
-- **La tipografía pasa por un cuello de botella.** El test exige **una sola** importación de `next/font/google` y que el `<body>` siga llevando `inter.className`. Añadir una fuente de titulares vale si va en la misma línea de import; **sustituir** Inter rompe el contrato.
+- The guard is tied to the values, not only to the shape. The test requires the list of
+  files containing the line `bg-blue-600` plus `hover:bg-blue-700` to be exactly
+  `["src/components/ui/Button.tsx"]`. Changing the accent forces editing the test at
+  the same time as the button, not afterwards.
+- Typography goes through a bottleneck. The test requires a single
+  `next/font/google` import and the `<body>` to keep carrying `inter.className`.
+  Adding a headline face is valid if it goes in the same import line; replacing Inter
+  breaks the contract.
 
-Cifra de apoyo: hay **242 usos** de utilidades de superficie (`bg-blue-*`, `text-blue-*`, `border-blue-*`, `rounded-*`, `shadow-*`) repartidos en **58 ficheros**. Eso es lo que hay que barrer en cualquier dirección.
+Supporting figure: there are 242 uses of surface utilities (`bg-blue-*`, `text-blue-*`,
+`border-blue-*`, `rounded-*`, `shadow-*`) across 58 files. That is what has to be swept
+in any direction.
 
----
+## Direction A — Travel notebook
 
-## Dirección A — Cuaderno de viaje
+(editorial, warm)
 
-*(editorial, cálida)*
+The idea. The app reads like a travel magazine: content rules and the interface almost
+disappears, with generous whitespace and strong typographic hierarchy. The trip stops
+being a record and becomes a story worth showing.
 
-**La idea.** La app se lee como una revista de viajes: el contenido manda y la interfaz casi desaparece, con blancos amplios y jerarquía tipográfica fuerte. El viaje deja de ser un registro y pasa a ser una historia que apetece enseñar.
+Typography. Two families: a headline serif (Fraunces or Newsreader) with body text in
+Inter. Generous scale — headings at 32–40px, line height 1.6, measure of 65–75
+characters, no negative tracking.
 
-**Tipografía.** Dos familias: un serif de titulares (Fraunces o Newsreader) con cuerpo de texto en Inter. Escala generosa — títulos de 32–40px, interlineado 1.6, medida de lectura de 65–75 caracteres, sin tracking negativo.
+Palette.
 
-**Paleta.**
-
-| Uso | Claro | Oscuro |
+| Use | Light | Dark |
 |---|---|---|
-| Papel / fondo | `#FBF8F3` | `#14120F` |
-| Superficie | `#F3EDE3` | `#1E1B16` |
-| Tinta | `#1A1815` | `#EFE9DE` |
-| Texto secundario | `#6B655C` | `#B9B0A2` |
-| Línea | `#E4DCD0` | `#332E26` |
-| Acento (acción) | `#B45309` | `#E8A33D` |
-| Éxito / aviso / error | `#2F6F5E` / `#A16207` / `#9F1239` | `#4E9C86` / `#C99A2E` / `#C7546B` |
+| Paper / background | `#FBF8F3` | `#14120F` |
+| Surface | `#F3EDE3` | `#1E1B16` |
+| Ink | `#1A1815` | `#EFE9DE` |
+| Secondary text | `#6B655C` | `#B9B0A2` |
+| Line | `#E4DCD0` | `#332E26` |
+| Accent (action) | `#B45309` | `#E8A33D` |
+| Success / warning / error | `#2F6F5E` / `#A16207` / `#9F1239` | `#4E9C86` / `#C99A2E` / `#C7546B` |
 
-**Espacio y tarjetas.** El espacio es el material: 48–80px de padding entre secciones. Las tarjetas son **láminas**, no cajas: sin borde, sin sombra, con un filete de 1px como separador y radio de 2–4px. Las portadas sangran de borde a borde. Sin gradientes y sin elevación en hover; el movimiento se reserva para el contenido que entra.
+Space and cards. Space is the material: 48–80px of padding between sections. Cards are
+plates, not boxes: no border, no shadow, a 1px rule as separator and a 2–4px radius.
+Covers bleed edge to edge. No gradients and no hover elevation; movement is reserved for
+content that enters.
 
-**Referencia real.** [Condé Nast Traveler](https://www.cntraveler.com) — editorial de viajes de gama alta, tipografía serif y fotografía a sangre. Como referencia de tono de marca, [Away](https://www.awaytravel.com), que vende objeto y relato a la vez.
+Real reference. [Condé Nast Traveler](https://www.cntraveler.com) — high-end travel
+editorial, serif typography and full-bleed photography. As a brand-tone reference,
+[Away](https://www.awaytravel.com), which sells object and story at once.
 
----
+## Direction B — Control room
 
-## Dirección B — Sala de control
+(utilitarian, precise)
 
-*(utilitaria, precisa)*
+The idea. A dense, precise interface, almost an engineering tool: hierarchy is built
+with weight and color, not size. The app takes pride in speed and in no data getting in
+the way, not in pretty photos.
 
-**La idea.** Interfaz densa y precisa, casi de herramienta de ingeniería: la jerarquía se construye con peso y color, no con tamaño. La app presume de rapidez y de que ningún dato estorba, no de fotos bonitas.
+Typography. Inter only (already in place), tracking of −0.011em, compact scale: 12 / 13
+/ 14 / 20px. Headings are not large; they are dark and bold.
 
-**Tipografía.** Inter en exclusiva (ya está montada), tracking de −0.011em, escala compacta: 12 / 13 / 14 / 20px. Los títulos no son grandes, son **oscuros y en negrita**.
+Palette.
 
-**Paleta.**
-
-| Uso | Claro | Oscuro |
+| Use | Light | Dark |
 |---|---|---|
-| Fondo | `#FFFFFF` | `#08090A` |
-| Superficie | `#F7F8F8` | `#101113` |
-| Superficie 2 | `#EEF0F1` | `#17181B` |
-| Tinta | `#08090A` | `#F7F8F8` |
-| Secundario / terciario | `#6F7680` / `#8A8F98` | `#9BA1AA` / `#6F7680` |
-| Línea | `#E4E6EA` | `#23252A` |
-| Acento | `#5E6AD2` | `#7C86E0` |
-| Éxito / aviso / error | `#3E9B4F` / `#C08A00` / `#C52828` | `#4FB463` / `#D9A01C` / `#E05A5A` |
+| Background | `#FFFFFF` | `#08090A` |
+| Surface | `#F7F8F8` | `#101113` |
+| Surface 2 | `#EEF0F1` | `#17181B` |
+| Ink | `#08090A` | `#F7F8F8` |
+| Secondary / tertiary | `#6F7680` / `#8A8F98` | `#9BA1AA` / `#6F7680` |
+| Line | `#E4E6EA` | `#23252A` |
+| Accent | `#5E6AD2` | `#7C86E0` |
+| Success / warning / error | `#3E9B4F` / `#C08A00` / `#C52828` | `#4FB463` / `#D9A01C` / `#E05A5A` |
 
-**Espacio y tarjetas.** Densidad alta: filas de 32–36px, padding de 12–16px, radios de 6–8px. Sombra **solo** en lo que flota (modales, menús); en reposo, borde de 1px y fondo ligeramente distinto. Listas y tablas por delante de rejillas de tarjetas. El modo oscuro no es un extra: es donde esta dirección respira.
+Space and cards. High density: 32–36px rows, 12–16px padding, 6–8px radii. Shadow only
+on what floats (modals, menus); at rest, a 1px border and a slightly different
+background. Lists and tables ahead of card grids. Dark mode is not an extra: it is where
+this direction breathes.
 
-**Referencia real.** [Linear](https://linear.app) — la interfaz y su documentación pública son el patrón de referencia de "denso pero legible" (contraste medido, un único acento, movimiento mínimo).
+Real reference. [Linear](https://linear.app) — the interface and its public
+documentation are the reference pattern for "dense but readable" (measured contrast, a
+single accent, minimal movement).
 
----
+## Direction C — Postcard
 
-## Dirección C — Tarjeta postal
+(showcase, consumer)
 
-*(escaparate, consumidor)*
+The idea. Large photography, rounded cards and warm color: this is the direction that
+sells the destination best. The management side is still there, but every trip gains a
+cover worth sharing.
 
-**La idea.** Fotografía grande, tarjetas redondeadas y color cálido: es la dirección que mejor vende el destino. La parte de gestión sigue ahí, pero cada viaje gana una portada que da ganas de compartir.
+Typography. Inter throughout (400/500/600), with the option of a dedicated display face
+for headings. Headings at 24–30px in 600, without reaching for the serif.
 
-**Tipografía.** Inter para todo (400/500/600), con la opción de un display propio para titulares. Títulos de 24–30px en 600, sin llegar al serif.
+Palette.
 
-**Paleta.**
-
-| Uso | Claro | Oscuro |
+| Use | Light | Dark |
 |---|---|---|
-| Fondo | `#FFFFFF` | `#121212` |
-| Superficie | `#F7F7F7` | `#1E1E1E` |
-| Tinta | `#222222` | `#EDEDED` |
-| Secundario | `#717171` | `#A8A8A8` |
-| Línea | `#DDDDDD` | `#2E2E2E` |
-| Acento | `#FF5A5F` | `#FF7A7E` |
-| Éxito / aviso / error | `#008489` / `#E0A800` / `#C13515` | `#22A0A6` / `#F0BE33` / `#E3725A` |
+| Background | `#FFFFFF` | `#121212` |
+| Surface | `#F7F7F7` | `#1E1E1E` |
+| Ink | `#222222` | `#EDEDED` |
+| Secondary | `#717171` | `#A8A8A8` |
+| Line | `#DDDDDD` | `#2E2E2E` |
+| Accent | `#FF5A5F` | `#FF7A7E` |
+| Success / warning / error | `#008489` / `#E0A800` / `#C13515` | `#22A0A6` / `#F0BE33` / `#E3725A` |
 
-Si cambiar de acento ahora sale caro, la variante barata es **conservar el azul** y subirlo: `#2563EB` con `#1D4ED8` en hover, y un secundario teal `#008489`. Se pierde la mitad del carácter, no el escaparate.
+If changing the accent is too expensive now, the cheap variant is to keep the blue and
+raise it: `#2563EB` with `#1D4ED8` on hover, and a teal secondary `#008489`. Half the
+character is lost, not the showcase.
 
-**Espacio y tarjetas.** Radios grandes: 16px en tarjeta, 24px en modal y sección, 999px en chips. **Tres niveles de sombra** (reposo, hover, flotante) en vez de una. Tarjeta canónica: imagen 16:9 arriba, título, metadatos, y elevación al pasar el ratón. Ritmo regular de 8px, mucho aire pero predecible.
+Space and cards. Large radii: 16px on cards, 24px on modals and sections, 999px on
+chips. Three shadow levels (rest, hover, floating) instead of one. Canonical card: 16:9
+image on top, title, metadata, and elevation on hover. Regular 8px rhythm, plenty of air
+but predictable.
 
-**Referencia real.** Airbnb y su Design Language System, documentado por quien lo diseñó: [Airbnb DLS — Karri Saarinen](https://karrisaarinen.com/dls/). Como referencia de *app* de viajes que es escaparate sin dejar de ser herramienta: [Flighty](https://flighty.com) (Apple Design Award).
+Real reference. Airbnb and its Design Language System, documented by the person who
+designed it: [Airbnb DLS — Karri Saarinen](https://karrisaarinen.com/dls/). As a travel
+app reference that is a showcase without ceasing to be a tool: [Flighty](https://flighty.com)
+(Apple Design Award).
 
----
+## Which one fits and which one I recommend
 
-## Cuál encaja y cuál recomiendo
+A and C both fit "a travel app that also wants to be a showcase". B is an excellent
+tool and a poor showcase: its merit is not getting in the way, and that does not come
+across in a screenshot.
 
-**Encajan con "app de viajes que además quiere ser escaparate" la A y la C.** La B es una herramienta excelente y un mal escaparate: su mérito es que no molesta, y eso no se enseña en una captura.
+I recommend C, Postcard. Three reasons:
 
-**Recomiendo la C, Tarjeta postal.** Tres razones:
+1. It is the only one that holds up both faces of the product. A planner has expense
+   tables, analytics charts and a task board: B handles them well and fails the
+   showcase; A handles them badly (a dense table in serif at 1.6 line height reads
+   worse, not better). C puts the showcase where it belongs — covers, listings, landing
+   — and leaves the interior neutral.
+2. It is the cheaper of the two that work. It reuses Inter as is, the existing
+   `rounded-lg` card and the `Button` structure: it is a change of tokens and radii, not
+   of architecture. A also requires a new type pairing and redoing the hierarchy of
+   every heading.
+3. Half the work is already done. The 9 pages with `dark:` and the `dark:bg-gray-800`
+   of the cards are closer to a `#1E1E1E` surface than to A's paper `#14120F` and
+   `#1E1B16`.
 
-1. **Es la única que aguanta las dos caras del producto.** Un planificador tiene tablas de gastos, gráficas de analítica y un tablero de tareas: la B los trata bien y falla el escaparate; la A los trata mal (una tabla densa en serif y a 1.6 de interlineado se lee peor, no mejor). La C pone el escaparate donde toca —portadas, listados, landing— y deja el interior neutro.
-2. **Es la más barata de las dos que valen.** Reutiliza Inter tal cual, la tarjeta `rounded-lg` existente y la estructura de `Button`: es un cambio de tokens y de radios, no de arquitectura. La A exige además un par tipográfico nuevo y rehacer la jerarquía de cada titular.
-3. **Ya tenemos medio camino hecho.** Las 9 páginas con `dark:` y el `dark:bg-gray-800` de las tarjetas están más cerca de una superficie `#1E1E1E` que del papel `#14120F` y el `#1E1B16` de la A.
+If the goal were brand differentiation above cost, I would choose A: it is the only one
+that looks like nothing else in the sector. And if the goal were efficiency for a user
+who records data every day, B would be the right answer — but then the showcase should
+be given up explicitly.
 
-Si el objetivo fuera **diferenciación de marca por encima de coste**, elegiría la A: es la única que no se parece a nada del sector. Y si el objetivo fuera **eficiencia para un usuario que registra datos todos los días**, la B sería la respuesta correcta — pero entonces conviene renunciar explícitamente al escaparate.
+## What would have to change, and how much
 
----
+None of the directions lands in the app with a `globals.css` change alone. Order of
+magnitude in work for one person:
 
-## Qué habría que tocar, y cuánto
+### A — Travel notebook · large
 
-Ninguna dirección se lleva a la app con un cambio de `globals.css`. Orden de magnitud en trabajo de una persona:
+- `globals.css`: new token set (paper, ink, lines, accents) plus the six state colors.
+- `layout.tsx`: add the headline face in the same `next/font/google` import and keep
+  `inter.className`; if Inter is replaced, the guard has to be edited.
+- `Button.tsx` and `fieldStyles.ts`: accent, radii and heights. `Button.tsx` no longer
+  contains `bg-blue-600` plus `hover:bg-blue-700`, so the guard fails and that assert
+  has to be rewritten.
+- `Card.tsx`: remove border and shadow, move to a plate. `PageTitle`, `EmptyState` and
+  `ErrorState` inherit the change.
+- Sweep of the 58 files / 242 uses of `rounded-*`, `shadow-*` and `gray-*`.
+- Also: the 13 pages without their own `dark:` need the new dark palette to reach their
+  surfaces.
 
-### A — Cuaderno de viaje · **grande**
+### B — Control room · medium
 
-- `globals.css`: juego de tokens nuevo (papel, tinta, líneas, acentos) más los seis colores de estado.
-- `layout.tsx`: añadir la fuente de titulares **en la misma importación** de `next/font/google` y conservar `inter.className`; si se sustituye Inter, hay que editar la guardia.
-- `Button.tsx` y `fieldStyles.ts`: acento, radios y alturas. `Button.tsx` deja de contener `bg-blue-600` + `hover:bg-blue-700`, luego **la guardia falla y hay que reescribir ese assert**.
-- `Card.tsx`: quitar borde y sombra, pasar a lámina. `PageTitle`, `EmptyState` y `ErrorState` heredan el cambio.
-- Barrido de los **58 ficheros / 242 usos** de `rounded-*`, `shadow-*` y `gray-*`.
-- Además: las 13 páginas sin `dark:` propias necesitan que la nueva paleta oscura llegue a sus superficies.
+- `globals.css`: gray scale and surfaces in `@theme inline` (finally a token instead of
+  hand-written `gray-800`), plus density.
+- `Button.tsx`, `fieldStyles.ts`, `Card.tsx`: 6–8 radius, 1px border and shadow only on
+  what floats. Same guard warning as in A.
+- `PageTitle` and the states: lower heading sizes.
+- Density in `Calendar.tsx`, `TaskBoard.tsx` and the analytics and expense tables.
+- Dark mode is half done: the 9 pages with `dark:` are untouched, the other 13 are not.
 
-### B — Sala de control · **media**
+### C — Postcard · medium
 
-- `globals.css`: escala de grises y superficies en `@theme inline` (por fin un token en vez de `gray-800` a mano), más densidad.
-- `Button.tsx`, `fieldStyles.ts`, `Card.tsx`: radio 6–8, borde de 1px y sombra solo en lo flotante. Mismo aviso de guardia que en la A.
-- `PageTitle` y los estados: bajar tamaños de titular.
-- Densidad en `Calendar.tsx`, `TaskBoard.tsx` y las tablas de analítica y gastos.
-- Modo oscuro ya a medio hacer: las 9 páginas con `dark:` no se tocan, las 13 restantes sí.
+- `globals.css`: accent, radius scale and three shadow levels as tokens.
+- `Button.tsx`, `fieldStyles.ts`: accent and radius. Same guard warning: changing the
+  accent breaks the primary button assert.
+- `Card.tsx`: `rounded-2xl` and a rest shadow. It drags in `PageSkeleton` and the
+  per-domain cards (`TripCard`, `ExpenseCard`, `NoteCard`, `BudgetCard`, `BookingCard`,
+  `AlertCard`).
+- Unify the existing asymmetry: `DashboardLayout` uses `dark:bg-black` while
+  `Card`/`Modal`/`Toast` use `dark:bg-gray-800`; with a real surface scale this is
+  solved once.
+- The showcase part — the trip cover — needs a new field in `trips` and a migration; it
+  is the only piece that leaves the CSS.
 
-### C — Tarjeta postal · **media**
+In all three, the sensible order is the guard's order: tokens → atoms (`Button`, field,
+`Card`) → states and headers → page sweep. That order already worked when closing the
+current system.
 
-- `globals.css`: acento, escala de radios y **tres niveles de sombra** como tokens.
-- `Button.tsx`, `fieldStyles.ts`: acento y radio. Mismo aviso de guardia: cambiar el acento rompe el assert del primario.
-- `Card.tsx`: `rounded-2xl` y sombra de reposo. Arrastra a `PageSkeleton` y a las tarjetas por dominio (`TripCard`, `ExpenseCard`, `NoteCard`, `BudgetCard`, `BookingCard`, `AlertCard`).
-- Unificar la asimetría existente: `DashboardLayout` usa `dark:bg-black` mientras `Card`/`Modal`/`Toast` usan `dark:bg-gray-800`; con una escala de superficies real esto se resuelve de una vez.
-- La parte de escaparate —portada de viaje— pide un campo nuevo en `trips` y una migración; es lo único que sale del CSS.
+## Status
 
-En las tres, el orden sensato es el de la guardia: **tokens → átomos (`Button`, campo, `Card`) → estados y cabeceras → barrido de páginas**. Ese orden ya funcionó al cerrar el sistema actual.
+Decided. The chosen direction is A, Travel notebook, recorded in
+[ADR-007](DECISIONS/ADR-007-rumbo-cuaderno-de-viaje.md), which fixes the palette, the
+typography, the shared components, the shell and the dark mode behavior. This document
+remains as history: it keeps the three proposals and their comparison, but is not
+re-decided. The recommendation for C above was dropped in favor of brand
+differentiation.
 
-## Estado
+## References
 
-**Decidido.** La dirección elegida es la **A, Cuaderno de viaje**, registrada en
-[ADR-007](DECISIONS/ADR-007-rumbo-cuaderno-de-viaje.md), que fija la paleta, la tipografía, los
-componentes compartidos, el armazón y el comportamiento del modo oscuro. Este documento queda como
-histórico: conserva las tres propuestas y su comparación, pero no se redecide. La recomendación de
-la C que aparece arriba se descartó a favor de la diferenciación de marca.
-
-## Referencias
-
-- [Condé Nast Traveler](https://www.cntraveler.com) — editorial de viajes.
-- [Away](https://www.awaytravel.com) — marca de viajes con relato editorial.
-- [Linear](https://linear.app) — densidad y precisión de herramienta.
-- [Airbnb DLS, por Karri Saarinen](https://karrisaarinen.com/dls/) — el sistema de diseño de Airbnb.
-- [Flighty](https://flighty.com) — app de viajes escaparate (Apple Design Award).
+- [Condé Nast Traveler](https://www.cntraveler.com) — travel editorial.
+- [Away](https://www.awaytravel.com) — travel brand with an editorial story.
+- [Linear](https://linear.app) — tool density and precision.
+- [Airbnb DLS, by Karri Saarinen](https://karrisaarinen.com/dls/) — Airbnb's design
+  system.
+- [Flighty](https://flighty.com) — showcase travel app (Apple Design Award).

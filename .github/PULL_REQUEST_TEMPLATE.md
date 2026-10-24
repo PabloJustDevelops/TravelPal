@@ -1,14 +1,14 @@
-## Descripción
+## Description
 
-Describe el cambio y su motivo.
+What the change does and why.
 
-## Relacionado
+## Related
 
 Closes #
 
 ## Checklist
 
-- [ ] Lint pasa (`pnpm run lint`)
-- [ ] Tests pasan (`pnpm test`)
-- [ ] Actualicé documentación si aplica
-- [ ] Aprobé el checklist de review (ver `docs/code-review-checklist.md`)
+- [ ] Lint passes (`pnpm run lint`)
+- [ ] Tests pass (`pnpm test`)
+- [ ] Documentation updated if needed
+- [ ] Review checklist completed (see `docs/code-review-checklist.md`)

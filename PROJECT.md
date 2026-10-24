@@ -1,65 +1,70 @@
-# PROJECT.md — TravelPal
+# PROJECT.md: TravelPal
 
-## Objetivo
+## Objective
 
-TravelPal es una aplicación web para planificar, reservar y controlar viajes —itinerarios, gastos,
-presupuestos y analíticas— construida en Next.js sobre Cloudflare Workers, con backend InsForge
-(Postgres + Auth + Storage).
+TravelPal is a web application to plan, book and track trips —itineraries, tasks, notes, expenses and
+budgets— built with Next.js as a static export served by Cloudflare Workers, with InsForge as the
+backend (Postgres, Auth, Storage and edge functions).
 
-## Alcance
+## Scope
 
-### Incluye
+### Included
 
-- **Cuenta**: registro, inicio de sesión, recuperación de contraseña, perfil y tema (auth por
-  InsForge; el refresh token vive en cookie httpOnly).
-- **Viajes** (`trips`) y su detalle.
-- **Planificación**: reservas (`bookings`, incluido el vuelo como reserva manual de tipo `flight`) y
-  actividades de itinerario (`itinerary_activities`).
-- **Gastos** (`expenses`) y **presupuestos** (`budgets`).
-- **Panel** (`/dashboard`) y **analíticas** (`/analytics`).
-- **Diario de viaje** (`journal_entries`, con fotos privadas servidas por URL firmada).
-- **Notas** (`notes`) y **tareas** (`tasks`).
-- **Alertas** en la campana de notificaciones (derivadas de tareas, reservas y presupuestos; la
-  campana lee y marca leído).
-- **Landing** pública.
-- **Push de navegador**: alta/baja de suscripción y service worker en el cliente.
+- **Account**: sign-up, sign-in, password recovery, profile and theme (InsForge auth; the session travels
+  in an httpOnly cookie managed by the SDK).
+- **Trips** (`trips`) and their detail view.
+- **Planning**: bookings (`bookings`, including a flight as a manual booking of type `flight`) and
+  itinerary activities (`itinerary_activities`).
+- **Expenses** (`expenses`) and budgets (`budgets`, folded into the expenses view).
+- **Dashboard** (`/dashboard`).
+- **Travel journal** (`journal_entries`, with private photos served through signed URLs).
+- **Notes** (`notes`) and tasks (`tasks`).
+- **Alerts** in the notification bell, derived from tasks, bookings and budgets; the bell reads and marks
+  them as read.
+- **Public landing page**.
+- **Browser push**: subscription management in the client plus the `send-push` InsForge function.
+- **Flight inspiration**: price ideas from Travelpayouts through the `travel-inspiration` InsForge
+  function.
 
-### No incluye
+### Excluded
 
-- **Búsqueda de vuelos en vivo**: Amadeus se retiró; el vuelo se registra a mano (ADR-006).
-- **Asistente/chatbot**: retirado por completo, junto con su proxy al LLM (ADR-008).
-- **Envío de push de servidor**: bloqueado; solo existe la parte de cliente (ADR-013).
-- **Vercel**: hosting retirado; el único camino es Cloudflare Workers (ADR-003).
-- **Rework funcional** propuesto en `docs/audits/auditoria-utilidad-y-rework.md`: no aplicado.
-- **Roadmap** (ver `README.md`): i18n, más APIs de viajes, colaboración y app móvil. Futuro, fuera
-  del alcance actual.
+- **Live flight search**: Amadeus was removed; flights are entered by hand (ADR-006).
+- **Assistant/chatbot**: fully removed, including its LLM proxy (ADR-008).
+- **Server push delivery beyond InsForge**: the sending path is the `send-push` function; there is no
+  other server (ADR-013).
+- **Vercel**: hosting removed; the only path is Cloudflare Workers (ADR-003).
+- **Functional rework proposed in `docs/audits/auditoria-utilidad-y-rework.md`**: not applied.
+- **Roadmap** (see `README.md`): i18n, more travel APIs, collaboration and a native app. Future work,
+  outside the current scope.
 
-## Definición de terminado
+## Definition of done
 
-Un cambio está terminado cuando, sobre `main`:
+A change is done when, on `main`:
 
-- [ ] `npm run lint`, `npm run type-check`, `npm run test:ci` y `npm run build` pasan, y el CI
-      (`.github/workflows/ci.yml`) queda en verde, incluido el job `worker-build`
-      (`npx opennextjs-cloudflare build`).
-- [ ] `node scripts/check-data-paths.mjs` pasa: no aparece ningún punto nuevo al BFF por `/api`
-      (camino único de datos, ADR-009).
-- [ ] El job `deploy` (push a `main`) publica el Worker con `npx opennextjs-cloudflare deploy`.
-- [ ] El esquema desplegado en InsForge coincide con `migrations/` (todas las migraciones aplicadas).
-- [ ] La funcionalidad funciona de extremo a extremo en producción y el aislamiento por usuario lo
-      impone RLS (`auth.uid()`), no un handler.
-- [ ] La documentación que se contradice con el código queda corregida o borrada (el código gana;
-      regla de `CONTEXT.md`).
-- [ ] Si la decisión cambia el alcance o el modelo de datos, lleva su ADR en `docs/DECISIONS/`.
+- [ ] `pnpm run lint`, `pnpm run type-check`, `pnpm run test:ci` and `pnpm run build` pass, and CI
+      (`.github/workflows/ci.yml`) is green, including the `worker-build` job (wrangler dry-run over the
+      exported artifact).
+- [ ] `node scripts/check-data-paths.mjs` passes: no new data path through the removed BFF (single data
+      path, ADR-009).
+- [ ] The `deploy` job (push to `main`) publishes the static Worker with
+      `wrangler deploy --no-autoconfig`, and `e2e-produccion` passes against the deployed URL.
+- [ ] The schema deployed in InsForge matches `migrations/` (every migration applied).
+- [ ] The feature works end to end in production and per-user isolation is enforced by RLS
+      (`auth.uid()`), not by a handler.
+- [ ] Documentation that contradicts the code is corrected or deleted (code wins; rule from
+      `CONTEXT.md`).
+- [ ] If the decision changes scope or the data model, it carries its ADR in `docs/DECISIONS/`.
 
-## Referencias
+## References
 
-- **Glosario y modelo de datos**: [`CONTEXT.md`](CONTEXT.md).
-- **Decisiones (ADRs)**: [`docs/DECISIONS/`](docs/DECISIONS/) — 000 plantilla; 001 obsoleto; 002
-  InsForge; 003 Cloudflare Workers; 004 esquema desde el modelo TS; 005 variables no inlineadas; 006
-  vuelos a entrada manual; 007 rumbo visual «Cuaderno de viaje»; 008 retirada del asistente; 009
-  camino único por el SDK; 010 persistencia por operación del planificador; 011 fotos del diario
-  privadas; 012 retirada del código BFF y de `public.users`; 013 push de navegador solo cliente.
-- **Issues y specs (tracker)**: GitHub issues de este repo, vía `gh` CLI
+- **Glossary and data model**: [`CONTEXT.md`](CONTEXT.md).
+- **Decisions (ADRs)**: [`docs/DECISIONS/`](docs/DECISIONS/) — 000 template; 001 obsolete; 002 InsForge;
+  003 Cloudflare Workers; 004 schema from the TS model; 005 secrets not inlined; 006 flights as manual
+  entry; 007 visual direction; 008 assistant removal; 009 single data path through the SDK; 010
+  per-operation persistence in the planner; 011 private journal photos; 012 removal of the BFF code and
+  `public.users`; 013 browser push with delivery in InsForge; 014 static assets Worker; 015 travel
+  inspiration in InsForge.
+- **Issues and specs (tracker)**: GitHub issues of this repo, through the `gh` CLI
   ([`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)).
-- **Arquitectura y guía técnica**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
+- **Architecture and technical guide**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
   [`docs/TECHNICAL.md`](docs/TECHNICAL.md).

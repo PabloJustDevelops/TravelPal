@@ -1,13 +1,22 @@
-# Ilustraciones originales de TravelPal
+# Original TravelPal illustrations
 
-Creación: 13 de octubre de 2026 con la herramienta integrada ImageGen. Son escenas ilustradas ficticias, no fotografías ni representaciones de destinos o usuarios reales. No se han utilizado fotos de stock ni referencias de terceros. El crédito visible es «Ilustración original creada para TravelPal con IA».
+Created on 13 October 2026 with the integrated ImageGen tool. These are fictional
+illustrated scenes, not photographs or depictions of real destinations or users. No
+stock photos or third-party references were used. The visible credit is
+"Ilustración original creada para TravelPal con IA".
 
-- `coastal-journey.webp`: 1536 × 1024, WebP calidad 82. Portada y panel de acceso. Alt: viajero por un sendero hacia un pueblo costero mediterráneo, con montañas y velero.
-- `travel-notebook.webp`: 1024 × 1024, WebP calidad 82. Recurso conservado de la exploración visual; no se usa en la landing seleccionada. Alt: cuaderno de viaje con ruta dibujada, brújula y mapa sobre una mesa.
+- `coastal-journey.webp`: 1536 × 1024, WebP quality 82. Cover and sign-in panel. Alt: a
+  traveler on a path toward a Mediterranean coastal village, with mountains and a
+  sailboat.
+- `travel-notebook.webp`: 1024 × 1024, WebP quality 82. Asset kept from the visual
+  exploration; not used in the selected landing page. Alt: a travel notebook with a
+  drawn route, a compass and a map on a table.
 
-Los PNG originales se conservaron fuera del repositorio; los recursos web se codificaron con Sharp, sin metadatos del generador. Los componentes declaran dimensiones y `sizes`; solo la portada precarga su imagen.
+The original PNGs were kept outside the repository; the web assets were encoded with
+Sharp, with no generator metadata. Components declare dimensions and `sizes`; only the
+cover preloads its image.
 
-## Prompts utilizados (herramienta integrada, sin API/CLI)
+## Prompts used (integrated tool, no API/CLI)
 
 ### Coastal journey
 
@@ -17,23 +26,25 @@ Use case: illustration-story. Asset type: original TravelPal website hero illust
 
 Use case: illustration-story. Asset type: original TravelPal website illustration, square 1:1 composition. An overhead still life of a travel journal open on a pale cool neutral desk, simple hand-drawn coastline route with a dotted blue path on its unlined pages, a compass, a blue pen, a train ticket with abstract marks only, an olive branch and the corner of a folded soft blue map. Sophisticated gouache and cut-paper editorial illustration, tactile paper texture, light clean background, restrained ink navy, cobalt blue and sage green with tiny terracotta details. Bright natural light. Carefully composed travel planning objects, elegant and calming, full canvas. No readable text, letters, numbers, logos, watermark, UI, photographic elements or stock photography. Custom illustration for a travel planning app following the Atlas light direction.
 
-## Panorámica del layout seleccionado
+## Overview of the selected layout
 
-`coastal-panorama.webp`: 1774 × 887, 323360 bytes, WebP calidad 85 y alphaQuality 100. Derivada con ImageGen de la ilustración costera original y el mock seleccionado; conserva transparencia real en el cielo para integrarse con los tokens claros y oscuros.
+`coastal-panorama.webp`: 1774 × 887, 323360 bytes, WebP quality 85 and alphaQuality 100.
+Derived with ImageGen from the original coastal illustration and the selected mock; it
+keeps real transparency in the sky so it blends with the light and dark tokens.
 
 Prompt: Edit the original TravelPal coastal illustration into a production hero raster asset matching the scenic layout in the selected website. Output ONLY the scenic artwork, NOT the webpage or any text/UI. Very wide panoramic landscape, approximately 2:1 aspect ratio. Preserve the original painterly gouache style, exact recognizable village, teal sea, mountains, sailboat, tiny backpack traveler and terracotta path. Recompose it like the selected website: village and traveler at lower left, sea at right, distant mountains rising toward the upper right. Remove all upper-left olive-tree branches that intrude into the heading area; retain lower-left foreground foliage. Remove the sky entirely to real alpha transparency, including upper-left area; preserve isolated apricot sun at upper right and any fine skyline edges. In the top-left 55 percent of canvas, leave a generous transparent region for a two-line website title. Scenic land/sea fills lower 45 percent edge to edge; right-hand mountains rise higher to around 45 percent of height. No text, letters, labels, buttons, logos, arrows, borders, rounded corners, page layout or watermark. The entire removed sky must be genuinely transparent, not white, black or a checkerboard painting. Do not introduce new people or objects.
 
-## Autenticación · Mesa de viaje (16 de octubre de 2026)
+## Authentication · travel desk (16 October 2026)
 
-`auth-travel-notebook.webp`: 1448 × 1086, WebP con alfa real. Recurso nuevo, creado
-con la herramienta integrada ImageGen para la opción 2 aprobada. Referencia de
-composición: `docs/design/assets/auth-mesa-2026-10-16/reference.png`; referencia de
-estilo: `docs/design/assets/layout1-2026-10-13/reference.webp`. Se utiliza como
-ilustración independiente a la izquierda de signup/signin y se oculta en móvil.
-No contiene el mockup, formulario ni titulares. La tipografía manuscrita pertenece
-a la ilustración, no a la interfaz. Créditos y procedencia quedan documentados aquí.
+`auth-travel-notebook.webp`: 1448 × 1086, WebP with real alpha. New asset, created with
+the integrated ImageGen tool for the approved option 2. Composition reference:
+`docs/design/assets/auth-mesa-2026-10-16/reference.png`; style reference:
+`docs/design/assets/layout1-2026-10-13/reference.webp`. It is used as a standalone
+illustration to the left of signup/signin and is hidden on mobile. It contains no
+mockup, form or headings. The handwritten typography belongs to the illustration, not
+to the interface. Credits and provenance are documented here.
 
-Prompt exacto (modo integrado, sin API/CLI):
+Exact prompt (integrated mode, no API/CLI):
 
 > Use case: illustration-story. Asset type: isolated transparent illustration for the TravelPal signup page.
 > Input images: Image 1 is the selected auth reference; use it for the still-life objects and arrangement only, excluding all webpage content. Image 2 is the landing reference; use it only for its Mediterranean gouache color treatment.
@@ -42,7 +53,7 @@ Prompt exacto (modo integrado, sin API/CLI):
 > Checklist text exactly: “Costa mediterránea”, “Pueblos con encanto”, “Playas escondidas”, “Buena comida”, “Dejarme llevar”.
 > Constraints: only the illustration, natural object silhouettes, fully transparent background. Avoid any webpage, UI, title, headline, logo, form, border, background color or canvas fill, mockup, watermark, extra objects, or text outside the notebook.
 
-`google.svg`: marca oficial de Google, descargada sin alteraciones desde
+`google.svg`: official Google mark, downloaded unaltered from
 https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg. Copyright Google
-Inc., según el propio recurso. Se conserva vectorial y con sus colores originales;
-no fue dibujada ni generada.
+Inc., per the asset itself. It is kept as a vector with its original colors; it was
+neither drawn nor generated.

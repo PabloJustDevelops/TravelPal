@@ -1,34 +1,32 @@
-# ADR-012: Retirada del código BFF y de `public.users`
+# ADR-012: Removal of the BFF code and of `public.users`
 
-## Contexto
+## Context
 
-ADR-009 dejó `requireUser`, `ensureUserExists` y `useApiResource` sin llamadores como limpieza de
-la etapa 4 del #38; esa etapa se gastó en #53 y #56. `public.users` solo la escribía
-`ensureUserExists`; en producción tiene 0 filas y 0 FKs entrantes; `profiles` es el perfil real.
+ADR-009 left `requireUser`, `ensureUserExists` and `useApiResource` without callers as stage 4
+cleanup of #38; that stage was spent on #53 and #56. `public.users` was only written by
+`ensureUserExists`; in production it has 0 rows and 0 incoming FKs; `profiles` is the real profile.
 
-Efecto medido del #38 en el Worker (job deploy, línea `Total Upload`): de 13864.67 KiB / 2843.16 KiB
-gzip (main @3b84755, antes de la etapa 0) a 13258.90 KiB / 2755.23 KiB gzip (main @96d909f, etapa
-4): −605.77 KiB (−4,4 %) y −87.93 KiB gzip (−3,1 %).
+Measured effect of #38 on the Worker (deploy job, `Total Upload` line): from 13864.67 KiB / 2843.16
+KiB gzip (main @3b84755, before stage 0) to 13258.90 KiB / 2755.23 KiB gzip (main @96d909f, stage 4):
+−605.77 KiB (−4.4 %) and −87.93 KiB gzip (−3.1 %).
 
-## Decisión
+## Decision
 
-1. Borrar las funciones/tipos/hook y sus tests; `createServerInsforgeClient` se conserva porque lo
-   usa `auth-actions.ts`.
-2. El guardián sigue vigilando `useApiResource(` como valla.
-3. `public.users` sale del modelo con la migración `20260918210000_drop-public-users.sql`,
-   **aplicada el 2026-10-02** con aprobación humana (backup previo `antes-de-drop-users`): la tabla
-   ya no existe en el backend y sus 3 policies RLS se fueron con ella; hasta entonces la tabla vacía
-   no rompía nada.
-4. Docs alineadas (ARCHITECTURE, TECHNICAL, CONTEXT, ADR-002).
+1. Delete the functions/types/hook and their tests; `createServerInsforgeClient` is kept because
+   `auth-actions.ts` uses it.
+2. The guard still watches `useApiResource(` as a fence.
+3. `public.users` leaves the model with migration `20260918210000_drop-public-users.sql`, applied on
+   2026-10-02 with human approval (previous backup `antes-de-drop-users`): the table no longer exists
+   in the backend and its 3 RLS policies went with it; until then the empty table broke nothing.
+4. Docs aligned (ARCHITECTURE, TECHNICAL, CONTEXT, ADR-002).
 
-## Consecuencias
+## Consequences
 
-Menos superficie; el modelo de `CONTEXT.md` coincide con el backend. Alternativa descartada: conservar
-la tabla «por si acaso» (mantiene 3 políticas RLS que el advisor cuenta como deuda y una doc que
-miente).
+Less surface; the `CONTEXT.md` model matches the backend. Discarded alternative: keeping the table
+"just in case" (it keeps 3 RLS policies that the advisor counts as debt and a doc that lies).
 
-## Estado
+## Status
 
-Aprobado y aplicado. La migración se ejecutó el 2026-10-02 contra el backend de InsForge, con backup
-previo (`antes-de-drop-users`) y verificación posterior: `to_regclass('public.users')` devuelve null,
-las 3 policies `users_*_own` desaparecieron y la migración consta en `system.custom_migrations`.
+Accepted and applied. The migration ran on 2026-10-02 against the InsForge backend, with a previous
+backup (`antes-de-drop-users`) and a later verification: `to_regclass('public.users')` returns null,
+the 3 `users_*_own` policies are gone and the migration is recorded in `system.custom_migrations`.

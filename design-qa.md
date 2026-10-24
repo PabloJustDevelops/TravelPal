@@ -1,55 +1,57 @@
-# TravelPal · integración del layout 1
+# TravelPal · layout 1 integration
 
-Fecha: 13 de octubre de 2026. Worktree: `codex/auth-brand-a11y`, asociado al PR #94. Alcance de esta iteración: landing y sus pruebas; no cambia la lógica de autenticación ni los módulos privados.
+Date: 13 October 2026. Worktree: `codex/auth-brand-a11y`, associated with PR #94. Scope of this iteration: the landing and its tests; it does not change authentication logic or the private modules.
 
-## Referencia y comparación
+## Reference and comparison
 
-La referencia elegida por Pablo es la imagen adjunta del layout 1. Original: 1487 × 1058 px. Implementación: viewport de 1440 × 1024 CSS px, deviceScaleFactor 1; relación de aspecto equivalente. La variante móvil se comprobó a 390 × 1024 px. Las capturas finales abren la portada sin ancla, esperan las fuentes y se guardan desde el inicio; no se reutilizan las capturas desplazadas de las primeras pasadas.
+The reference chosen by Pablo is the attached layout 1 image. Original: 1487 × 1058 px. Implementation: 1440 × 1024 CSS px viewport, deviceScaleFactor 1; equivalent aspect ratio. The mobile variant was checked at 390 × 1024 px. The final screenshots open the page without an anchor, wait for the fonts and save from the top; the scrolled screenshots from the first passes are not reused.
 
-- [Referencia](docs/design/assets/layout1-2026-10-13/reference.webp).
-- [Escritorio claro](docs/design/assets/layout1-2026-10-13/desktop-light.webp).
-- [Escritorio oscuro](docs/design/assets/layout1-2026-10-13/desktop-dark.webp).
-- [Móvil claro](docs/design/assets/layout1-2026-10-13/mobile-light.webp).
-- [Móvil oscuro](docs/design/assets/layout1-2026-10-13/mobile-dark.webp).
+- [Reference](docs/design/assets/layout1-2026-10-13/reference.webp).
+- [Desktop light](docs/design/assets/layout1-2026-10-13/desktop-light.webp).
+- [Desktop dark](docs/design/assets/layout1-2026-10-13/desktop-dark.webp).
+- [Mobile light](docs/design/assets/layout1-2026-10-13/mobile-light.webp).
+- [Mobile dark](docs/design/assets/layout1-2026-10-13/mobile-dark.webp).
 
-## Superficies de fidelidad
+## Fidelity surfaces
 
-| Superficie | Comprobación y resultado |
+| Surface | Check and result |
 | --- | --- |
-| Tipografía | Inter real: 117.36 px y line-height 115.013 px para el titular a 1440 px, medido en navegador. Se conservan las dos líneas y la jerarquía de la referencia; en móvil la segunda línea se divide sin desbordar. La nota del destino usa Fraunces cursiva existente, en lugar de simular la letra manuscrita del mock. |
-| Layout y espaciado | Cabecera ligera, titular sobre el paisaje, panorama sin tarjeta y franja horizontal de ejemplo. En móvil, acciones antes del paisaje y paradas apiladas. Se eliminó el exceso de espacio vacío móvil observado en la primera revisión. |
-| Colores | Tokens Atlas del repositorio: fondo claro, tinta, neutros y azul para acciones; las mismas variables mantienen la variante oscura. Axe no reporta violaciones en las rutas y temas evaluados. |
-| Imágenes | Panorámica creada con ImageGen a partir de la ilustración original y el mock aprobado. WebP 1774 × 887, 323360 bytes, alpha real; no se usa una captura con texto como fondo. `sizes` contempla el encuadre de 200vw en móvil para evitar una imagen demasiado pequeña. Las imágenes cargan en las pruebas. |
-| Contenido | Titular, subtítulo, CTA, destino y tres paradas del mock. Los valores están rotulados como «Viaje de ejemplo». No son datos del usuario ni se guardan. Las secciones siguientes explican funciones existentes sin tarjetas repetidas ni testimonios. |
+| Typography | Real Inter: 117.36 px and 115.013 px line-height for the headline at 1440 px, measured in the browser. Both lines and the reference hierarchy are kept; on mobile the second line wraps without overflow. The destination note uses the existing Fraunces italic instead of imitating the mock's handwritten lettering. |
+| Layout and spacing | Light header, headline over the landscape, panorama without a card and a horizontal example strip. On mobile, actions come before the landscape and the stops are stacked. The excess mobile whitespace observed in the first review was removed. |
+| Colours | Atlas tokens from the repository: light background, ink, neutrals and blue for actions; the same variables keep the dark variant. Axe reports no violations on the evaluated routes and themes. |
+| Images | Panorama created with ImageGen from the original illustration and the approved mock. WebP 1774 × 887, 323360 bytes, real alpha; no screenshot containing text is used as a background. `sizes` accounts for the 200vw framing on mobile to avoid an image that is too small. Images load in the tests. |
+| Content | Headline, subheading, CTA, destination and three stops from the mock. The values are labelled `Viaje de ejemplo`. They are not user data and are not stored. The following sections explain existing features without repeated cards or testimonials. |
 
-## Interacción y movimiento
+## Interaction and motion
 
-«Crear mi viaje» abre `/signup`; «Entrar» abre `/signin`; «Ver un ejemplo» lleva a `#example`. Las tres paradas se pueden seleccionar con clic y teclado: flechas, Home y End, foco y estado seleccionado. El panel explica la parada seleccionada y cambia con una transición de 180 ms; la regla global de movimiento reducido elimina el desplazamiento. No hay bucles, scroll bloqueado ni animaciones repetidas por sección. Probado el cambio a «Alojamiento» en el navegador de la app.
+On-screen labels quoted below are the literal strings from the components.
 
-El panel de detalle y el subrayado seleccionado son una adaptación funcional del mock estático. Se utilizan Button, tokens e iconos Heroicons existentes. No se introducen dependencias ni backend nuevo.
+`Crear mi viaje` opens `/signup`; `Entrar` opens `/signin`; `Ver un ejemplo` goes to `#example`. The three stops can be selected with mouse and keyboard: arrows, Home and End, focus and selected state. The panel explains the selected stop and changes with a 180 ms transition; the global reduced-motion rule removes the displacement. There are no loops, no scroll locking and no animations repeated per section. Switching to `Alojamiento` was tested in the app browser.
 
-## Incidencias resueltas y diferencias menores
+The detail panel and the selected underline are a functional adaptation of the static mock. The existing Button, tokens and Heroicons icons are used. No new dependencies or backend are introduced.
 
-- El test global del sistema de diseño rechazó nuevos botones nativos; las pestañas ahora usan `Button` compartido, que reenvía el ref.
-- El primer encuadre móvil dejaba demasiado cielo transparente; se compactó y volvió a capturar.
-- Las primeras capturas podían conservar el ancla del menú móvil; la captura final vuelve a `/` y espera las fuentes.
-- P3: la tipografía de la anotación y las siluetas de iconos no son idénticas al raster generado. Se conservan fuentes e iconos reales del sistema; no son placeholders. La panorámica es una derivación de la ilustración original, no una coincidencia píxel a píxel.
+## Resolved issues and minor differences
 
-Sin P0/P1/P2 abiertos. Revisión independiente read-only: sin hallazgos, incluido el uso final de Button.
+- The design system's global test rejected new native buttons; the tabs now use the shared `Button`, which forwards the ref.
+- The first mobile framing left too much transparent sky; it was compacted and captured again.
+- The first screenshots could keep the mobile menu anchor; the final capture returns to `/` and waits for the fonts.
+- P3: the annotation typeface and the icon silhouettes are not identical to the generated raster. The real system fonts and icons are kept; they are not placeholders. The panorama is a derivation of the original illustration, not a pixel-for-pixel match.
 
-## Validación ejecutada
+No P0/P1/P2 open. Independent read-only review: no findings, including the final use of Button.
+
+## Validation executed
 
 ```bash
 pnpm exec jest --runInBand --coverage=false
 ```
 
-Salida 0: `Test Suites: 64 passed, 64 total`; `Tests: 460 passed, 460 total`. Hay avisos de consola existentes de pruebas mock/act; no se ocultan como una salida completamente silenciosa.
+Output 0: `Test Suites: 64 passed, 64 total`; `Tests: 460 passed, 460 total`. There are pre-existing console warnings from mock/act tests; they are not hidden as a fully silent output.
 
 ```bash
 NEXT_PUBLIC_INSFORGE_URL=https://example.invalid NEXT_PUBLIC_INSFORGE_ANON_KEY=qa-placeholder INSFORGE_API_KEY=qa-placeholder E2E_BASE_URL=http://localhost:3010 pnpm exec playwright test e2e/smoke/landing-auth-layout.spec.ts e2e/smoke/signup-accessibility.spec.ts e2e/smoke/signin-controls.spec.ts --project=smoke --workers=1
 ```
 
-Salida 0: `27 passed (31.2s)`. Incluye landing, signin, signup, recuperación y reset a 390/1440 px en claro/oscuro, axe, imágenes cargadas, ausencia de desbordamiento, teclado del ejemplo y prefers-reduced-motion. Entorno ficticio; no valida altas, correos ni resets reales.
+Output 0: `27 passed (31.2s)`. Covers landing, signin, signup, recovery and reset at 390/1440 px in light and dark, axe, loaded images, absence of overflow, the example's keyboard interaction and prefers-reduced-motion. Fictional environment; it does not validate real signups, emails or resets.
 
 ```bash
 pnpm exec eslint src/components/landing src/app/page.tsx e2e/smoke/landing-auth-layout.spec.ts e2e/smoke/signup-accessibility.spec.ts
@@ -57,30 +59,30 @@ pnpm run type-check
 git diff --check
 ```
 
-ESLint: salida 0 sin mensajes. TypeScript: salida 0, `$ tsc --noEmit`. Diff check: salida 0 sin mensajes.
+ESLint: output 0 with no messages. TypeScript: output 0, `$ tsc --noEmit`. Diff check: output 0 with no messages.
 
 ```bash
 IMPECCABLE_HOME=/tmp/travelpal-impeccable-cache /tmp/travelpal-impeccable-20261013/.agents/skills/impeccable/scripts/impeccable detect --json src/components/landing/Hero.tsx src/components/landing/Navbar.tsx src/components/landing/ExampleJourney.tsx src/components/landing/Features.tsx src/components/landing/HowItWorks.tsx src/components/landing/CTA.tsx src/components/landing/Footer.tsx src/components/landing/Brand.tsx
 ```
 
-Salida 0: `[]`. Detector oficial ejecutado desde copia temporal; no se instalaron hooks. Su resultado no sustituye la comparación visual.
+Output 0: `[]`. Official detector run from a temporary copy; no hooks were installed. Its result does not replace the visual comparison.
 
-## Entrega
+## Delivery
 
-- Landing integrada y capturas finales inspeccionadas.
-- Rutas, controles de ejemplo y menú comprobados.
-- Claro/oscuro, teclado, movimiento reducido y pruebas pasadas.
-- Recursos con alt, crédito y procedencia en `public/images/atlas/README.md`.
-- No hay commit, push, merge ni deploy en esta entrega.
+- Landing integrated and final screenshots inspected.
+- Routes, example controls and menu checked.
+- Light and dark, keyboard, reduced motion and tests passing.
+- Assets with alt, credit and provenance in `public/images/atlas/README.md`.
+- No commit, push, merge or deploy in this delivery.
 
-Resultado de esta entrega: `passed` para landing; no representa el gate visual global.
+Result of this delivery: `passed` for the landing; it does not represent the global visual gate.
 
-## Lista/alta y planificación
+## List/create and planning
 
-La lista y el alta conservan filtros, autenticación, validación de fechas y presupuesto parcial; los E2E autenticados del PR pasaron antes de esta etapa de planificación. Planning conserva sus consultas y mutaciones; calendario, tarjetas y formularios tienen historias y pruebas. La historia de reserva comprueba acciones dentro de un viewport de 390 × 844. Evidencia de esta etapa: `docs/audits/2026-10-11-atlas-planificacion.md`. Falta ejecutar el E2E autenticado sobre el estado final del módulo y completar el gate visual global.
+The list and create flows keep filters, authentication, date validation and partial budget; the PR's authenticated E2E tests passed before this planning stage. Planning keeps its queries and mutations; calendar, cards and forms have stories and tests. The booking story checks actions inside a 390 × 844 viewport. Evidence for this stage: `docs/audits/2026-10-11-atlas-planificacion.md`. The authenticated E2E on the module's final state is still to be run, and the global visual gate is still to be completed.
 
 final result: blocked
 
-El E2E autenticado de la página completa queda pendiente sobre el estado integrado y el gate visual global sigue bloqueado.
+The authenticated E2E of the full page remains pending on the integrated state, and the global visual gate remains blocked.
 
-Resultado global: `blocked` hasta completar ambos gates.
+Overall result: `blocked` until both gates are completed.

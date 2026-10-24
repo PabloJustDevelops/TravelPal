@@ -1,81 +1,99 @@
-# Push de navegador: servidor (#48)
+# Browser push: server delivery (#48)
 
-## Arquitectura y límites
+## Architecture and limits
 
-Next.js sigue siendo un export estático. `send-push` es una función Deno de InsForge,
-invocada por un schedule, sin route handlers. Usa únicamente WebCrypto para VAPID ES256
-([RFC 8292](https://www.rfc-editor.org/rfc/rfc8292.html)) y cifrado ECDH/HKDF/AES-GCM
-`aes128gcm` ([RFC 8291](https://www.rfc-editor.org/rfc/rfc8291.html)). El SDK de InsForge
-se fija a `npm:@insforge/sdk@1.5.2`, la versión del lockfile; no hay dependencias nuevas.
+Next.js remains a static export. `send-push` is an InsForge Deno function invoked by a
+schedule, with no route handlers. It uses WebCrypto only, for VAPID ES256
+([RFC 8292](https://www.rfc-editor.org/rfc/rfc8292.html)) and for ECDH/HKDF/AES-GCM
+`aes128gcm` encryption ([RFC 8291](https://www.rfc-editor.org/rfc/rfc8291.html)). The
+InsForge SDK is pinned to `npm:@insforge/sdk@1.5.2`, the lockfile version; no new
+dependencies.
 
-**Cliente y servidor están implementados en código; la activación remota sigue pendiente.**
-El cliente hace upsert en `push_subscriptions` al suscribirse y reconcilia una suscripción viva
-al hidratar la sesión o cambiar de cuenta, desde `PushSubscriptionSync` en el layout raíz y desde
-Ajustes. La identidad de cada escritura/borrado se obtiene con `auth.getCurrentUser()`, nunca
-con datos de la interfaz. El endpoint es la clave de conflicto y cada upsert refresca `last_seen_at`.
-La baja borra la fila propia por endpoint antes de cancelar la suscripción del navegador; no exige
-que la fila exista. localStorage es una caché auxiliar para recuperar el endpoint al darla de baja.
+Client and server are implemented in code; remote activation is still pending. The
+client upserts into `push_subscriptions` on subscribe and reconciles a live
+subscription when the session hydrates or the account changes, from
+`PushSubscriptionSync` in the root layout and from Settings. The identity of every
+write and delete comes from `auth.getCurrentUser()`, never from interface data. The
+endpoint is the conflict key and every upsert refreshes `last_seen_at`. Unsubscribe
+deletes the caller's row by endpoint before cancelling the browser subscription; it
+does not require the row to exist. localStorage is an auxiliary cache used to
+recover the endpoint at unsubscribe time.
 
-Si RLS rechaza reutilizar el endpoint de otra cuenta, el cliente cancela la suscripción anterior
-y crea una nueva para la sesión actual. No reasigna ni borra filas ajenas; el servidor retirará
-el endpoint invalidado cuando responda 404/410. Las mutaciones se serializan para que la
-reconciliación global y Ajustes no se pisen. No se pide permiso automáticamente.
+If RLS rejects reusing another account's endpoint, the client cancels the previous
+subscription and creates a new one for the current session. It never reassigns or
+deletes rows it does not own; the server removes the invalidated endpoint when it
+answers 404/410. Mutations are serialized so global reconciliation and Settings do
+not overwrite each other. Permission is never requested automatically.
 
-El interruptor refleja el navegador incluso si falla el SDK, muestra el error y vuelve a permitir
-reintentar. Ajustes permite el alta con soporte, permiso disponible y clave pública VAPID.
-Siguen pendientes aplicar la migración, configurar secretos, publicar la función y programarla.
-No se ha probado una entrega real a un navegador.
+The toggle reflects the browser state even when the SDK fails, shows the error and
+allows retrying. Settings enables sign-up when the browser supports push, permission
+is available and the VAPID public key exists. Still pending: applying the migration,
+configuring secrets, deploying the function and scheduling it. No real delivery to a
+browser has been tested.
 
-La campana crea las filas `alerts` desde tareas, reservas y presupuestos cuando se abre la app.
-El servidor consume esas filas: no crea alertas si la campana no se ha ejecutado.
+The bell creates `alerts` rows from tasks, bookings and budgets when the app is
+opened. The server consumes those rows: it does not create alerts if the bell has not
+run.
 
-- Migración: `migrations/20261023120000_browser-push-server.sql`, idempotente. RLS CRUD con
-  `(select auth.uid()) = user_id`; sin acceso anónimo. `endpoint` único; claves `p256dh` y `auth`
-  en base64url sin padding; `last_seen_at` se actualiza desde el cliente al reconciliar.
-- Autorización exclusiva mediante `X-Push-Secret`. Un bearer de usuario no autoriza el envío.
-  No hay CORS: el navegador no invoca esta función. No se lee el cuerpo ni se aceptan parámetros.
-- RPC `claim_push_alerts` solo ejecutable por `project_admin` (API key administrativa de InsForge).
-  Reserva atómicamente hasta 10 alertas no leídas, sin envío previo y con suscripciones. Fecha efectiva:
-  `coalesce(alert_date, created_at)`, entre ahora menos 24 horas y ahora. No anticipa alertas futuras.
-- `push_claimed_at` + `push_claim_token` y `FOR UPDATE SKIP LOCKED` evitan trabajo solapado;
-  la reserva caduca a los 5 minutos tras una caída. La finalización exige el mismo token. Si un
-  envío falla, conserva `push_claimed_at` y limpia el token; tras caducar el lease puede reintentarse.
-  Los claims nulos van primero y luego se ordena por último intento, fecha efectiva e ID, para que
-  los fallos repetidos roten detrás de alertas aún no intentadas.
-- Cada alerta intenta hasta las 20 suscripciones más recientes del usuario, en paralelo; las alertas
-  se procesan en serie. Es un límite operativo deliberado: usuarios con más de 20 dispositivos
-  solo reciben el aviso en los 20 más recientes. Timeout HTTP/DB de 5 segundos; sin reintento interno.
-- Solo endpoints HTTPS de FCM (`fcm.googleapis.com`), Apple (`web.push.apple.com`) y Mozilla
-  (`updates.push.services.mozilla.com` y un subdominio de `push.services.mozilla.com`). Sin
-  credenciales, puertos alternativos ni redirecciones. Es una defensa SSRF y una lista de producto,
-  no una lista universal de Web Push: otro proveedor exige revisar y ampliar la función.
-- Payload `{ title, body, url }`, título hasta 100 caracteres y cuerpo hasta 500; TTL 900 segundos.
-  `url` apunta a `/trip?id=<id>` (ruta real del export) o a `/dashboard`. Las respuestas HTTP nunca incluyen contenido ni endpoints.
-- `404/410` elimina la suscripción. Otros errores conservan la alerta sin marca para reintentar en
-  el siguiente ciclo elegible (después de 5 minutos). Si no hay ninguna aceptación 2xx,
-  `push_sent_at` sigue siendo `null`.
-- Si algún servicio acepta el aviso, se marca la alerta como enviada globalmente. No hay reintento
-  por dispositivo tras éxito parcial. Un 2xx significa aceptación del servicio push, no que el
-  usuario haya visto la notificación. Los contadores `{ sent, deleted, failed }` cuentan intentos
-  por suscripción y solo se devuelven tras persistir el resultado. Un fallo de DB devuelve 503.
+- Migration: `migrations/20261023120000_browser-push-server.sql`, idempotent. RLS CRUD
+  with `(select auth.uid()) = user_id`; no anonymous access. `endpoint` is unique;
+  `p256dh` and `auth` keys in base64url without padding; `last_seen_at` is updated
+  from the client during reconciliation.
+- Authorization is exclusively through `X-Push-Secret`. A user bearer does not
+  authorize sending. There is no CORS: the browser does not call this function. The
+  body is not read and no parameters are accepted.
+- RPC `claim_push_alerts`, executable only by `project_admin` (InsForge admin API
+  key). It atomically reserves up to 10 unread alerts with no previous send and with
+  subscriptions. Effective date: `coalesce(alert_date, created_at)`, between now minus
+  24 hours and now. Future alerts are never pulled forward.
+- `push_claimed_at` plus `push_claim_token` plus `FOR UPDATE SKIP LOCKED` prevent
+  overlapping work; the reservation expires 5 minutes after a crash. Completion
+  requires the same token. If a send fails, `push_claimed_at` is kept and the token is
+  cleared; once the lease expires the alert can be retried. Null claims go first, then
+  order is by last attempt, effective date and ID, so repeated failures rotate behind
+  never-attempted alerts.
+- Each alert tries up to the 20 most recent subscriptions of the user, in parallel;
+  alerts are processed serially. This is a deliberate operational limit: users with
+  more than 20 devices only get the notice on the 20 most recent ones. HTTP/DB timeout
+  of 5 seconds, no internal retry.
+- HTTPS endpoints only, for FCM (`fcm.googleapis.com`), Apple (`web.push.apple.com`)
+  and Mozilla (`updates.push.services.mozilla.com` and one subdomain of
+  `push.services.mozilla.com`). No credentials, alternate ports or redirects. This is
+  an SSRF defense and a product allowlist, not a universal Web Push list: another
+  provider requires reviewing and extending the function.
+- Payload `{ title, body, url }`, title up to 100 characters and body up to 500; TTL
+  900 seconds. `url` points to `/trip?id=<id>` (the real export route) or to
+  `/dashboard`. HTTP responses never include content or endpoints.
+- `404/410` deletes the subscription. Other errors keep the alert unmarked so it is
+  retried in the next eligible cycle (after 5 minutes). If no service returns 2xx,
+  `push_sent_at` stays `null`.
+- If any service accepts the notice, the alert is marked as sent globally. There is no
+  per-device retry after partial success. A 2xx means acceptance by the push service,
+  not that the user saw the notification. The `{ sent, deleted, failed }` counters
+  count attempts per subscription and are returned only after the result is persisted.
+  A DB failure returns 503.
 
-La garantía es **al menos una vez ante caídas**: una caída entre el POST aceptado y la escritura de
-`push_sent_at` puede repetir el aviso tras caducar la reserva. No existe transacción distribuida con
-el servicio push. La marca evita repetir ciclos ya confirmados; no promete entrega exactamente una vez.
+The guarantee is at-least-once across crashes: a crash between the accepted POST and
+the `push_sent_at` write can repeat the notice once the reservation expires. There is
+no distributed transaction with the push service. The mark prevents repeating
+confirmed cycles; it does not promise exactly-once delivery.
 
-## Preparación y comandos pendientes (NO ejecutados)
+## Preparation and pending commands (not executed)
 
-Usar el proyecto ya vinculado `travelpal`; no crear otro. Estos comandos modifican el backend y
-quedan para el operador. Aplicar primero la migración con el flujo de migraciones del repositorio.
+Use the already linked `travelpal` project; do not create another one. These commands
+modify the backend and are left to the operator. Apply the migration first with the
+repository migration flow.
 
-Generar un par P-256 fuera del repo. `VAPID_PRIVATE_KEY` debe ser un **JWK privado JSON de una línea**
-con `kty: EC`, `crv: P-256`, `x`, `y`, `d`; no PEM ni el escalar privado solo. La clave pública
-para el cliente es el punto sin comprimir de 65 bytes (0x04 + x + y), codificado base64url sin padding.
-Guardar la privada en un gestor de secretos. No pegarla en documentos, logs ni `.env.example`.
+Generate a P-256 key pair outside the repo. `VAPID_PRIVATE_KEY` must be a one-line
+JSON private JWK with `kty: EC`, `crv: P-256`, `x`, `y`, `d`; not PEM and not the
+bare private scalar. The client public key is the uncompressed 65-byte point
+(0x04 + x + y), encoded base64url without padding. Store the private key in a secret
+manager. Do not paste it into documents, logs or `.env.example`.
 
-Las siguientes variables de shell se rellenan desde ese gestor; no son valores literales.
-`VAPID_SUBJECT` es un contacto `mailto:` o HTTPS controlado por el operador. El secreto de servicio
-se genera con al menos 32 bytes aleatorios. Evitar historial y trazas de shell al introducirlos.
+The shell variables below are filled from that manager; they are not literal values.
+`VAPID_SUBJECT` is a `mailto:` contact or an HTTPS URL controlled by the operator. The
+service secret is generated with at least 32 random bytes. Avoid shell history and
+traces when entering them.
 
 ```bash
 npx -y @insforge/cli db migrations up 20261023120000_browser-push-server.sql
@@ -91,16 +109,19 @@ npx -y @insforge/cli schedules create \
   --headers '{"X-Push-Secret":"${{secrets.PUSH_SEND_SECRET}}"}'
 ```
 
-La función usa los secretos reservados de runtime `INSFORGE_BASE_URL` y `API_KEY` vía
-`createAdminClient`; no `INSFORGE_API_KEY`. No crear ni copiar una API key al frontend.
-El [rol administrativo](https://github.com/InsForge/insforge-skills/blob/main/skills/insforge-cli/references/database/access-control.md)
-es `project_admin`, no `service_role`. El RPC es `SECURITY INVOKER`, sin elevar permisos de usuario.
+The function uses the reserved runtime secrets `INSFORGE_BASE_URL` and `API_KEY` via
+`createAdminClient`, not `INSFORGE_API_KEY`. Do not create or copy an API key into the
+frontend. The
+[administrative role](https://github.com/InsForge/insforge-skills/blob/main/skills/insforge-cli/references/database/access-control.md)
+is `project_admin`, not `service_role`. The RPC is `SECURITY INVOKER` and does not
+elevate user privileges.
 
-Añadir la pública como variable de GitHub Actions `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, y en `.env.local`
-para build local. `.github/workflows/ci.yml` la pasa al build mediante `vars`, nunca la privada.
-El bundle estático incorpora la pública al compilar: cambiarla requiere reconstruir el frontend.
+Add the public key as the GitHub Actions variable `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and
+to `.env.local` for local builds. `.github/workflows/ci.yml` passes it to the build
+through `vars`, never the private key. The static bundle embeds the public key at
+compile time: changing it requires rebuilding the frontend.
 
-Consultar la función y el schedule después de configurarlos (guardar el ID devuelto):
+Inspect the function and the schedule after configuring them (keep the returned ID):
 
 ```bash
 npx -y @insforge/cli functions list
@@ -108,21 +129,24 @@ npx -y @insforge/cli schedules get "$PUSH_SCHEDULE_ID"
 npx -y @insforge/cli schedules logs "$PUSH_SCHEDULE_ID" --limit 20
 ```
 
-Referencias de operación: [deploy de funciones](https://github.com/InsForge/insforge-skills/blob/main/skills/insforge-cli/references/functions-deploy.md),
+Operational references:
+[function deploy](https://github.com/InsForge/insforge-skills/blob/main/skills/insforge-cli/references/functions-deploy.md),
 [schedules](https://github.com/InsForge/insforge-skills/blob/main/skills/insforge-cli/references/schedules.md),
-[secrets de runtime](https://github.com/InsForge/InsForge/blob/main/docs/core-concepts/functions/overview.mdx).
-Los placeholders `${{secrets.KEY}}` del schedule se resuelven al crearlo/actualizarlo: no asumir
-que rotar un secreto cambia por sí solo las cabeceras de un schedule existente.
+[runtime secrets](https://github.com/InsForge/InsForge/blob/main/docs/core-concepts/functions/overview.mdx).
+The `${{secrets.KEY}}` placeholders in a schedule are resolved when it is created or
+updated: do not assume that rotating a secret changes the headers of an existing
+schedule by itself.
 
-## Rotación
+## Rotation
 
-1. Pausar el schedule; actualizar `PUSH_SEND_SECRET` en InsForge y volver a guardar las cabeceras
-   del schedule para resolver el nuevo valor. Reanudar y comprobar logs.
-2. Para rotar VAPID, generar otro par y actualizar privada/subject y pública del build coordinadamente.
-   Las suscripciones están vinculadas a la pública anterior: el cliente debe cancelar y volver a
-   suscribir, y sustituir las filas correspondientes. Planificar la interrupción; esta función solo
-   admite una clave VAPID activa, no hay transición simultánea de dos claves.
-3. Probar con un dispositivo de prueba antes de reactivar el schedule general.
+1. Pause the schedule; update `PUSH_SEND_SECRET` in InsForge and save the schedule
+   headers again to resolve the new value. Resume and check the logs.
+2. To rotate VAPID, generate another pair and update the private key, the subject and
+   the public key in the build in a coordinated way. Subscriptions are bound to the
+   previous public key: the client must cancel and subscribe again, and replace the
+   corresponding rows. Plan the interruption; this function supports only one active
+   VAPID key, with no simultaneous transition between two keys.
+3. Test with a test device before re-enabling the general schedule.
 
 ```bash
 npx -y @insforge/cli schedules update "$PUSH_SCHEDULE_ID" --active false
@@ -134,9 +158,9 @@ npx -y @insforge/cli secrets update VAPID_SUBJECT --value "$VAPID_SUBJECT"
 npx -y @insforge/cli schedules update "$PUSH_SCHEDULE_ID" --active true
 ```
 
-## Pruebas
+## Tests
 
-Sin secretos y sin red real durante los tests nuevos (Deno puede descargar imports inicialmente):
+No secrets and no real network in the new tests (Deno may download imports initially):
 
 ```bash
 deno test --no-lock insforge/functions/send-push/index_test.ts
@@ -148,14 +172,16 @@ pnpm run build
 pnpm run validate:static-export
 ```
 
-Deno verifica la firma con la pública VAPID y descifra el body con la privada del receptor;
-comprueba rechazo de bearer sin secreto, SSRF, 404/410, errores, éxito parcial y límite de lote.
-PGlite aplica dos veces la migración y comprueba RLS CRUD, privilegios del RPC, ventana temporal,
-reservas y deduplicación. No accede al backend del proyecto.
+Deno verifies the signature with the VAPID public key and decrypts the body with the
+receiver's private key; it checks rejection of a bearer without the secret, SSRF,
+404/410, errors, partial success and the batch limit. PGlite applies the migration
+twice and checks RLS CRUD, RPC privileges, the time window, reservations and
+deduplication. It does not reach the project backend.
 
-Prueba real pendiente, con la infraestructura remota configurada: suscribir un navegador
-con la pública correspondiente, confirmar su fila propia y una alerta no leída vencida hace menos de
-24 horas, cerrar la app y ejecutar un ciclo. Confirmar recepción y apertura del viaje/dashboard,
-`push_sent_at` persistido y ausencia de segundo envío al repetir el ciclo. Repetir con Android y con
-Safari iOS instalado como PWA. Revocar una suscripción y comprobar su limpieza tras 404/410;
-provocar un fallo de proveedor y comprobar que la alerta conserva `push_sent_at = null`.
+Real test still pending, with the remote infrastructure configured: subscribe a
+browser with the matching public key, confirm its own row and an unread alert that
+fell due less than 24 hours ago, close the app and run one cycle. Confirm reception
+and that the trip/dashboard opens, `push_sent_at` persisted and no second send when
+the cycle repeats. Repeat on Android and on Safari iOS installed as a PWA. Revoke a
+subscription and check cleanup after 404/410; force a provider failure and check that
+the alert keeps `push_sent_at = null`.
