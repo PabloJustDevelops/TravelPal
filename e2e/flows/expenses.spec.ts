@@ -64,7 +64,9 @@ test.describe('flujo de gastos', () => {
 
     const editLink = page.getByRole('link', { name: `Editar gasto ${expenseTitle}` })
     const editHref = await editLink.getAttribute('href')
-    expect(editHref).toMatch(/^\/expense-edit\?id=[0-9a-f-]+$/i)
+    // La ruta del locale puede venir con prefijo (/es/expense-edit) o sin él, según desde
+    // dónde se enlace: se acepta cualquiera de las dos formas canónicas.
+    expect(editHref).toMatch(/^(?:\/es)?\/expense-edit\?id=[0-9a-f-]+$/i)
     await page.goto(editHref!)
     await expect(page.getByRole('heading', { name: 'Editar gasto' })).toBeVisible()
     await expect(page.getByLabel('Descripción *')).toHaveValue(expenseTitle)
