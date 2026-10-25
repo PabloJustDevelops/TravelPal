@@ -470,7 +470,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
           id={panelId}
           role="region"
           aria-labelledby={`${panelId}-titulo`}
-          className={`absolute ${panelPlacement === "top-start" ? "left-0 bottom-full mb-2" : "right-0 mt-2"} w-96 max-w-[calc(100vw-5rem)] bg-surface rounded-lg shadow-lg border border-line z-50 max-h-96 overflow-hidden`}
+          className={`absolute ${panelPlacement === "top-start" ? "left-0 bottom-full mb-2" : "right-0 mt-2"} w-96 max-w-[calc(100vw-5rem)] bg-surface rounded-lg shadow-lg border border-line z-50 max-h-96 overflow-hidden max-lg:fixed max-lg:inset-x-4 max-lg:top-16 max-lg:mt-0 max-lg:w-auto max-lg:max-w-none`}
         >
           {/* Header */}
           <div className="px-4 py-3 border-b border-line flex items-center justify-between">
