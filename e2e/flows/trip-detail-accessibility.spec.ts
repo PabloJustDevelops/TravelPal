@@ -17,7 +17,7 @@ for (const width of [1440, 390]) {
       departure.setHours(9, 0, 0, 0);
       try {
         await createTrip(page, { title, origin: 'Madrid', destination: 'Lisboa', departure: toDateTimeLocal(departure) });
-        await expect(page.getByRole('heading', { name: 'Planificador de Itinerario' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Planificador de itinerario' })).toBeVisible();
         await expect(page.getByText('Sin gastos ni reservas todavía')).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
         const add = page.getByRole('button', { name: 'Agregar', exact: true }).first();
@@ -38,7 +38,7 @@ for (const width of [1440, 390]) {
         await page.getByRole('heading', { name: /^Día 1/ }).click();
         await expect(page.getByRole('heading', { name: activity, exact: true })).toBeVisible();
         await page.reload();
-        await expect(page.getByRole('heading', { name: 'Planificador de Itinerario' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Planificador de itinerario' })).toBeVisible();
         await page.getByRole('heading', { name: /^Día 1/ }).click();
         await expect(page.getByRole('heading', { name: activity, exact: true })).toBeVisible();
         await expect(page.getByText('Sin gastos ni reservas todavía')).toBeVisible();
