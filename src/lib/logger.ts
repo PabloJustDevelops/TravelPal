@@ -1,6 +1,4 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
-import { showToast } from "./toast";
-import { getErrorMessage } from "./utils";
 import { publicEnv } from "./public-env";
 
 const LEVELS: Record<LogLevel, number> = {
@@ -47,12 +45,9 @@ function warn(...args: unknown[]) {
 
 function error(...args: unknown[]) {
   if (isLevelEnabled("error")) {
+    // Solo consola: el detalle tecnico no se pinta al usuario. Quien necesite feedback
+    // visible llama a showToast con una clave traducida.
     console.error(...args);
-    // Emitir toast en cliente para feedback visual
-    if (typeof window !== "undefined") {
-      const msg = getErrorMessage(args.length === 1 ? args[0] : args);
-      showToast({ type: "error", title: "Error", message: msg });
-    }
   }
 }
 
