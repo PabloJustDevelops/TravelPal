@@ -1,12 +1,13 @@
 "use client";
 
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useDelayedLoading } from '@/hooks/useDelayedLoading'
 import InteriorSkeleton, { type InteriorScreen } from '@/components/ui/InteriorSkeleton'
 import skeletonStyles from '@/components/ui/skeleton.module.css'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import Navbar from './Navbar'
+import TopBar from './TopBar'
 import styles from './interior.module.css'
 import { HomeIcon, MapPinIcon, CurrencyDollarIcon, DocumentTextIcon, CalendarIcon, ClipboardDocumentListIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useI18n } from '@/lib/i18n/LocaleProvider'
@@ -22,6 +23,8 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, pending = false, skeleton = 'dashboard', loadingView }: DashboardLayoutProps) {
   const { locale, t } = useI18n()
   const { loading: authLoading } = useAuth()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const mobileToggleRef = useRef<HTMLButtonElement>(null)
   const waiting = authLoading || pending
   const visible = useDelayedLoading(waiting)
   const shell = (
@@ -35,7 +38,8 @@ export default function DashboardLayout({ children, pending = false, skeleton = 
           { name: t('navPlanning'), href: '/planning', icon: CalendarIcon },
           { name: t('navExpenses'), href: '/expenses', icon: CurrencyDollarIcon },
           { name: t('navNotes'), href: '/notes', icon: DocumentTextIcon },
-        ]} />
+        ]} mobileMenuOpen={mobileMenuOpen} onMobileMenuOpenChange={setMobileMenuOpen} mobileToggleRef={mobileToggleRef} />
+        <TopBar mobileMenuOpen={mobileMenuOpen} onMobileMenuToggle={() => setMobileMenuOpen((open) => !open)} mobileToggleRef={mobileToggleRef} />
         <main id="main-content" tabIndex={-1} className={`${styles.main} min-w-0 lg:ml-60`}>
           <div className={skeletonStyles.frame} data-loading-frame={skeleton}>
             {waiting ? <InteriorSkeleton screen={skeleton} view={loadingView} visible={visible} /> : children}

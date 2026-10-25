@@ -6,7 +6,7 @@ import Brand from '@/components/landing/Brand'
 import Link from 'next/link'
 import styles from './authStyles.module.css'
 import { localePath } from '@/lib/i18n'
-import LanguageSelector from '@/lib/i18n/LanguageSelector'
+import LanguageSelect from '@/components/i18n/LanguageSelect'
 import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 export default function AuthShell({ children, mode }: { children: ReactNode; mode?: 'signup' | 'signin' }) {
@@ -18,7 +18,7 @@ export default function AuthShell({ children, mode }: { children: ReactNode; mod
         <header className={styles.header}>
           <Brand />
           <div className="flex items-center gap-4">
-            <LanguageSelector />
+            <LanguageSelect />
             <p className={styles.accountPrompt}>
               {isSignup ? t('alreadyAccount') : t('noAccount')}{' '}
               <Link href={localePath(locale, isSignup ? '/signin' : '/signup')}>{isSignup ? t('startSession') : t('createYourAccount')}</Link>
@@ -57,7 +57,7 @@ export default function AuthShell({ children, mode }: { children: ReactNode; mod
         <section className="flex flex-col px-5 py-6 sm:px-10 lg:px-16 lg:py-10">
           <div className="flex items-center justify-between gap-4">
             <Brand />
-            <LanguageSelector />
+            <LanguageSelect />
           </div>
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10 lg:py-12">
             <p className="mb-6 text-xs font-semibold uppercase tracking-[0.16em] text-accent">{t('travelSpace')}</p>
