@@ -45,7 +45,7 @@ test.describe('flujo de fotos del diario', () => {
     })
 
     // El diario solo se abre en viajes pasados: lo prueba el bloque de fotos.
-    await expect(page.getByText('Todavia no hay fotos del viaje')).toBeVisible()
+    await expect(page.getByText('Todavía no hay fotos del viaje')).toBeVisible()
 
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
