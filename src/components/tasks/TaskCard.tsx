@@ -1,7 +1,5 @@
 import React from 'react';
 import { Task } from '@/lib/insforge';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { 
   CalendarIcon, 
   FlagIcon, 
@@ -11,6 +9,7 @@ import {
 import Button from '@/components/ui/Button';
 import { selectClassName } from '@/components/ui/fieldStyles';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
 interface TaskCardProps {
   task: Task;
@@ -20,18 +19,6 @@ interface TaskCardProps {
   className?: string;
 }
 
-const priorityConfig = {
-  low: { color: 'bg-success/10 text-success border-success', label: 'Baja' },
-  medium: { color: 'bg-warning/10 text-warning border-warning', label: 'Media' },
-  high: { color: 'bg-danger/10 text-ink border-danger', label: 'Alta' },
-};
-
-const statusOptions: { value: Task['status']; label: string }[] = [
-  { value: 'pending', label: 'Pendiente' },
-  { value: 'in_progress', label: 'En Progreso' },
-  { value: 'completed', label: 'Completada' },
-];
-
 export const TaskCard: React.FC<TaskCardProps> = ({ 
   task, 
   onEdit, 
@@ -39,6 +26,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onStatusChange,
   className = ''
 }) => {
+  const { t, locale } = useI18n();
+  const priorityConfig = {
+    low: { color: 'bg-success/10 text-success border-success', label: t('taskPriorityLow') },
+    medium: { color: 'bg-warning/10 text-warning border-warning', label: t('taskPriorityMedium') },
+    high: { color: 'bg-danger/10 text-ink border-danger', label: t('taskPriorityHigh') },
+  };
+  const statusOptions: { value: Task['status']; label: string }[] = [
+    { value: 'pending', label: t('taskPending') },
+    { value: 'in_progress', label: t('taskInProgress') },
+    { value: 'completed', label: t('taskCompleted') },
+  ];
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
 
   const handleStatusChange = (value: string) => {
@@ -68,9 +66,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-            aria-label="Editar tarea"
+            aria-label={t('taskEditAria')}
             className="h-11 w-11 shrink-0 p-0"
-            title="Editar tarea"
+            title={t('taskEditAria')}
           >
             <PencilSquareIcon className="w-4 h-4" />
           </Button>
@@ -78,9 +76,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-            aria-label="Eliminar tarea"
+            aria-label={t('taskDeleteAria')}
             className="h-11 w-11 shrink-0 p-0 text-danger hover:text-danger hover:bg-danger/10"
-            title="Eliminar tarea"
+            title={t('taskDeleteAria')}
           >
             <TrashIcon className="w-4 h-4" />
           </Button>
@@ -101,7 +99,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {task.due_date ? (
           <div className="flex items-center text-xs font-medium text-muted">
             <CalendarIcon className="w-4 h-4 mr-1.5 text-muted" aria-hidden="true" />
-            {format(new Date(task.due_date), "d 'de' MMM", { locale: es })}
+            {new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' }).format(new Date(task.due_date))}
           </div>
         ) : (
           <span />
@@ -113,7 +111,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           value={task.status}
           onChange={(e) => handleStatusChange(e.target.value)}
           draggable={false}
-          aria-label={`Mover la tarea ${task.title}`}
+          aria-label={t('taskMoveAria').replace('{title}', task.title)}
           className={cn(selectClassName, 'min-h-11 w-auto max-w-full px-2 py-0 text-xs')}
         >
           {statusOptions.map((option) => (

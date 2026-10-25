@@ -10,9 +10,10 @@ import PageTitle from "@/components/ui/PageTitle";
 import Input from "@/components/ui/Input";
 import { UserCircleIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useToast } from "@/components/ui/Toast";
-import { avatarUrlSchema, AVATAR_URL_ERROR } from "@/lib/avatar-url";
+import { avatarUrlSchema } from "@/lib/avatar-url";
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
-export default function ProfilePage() {
+export function ProfilePageContent({t}: Pick<ReturnType<typeof useI18n>, 't'>) {
   const { user, updateProfile, uploadAvatar } = useAuth();
   const { showSuccess, showError } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -40,7 +41,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     const avatar = avatarUrlSchema.safeParse(formData.avatarUrl);
     if (!avatar.success) {
-      setAvatarError(AVATAR_URL_ERROR);
+      setAvatarError(t('avatarUrlError'));
       return;
     }
     setAvatarError("");
@@ -48,7 +49,7 @@ export default function ProfilePage() {
     // Timeout de seguridad local para la UI
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      showError("La operación ha tardado demasiado. Por favor, inténtalo de nuevo.");
+      showError(t('profileOperationTimeout'), t('errorToastTitle'), t('toastDismiss'));
     }, 30000);
 
     try {
@@ -56,11 +57,11 @@ export default function ProfilePage() {
         full_name: formData.fullName,
         avatar_url: avatar.data ?? "",
       });
-      showSuccess("Perfil actualizado correctamente");
+      showSuccess(t('profileUpdated'), t('noticeTitle'), t('toastDismiss'));
       setIsEditing(false);
     } catch (error) {
       console.error("Error al actualizar perfil:", error);
-      showError("Error al actualizar el perfil: " + (error instanceof Error ? error.message : "Error desconocido"));
+      showError(t('profileUpdateError'), t('errorToastTitle'), t('toastDismiss'));
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
@@ -73,7 +74,7 @@ export default function ProfilePage() {
 
     // Validar tamaño (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showError("La imagen no debe superar los 5MB");
+      showError(t('avatarTooLarge'), t('errorToastTitle'), t('toastDismiss'));
       return;
     }
 
@@ -82,10 +83,10 @@ export default function ProfilePage() {
       const publicUrl = await uploadAvatar(file);
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
       setAvatarError("");
-      showSuccess("Imagen subida correctamente");
+      showSuccess(t('avatarUploaded'), t('noticeTitle'), t('toastDismiss'));
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      showError("Error al subir la imagen");
+      showError(t('avatarUploadError'), t('errorToastTitle'), t('toastDismiss'));
     } finally {
       setUploading(false);
     }
@@ -95,7 +96,7 @@ export default function ProfilePage() {
     return (
       <DashboardLayout skeleton="profile">
         <div className="flex items-center justify-center h-full">
-          <p>Cargando perfil...</p>
+          <p>{t('profileLoading')}</p>
         </div>
       </DashboardLayout>
     );
@@ -104,14 +105,14 @@ export default function ProfilePage() {
   return (
     <DashboardLayout skeleton="profile">
       <div className="mx-auto space-y-7">
-        <PageTitle title="Tu perfil" subtitle="Cómo apareces en TravelPal." />
+        <PageTitle title={t('profileTitle')} subtitle={t('profileSubtitle')} />
         <AccountTabs active="profile" />
 
         <Card className="rounded-none border-0 bg-transparent">
           <CardHeader className="border-0 px-0 pt-0">
             <CardTitle headingLevel={2} className="flex items-center gap-2">
               <UserCircleIcon className="h-6 w-6" />
-              Foto de perfil
+              {t('profilePhoto')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-7 px-0">
@@ -120,7 +121,7 @@ export default function ProfilePage() {
                 {formData.avatarUrl && avatarUrlSchema.safeParse(formData.avatarUrl).success ? (
                   <img
                     src={formData.avatarUrl}
-                    alt={formData.fullName || "Usuario"}
+                    alt={formData.fullName || t('user')}
                     className="h-24 w-24 rounded-full object-cover border border-line"
                   />
                 ) : (
@@ -129,7 +130,7 @@ export default function ProfilePage() {
                 {isEditing && (
                   <Button
                     variant="ghost"
-                    aria-label="Cambiar foto de perfil"
+                    aria-label={t('profileChangePhoto')}
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                     className="absolute inset-0 flex h-full w-full items-center justify-center bg-ink/60 rounded-full opacity-0 group-hover:opacity-100 hover:!bg-ink/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-opacity cursor-pointer"
@@ -149,7 +150,7 @@ export default function ProfilePage() {
               
               <div className="flex-1 text-left space-y-2">
                 <h2 className="text-2xl font-bold text-ink">
-                  {formData.fullName || "Usuario"}
+                  {formData.fullName || t('user')}
                 </h2>
                 <p className="text-muted">{formData.email}</p>
                 {isEditing && (
@@ -160,7 +161,7 @@ export default function ProfilePage() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
                     >
-                      {uploading ? "Subiendo..." : "Subir foto"}
+                      {uploading ? t('profileUploading') : t('profileUploadPhoto')}
                     </Button>
                   </div>
                 )}
@@ -168,10 +169,10 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid max-w-3xl grid-cols-1 gap-6 pt-6 border-t border-line">
-              <h2 className="text-2xl font-bold text-ink">Datos de la cuenta</h2>
+              <h2 className="text-2xl font-bold text-ink">{t('accountDetails')}</h2>
               <div className="space-y-2">
                 <label htmlFor="profile-name" className="block text-sm font-medium text-ink">
-                  Nombre Completo
+                  {t('fullName')}
                 </label>
                 <Input
                   id="profile-name"
@@ -180,13 +181,13 @@ export default function ProfilePage() {
                     setFormData({ ...formData, fullName: e.target.value })
                   }
                   disabled={!isEditing}
-                  placeholder="Tu nombre completo"
+                  placeholder={t('fullNamePlaceholder')}
                 />
               </div>
               
               <div className="space-y-2">
                 <label htmlFor="profile-email" className="block text-sm font-medium text-ink">
-                  Email
+                  {t('email')}
                 </label>
                 <Input
                   id="profile-email"
@@ -199,7 +200,7 @@ export default function ProfilePage() {
               {isEditing && (
                 <div className="space-y-2">
                   <label htmlFor="profile-avatar" className="block text-sm font-medium text-ink">
-                    URL del Avatar (Opcional)
+                    {t('avatarUrlLabel')}
                   </label>
                     <Input
                       id="profile-avatar"
@@ -215,7 +216,7 @@ export default function ProfilePage() {
                     />
                   {avatarError && <p id="profile-avatar-error" role="alert" className="text-sm text-danger">{avatarError}</p>}
                   <p id="profile-avatar-help" className="text-xs text-muted">
-                    Puedes subir una foto o pegar una URL HTTPS de esta app o del almacenamiento de InsForge.
+                    {t('avatarUrlHelp')}
                   </p>
                 </div>
               )}
@@ -241,15 +242,15 @@ export default function ProfilePage() {
                     }}
                     disabled={loading || uploading}
                   >
-                    Cancelar
+                    {t('profileCancel')}
                   </Button>
                   <Button onClick={handleSave} disabled={loading || uploading}>
-                    {loading ? "Guardando..." : "Guardar Cambios"}
+                    {loading ? t('profileSaving') : t('profileSave')}
                   </Button>
                 </>
               ) : (
                 <Button className="transition-none" onClick={() => setIsEditing(true)}>
-                  Editar Perfil
+                  {t('profileEdit')}
                 </Button>
               )}
             </div>
@@ -258,4 +259,9 @@ export default function ProfilePage() {
       </div>
     </DashboardLayout>
   );
+}
+
+export default function ProfilePage() {
+  const i18n = useI18n()
+  return <ProfilePageContent {...i18n} />
 }

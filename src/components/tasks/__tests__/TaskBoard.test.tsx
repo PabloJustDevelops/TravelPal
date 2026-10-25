@@ -60,7 +60,7 @@ describe("TaskBoard", () => {
       name: "Mostrar tareas por estado",
     });
     expect(stateSelector).toHaveValue("pending");
-    const pendingColumn = screen.getByRole("region", { name: "Pendiente" });
+    const pendingColumn = screen.getByRole("region", { name: "Por hacer" });
     const progressColumn = screen.getByRole("region", { name: "En Progreso" });
     expect(pendingColumn).toHaveClass("flex");
     expect(progressColumn).toHaveClass("hidden");

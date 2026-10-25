@@ -5,6 +5,7 @@ import { Task } from '@/lib/insforge';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { fieldClassName, textareaClassName } from '@/components/ui/fieldStyles';
 import Button from '@/components/ui/Button';
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   initialData,
   isLoading = false
 }) => {
+  const { t } = useI18n();
   const formId = useId();
   const {
     register,
@@ -102,14 +104,14 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                     as="h3"
                     className="text-lg font-medium leading-6 text-ink"
                   >
-                    {initialData ? 'Editar Tarea' : 'Nueva Tarea'}
+                    {initialData ? t('taskModalEdit') : t('taskModalNew')}
                   </Dialog.Title>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onClose}
                     className="p-2"
-                    aria-label="Cerrar"
+                    aria-label={t('close')}
                   >
                     <XMarkIcon className="h-6 w-6" />
                   </Button>
@@ -118,16 +120,16 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div>
                     <label htmlFor={`${formId}-title`} className="block text-sm font-medium text-muted">
-                      Título
+                      {t('taskTitle')}
                     </label>
                     <input
                       type="text"
                       id={`${formId}-title`}
                       {...register('title', {
-                        required: 'El título es obligatorio'
+                        required: t('taskTitleRequired')
                       })}
                       className={fieldClassName}
-                      placeholder="Ej: Revisar presupuesto"
+                      placeholder={t('taskTitlePlaceholder')}
                       aria-invalid={errors.title ? 'true' : 'false'}
                       aria-describedby={errors.title ? `${formId}-title-error` : undefined}
                     />
@@ -140,52 +142,52 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
                   <div>
                     <label htmlFor={`${formId}-description`} className="block text-sm font-medium text-muted">
-                      Descripción
+                      {t('taskDescription')}
                     </label>
                     <textarea
                       id={`${formId}-description`}
                       {...register('description')}
                       rows={3}
                       className={textareaClassName}
-                      placeholder="Detalles adicionales..."
+                      placeholder={t('taskDescriptionPlaceholder')}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor={`${formId}-status`} className="block text-sm font-medium text-muted">
-                        Estado
+                        {t('taskStatus')}
                       </label>
                       <select
                         id={`${formId}-status`}
                         {...register('status')}
                         className={fieldClassName}
                       >
-                        <option value="pending">Pendiente</option>
-                        <option value="in_progress">En Progreso</option>
-                        <option value="completed">Completada</option>
+                        <option value="pending">{t('taskPending')}</option>
+                        <option value="in_progress">{t('taskInProgress')}</option>
+                        <option value="completed">{t('taskCompleted')}</option>
                       </select>
                     </div>
 
                     <div>
                       <label htmlFor={`${formId}-priority`} className="block text-sm font-medium text-muted">
-                        Prioridad
+                        {t('taskPriority')}
                       </label>
                       <select
                         id={`${formId}-priority`}
                         {...register('priority')}
                         className={fieldClassName}
                       >
-                        <option value="low">Baja</option>
-                        <option value="medium">Media</option>
-                        <option value="high">Alta</option>
+                        <option value="low">{t('taskPriorityLow')}</option>
+                        <option value="medium">{t('taskPriorityMedium')}</option>
+                        <option value="high">{t('taskPriorityHigh')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor={`${formId}-due_date`} className="block text-sm font-medium text-muted">
-                      Fecha Límite
+                      {t('taskDueDate')}
                     </label>
                     <input
                       type="date"
@@ -201,13 +203,13 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                       variant="outline"
                       onClick={onClose}
                     >
-                      Cancelar
+                      {t('cancel')}
                     </Button>
                     <Button
                       type="submit"
                       loading={isLoading}
                     >
-                      Guardar
+                      {t('save')}
                     </Button>
                   </div>
                 </form>

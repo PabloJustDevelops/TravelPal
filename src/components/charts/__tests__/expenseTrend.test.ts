@@ -54,3 +54,9 @@ describe('buildExpenseTrend', () => {
     ])
   })
 })
+
+
+it('formatea los nombres de mes en inglés cuando ese locale está activo', () => {
+  const trend = buildExpenseTrend([expense('2026-01-15', 10)], 'en')
+  expect(trend[0].name).toBe('Jan 2026')
+})

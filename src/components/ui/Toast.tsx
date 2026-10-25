@@ -8,10 +8,10 @@ type ToastItem = Required<ToastPayload> & { id: string }
 
 type ToastContextValue = {
   show: (payload: ToastPayload) => void
-  showSuccess: (message: string, title?: string) => void
-  showError: (message: string, title?: string) => void
-  showWarning: (message: string, title?: string) => void
-  showInfo: (message: string, title?: string) => void
+  showSuccess: (message: string, title?: string, dismissLabel?: string) => void
+  showError: (message: string, title?: string, dismissLabel?: string) => void
+  showWarning: (message: string, title?: string, dismissLabel?: string) => void
+  showInfo: (message: string, title?: string, dismissLabel?: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -31,6 +31,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       type: payload.type,
       title: payload.title ?? (payload.type === 'error' ? 'Error' : 'Aviso'),
       message: payload.message,
+      dismissLabel: payload.dismissLabel ?? 'Cerrar aviso',
       durationMs: duration,
     }
     setToasts((prev) => [...prev, item])
@@ -39,8 +40,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, [remove])
 
-  const showOfType = useCallback((type: ToastType) => (message: string, title?: string) => {
-    show({ type, message, title })
+  const showOfType = useCallback((type: ToastType) => (message: string, title?: string, dismissLabel?: string) => {
+    show({ type, message, title, dismissLabel })
   }, [show])
 
   const value = useMemo<ToastContextValue>(() => ({
@@ -88,7 +89,7 @@ export function ToastViewport({ toasts, onClose }: { toasts: ToastItem[]; onClos
           <button
             className="ml-3 text-on-accent/80 hover:text-on-accent"
             onClick={() => onClose(t.id)}
-            aria-label="Cerrar aviso"
+            aria-label={t.dismissLabel}
           >
             <XMarkIcon className="h-4 w-4" />
           </button>

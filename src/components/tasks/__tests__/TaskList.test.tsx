@@ -31,7 +31,7 @@ it("agrupa por estado y permite completar y editar con teclado o selector", () =
   );
   expect(onStatusChange).toHaveBeenCalledWith("one", "completed");
   fireEvent.click(
-    screen.getByRole("button", { name: "Editar Preparar maleta" }),
+    screen.getByRole("button", { name: "Editar tarea Preparar maleta" }),
   );
   expect(onEditTask).toHaveBeenCalledWith(task);
 });

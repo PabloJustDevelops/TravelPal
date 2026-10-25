@@ -13,6 +13,7 @@ import {
   EyeIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline";
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
 interface NoteEditorProps {
   note?: Note;
@@ -23,17 +24,7 @@ interface NoteEditorProps {
   loading?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
 }
-const categories = [
-  { value: "general", label: "General" },
-  { value: "itinerary", label: "Itinerario" },
-  { value: "accommodation", label: "Alojamiento" },
-  { value: "transport", label: "Transporte" },
-  { value: "restaurant", label: "Restaurante" },
-  { value: "activity", label: "Actividad" },
-  { value: "shopping", label: "Compras" },
-  { value: "emergency", label: "Emergencia" },
-  { value: "contact", label: "Contacto" },
-];
+const categories = ["general", "itinerary", "accommodation", "transport", "restaurant", "activity", "shopping", "emergency", "contact"] as const;
 
 // React escapa el texto antes de renderizar. El contenido de una nota nunca se ejecuta como HTML.
 function inline(text: string) {
@@ -100,6 +91,7 @@ export default function NoteEditor({
   loading = false,
   onDirtyChange,
 }: NoteEditorProps) {
+  const { t } = useI18n();
   const formId = useId();
   const [initial, setInitial] = useState({
     title: note?.title || "",
@@ -136,7 +128,7 @@ export default function NoteEditor({
     event.preventDefault();
     setError("");
     if (!formData.title.trim() || !formData.content.trim()) {
-      setError("El título y el contenido son requeridos");
+      setError(t('noteRequiredError'));
       return;
     }
     try {
@@ -144,23 +136,21 @@ export default function NoteEditor({
       setInitial({ ...formData });
       onDirtyChange?.(false);
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Error al guardar la nota",
-      );
+      setError(error instanceof Error ? error.message : t('noteSaveError'));
     }
   };
   return (
-    <section aria-label="Editor de nota" className="min-w-0 p-5 sm:p-6">
-      <h2 className="sr-only">{note?.title || "Nueva Nota"}</h2>
+    <section aria-label={t('noteEditorLabel')} className="min-w-0 p-5 sm:p-6">
+      <h2 className="sr-only">{note?.title || t('newNote')}</h2>
       <div className="mb-3 flex lg:hidden">
         <Button
           variant="ghost"
           onClick={onCancel}
-          aria-label="Cerrar editor de nota"
+          aria-label={t('noteCloseEditor')}
           className="min-h-11 gap-2"
         >
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
-          Volver a notas
+          {t('backToNotes')}
         </Button>
       </div>
       <form onSubmit={submit} className="space-y-5">
@@ -173,29 +163,29 @@ export default function NoteEditor({
           </p>
         )}
         <Input
-          aria-label="Título *"
+          aria-label={t('noteTitleRequired')}
           name="title"
           value={formData.title}
           onChange={change}
-          placeholder="Título de la nota"
+          placeholder={t('noteTitlePlaceholder')}
           required
           className="min-h-12 border-transparent px-0 text-2xl font-bold"
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-ink">
-              Categoría *
+              {t('noteCategoryRequired')}
             </legend>
             <select
               name="category"
               value={formData.category}
               onChange={change}
-              aria-label="Categoría de la nota"
+              aria-label={t('noteCategoryLabel')}
               className={`${selectClassName} min-h-11`}
             >
               {categories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
+                <option key={category} value={category}>
+                  {t(({general:'expenseCategoryGeneral',itinerary:'expenseCategoryItinerary',accommodation:'expenseCategoryAccommodation',transport:'expenseCategoryTransport',restaurant:'expenseCategoryRestaurant',activity:'expenseCategoryActivity',shopping:'expenseCategoryShopping',emergency:'expenseCategoryEmergency',contact:'expenseCategoryContact'} as const)[category])}
                 </option>
               ))}
             </select>
@@ -206,7 +196,7 @@ export default function NoteEditor({
                 htmlFor={`${formId}-trip`}
                 className="mb-2 block text-sm font-medium text-ink"
               >
-                Asociar a Viaje (Opcional)
+                {t('noteAssociateTrip')}
               </label>
               <select
                 id={`${formId}-trip`}
@@ -215,7 +205,7 @@ export default function NoteEditor({
                 onChange={change}
                 className={`${selectClassName} min-h-11`}
               >
-                <option value="">Sin viaje asociado</option>
+                <option value="">{t('noteTripNone')}</option>
                 {trips.map((trip) => (
                   <option key={trip.id} value={trip.id}>
                     {trip.title}
@@ -234,7 +224,7 @@ export default function NoteEditor({
             onClick={() => setIsPreview(false)}
           >
             <PencilIcon className="h-4 w-4" aria-hidden="true" />
-            Editar
+            {t('noteTabEdit')}
           </Button>
           <Button
             type="button"
@@ -244,7 +234,7 @@ export default function NoteEditor({
             onClick={() => setIsPreview(true)}
           >
             <EyeIcon className="h-4 w-4" aria-hidden="true" />
-            Vista Previa
+            {t('noteTabPreview')}
           </Button>
         </div>
         {!isPreview ? (
@@ -253,7 +243,7 @@ export default function NoteEditor({
               htmlFor={`${formId}-content`}
               className="mb-2 block text-sm font-medium text-ink"
             >
-              Contenido *
+              {t('noteContentRequired')}
             </label>
             <textarea
               id={`${formId}-content`}
@@ -263,7 +253,7 @@ export default function NoteEditor({
               rows={15}
               aria-describedby={`${formId}-help`}
               className={`${textareaClassName} min-h-80 font-mono`}
-              placeholder="Escribe tu nota aquí... Puedes usar Markdown"
+              placeholder={t('noteContentPlaceholder')}
               data-testid="note-content-textarea"
               required
             />
@@ -271,21 +261,21 @@ export default function NoteEditor({
         ) : (
           <div className="min-h-80 rounded-md border border-line p-4 text-ink">
             <h3 className="mb-4 text-xl font-bold">
-              {formData.title || "Sin título"}
+              {formData.title || t('noteUntitled')}
             </h3>
             {formData.content ? (
               <MarkdownPreview content={formData.content} />
             ) : (
-              <p className="text-muted">Sin contenido para mostrar</p>
+              <p className="text-muted">{t('noteNoContent')}</p>
             )}
           </div>
         )}
         <p id={`${formId}-help`} className="text-xs text-muted">
-          Puedes usar Markdown. Consulta la vista previa antes de guardar.
+          {t('noteMarkdownHelp')}
         </p>
         <div className="flex flex-wrap gap-3 border-t border-line pt-5">
           <Button type="submit" loading={loading} className="min-h-11">
-            {note ? "Actualizar Nota" : "Guardar Nota"}
+            {note ? t('noteUpdate') : t('noteSave')}
           </Button>
           <Button
             type="button"
@@ -294,11 +284,11 @@ export default function NoteEditor({
             disabled={loading}
             className="min-h-11"
           >
-            Cancelar
+            {t('cancel')}
           </Button>
           {dirty && (
             <span role="status" className="self-center text-xs text-muted">
-              Cambios sin guardar
+              {t('noteCancelChanges')}
             </span>
           )}
         </div>

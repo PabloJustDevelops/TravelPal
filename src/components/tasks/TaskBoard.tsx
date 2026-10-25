@@ -3,6 +3,7 @@ import { Task } from '@/lib/insforge';
 import { TaskCard } from './TaskCard';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { selectClassName } from '@/components/ui/fieldStyles';
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -11,18 +12,18 @@ interface TaskBoardProps {
   onStatusChange: (taskId: string, newStatus: Task['status']) => void;
 }
 
-const columns: { id: Task['status']; title: string; color: string; bg: string }[] = [
-  { id: 'pending', title: 'Pendiente', color: 'border-line', bg: 'bg-transparent' },
-  { id: 'in_progress', title: 'En Progreso', color: 'border-accent', bg: 'bg-transparent' },
-  { id: 'completed', title: 'Completada', color: 'border-success', bg: 'bg-transparent' },
-];
-
 export const TaskBoard: React.FC<TaskBoardProps> = ({
   tasks,
   onEditTask,
   onDeleteTask,
   onStatusChange,
 }) => {
+  const { t } = useI18n();
+  const columns: { id: Task['status']; title: string; color: string; bg: string }[] = [
+    { id: 'pending', title: t('taskPending'), color: 'border-line', bg: 'bg-transparent' },
+    { id: 'in_progress', title: t('taskInProgress'), color: 'border-accent', bg: 'bg-transparent' },
+    { id: 'completed', title: t('taskCompleted'), color: 'border-success', bg: 'bg-transparent' },
+  ];
   const [mobileStatus, setMobileStatus] = useState<Task['status']>('pending');
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverTrash, setDragOverTrash] = useState(false);
@@ -97,18 +98,18 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             }
           `}>
             <TrashIcon className={`w-8 h-8 ${dragOverTrash ? 'animate-bounce' : ''}`} />
-            <span className="font-medium text-lg">Soltar para eliminar</span>
+            <span className="font-medium text-lg">{t('taskBoardDropDelete')}</span>
           </div>
         </div>
       )}
 
       <div className="mb-4 md:hidden">
         <label htmlFor="task-board-status" className="mb-1.5 block text-sm font-medium text-ink">
-          Mostrar tareas por estado
+          {t('taskBoardStatus')}
         </label>
         <select
           id="task-board-status"
-          aria-label="Mostrar tareas por estado"
+          aria-label={t('taskBoardStatus')}
           aria-controls={`task-column-${mobileStatus}`}
           value={mobileStatus}
           onChange={(event) => setMobileStatus(event.target.value as Task['status'])}
@@ -168,7 +169,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 ))}
                 {colTasks.length === 0 && (
                   <div className="flex min-h-20 flex-col items-center justify-center rounded-lg bg-paper/50 px-3 text-muted">
-                    <span className="text-sm">Sin tareas</span>
+                    <span className="text-sm">{t('taskNoTasks')}</span>
                   </div>
                 )}
               </div>

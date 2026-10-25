@@ -25,14 +25,14 @@ import {
 } from "@heroicons/react/24/outline";
 import { showToast } from "@/lib/toast";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
-export default function TasksPage() {
+export function TasksPageContent({t}: Pick<ReturnType<typeof useI18n>, 't'>) {
   const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [viewMode, setViewMode] = useState<"list" | "board" | "calendar">(
@@ -110,8 +110,8 @@ export default function TasksPage() {
   }, [authLoading, user?.id, reloadToken]);
 
   const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de tareas ha tardado demasiado.",
-    request: "No se pudieron cargar las tareas.",
+    timeout: t("tasksLoadTimeout"),
+    request: t("tasksRequestError"),
   });
 
   const handleCreateTask = () => {
@@ -143,7 +143,7 @@ export default function TasksPage() {
         );
 
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo actualizar la tarea");
+        assertRowsAffected(updatedRows, t("taskUpdateError"));
       } else {
         const { error } = await withQueryTimeout(
           insforge.database
@@ -168,20 +168,24 @@ export default function TasksPage() {
 
       showToast({
         type: "success",
-        message: editingTask ? "Tarea actualizada" : "Tarea creada",
+        title: t("noticeTitle"),
+        dismissLabel: t("toastDismiss"),
+        message: editingTask ? t("taskUpdated") : t("taskCreated"),
       });
       setIsModalOpen(false);
       refetch(); // Reload tasks
     } catch (err) {
       logger.error("TasksPage: Error saving task", {
-        error: getErrorMessage(err, "Error al guardar la tarea"),
+        error: getErrorMessage(err, t("taskSaveError")),
       });
       showToast({
         type: "error",
+        title: t("errorToastTitle"),
+        dismissLabel: t("toastDismiss"),
         message:
           queryErrorKind(err) === "timeout"
-            ? CONNECTION_TIMEOUT_MESSAGE
-            : "Error al guardar la tarea",
+            ? t("connectionTimeout")
+            : t("taskSaveError"),
       });
     } finally {
       setSaving(false);
@@ -190,7 +194,7 @@ export default function TasksPage() {
 
   const handleDeleteTask = async (task: Task) => {
     if (!user) return;
-    if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
+    if (!confirm(t("taskDeleteConfirm"))) return;
 
     try {
       const insforge = createInsforgeClient();
@@ -205,20 +209,22 @@ export default function TasksPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(deletedRows, "No se pudo eliminar la tarea");
+      assertRowsAffected(deletedRows, t("taskDeleteError"));
 
-      showToast({ type: "success", message: "Tarea eliminada" });
+      showToast({ type: "success", title: t("noticeTitle"), dismissLabel: t("toastDismiss"), message: t("taskDeleted") });
       setTasks(tasks.filter((t) => t.id !== task.id));
     } catch (err) {
       logger.error("TasksPage: Error deleting task", {
-        error: getErrorMessage(err, "Error al eliminar la tarea"),
+        error: getErrorMessage(err, t("taskDeleteError")),
       });
       showToast({
         type: "error",
+        title: t("errorToastTitle"),
+        dismissLabel: t("toastDismiss"),
         message:
           queryErrorKind(err) === "timeout"
-            ? CONNECTION_TIMEOUT_MESSAGE
-            : "Error al eliminar la tarea",
+            ? t("connectionTimeout")
+            : t("taskDeleteError"),
       });
     }
   };
@@ -248,19 +254,21 @@ export default function TasksPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudo actualizar el estado");
+      assertRowsAffected(updatedRows, t("taskUpdateError"));
 
       // No need to fetch if successful, state is already updated
     } catch (err) {
       logger.error("TasksPage: Error updating task status", {
-        error: getErrorMessage(err, "Error al actualizar el estado"),
+        error: getErrorMessage(err, t("taskUpdateError")),
       });
       showToast({
         type: "error",
+        title: t("errorToastTitle"),
+        dismissLabel: t("toastDismiss"),
         message:
           queryErrorKind(err) === "timeout"
-            ? CONNECTION_TIMEOUT_MESSAGE
-            : "Error al actualizar el estado",
+            ? t("connectionTimeout")
+            : t("taskUpdateError"),
       });
       setTasks(previousTasks); // Revert on error
     }
@@ -276,7 +284,7 @@ export default function TasksPage() {
         <ErrorState
           message={error}
           onRetry={() => refetch()}
-          title="Error al cargar las tareas"
+          title={t("tasksLoadError")}
         />
       </DashboardLayout>
     );
@@ -288,8 +296,8 @@ export default function TasksPage() {
         {/* Header */}
         <div data-loading-slot="title" className={`${slots.tasksTitle} mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between`}>
           <PageTitle
-            title="Lo importante, antes de salir."
-            subtitle="Tus pendientes, sin perder el hilo."
+            title={t("tasksHeading")}
+            subtitle={t("tasksSubtitle")}
           />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -300,10 +308,10 @@ export default function TasksPage() {
                 aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
               >
-                Lista
+                {t("taskListView")}
               </Button>
               <button
-                aria-label="Vista Tablero"
+                aria-label={t("taskBoardView")}
                 aria-pressed={viewMode === "board"}
                 onClick={() => setViewMode("board")}
                 className={`min-h-11 min-w-11 p-2 rounded-md transition-colors ${
@@ -311,7 +319,7 @@ export default function TasksPage() {
                     ? "bg-accent-soft text-accent"
                     : "text-muted hover:bg-surface-strong"
                 }`}
-                title="Vista Tablero"
+                title={t("taskBoardView")}
               >
                 <ViewColumnsIcon className="w-5 h-5" />
               </button>
@@ -322,8 +330,8 @@ export default function TasksPage() {
                     ? "bg-accent-soft text-accent"
                     : "text-muted hover:bg-surface-strong"
                 }`}
-                title="Vista Calendario"
-                aria-label="Vista Calendario"
+                title={t("taskCalendarView")}
+                aria-label={t("taskCalendarView")}
                 aria-pressed={viewMode === "calendar"}
               >
                 <CalendarIcon className="w-5 h-5" />
@@ -332,11 +340,11 @@ export default function TasksPage() {
 
             <Button
               onClick={handleCreateTask}
-              aria-label="Nueva Tarea"
+              aria-label={t("newTask")}
               className="gap-2"
             >
               <PlusIcon className="w-5 h-5" />
-              <span className="hidden sm:inline">Nueva Tarea</span>
+              <span className="hidden sm:inline">{t("newTask")}</span>
             </Button>
           </div>
         </div>
@@ -344,13 +352,13 @@ export default function TasksPage() {
         <div data-loading-slot="tasksFilters" className={`${slots.tasksFilters} mb-6 flex flex-wrap items-center justify-between gap-4`}>
           <div
             role="group"
-            aria-label="Filtrar tareas por estado"
+            aria-label={t("tasksFilter")}
             className="flex flex-wrap gap-1"
           >
             {[
-              { id: "all", label: "Todas" },
-              { id: "pending", label: "Pendientes" },
-              { id: "completed", label: "Completadas" },
+              { id: "all", label: t("taskFilterAll") },
+              { id: "pending", label: t("taskFilterPending") },
+              { id: "completed", label: t("taskFilterCompleted") },
             ].map((filter) => (
               <Button
                 key={filter.id}
@@ -365,8 +373,8 @@ export default function TasksPage() {
           </div>
           <div className="w-full sm:max-w-xs">
             <Input
-              aria-label="Buscar tareas"
-              placeholder="Buscar tareas..."
+              aria-label={t("searchTasks")}
+              placeholder={t("searchTasks") + "..."}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="min-h-11"
@@ -374,7 +382,7 @@ export default function TasksPage() {
           </div>
         </div>
         {/* Content */}
-        <div data-loading-slot="tasksBody" role="region" aria-label="Tareas" tabIndex={0} className={slots.tasksBody}>
+        <div data-loading-slot="tasksBody" role="region" aria-label={t("tasksRegion")} tabIndex={0} className={slots.tasksBody}>
           {viewMode === "list" ? (
             <TaskList
               tasks={filteredTasks}
@@ -384,7 +392,7 @@ export default function TasksPage() {
             />
           ) : viewMode === "board" ? (
             <>
-              <h2 className="sr-only">Tablero de tareas</h2>
+              <h2 className="sr-only">{t("taskBoardTitle")}</h2>
               <TaskBoard
                 tasks={filteredTasks}
                 onEditTask={handleEditTask}
@@ -414,4 +422,9 @@ export default function TasksPage() {
       />
     </DashboardLayout>
   );
+}
+
+export default function TasksPage() {
+  const i18n = useI18n()
+  return <TasksPageContent {...i18n} />
 }
