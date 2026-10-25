@@ -11,9 +11,11 @@ jest.mock("../Navbar", () => ({
     <nav>{navigation.map((item) => <a key={item.href} href={item.href}>{item.name}</a>)}</nav>
   ),
 }));
+jest.mock("../TopBar", () => ({ __esModule: true, default: () => <div data-testid="top-bar" /> }));
 
 it("incluye inspiración de vuelos en la navegación", () => {
   render(<DashboardLayout>Contenido</DashboardLayout>);
+  expect(screen.getByTestId("top-bar")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Inspiración de vuelos" })).toHaveAttribute(
     "href",
     "/travel-inspiration",
