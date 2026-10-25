@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { formatNumber } from "@/lib/i18n";
 import type { JournalEntry } from "@/lib/insforge";
 import { createInsforgeClient } from "@/lib/insforge";
 import {
@@ -13,10 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   cn,
-  formatDate,
-  getErrorMessage,
+    getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
 import Button from "@/components/ui/Button";
@@ -40,15 +40,15 @@ interface TripJournalProps {
   tripId: string;
 }
 
-const LOAD_ERROR = "No se pudo cargar el diario del viaje";
 
-function Rating({ rating }: { rating?: number }) {
+
+function Rating({ rating, label }: { rating?: number; label: (rating: number) => string }) {
   if (!rating) return null;
 
   return (
     <span
       className="flex items-center gap-0.5"
-      aria-label={`Valoracion: ${rating} de 5`}
+      aria-label={label(rating)}
     >
       {[1, 2, 3, 4, 5].map((star) => (
         <StarIcon
@@ -63,6 +63,7 @@ function Rating({ rating }: { rating?: number }) {
 
 export default function TripJournal({ tripId }: TripJournalProps) {
   const { user } = useAuth();
+  const { locale, t } = useI18n();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{
@@ -103,8 +104,8 @@ export default function TripJournal({ tripId }: TripJournalProps) {
   }, [load]);
 
   const loadErrorMessage = getLoadErrorMessage(loadError, {
-    timeout: "La carga del diario ha tardado demasiado.",
-    request: LOAD_ERROR,
+    timeout: t("journalLoadTimeout"),
+    request: t("journalLoadError"),
   });
 
   const openNewEntry = () => {
@@ -144,9 +145,9 @@ export default function TripJournal({ tripId }: TripJournalProps) {
         );
 
         if (saveError) throw saveError;
-        assertRowsAffected(updatedRows, "No se pudo guardar la entrada");
+        assertRowsAffected(updatedRows, t("entrySaveError"));
       } else {
-        if (!user?.id) throw new Error("Sesion no disponible");
+        if (!user?.id) throw new Error(t("sessionUnavailable"));
 
         const { error: saveError } = await withQueryTimeout(
           insforge.database
@@ -165,8 +166,8 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       // El formulario ensena el mensaje; no lo tragamos.
       throw new Error(
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "No se pudo guardar la entrada"),
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("entrySaveError")),
       );
     } finally {
       setSaving(false);
@@ -176,7 +177,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
   const handleDelete = async (entry: JournalEntry) => {
     if (
       typeof window !== "undefined" &&
-      !window.confirm("Quieres borrar esta entrada del diario?")
+      !window.confirm(t("deleteEntryConfirm"))
     ) {
       return;
     }
@@ -193,17 +194,17 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       );
 
       if (deleteError) throw deleteError;
-      assertRowsAffected(deletedRows, "No se pudo borrar la entrada");
+      assertRowsAffected(deletedRows, t("entryDeleteError"));
 
       setEntries((current) => current.filter((item) => item.id !== entry.id));
-      showToast({ type: "success", message: "Entrada borrada" });
+      showToast({ type: "success", message: t("entryDeleted") });
     } catch (err) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "No se pudo borrar la entrada");
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("entryDeleteError"));
       logger.error("TripJournal: delete failed", { error: message });
-      showToast({ type: "error", title: "Error al borrar la entrada", message });
+      showToast({ type: "error", title: t("entryDeleteError"), message });
     }
   };
 
@@ -213,10 +214,10 @@ export default function TripJournal({ tripId }: TripJournalProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2">
             <BookOpenIcon className="h-5 w-5 text-muted" aria-hidden="true" />
-            Diario
+            {t("journal")}
           </CardTitle>
           <Button onClick={openNewEntry} size="sm" className="min-h-11">
-            Anadir entrada
+            {t("addEntry")}
           </Button>
         </div>
       </CardHeader>
@@ -224,19 +225,19 @@ export default function TripJournal({ tripId }: TripJournalProps) {
         {loading ? (
           <div
             role="status"
-            aria-label="Cargando el diario del viaje"
+            aria-label={t("journalLoading")}
             className="flex justify-center py-8"
           >
             <LoadingSpinner />
           </div>
         ) : loadErrorMessage ? (
-          <ErrorState message={loadErrorMessage} onRetry={load} />
+          <ErrorState message={loadErrorMessage} title={t("journalErrorTitle")} retryLabel={t("retry")} onRetry={load} />
         ) : entries.length === 0 ? (
           <EmptyState
             icon={<BookOpenIcon className="h-12 w-12" />}
-            title="Todavia no has escrito el diario de este viaje"
-            description="Guarda como fue cada dia para que el viaje no se quede en fotos."
-            action={<Button onClick={openNewEntry}>Escribir la primera entrada</Button>}
+            title={t("journalEmptyTitle")}
+            description={t("journalEmptyDescription")}
+            action={<Button onClick={openNewEntry}>{t("firstJournalEntry")}</Button>}
           />
         ) : (
           <ol className="space-y-6">
@@ -246,9 +247,9 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="text-lg font-semibold leading-snug text-ink">
-                        {formatDate(entry.entry_date)}
+                        {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { day: "numeric", month: "long", year: "numeric" }).format(new Date(entry.entry_date))}
                       </p>
-                      <Rating rating={entry.rating} />
+                      <Rating rating={entry.rating} label={(rating) => t("rating").replace("{rating}", formatNumber(rating, locale))} />
                     </div>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-reading text-ink">
                       {entry.content}
@@ -259,7 +260,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => openEditEntry(entry)}
-                      aria-label="Editar entrada"
+                      aria-label={t("editEntry")}
                       className="min-h-11 min-w-11"
                     >
                       <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
@@ -268,7 +269,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(entry)}
-                      aria-label="Borrar entrada"
+                      aria-label={t("deleteEntry")}
                       className="min-h-11 min-w-11 text-danger"
                     >
                       <TrashIcon className="h-4 w-4" aria-hidden="true" />
@@ -286,7 +287,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
       <Modal
         isOpen={editorOpen}
         onClose={closeEditor}
-        title={editingEntry ? "Editar entrada" : "Nueva entrada"}
+        title={editingEntry ? t("editEntry") : t("newEntry")}
         size="lg"
       >
         <JournalEntryForm

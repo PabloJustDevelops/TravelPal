@@ -3,7 +3,7 @@ import Navbar from '../Navbar';
 import { HomeIcon, MapPinIcon } from '@heroicons/react/24/outline';
 const mockUser = { full_name: 'Test', avatar_url: '' };
 jest.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser, signOut: jest.fn() }) }));
-jest.mock('next/navigation', () => ({ usePathname: () => '/trips/fixture' }));
+jest.mock('next/navigation', () => ({ usePathname: () => '/trips/fixture', useRouter: () => ({ push: jest.fn(), replace: jest.fn(), refresh: jest.fn() }) }));
 jest.mock('@/components/notifications/NotificationSystem', () => ({ __esModule: true, default: () => null }));
 const navigation = [{ name: 'Dashboard', href: '/dashboard', icon: HomeIcon }, { name: 'Viajes', href: '/trips', icon: MapPinIcon }];
 beforeEach(() => { mockUser.avatar_url = ''; });

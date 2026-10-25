@@ -100,7 +100,7 @@ describe("TripJournal", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Todavia no has escrito el diario de este viaje"),
+        screen.getByText("Todavía no has escrito el diario de este viaje"),
       ).toBeInTheDocument();
     });
   });
@@ -116,7 +116,7 @@ describe("TripJournal", () => {
     await waitFor(() => {
       expect(screen.getByText("Primer dia")).toBeInTheDocument();
     });
-    expect(screen.getByLabelText("Valoracion: 5 de 5")).toBeInTheDocument();
+    expect(screen.getByLabelText("Valoración: 5 de 5")).toBeInTheDocument();
   });
 
   it("si falla la carga lo dice y permite reintentar", async () => {
@@ -147,12 +147,12 @@ describe("TripJournal", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Todavia no has escrito el diario de este viaje"),
+        screen.getByText("Todavía no has escrito el diario de este viaje"),
       ).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Anadir entrada" }));
-    fireEvent.change(screen.getByLabelText("Como fue"), {
+    fireEvent.click(screen.getByRole("button", { name: "Añadir entrada" }));
+    fireEvent.change(screen.getByLabelText("Cómo fue"), {
       target: { value: "Un dia redondo" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Guardar entrada" }));

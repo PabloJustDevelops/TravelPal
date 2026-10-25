@@ -17,7 +17,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
@@ -26,9 +25,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { PhotoIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const LOAD_ERROR = "No se pudieron cargar las fotos del diario";
+
 
 function objectKey(userId: string, tripId: string, fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() || "jpg";
@@ -38,6 +38,7 @@ function objectKey(userId: string, tripId: string, fileName: string): string {
 
 export default function JournalPhotos({ tripId }: { tripId: string }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [photos, setPhotos] = useState<JournalPhotoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{
@@ -107,8 +108,8 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
   }, [load]);
 
   const loadErrorMessage = getLoadErrorMessage(loadError, {
-    timeout: "La carga de las fotos ha tardado demasiado.",
-    request: LOAD_ERROR,
+    timeout: t("journalLoadTimeout"),
+    request: t("photosLoadError"),
   });
 
   const handleFiles = async (files: FileList | null) => {
@@ -118,8 +119,8 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
     if (file.size > MAX_BYTES) {
       showToast({
         type: "error",
-        title: "Foto demasiado grande",
-        message: "Cada foto puede pesar hasta 5 MB.",
+        title: t("photoTooLarge"),
+        message: t("photoSizeLimit"),
       });
       return;
     }
@@ -141,7 +142,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
       // La key la devuelve el propio upload; guardamos esa, no la inventada,
       // porque es la que identifica el objeto para borrarlo despues.
       const storedKey = data?.key ?? key;
-      if (!url) throw new Error("No se pudo obtener la url de la foto");
+      if (!url) throw new Error(t("photoUrlError"));
 
       const { error: insertError } = await withQueryTimeout(
         insforge.database
@@ -163,10 +164,10 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
     } catch (err) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "No se pudo subir la foto");
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("photoUploadError"));
       logger.error("JournalPhotos: upload failed", { error: message });
-      showToast({ type: "error", title: "Error al subir la foto", message });
+      showToast({ type: "error", title: t("photoUploadError"), message });
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -176,7 +177,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
   const handleDelete = async (photo: JournalPhotoRow) => {
     if (
       typeof window !== "undefined" &&
-      !window.confirm("Quieres borrar esta foto?")
+      !window.confirm(t("deletePhotoConfirm"))
     ) {
       return;
     }
@@ -201,17 +202,17 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
         { label: "journal-photos:delete" },
       );
       if (deleteError) throw deleteError;
-      assertRowsAffected(deletedRows, "No se pudo borrar la foto");
+      assertRowsAffected(deletedRows, t("photoDeleteFailed"));
 
       setPhotos((current) => current.filter((item) => item.id !== photo.id));
-      showToast({ type: "success", message: "Foto borrada" });
+      showToast({ type: "success", message: t("photoDeleted") });
     } catch (err) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "No se pudo borrar la foto");
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("photoDeleteFailed"));
       logger.error("JournalPhotos: delete failed", { error: message });
-      showToast({ type: "error", title: "Error al borrar la foto", message });
+      showToast({ type: "error", title: t("photoDeleteError"), message });
     } finally {
       setBusyId(null);
     }
@@ -222,7 +223,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="flex items-center gap-2 text-lg font-semibold leading-snug text-ink">
           <PhotoIcon className="h-5 w-5 text-muted" aria-hidden="true" />
-          Fotos
+          {t("photos")}
         </h3>
         <div>
           <input
@@ -230,7 +231,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
             type="file"
             accept="image/*"
             className="hidden"
-            aria-label="Anadir foto al diario"
+            aria-label={t("addPhotoInputAria")}
             onChange={(event) => handleFiles(event.target.files)}
             disabled={uploading}
           />
@@ -240,7 +241,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
             onClick={() => inputRef.current?.click()}
             className="min-h-11"
           >
-            Anadir foto
+            {t("addPhoto")}
           </Button>
         </div>
       </div>
@@ -248,18 +249,18 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
       {loading ? (
         <div
           role="status"
-          aria-label="Cargando las fotos del diario"
+          aria-label={t("photosLoading")}
           className="flex justify-center py-8"
         >
           <LoadingSpinner />
         </div>
       ) : loadErrorMessage ? (
-        <ErrorState message={loadErrorMessage} onRetry={load} />
+        <ErrorState message={loadErrorMessage} title={t("photosErrorTitle")} retryLabel={t("retry")} onRetry={load} />
       ) : photos.length === 0 ? (
         <EmptyState
           icon={<PhotoIcon className="h-12 w-12" />}
-          title="Todavia no hay fotos del viaje"
-          description="Anade las fotos que quieras recordar de este viaje."
+          title={t("photosEmpty")}
+          description={t("photosEmptyHint")}
         />
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -271,23 +272,23 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
               {photo.signedUrl ? (
                 <img
                   src={photo.signedUrl}
-                  alt="Foto del diario"
+                  alt={t("journalPhotoAlt")}
                   className="h-40 w-full object-cover"
                 />
               ) : (
                 <div
                   role="img"
-                  aria-label="Foto del diario no disponible"
+                  aria-label={t("photoUnavailable")}
                   className="flex h-40 w-full items-center justify-center px-3 text-center text-sm text-muted"
                 >
-                  No se pudo cargar la foto
+                  {t("photoLoadError")}
                 </div>
               )}
               <div className="absolute right-2 top-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Borrar foto"
+                  aria-label={t("deletePhoto")}
                   className="bg-paper text-danger"
                   loading={busyId === photo.id}
                   onClick={() => handleDelete(photo)}

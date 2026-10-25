@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ErrorState from '@/components/ui/ErrorState'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -18,6 +19,7 @@ export default function ProtectedRoute({
   redirectTo = '/signin' 
 }: ProtectedRouteProps) {
   const { user, loading, sessionError, reloadSession } = useAuth()
+  const { t } = useI18n()
   const router = useRouter()
 
   useEffect(() => {
@@ -50,8 +52,9 @@ export default function ProtectedRoute({
       return (
         <div className="min-h-screen flex items-center justify-center px-4">
           <ErrorState
-            title="No se pudo comprobar tu sesión"
-            message="No hemos podido verificar tu sesión con el servidor. Reintenta; si el problema continúa, cierra sesión y vuelve a entrar."
+            title={t('sessionCheckErrorTitle')}
+            message={t('sessionCheckErrorMessage')}
+            retryLabel={t('retry')}
             onRetry={() => {
               void reloadSession()
             }}

@@ -15,7 +15,6 @@ import {
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
@@ -30,16 +29,13 @@ import {
   MapPinIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localePath } from "@/lib/i18n";
 
-const TRIP_STATUS_LABELS: Record<Trip["status"], string> = {
-  planned: "Planeado",
-  confirmed: "Confirmado",
-  completed: "Completado",
-  cancelled: "Cancelado",
-};
+const TRIP_STATUS_KEYS = { planned: "tripStatusPlanned", confirmed: "tripStatusConfirmed", completed: "tripStatusCompleted", cancelled: "tripStatusCancelled" } as const;
 
-function tripDate(value: string, options?: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("es-ES", {
+function tripDate(value: string, locale: "es" | "en", options?: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -47,14 +43,15 @@ function tripDate(value: string, options?: Intl.DateTimeFormatOptions) {
   }).format(new Date(value));
 }
 
-function tripTime(value: string) {
-  return new Intl.DateTimeFormat("es-ES", {
+function tripTime(value: string, locale: "es" | "en") {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
 function TripDetailsContent() {
+  const { locale, t } = useI18n();
   const id = useSearchParams().get("id")?.trim() ?? "";
 
   const { user, loading: authLoading } = useAuth();
@@ -120,23 +117,23 @@ function TripDetailsContent() {
     if (!id) return;
 
     if (!user) {
-      router.push("/signin");
+      router.push((locale === "en" ? localePath(locale, "/signin") : "/signin"));
       return;
     }
 
     setLoading(true);
     loadTrip();
-  }, [id, user, authLoading, router, loadTrip]);
+  }, [id, user, authLoading, router, loadTrip, locale]);
 
   const error = getLoadErrorMessage(loadError, {
-    timeout: CONNECTION_TIMEOUT_MESSAGE,
-    request: "No se pudo cargar la información del viaje",
+    timeout: t("connectionTimeout"),
+    request: t("tripLoadError"),
   });
 
   if (!id) {
     return (
       <DashboardLayout skeleton="trip">
-        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un viaje para ver el detalle.</p>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">{t("detailNoSelection")}</p>
       </DashboardLayout>
     );
   }
@@ -149,15 +146,15 @@ function TripDetailsContent() {
     if (notFound) {
       return (
         <DashboardLayout skeleton="trip">
-          <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Viaje no encontrado.</p>
+          <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">{t("tripNotFound")}</p>
         </DashboardLayout>
       );
     }
     return (
       <DashboardLayout skeleton="trip">
         <section className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center" aria-labelledby="trip-load-error">
-          <h1 id="trip-load-error" className="font-sans text-2xl font-semibold text-ink">No se pudo abrir el viaje</h1>
-          <p className="mb-6 mt-3 text-muted">{error || "Viaje no encontrado"}</p>
+          <h1 id="trip-load-error" className="font-sans text-2xl font-semibold text-ink">{t("tripOpenError")}</h1>
+          <p className="mb-6 mt-3 text-muted">{error || t("tripNotFound")}</p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               onClick={() => {
@@ -167,11 +164,11 @@ function TripDetailsContent() {
                 loadTrip();
               }}
             >
-              Reintentar
+              {t("retry")}
             </Button>
-            <Link href="/trips" className="inline-flex min-h-11 items-center gap-2 rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <Link href={(locale === "en" ? localePath(locale, "/trips") : "/trips")} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
               <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
-              Volver a Mis Viajes
+              {t("backToTrips")}
             </Link>
           </div>
         </section>
@@ -200,17 +197,17 @@ function TripDetailsContent() {
       );
 
       if (updateError) throw updateError;
-      assertRowsAffected(updatedRows, "No se pudo marcar el viaje como completado");
+      assertRowsAffected(updatedRows, t("markTripError"));
       await loadTrip();
     } catch (err) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "No se pudo marcar el viaje como completado");
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("markTripError"));
       logger.error("TripDetailsPage: mark completed failed", { error: message });
       showToast({
         type: "error",
-        title: "Error al completar el viaje",
+        title: t("markTripErrorTitle"),
         message,
       });
     } finally {
@@ -222,14 +219,14 @@ function TripDetailsContent() {
     <DashboardLayout skeleton="trip">
       <div className="mx-auto max-w-7xl space-y-6 font-sans">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/trips" className="inline-flex min-h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-            <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" /> Mis viajes
+          <Link href={(locale === "en" ? localePath(locale, "/trips") : "/trips")} className="inline-flex min-h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />{t("myTrips")}
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
-              Editar viaje
+              {t("editTrip")}
             </Button>
-            <DeleteTripButton trip={trip} size="md" onDeleted={() => router.push("/trips")} />
+            <DeleteTripButton trip={trip} size="md" onDeleted={() => router.push((locale === "en" ? localePath(locale, "/trips") : "/trips"))} />
           </div>
         </div>
 
@@ -237,7 +234,7 @@ function TripDetailsContent() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Tu viaje</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t("yourTrip")}</p>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   trip.status === "confirmed" || trip.status === "completed"
                     ? "bg-success/10 text-success"
@@ -245,7 +242,7 @@ function TripDetailsContent() {
                       ? "bg-danger/10 text-danger"
                       : "bg-accent-soft text-accent"
                 }`}>
-                  {TRIP_STATUS_LABELS[trip.status]}
+                  {t(TRIP_STATUS_KEYS[trip.status])}
                 </span>
               </div>
               <h1 className="mt-2 break-words text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[38px]">{trip.title}</h1>
@@ -257,11 +254,11 @@ function TripDetailsContent() {
             <div className="flex shrink-0 items-center gap-2 text-sm text-muted">
               <CalendarIcon className="h-5 w-5 text-accent" aria-hidden="true" />
               <span>
-                {tripDate(trip.departure_date)}
-                {trip.return_date && <> <span aria-hidden="true">–</span> {tripDate(trip.return_date)}</>}
+                {tripDate(trip.departure_date, locale)}
+                {trip.return_date && <> <span aria-hidden="true">–</span> {tripDate(trip.return_date, locale)}</>}
                 <span className="mt-1 block text-xs text-muted">
-                  Salida {tripTime(trip.departure_date)}
-                  {trip.return_date && <> · Regreso {tripTime(trip.return_date)}</>}
+                  {t("departure")} {tripTime(trip.departure_date, locale)}
+                  {trip.return_date && <> · {t("return")} {tripTime(trip.return_date, locale)}</>}
                 </span>
               </span>
             </div>
@@ -279,7 +276,7 @@ function TripDetailsContent() {
 
             {trip.notes && (
               <section className="border-b border-line pb-6" aria-labelledby="trip-notes-heading">
-                <h2 id="trip-notes-heading" className="text-lg font-semibold text-ink">Notas del viaje</h2>
+                <h2 id="trip-notes-heading" className="text-lg font-semibold text-ink">{t("tripNotes")}</h2>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-reading text-muted">{trip.notes}</p>
               </section>
             )}
@@ -288,36 +285,36 @@ function TripDetailsContent() {
               <TripJournal tripId={trip.id} />
             ) : (
               <section className="border-b border-line pb-6" aria-labelledby="trip-journal-heading">
-                <h2 id="trip-journal-heading" className="text-lg font-semibold text-ink">Diario del viaje</h2>
+                <h2 id="trip-journal-heading" className="text-lg font-semibold text-ink">{t("tripJournal")}</h2>
                 <p className="mb-4 mt-2 text-sm leading-reading text-muted">
-                  El diario se abre cuando el viaje haya pasado. También puedes marcarlo como completado ahora.
+                  {t("journalAvailableAfter")}
                 </p>
                 <Button onClick={markCompleted} disabled={markingComplete}>
-                  {markingComplete ? "Marcando…" : "Marcar como completado"}
+                  {markingComplete ? t("marking") : t("markCompleted")}
                 </Button>
               </section>
             )}
           </div>
 
-          <aside className="min-w-0 space-y-6 lg:border-l lg:border-line lg:pl-6" aria-label="Resumen y datos del viaje">
+          <aside className="min-w-0 space-y-6 lg:border-l lg:border-line lg:pl-6" aria-label={t("tripSummaryAndDetails")}>
             <TripSummary tripId={trip.id} />
 
             {(trip.airline || trip.flight_number || trip.confirmation_number) && (
               <section className="border-t border-line pt-5" aria-labelledby="flight-details-heading">
-                <h2 id="flight-details-heading" className="text-lg font-semibold text-ink">Información de vuelo</h2>
+                <h2 id="flight-details-heading" className="text-lg font-semibold text-ink">{t("flightInformation")}</h2>
                 <dl className="mt-4 space-y-4">
-                  {trip.airline && <div><dt className="text-sm text-muted">Aerolínea</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.airline}</dd></div>}
-                  {trip.flight_number && <div><dt className="text-sm text-muted">Número de vuelo</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.flight_number}</dd></div>}
-                  {trip.confirmation_number && <div><dt className="text-sm text-muted">Confirmación</dt><dd className="mt-1 break-all rounded-md bg-surface px-3 py-2 font-mono text-sm text-ink">{trip.confirmation_number}</dd></div>}
+                  {trip.airline && <div><dt className="text-sm text-muted">{t("airline")}</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.airline}</dd></div>}
+                  {trip.flight_number && <div><dt className="text-sm text-muted">{t("flightNumber")}</dt><dd className="mt-1 text-sm font-medium text-ink">{trip.flight_number}</dd></div>}
+                  {trip.confirmation_number && <div><dt className="text-sm text-muted">{t("confirmation")}</dt><dd className="mt-1 break-all rounded-md bg-surface px-3 py-2 font-mono text-sm text-ink">{trip.confirmation_number}</dd></div>}
                 </dl>
               </section>
             )}
 
             <section className="border-t border-line pt-5" aria-labelledby="tasks-general-heading">
-              <h2 id="tasks-general-heading" className="text-base font-semibold text-ink">Tareas</h2>
-              <p className="mt-2 text-sm leading-reading text-muted">Tus tareas se gestionan en una lista general y no están asignadas a este viaje.</p>
+              <h2 id="tasks-general-heading" className="text-base font-semibold text-ink">{t("tasks")}</h2>
+              <p className="mt-2 text-sm leading-reading text-muted">{t("tasksGeneralList")}</p>
               <Link href="/tasks" className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md font-medium text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-                Ver tareas <ArrowLeftIcon className="h-4 w-4 rotate-180" aria-hidden="true" />
+                {t("viewTasksLink")} <ArrowLeftIcon className="h-4 w-4 rotate-180" aria-hidden="true" />
               </Link>
             </section>
           </aside>

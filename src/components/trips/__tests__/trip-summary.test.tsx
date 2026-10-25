@@ -67,7 +67,7 @@ describe("TripSummary", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Sin gastos ni reservas todavia"),
+        screen.getByText("Sin gastos ni reservas todavía"),
       ).toBeInTheDocument();
     });
   });

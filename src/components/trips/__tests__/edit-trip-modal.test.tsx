@@ -73,12 +73,12 @@ describe("EditTripModal", () => {
     );
 
     expect(screen.getByLabelText("Número de personas")).toHaveValue(2);
-    expect(screen.getByLabelText("Notas Adicionales")).toHaveValue("Una semana tranquila.");
+    expect(screen.getByLabelText("Notas adicionales")).toHaveValue("Una semana tranquila.");
 
     fireEvent.change(screen.getByLabelText("Número de personas"), {
       target: { value: "3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar Cambios" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => expect(mockOnSuccess).toHaveBeenCalled());
     expect(update).toHaveBeenCalledWith(

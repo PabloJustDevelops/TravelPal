@@ -78,7 +78,7 @@ test.describe('flujo de gastos', () => {
     await expect(
       page.getByRole('heading', { name: 'Resumen del viaje' }),
     ).toBeVisible()
-    await expect(page.getByText('Sin gastos ni reservas todavia')).toHaveCount(0)
+    await expect(page.getByText('Sin gastos ni reservas todavía')).toHaveCount(0)
     await expect(page.getByText(/42,50\s*€/).first()).toBeVisible()
   })
 })

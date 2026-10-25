@@ -4,6 +4,8 @@ import CurrentYear from '../CurrentYear'
 import LandingMotion from '../LandingMotion'
 import type { ImgHTMLAttributes } from 'react'
 
+jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), refresh: jest.fn() }), usePathname: () => '/' }))
+
 jest.mock('@/lib/i18n/LocaleBootstrap', () => ({ __esModule: true, default: () => null }))
 
 jest.mock('next/image', () => ({

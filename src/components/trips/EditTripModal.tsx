@@ -10,8 +10,9 @@ import {
   queryErrorKind,
   withQueryTimeout,
 } from "@/lib/insforge-query";
-import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
+
 import { logger } from "@/lib/logger";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 interface EditTripModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function EditTripModal({
   onSuccess,
   trip,
 }: EditTripModalProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -91,7 +93,7 @@ export default function EditTripModal({
         !formData.destination ||
         !formData.departure_date
       ) {
-        throw new Error("Por favor completa todos los campos requeridos");
+        throw new Error(t("requiredFieldsError"));
       }
 
       // Validate dates
@@ -102,7 +104,7 @@ export default function EditTripModal({
 
       if (returnDate && returnDate <= departureDate) {
         throw new Error(
-          "La fecha de regreso debe ser posterior a la fecha de salida"
+          t("returnDateError")
         );
       }
 
@@ -131,7 +133,7 @@ export default function EditTripModal({
       );
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudo actualizar el viaje");
+      assertRowsAffected(updatedRows, t("tripUpdateError"));
 
       logger.info("Viaje actualizado exitosamente:", trip.id);
       onSuccess();
@@ -140,8 +142,8 @@ export default function EditTripModal({
       logger.error("Error al actualizar viaje:", error);
       setError(
         queryErrorKind(error) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : error.message || "Error al actualizar el viaje",
+          ? t("connectionTimeout")
+          : error.message || t("tripUpdateError"),
       );
     } finally {
       setLoading(false);
@@ -149,7 +151,7 @@ export default function EditTripModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Editar Viaje" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t("editTripFormTitle")} size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div role="alert" className="rounded-md border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
@@ -160,35 +162,35 @@ export default function EditTripModal({
         {/* Basic Information */}
         <div className="space-y-4">
           <h3 className="border-b border-line pb-2 text-base font-semibold text-ink">
-            Destino y fechas
+            {t("destinationAndDates")}
           </h3>
 
           <Input
-            label="Título del Viaje *"
+            label={t("tripTitleLabel")}
             name="title"
             value={formData.title}
             onChange={handleInputChange}
-            placeholder="ej. Vacaciones en París"
+            placeholder={t("titlePlaceholder")}
             className="min-h-11"
             required
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Origen *"
+              label={t("originLabel")}
               name="origin"
               value={formData.origin}
               onChange={handleInputChange}
-              placeholder="ej. Madrid"
+              placeholder={t("originPlaceholder")}
               className="min-h-11"
               required
             />
             <Input
-              label="Destino *"
+              label={t("destinationLabel")}
               name="destination"
               value={formData.destination}
               onChange={handleInputChange}
-              placeholder="ej. París"
+              placeholder={t("destinationPlaceholder")}
               className="min-h-11"
               required
             />
@@ -196,7 +198,7 @@ export default function EditTripModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Fecha de Salida *"
+              label={t("departureDateLabel")}
               name="departure_date"
               type="datetime-local"
               value={formData.departure_date}
@@ -205,7 +207,7 @@ export default function EditTripModal({
               className="min-h-11"
             />
             <Input
-              label="Fecha de Regreso"
+              label={t("returnDateLabel")}
               name="return_date"
               type="datetime-local"
               value={formData.return_date}
@@ -217,11 +219,11 @@ export default function EditTripModal({
         </div>
 
         <div className="space-y-4 border-t border-line pt-5">
-          <h3 className="text-base font-semibold text-ink">Un par de detalles</h3>
+          <h3 className="text-base font-semibold text-ink">{t("tripDetails")}</h3>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
-              label="Número de personas"
+              label={t("travelers")}
               name="travelers"
               type="number"
               min="1"
@@ -231,7 +233,7 @@ export default function EditTripModal({
             />
             <div className="space-y-1">
               <label htmlFor="edit-trip-status" className="block text-sm font-medium text-ink">
-                Estado del viaje
+                {t("editorStatus")}
               </label>
               <select
                 id="edit-trip-status"
@@ -240,10 +242,10 @@ export default function EditTripModal({
                 onChange={handleInputChange}
                 className={`${selectClassName} min-h-11`}
               >
-                <option value="planned">Planeado</option>
-                <option value="confirmed">Confirmado</option>
-                <option value="completed">Completado</option>
-                <option value="cancelled">Cancelado</option>
+                <option value="planned">{t("tripStatusPlanned")}</option>
+                <option value="confirmed">{t("tripStatusConfirmed")}</option>
+                <option value="completed">{t("tripStatusCompleted")}</option>
+                <option value="cancelled">{t("tripStatusCancelled")}</option>
               </select>
             </div>
           </div>
@@ -251,33 +253,33 @@ export default function EditTripModal({
 
         {/* Flight Information */}
         <div className="space-y-4 border-t border-line pt-5">
-          <h3 className="text-base font-semibold text-ink">Información de vuelo</h3>
+          <h3 className="text-base font-semibold text-ink">{t("flightInformation")}</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Aerolínea"
+              label={t("airline")}
               name="airline"
               value={formData.airline}
               onChange={handleInputChange}
-              placeholder="ej. Iberia"
+              placeholder={t("airlinePlaceholder")}
               className="min-h-11"
             />
             <Input
-              label="Número de Vuelo"
+              label={t("flightNumber")}
               name="flight_number"
               value={formData.flight_number}
               onChange={handleInputChange}
-              placeholder="ej. IB3201"
+              placeholder={t("flightNumberPlaceholder")}
               className="min-h-11"
             />
           </div>
 
           <Input
-            label="Código de Confirmación"
+            label={t("confirmation")}
             name="confirmation_number"
             value={formData.confirmation_number}
             onChange={handleInputChange}
-            placeholder="ej. ABC123"
+            placeholder={t("confirmationPlaceholder")}
             className="min-h-11"
           />
         </div>
@@ -285,7 +287,7 @@ export default function EditTripModal({
         {/* Notes */}
         <div className="space-y-2">
           <label htmlFor="edit-trip-notes" className="block text-sm font-medium text-ink">
-            Notas Adicionales
+            {t("extraNotes")}
           </label>
           <textarea
             id="edit-trip-notes"
@@ -294,7 +296,7 @@ export default function EditTripModal({
             onChange={handleInputChange}
             rows={4}
             className={textareaClassName}
-            placeholder="Añade cualquier información adicional sobre el viaje..."
+            placeholder={t("extraNotesPlaceholder")}
           />
         </div>
 
@@ -305,7 +307,7 @@ export default function EditTripModal({
             disabled={loading}
             className="min-h-11 flex-1 sm:flex-none"
           >
-            {loading ? "Guardando..." : "Guardar Cambios"}
+            {loading ? t("saving") : t("saveChanges")}
           </Button>
           <Button 
             variant="outline" 
@@ -313,7 +315,7 @@ export default function EditTripModal({
             onClick={onClose}
             className="min-h-11 flex-1 sm:flex-none"
           >
-            Cancelar
+            {t("cancel")}
           </Button>
         </div>
       </form>

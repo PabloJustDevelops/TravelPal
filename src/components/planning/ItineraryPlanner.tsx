@@ -18,22 +18,22 @@ import { textareaClassName, selectClassName } from '../ui/fieldStyles';
 import CategoryIcon from '../ui/CategoryIcon';
 import { Card } from '../ui/Card';
 import {
-  formatDate,
   cn,
-  CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
   formatCurrency,
 } from '../../lib/utils';
 import { queryErrorKind } from '../../lib/insforge-query';
 import { logger } from '@/lib/logger';
+import { useI18n } from '@/lib/i18n/LocaleProvider';
+import { formatNumber } from '@/lib/i18n';
 
 const ACTIVITY_CATEGORIES = [
-  { value: 'transport', label: 'Transporte', color: 'bg-surface text-muted' },
-  { value: 'accommodation', label: 'Alojamiento', color: 'bg-surface text-muted' },
-  { value: 'food', label: 'Comida', color: 'bg-surface text-muted' },
-  { value: 'activity', label: 'Actividad', color: 'bg-surface text-muted' },
-  { value: 'shopping', label: 'Compras', color: 'bg-surface text-muted' },
-  { value: 'other', label: 'Otro', color: 'bg-surface text-muted' }
+  { value: 'transport', key: 'transportation', label: 'Transporte', color: 'bg-surface text-muted' },
+  { value: 'accommodation', key: 'accommodation', label: 'Alojamiento', color: 'bg-surface text-muted' },
+  { value: 'food', key: 'food', label: 'Comida', color: 'bg-surface text-muted' },
+  { value: 'activity', key: 'activity', label: 'Actividad', color: 'bg-surface text-muted' },
+  { value: 'shopping', key: 'shopping', label: 'Compras', color: 'bg-surface text-muted' },
+  { value: 'other', key: 'other', label: 'Otro', color: 'bg-surface text-muted' }
 ] as const;
 
 export type PlannerCategory = (typeof ACTIVITY_CATEGORIES)[number]['value'];
@@ -103,6 +103,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   activeDate,
   onSelectDay,
 }) => {
+  const { locale, t } = useI18n();
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [isAddingActivity, setIsAddingActivity] = useState(false);
   const [editingActivity, setEditingActivity] = useState<PlannerActivity | null>(null);
@@ -163,8 +164,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
     } catch (err) {
       const message =
         queryErrorKind(err) === 'timeout'
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, 'Error al guardar la actividad');
+          ? t("connectionTimeout")
+          : getErrorMessage(err, t("activityOperationError"));
       logger.error('ItineraryPlanner: no se pudo guardar la actividad', {
         error: message,
       });
@@ -242,9 +243,9 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       {showHeading && <div>
-        <PlannerHeading className="text-xl font-semibold text-ink">Planificador de Itinerario</PlannerHeading>
+        <PlannerHeading className="text-xl font-semibold text-ink">{t("plannerTitle")}</PlannerHeading>
         <p className="text-muted">
-          {formatDate(new Date(startDate))} - {formatDate(new Date(endDate))}
+          {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { year: "numeric", month: "long", day: "numeric" }).format(new Date(startDate))} - {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { year: "numeric", month: "long", day: "numeric" }).format(new Date(endDate))}
         </p>
       </div>
 
@@ -255,8 +256,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
         </div>
       )}
 
-      <div role="group" aria-label="Días del viaje" className="grid grid-cols-3 gap-2 border-b border-line pb-5 sm:grid-cols-6">
-        {tripDays.map((date, index) => <Button key={date} variant="outline" aria-pressed={activeDate ? date === (tripDays.includes(activeDate) ? activeDate : tripDays[0]) : expandedDays.has(date)} onClick={() => { setExpandedDays(new Set([date])); onSelectDay?.(date); }} aria-label={`Ver día ${index+1}, ${formatDate(parseISO(date))}`} className={`min-h-14 px-2 text-sm transition-none ${expandedDays.has(date) || date === activeDate ? "border-accent bg-accent-soft text-accent" : ""}`}><span>{parseISO(date).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'})}</span></Button>)}
+      <div role="group" aria-label={t("tripDays")} className="grid grid-cols-3 gap-2 border-b border-line pb-5 sm:grid-cols-6">
+        {tripDays.map((date, index) => <Button key={date} variant="outline" aria-pressed={activeDate ? date === (tripDays.includes(activeDate) ? activeDate : tripDays[0]) : expandedDays.has(date)} onClick={() => { setExpandedDays(new Set([date])); onSelectDay?.(date); }} aria-label={t("viewDay").replace("{day}", formatNumber(index + 1, locale)).replace("{date}", new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { year: "numeric", month: "long", day: "numeric" }).format(parseISO(date)))} className={`min-h-14 px-2 text-sm transition-none ${expandedDays.has(date) || date === activeDate ? "border-accent bg-accent-soft text-accent" : ""}`}><span>{parseISO(date).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES',{weekday:'short',day:'numeric',month:'short'})}</span></Button>)}
       </div>
       {/* Días del viaje */}
       <div className="space-y-4">
@@ -265,7 +266,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
           const dayItinerary = getDayItinerary(date);
           const isExpanded = !!activeDate || expandedDays.has(date);
           const dayDate = parseISO(date);
-          const dayName = dayDate.toLocaleDateString('es-ES', { weekday: 'long' });
+          const dayName = dayDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long' });
           const dayCosts = getDayCostsByCurrency(dayItinerary.activities);
 
           return (
@@ -290,10 +291,10 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                       )}
                       <span>
                         <span className="block font-semibold text-ink">
-                          Día {index + 1} - {dayName}
+                          {t("day").replace("{day}", formatNumber(index + 1, locale))} - {dayName}
                         </span>
                         <span className="block text-sm font-normal text-muted">
-                          {formatDate(dayDate)}
+                          {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { year: "numeric", month: "long", day: "numeric" }).format(dayDate)}
                         </span>
                       </span>
                     </Button>
@@ -304,12 +305,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="hidden text-right sm:block">
                       <p className="text-sm text-muted">
-                        {dayItinerary.activities.length} {dayItinerary.activities.length === 1 ? 'actividad' : 'actividades'}
+                        {dayItinerary.activities.length} {dayItinerary.activities.length === 1 ? t('activityOne') : t('activityMany')}
                       </p>
                       {dayCosts.length > 0 && (
-                        <ul aria-label="Costes de actividades por moneda" className="text-sm font-medium text-ink">
+                        <ul aria-label={t("activityCosts")} className="text-sm font-medium text-ink">
                           {dayCosts.map(([currency, total]) => (
-                            <li key={currency}>{formatCurrency(total, currency)}</li>
+                            <li key={currency}>{formatCurrency(total, currency, locale)}</li>
                           ))}
                         </ul>
                       )}
@@ -325,7 +326,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                       }}
                     >
                       <PlusIcon className="h-4 w-4 mr-1" />
-                      Agregar
+                      {t("add")}
                     </Button>
                   </div>
               </div>
@@ -376,7 +377,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                     )}
                                     {typeof activity.cost === 'number' && (
                                       <span className="font-medium text-ink">
-                                        {formatCurrency(activity.cost, activity.currency || 'EUR')}
+                                        {formatCurrency(activity.cost, activity.currency || 'EUR', locale)}
                                       </span>
                                     )}
                                   </div>
@@ -384,16 +385,16 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
 
                                 <div className="flex min-w-0 flex-wrap items-center gap-2 sm:ml-4 sm:shrink-0 sm:flex-nowrap">
                                   <span className={`max-w-full break-words rounded-full px-2 py-1 text-xs font-medium ${category.color}`}>
-                                    {category.label}
+                                    {t(category.key)}
                                   </span>
                                   {onMoveActivity && <div className="flex items-center">
-                                    <Button variant="ghost" aria-label={`Subir ${activity.title}`} disabled={isSaving || activityIndex === 0} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,-1))}><ChevronUpIcon className="h-4 w-4" aria-hidden="true" /></Button>
-                                    <Button variant="ghost" aria-label={`Bajar ${activity.title}`} disabled={isSaving || activityIndex === dayItinerary.activities.length-1} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,1))}><ChevronDownIcon className="h-4 w-4" aria-hidden="true" /></Button>
+                                    <Button variant="ghost" aria-label={t("moveUp").replace("{title}", activity.title)} disabled={isSaving || activityIndex === 0} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,-1))}><ChevronUpIcon className="h-4 w-4" aria-hidden="true" /></Button>
+                                    <Button variant="ghost" aria-label={t("moveDown").replace("{title}", activity.title)} disabled={isSaving || activityIndex === dayItinerary.activities.length-1} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,1))}><ChevronDownIcon className="h-4 w-4" aria-hidden="true" /></Button>
                                   </div>}
                                   <Button
                                     variant="ghost"
                                     size="md"
-                                    aria-label={`Editar ${activity.title}`}
+                                    aria-label={t("editActivityAction") + " " + activity.title}
                                     disabled={isSaving}
                                     onClick={() => setEditingActivity(activity)}
                                     className="min-h-11 min-w-11 shrink-0 p-0"
@@ -403,7 +404,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                   <Button
                                     variant="ghost"
                                     size="md"
-                                    aria-label={`Eliminar ${activity.title}`}
+                                    aria-label={t("removeActivity").replace("{title}", activity.title)}
                                     disabled={isSaving}
                                     loading={saving?.kind === 'delete' && saving.activityId === activity.id}
                                     onClick={() => handleActivityDelete(activity)}
@@ -420,7 +421,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                     </div>
                   ) : (
                     <div className="py-8 text-center text-muted">
-                      <p>No hay actividades planificadas para este día</p>
+                      <p>{t("noPlannedActivities")}</p>
                       <Button
                         variant="outline"
                         className="mt-2"
@@ -431,7 +432,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                         }}
                       >
                         <PlusIcon className="h-4 w-4 mr-1" />
-                        Agregar primera actividad
+                        {t("addFirstActivity")}
                       </Button>
                     </div>
                   )}
@@ -475,6 +476,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
   error = ''
 }) => {
   const id = useId();
+  const { t } = useI18n();
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: activity?.title || '',
@@ -514,13 +516,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
         <div className="flex min-h-full items-center justify-center p-4">
           <DialogPanel className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-paper p-6 text-ink shadow-xl">
           <DialogTitle as="h2" className="mb-4 font-sans text-xl font-semibold text-ink">
-            {activity ? 'Editar Actividad' : 'Nueva Actividad'}
+            {activity ? t('editActivity') : t('newActivity')}
           </DialogTitle>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor={`${id}-title`} className="mb-1 block text-sm font-medium text-ink">
-                Título *
+                {t("activityTitle")}
               </label>
               <Input
                 id={`${id}-title`}
@@ -528,20 +530,20 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                 autoFocus
                 value={formData.title}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Nombre de la actividad"
+                placeholder={t("activityName")}
                 required
               />
             </div>
 
             <div>
               <label htmlFor={`${id}-description`} className="mb-1 block text-sm font-medium text-ink">
-                Descripción
+                {t("activityDescription")}
               </label>
               <textarea
                 id={`${id}-description`}
                 value={formData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descripción opcional"
+                placeholder={t("optionalDescription")}
                 className={cn(textareaClassName, 'resize-none')}
                 rows={2}
               />
@@ -550,7 +552,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor={`${id}-start-time`} className="mb-1 block text-sm font-medium text-ink">
-                  Hora inicio
+                  {t("startTime")}
                 </label>
                 <Input
                   id={`${id}-start-time`}
@@ -561,7 +563,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               </div>
               <div>
                 <label htmlFor={`${id}-end-time`} className="mb-1 block text-sm font-medium text-ink">
-                  Hora fin
+                  {t("endTime")}
                 </label>
                 <Input
                   id={`${id}-end-time`}
@@ -574,19 +576,19 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
 
             <div>
               <label htmlFor={`${id}-location`} className="mb-1 block text-sm font-medium text-ink">
-                Ubicación
+                {t("location")}
               </label>
               <Input
                 id={`${id}-location`}
                 value={formData.location}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Dirección o lugar"
+                placeholder={t("addressOrPlace")}
               />
             </div>
 
             <div>
               <label htmlFor={`${id}-category`} className="mb-1 block text-sm font-medium text-ink">
-                Categoría
+                {t("category")}
               </label>
               <select
                 id={`${id}-category`}
@@ -596,7 +598,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               >
                 {ACTIVITY_CATEGORIES.map(category => (
                   <option key={category.value} value={category.value}>
-                    {category.label}
+                    {t(category.key)}
                   </option>
                 ))}
               </select>
@@ -605,7 +607,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor={`${id}-cost`} className="mb-1 block text-sm font-medium text-ink">
-                  Costo
+                  {t("cost")}
                 </label>
                 <Input
                   id={`${id}-cost`}
@@ -618,7 +620,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               </div>
               <div>
                 <label htmlFor={`${id}-currency`} className="mb-1 block text-sm font-medium text-ink">
-                  Moneda
+                  {t("currency")}
                 </label>
                 <select
                   id={`${id}-currency`}
@@ -646,13 +648,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                 variant="outline"
                 onClick={onCancel}
               >
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={saving}
               >
-                {activity ? (saving ? 'Actualizando...' : 'Actualizar') : (saving ? 'Agregando...' : 'Agregar')}
+                {activity ? (saving ? t('updating') : t('update')) : (saving ? t('adding') : t('add'))}
               </Button>
             </div>
           </form>

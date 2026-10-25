@@ -46,6 +46,8 @@ import { logger } from "@/lib/logger";
 import { Menu, Transition } from "@headlessui/react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { formatDate, formatNumber, localePath } from "@/lib/i18n";
 
 
 interface Budget {
@@ -61,16 +63,17 @@ interface Budget {
 }
 
 const dateRanges = [
-  { value: "all", label: "Todo el tiempo" },
-  { value: "30", label: "Últimos 30 días" },
-  { value: "90", label: "Últimos 3 meses" },
-  { value: "365", label: "Último año" },
+  { value: "all", key: "allTime" },
+  { value: "30", key: "last30Days" },
+  { value: "90", key: "last3Months" },
+  { value: "365", key: "lastYear" },
 ];
 
 const currencies = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD"];
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
+  const { locale, t } = useI18n();
   const [dateRange, setDateRange] = useState("all");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [isExporting, setIsExporting] = useState(false);
@@ -239,7 +242,7 @@ export default function DashboardPage() {
     // Destino mas visitado.
     const destinationCounts = tripsData.reduce(
       (acc, trip) => {
-        const destination = trip.destination || "Desconocido";
+        const destination = trip.destination || t("destinationUnknown");
         acc[destination] = (acc[destination] || 0) + 1;
         return acc;
       },
@@ -247,7 +250,7 @@ export default function DashboardPage() {
     );
     const mostVisitedDestination =
       Object.entries(destinationCounts).sort(([, a], [, b]) => b - a)[0]?.[0] ||
-      "N/A";
+      t("noValue");
 
     const activeTrips = tripsData.filter(
       (trip) =>
@@ -267,11 +270,11 @@ export default function DashboardPage() {
       activeTrips,
       upcomingTrips,
     };
-  }, [data, selectedCurrency]);
+  }, [data, selectedCurrency, t]);
 
   const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de datos ha tardado demasiado. Por favor, reintenta.",
-    request: "Error al cargar los datos. Por favor, intenta recargar.",
+    timeout: t("dashboardLoadTimeout"),
+    request: t("dashboardLoadRequest"),
   });
 
   const showSkeleton =
@@ -374,7 +377,8 @@ export default function DashboardPage() {
           <ErrorState
             message={error}
             onRetry={() => refetch()}
-            title="Error al cargar el dashboard"
+            title={t("dashboardLoadError")}
+            retryLabel={t("retry")}
           />
         </div>
       </DashboardLayout>
@@ -390,8 +394,8 @@ export default function DashboardPage() {
         {/* Cabecera: bienvenida y menu de exportacion */}
         <PageTitle
           className={slots.dashboardTitle}
-          title={`Bienvenido, ${user?.full_name?.split(" ")[0] || "Viajero"}`}
-          subtitle="Tu próximo viaje, cada vez más cerca."
+          title={`${t("dashboardWelcome")}, ${user?.full_name?.split(" ")[0] || t("dashboardTraveler")}`}
+          subtitle={t("dashboardSubtitle")}
           action={
             <Menu
               as="div"
@@ -406,7 +410,7 @@ export default function DashboardPage() {
                     disabled={isExporting}
                   >
                     <ArrowDownTrayIcon className="h-5 w-5" />
-                    <span>{isExporting ? "Exportando..." : "Exportar"}</span>
+                    <span>{isExporting ? t("exporting") : t("export")}</span>
                   </Button>
                 </Menu.Button>
               </div>
@@ -433,7 +437,7 @@ export default function DashboardPage() {
                             className="mr-2 h-5 w-5"
                             aria-hidden="true"
                           />
-                          Exportar JSON
+                          {t("exportJson")}
                         </button>
                       )}
                     </Menu.Item>
@@ -449,7 +453,7 @@ export default function DashboardPage() {
                             className="mr-2 h-5 w-5"
                             aria-hidden="true"
                           />
-                          Exportar PDF
+                          {t("exportPdf")}
                         </button>
                       )}
                     </Menu.Item>
@@ -469,7 +473,7 @@ export default function DashboardPage() {
         />
 
         <details ref={statisticsRef} data-loading-slot="dashboardReport" className={`${slots.dashboardReport} rounded-lg border border-line bg-paper p-5`}>
-          <summary className="min-h-11 cursor-pointer rounded-md text-lg font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent">Actividad y estadísticas <span className="ml-2 text-sm font-normal text-muted">Resumen de tus viajes, gastos y planificación.</span></summary>
+          <summary className="min-h-11 cursor-pointer rounded-md text-lg font-semibold text-ink focus-visible:outline-2 focus-visible:outline-accent">{t("dashboardActivity")} <span className="ml-2 text-sm font-normal text-muted">{t("dashboardActivityDescription")}</span></summary>
           <div className="mt-6 space-y-6">
         {/* Filtros: moneda y rango de fechas */}
         <div
@@ -479,7 +483,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
               <FunnelIcon className="h-5 w-5 text-muted" />
-              <label htmlFor="dashboard-currency" className="text-sm text-muted">Moneda:</label>
+              <label htmlFor="dashboard-currency" className="text-sm text-muted">{t("currency")}</label>
               <select
                 id="dashboard-currency"
                 value={selectedCurrency}
@@ -494,7 +498,7 @@ export default function DashboardPage() {
               </select>
             </div>
             <div className="flex items-center space-x-2">
-              <label htmlFor="dashboard-range" className="text-sm text-muted">Rango de fechas:</label>
+              <label htmlFor="dashboard-range" className="text-sm text-muted">{t("dateRange")}</label>
               <select
                 id="dashboard-range"
                 value={dateRange}
@@ -503,7 +507,7 @@ export default function DashboardPage() {
               >
                 {dateRanges.map((r) => (
                   <option key={r.value} value={r.value}>
-                    {r.label}
+                    {t(r.key as "allTime" | "last30Days" | "last3Months" | "lastYear")}
                   </option>
                 ))}
               </select>
@@ -522,10 +526,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <div className="text-sm font-medium text-muted truncate">
-                      Total Viajes
+                      {t("totalTrips")}
                     </div>
                     <div className="text-lg font-bold text-ink mt-1">
-                      {totalTrips}
+                      {formatNumber(totalTrips, locale)}
                     </div>
                   </div>
                 </div>
@@ -542,7 +546,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <div className="text-sm font-medium text-muted truncate">
-                      Destino más visitado
+                      {t("mostVisitedDestination")}
                     </div>
                     <div
                       className="text-lg font-bold text-ink mt-1 truncate"
@@ -565,10 +569,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <div className="text-sm font-medium text-muted truncate">
-                      Viajes Activos
+                      {t("activeTrips")}
                     </div>
                     <div className="text-lg font-bold text-ink mt-1">
-                      {activeTrips}
+                      {formatNumber(activeTrips, locale)}
                     </div>
                   </div>
                 </div>
@@ -585,10 +589,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <div className="text-sm font-medium text-muted truncate">
-                      Próximos Viajes
+                      {t("upcomingTrips")}
                     </div>
                     <div className="text-lg font-bold text-ink mt-1">
-                      {upcomingTrips}
+                      {formatNumber(upcomingTrips, locale)}
                     </div>
                   </div>
                 </div>
@@ -603,7 +607,7 @@ export default function DashboardPage() {
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-6 text-ink flex items-center">
                 <span className="w-1 h-6 bg-accent rounded-full mr-3"></span>
-                Estado de Viajes
+                {t("dashboardTripStatus")}
               </h3>
               <TripChart trips={trips} height={350} />
             </div>
@@ -613,7 +617,7 @@ export default function DashboardPage() {
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-6 text-ink flex items-center">
                 <span className="w-1 h-6 bg-success rounded-full mr-3"></span>
-                Destinos más Populares
+                {t("popularDestinations")}
               </h3>
               <TripChart trips={trips} type="destinations" height={300} />
             </div>
@@ -621,7 +625,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* Viajes Recientes */}
+          {/* {t("recentTrips")} */}
           <div
 
             className="bg-surface shadow rounded-xl transition-all duration-200 border border-line"
@@ -629,13 +633,13 @@ export default function DashboardPage() {
             <div className="px-6 py-5 flex justify-between items-center border-b border-line">
               <h2 className="text-lg font-semibold leading-6 text-ink flex items-center gap-2">
                 <MapPinIcon className="h-5 w-5 text-accent" />
-                Viajes Recientes
+                {t("recentTrips")}
               </h2>
               <Link
-                href="/trips"
+                href={(locale === "en" ? localePath(locale, "/trips") : "/trips")}
                 className="text-sm font-medium text-accent hover:text-accent-hover transition-colors hover:underline"
               >
-                Ver todos
+                {t("viewAll")}
               </Link>
             </div>
             <ul
@@ -645,7 +649,7 @@ export default function DashboardPage() {
               {trips.slice(0, 3).map((trip) => (
                 <li key={trip.id}>
                   <Link
-                    href={`/trip?id=${encodeURIComponent(trip.id)}`}
+                    href={`${(locale === "en" ? localePath(locale, "/trip") : "/trip")}?id=${encodeURIComponent(trip.id)}`}
                     className="block hover:bg-surface-strong transition-colors group"
                   >
                     <div className="px-6 py-4">
@@ -666,12 +670,12 @@ export default function DashboardPage() {
                             }`}
                           >
                             {trip.status === "confirmed"
-                              ? "Confirmado"
+                              ? t("tripStatusConfirmed")
                               : trip.status === "planned"
-                                ? "Planificado"
+                                ? t("tripStatusPlanned")
                                 : trip.status === "cancelled"
-                                  ? "Cancelado"
-                                  : "Completado"}
+                                  ? t("tripStatusCancelled")
+                                  : t("tripStatusCompleted")}
                           </span>
                         </div>
                       </div>
@@ -685,7 +689,7 @@ export default function DashboardPage() {
                         <div className="mt-2 flex items-center text-sm text-muted sm:mt-0">
                           <CalendarIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-muted" />
                           <p>
-                            {new Date(trip.departure_date).toLocaleDateString()}
+                            {formatDate(new Date(trip.departure_date), locale)}
                           </p>
                         </div>
                       </div>
@@ -696,7 +700,7 @@ export default function DashboardPage() {
               {trips.length === 0 && (
                 <li className="px-6 py-12 text-center text-muted text-sm flex flex-col items-center">
                   <PaperAirplaneIcon className="h-10 w-10 text-muted mb-2" />
-                  No tienes viajes recientes
+                  {t("noRecentTrips")}
                 </li>
               )}
             </ul>

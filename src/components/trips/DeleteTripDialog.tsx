@@ -5,7 +5,6 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import {
   deleteTrip,
-  formatTripDeletionCounts,
   getTripDeletionImpact,
   TripChildDeletionError,
   type TripDeletionImpact,
@@ -13,7 +12,8 @@ import {
 import { queryErrorKind } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import { showToast } from "@/lib/toast";
-import { CONNECTION_TIMEOUT_MESSAGE, getErrorMessage } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 interface DeleteTripDialogProps {
   trip: { id: string; title: string };
@@ -39,6 +39,7 @@ export default function DeleteTripDialog({
   onClose,
   onDeleted,
 }: DeleteTripDialogProps) {
+  const { locale, t } = useI18n();
   const [impact, setImpact] = useState<TripDeletionImpact | null>(null);
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [choice, setChoice] = useState<ChildrenChoice>("keep");
@@ -70,12 +71,25 @@ export default function DeleteTripDialog({
     };
   }, [isOpen, trip.id]);
 
-  const cascadeSummary = impact
-    ? formatTripDeletionCounts(impact.cascading)
-    : null;
-  const optionalSummary = impact
-    ? formatTripDeletionCounts([impact.expenses, impact.notes])
-    : null;
+  const formatCounts = (counts: TripDeletionImpact["cascading"]) => {
+    const keyByTable = {
+      itinerary_activities: ["deletionCountActivitiesOne", "deletionCountActivitiesMany"],
+      bookings: ["deletionCountBookingOne", "deletionCountBookingMany"],
+      journal_entries: ["deletionCountJournalEntryOne", "deletionCountJournalEntryMany"],
+      journal_photos: ["deletionCountJournalPhotoOne", "deletionCountJournalPhotoMany"],
+      expenses: ["deletionCountExpenseOne", "deletionCountExpenseMany"],
+      notes: ["deletionCountNoteOne", "deletionCountNoteMany"],
+    } as const;
+    const parts = counts.filter((entry) => entry.count > 0).map((entry) => {
+      const keys = keyByTable[entry.table as keyof typeof keyByTable];
+      const label = keys ? t(entry.count === 1 ? keys[0] : keys[1]) : entry.count === 1 ? entry.one : entry.many;
+      return `${new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES").format(entry.count)} ${label}`;
+    });
+    if (parts.length < 2) return parts[0] ?? null;
+    return `${parts.slice(0, -1).join(", ")} ${t("listConjunction")} ${parts[parts.length - 1]}`;
+  };
+  const cascadeSummary = impact ? formatCounts(impact.cascading) : null;
+  const optionalSummary = impact ? formatCounts([impact.expenses, impact.notes]) : null;
   const expensesCount = impact?.expenses.count ?? 0;
   const notesCount = impact?.notes.count ?? 0;
   const hasOptional = expensesCount > 0 || notesCount > 0;
@@ -91,7 +105,7 @@ export default function DeleteTripDialog({
         deleteExpenses: deleteChildren && expensesCount > 0,
         deleteNotes: deleteChildren && notesCount > 0,
       });
-      showToast({ type: "success", message: "Viaje eliminado" });
+      showToast({ type: "success", message: t("tripDeleted") });
       onClose();
       onDeleted();
     } catch (err) {
@@ -99,44 +113,44 @@ export default function DeleteTripDialog({
         err instanceof TripChildDeletionError
           ? err.message
           : queryErrorKind(err) === "timeout"
-            ? CONNECTION_TIMEOUT_MESSAGE
-            : getErrorMessage(err, "No se pudo eliminar el viaje");
+            ? t("connectionTimeout")
+            : getErrorMessage(err, t("deleteTripError"));
 
       logger.error("DeleteTripDialog: delete failed", { error: message });
-      showToast({ type: "error", title: "Error al eliminar el viaje", message });
+      showToast({ type: "error", title: t("deleteTripError"), message });
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Eliminar viaje">
+    <Modal isOpen={isOpen} onClose={onClose} title={t("tripDelete")}>
       <div className="space-y-4">
         <p className="text-sm text-ink">
-          ¿Seguro que quieres eliminar el viaje &quot;{trip.title}&quot;?
+          {t("deleteTripConfirm").replace("{title}", trip.title)}
         </p>
 
         {loadingImpact ? (
           <p className="text-sm text-muted" role="status">
-            Calculando qué se borrará…
+            {t("calculatingDeletion")}
           </p>
         ) : cascadeSummary ? (
           <p className="text-sm text-ink">
-            Se eliminarán también {cascadeSummary}.
+            {t("deletionSummary").replace("{summary}", cascadeSummary)}
           </p>
         ) : (
           <p className="text-sm text-muted">
-            No hay más datos asociados a este viaje.
+            {t("noRelatedData")}
           </p>
         )}
 
         {hasOptional && optionalSummary && (
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-ink">
-              Gastos y notas
+              {t("expensesAndNotes")}
             </legend>
             <p className="text-sm text-muted">
-              Este viaje tiene {optionalSummary}. ¿Qué quieres hacer con ellos?
+              {t("deletionOptionalPrompt").replace("{summary}", optionalSummary)}
             </p>
 
             <label className={optionClassName}>
@@ -150,10 +164,10 @@ export default function DeleteTripDialog({
               />
               <span>
                 <span className="block text-sm font-medium text-ink">
-                  Conservarlos sin viaje
+                  {t("keepWithoutTrip")}
                 </span>
                 <span className="block text-xs text-muted">
-                  Se quedan sin viaje y puedes asignarlos a otro.
+                  {t("keepWithoutTripHint")}
                 </span>
               </span>
             </label>
@@ -169,10 +183,10 @@ export default function DeleteTripDialog({
               />
               <span>
                 <span className="block text-sm font-medium text-ink">
-                  Eliminarlos también
+                  {t("deleteAsWell")}
                 </span>
                 <span className="block text-xs text-muted">
-                  Se borran junto con el viaje y no se pueden recuperar.
+                  {t("deleteAsWellHint")}
                 </span>
               </span>
             </label>
@@ -181,7 +195,7 @@ export default function DeleteTripDialog({
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button
             type="button"
@@ -190,7 +204,7 @@ export default function DeleteTripDialog({
             disabled={loadingImpact}
             onClick={handleConfirm}
           >
-            Eliminar viaje
+            {t("tripDelete")}
           </Button>
         </div>
       </div>

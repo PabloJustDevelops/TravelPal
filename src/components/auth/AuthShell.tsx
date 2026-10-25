@@ -6,6 +6,7 @@ import Brand from '@/components/landing/Brand'
 import Link from 'next/link'
 import styles from './authStyles.module.css'
 import { localePath } from '@/lib/i18n'
+import LanguageSelector from '@/lib/i18n/LanguageSelector'
 import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 export default function AuthShell({ children, mode }: { children: ReactNode; mode?: 'signup' | 'signin' }) {
@@ -16,10 +17,13 @@ export default function AuthShell({ children, mode }: { children: ReactNode; mod
       <div className={styles.shell}>
         <header className={styles.header}>
           <Brand />
-          <p className={styles.accountPrompt}>
-            {isSignup ? t('alreadyAccount') : t('noAccount')}{' '}
-            <Link href={localePath(locale, isSignup ? '/signin' : '/signup')}>{isSignup ? t('startSession') : t('createYourAccount')}</Link>
-          </p>
+          <div className="flex items-center gap-4">
+            <LanguageSelector />
+            <p className={styles.accountPrompt}>
+              {isSignup ? t('alreadyAccount') : t('noAccount')}{' '}
+              <Link href={localePath(locale, isSignup ? '/signin' : '/signup')}>{isSignup ? t('startSession') : t('createYourAccount')}</Link>
+            </p>
+          </div>
         </header>
         <main className={styles.layout}>
           <aside className={styles.story} aria-label={t('authStoryLabel')}>
@@ -51,7 +55,10 @@ export default function AuthShell({ children, mode }: { children: ReactNode; mod
     <main className="min-h-screen bg-paper text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-2">
         <section className="flex flex-col px-5 py-6 sm:px-10 lg:px-16 lg:py-10">
-          <Brand />
+          <div className="flex items-center justify-between gap-4">
+            <Brand />
+            <LanguageSelector />
+          </div>
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10 lg:py-12">
             <p className="mb-6 text-xs font-semibold uppercase tracking-[0.16em] text-accent">{t('travelSpace')}</p>
             {children}

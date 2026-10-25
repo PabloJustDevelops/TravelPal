@@ -4,6 +4,8 @@ import SignUpPage from '@/app/signup/page'
 import ForgotPasswordPage from '@/app/forgot-password/page'
 import ResetPasswordPage from '@/app/reset-password/page'
 
+jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), refresh: jest.fn() }), usePathname: () => '/' }))
+
 jest.mock('../LoginForm', () => ({ __esModule: true, default: () => <h1>Acceso</h1> }))
 jest.mock('../RegisterForm', () => ({ __esModule: true, default: () => <h1>Registro</h1> }))
 jest.mock('../ForgotPasswordForm', () => ({ __esModule: true, default: () => <form aria-label="Recuperación" /> }))

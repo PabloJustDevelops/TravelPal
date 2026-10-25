@@ -15,6 +15,7 @@ import {
   YAxis, 
   CartesianGrid 
 } from 'recharts'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 export interface TripChartProps {
   trips: Trip[]
@@ -39,16 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: '#0EA5E9',  // Sky-500
 }
 
-const STATUS_NAMES: Record<string, string> = {
-  upcoming: 'Próximos',
-  completed: 'Completados',
-  cancelled: 'Cancelados',
-  in_progress: 'En curso',
-  planned: 'Planificados',
-  confirmed: 'Confirmados',
-}
-
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, t, locale }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -57,7 +49,7 @@ const CustomTooltip = ({ active, payload }: any) => {
           {data.name}
         </p>
         <p className="text-sm text-muted">
-          {data.value} {data.value === 1 ? 'viaje' : 'viajes'}
+          {new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES').format(data.value)} {data.value === 1 ? t('tripCountOne') : t('tripCountMany')}
         </p>
       </div>
     );
@@ -65,7 +57,8 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export default function TripChart({ trips, type = 'status', title = 'Estado de Viajes', height = 320 }: TripChartProps) {
+export default function TripChart({ trips, type = 'status', height = 320 }: TripChartProps) {
+  const { t, locale } = useI18n()
   const [data, setData] = useState<ChartData[]>([])
   const mobileHeight = Math.min(280, Math.max(220, data.length * 36 + 80))
   const chartStyle = {
@@ -88,7 +81,7 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
       }, {} as Record<string, number>)
 
       const processedData = Object.entries(statusCounts).map(([key, value]) => ({
-        name: STATUS_NAMES[key] || key,
+        name: t(({ upcoming: 'upcoming', completed: 'tripStatusCompleted', cancelled: 'tripStatusCancelled', in_progress: 'inProgress', planned: 'tripStatusPlanned', confirmed: 'tripStatusConfirmed' } as const)[key] ?? 'upcoming'),
         value: value,
         color: STATUS_COLORS[key] || '#6B7280'
       }))
@@ -113,7 +106,7 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
 
       setData(processedData)
     }
-  }, [trips, type])
+  }, [trips, type, locale, t])
 
   if (data.length === 0) {
     return (
@@ -122,7 +115,7 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
         className={`${chartClassName} flex items-center justify-center rounded-lg border border-dashed border-line bg-surface-strong`}
         style={chartStyle}
       >
-        <p className="text-muted text-sm">No hay datos suficientes</p>
+        <p className="text-muted text-sm">{t("insufficientChartData")}</p>
       </div>
     )
   }
@@ -145,7 +138,7 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
                 <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip t={t} locale={locale} />} />
             <Legend 
               verticalAlign="middle" 
               align="right"
@@ -172,7 +165,7 @@ export default function TripChart({ trips, type = 'status', title = 'Estado de V
             />
             <Tooltip 
               cursor={{ fill: 'transparent' }}
-              content={<CustomTooltip />}
+              content={<CustomTooltip t={t} locale={locale} />}
             />
             <Bar 
               dataKey="value" 
