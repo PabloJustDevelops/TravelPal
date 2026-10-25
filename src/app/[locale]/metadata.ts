@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { Locale } from '@/lib/i18n'
+import { translate, type MessageKey } from '@/lib/i18n'
 
 const origin = 'https://travelpal.prg-dev.workers.dev'
 const routeTitles = { signin: ['Iniciar sesión', 'Sign in'], signup: ['Crear cuenta', 'Create account'], 'forgot-password': ['Recuperar contraseña', 'Reset your password'], 'reset-password': ['Restablecer contraseña', 'Choose a new password'] } as const
@@ -9,6 +10,20 @@ const descriptions = {
   'forgot-password': ['Recupera el acceso a tu cuenta de TravelPal.', 'Recover access to your TravelPal account.'],
   'reset-password': ['Elige una nueva contraseña para tu cuenta.', 'Choose a new password for your account.'],
 } as const
+
+export function privateMetadata(locale: Locale, titleKey: MessageKey, descriptionKey: MessageKey): Metadata {
+  const title = translate(locale, titleKey)
+  const description = translate(locale, descriptionKey)
+  const openGraphLocale = locale === 'en' ? 'en_US' : 'es_ES'
+  return {
+    title,
+    description,
+    keywords: locale === 'en' ? 'travel, expenses, planning, budget, itinerary' : 'viajes, gastos, planificación, presupuesto, itinerario',
+    robots: { index: false, follow: true },
+    openGraph: { type: 'website', locale: openGraphLocale, title, description, siteName: 'TravelPal', images: [{ url: `${origin}/og-image.png`, width: 1200, height: 630, alt: translate(locale, 'ogImageAlt') }] },
+    twitter: { card: 'summary_large_image', title, description, images: [`${origin}/og-image.png`] },
+  }
+}
 
 export function authMetadata(route: keyof typeof routeTitles) {
   return async ({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> => {

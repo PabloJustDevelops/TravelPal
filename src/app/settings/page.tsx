@@ -18,9 +18,9 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { getErrorMessage } from "@/lib/utils";
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
-export default function SettingsPage() {
+export function SettingsPageContent({t, locale}: Pick<ReturnType<typeof useI18n>, 't' | 'locale'>) {
   const { theme, setTheme } = useTheme();
   const { user, resetPassword } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -28,14 +28,14 @@ export default function SettingsPage() {
   const push = usePushNotifications();
 
   const pushDescription = !push.supported
-    ? "Tu navegador no soporta notificaciones push. En iPhone hay que instalar la app en la pantalla de inicio antes de activarlas."
+    ? t('pushUnsupported')
     : push.permission === "denied"
-      ? "El navegador ha bloqueado las notificaciones para esta web. Puedes cambiar el permiso en sus ajustes."
+      ? t('pushDenied')
       : push.subscribed
-        ? "Este navegador está suscrito a los avisos de alertas. Puedes desactivarlos cuando quieras."
+        ? t('pushSubscribed')
         : !push.configured
-          ? "Las notificaciones push no están configuradas en este entorno."
-          : "Activa los avisos de alertas para este navegador, incluso con la app cerrada.";
+          ? t('pushNotConfigured')
+          : t('pushEnable');
 
   const handleTogglePush = () => {
     if (push.subscribed) {
@@ -47,19 +47,19 @@ export default function SettingsPage() {
 
   const handleChangePassword = async () => {
     if (!user?.email) {
-      showError("No hay una sesión activa para cambiar la contraseña");
+      showError(t('passwordResetNoSession'), t('errorToastTitle'), t('toastDismiss'));
       return;
     }
 
     setSendingReset(true);
     try {
-      await resetPassword(user.email);
+      await resetPassword(user.email, locale);
       showSuccess(
-        `Te hemos enviado un enlace a ${user.email} para cambiar la contraseña`,
+        t('passwordResetSent').replace('{email}', user.email), t('noticeTitle'), t('toastDismiss'),
       );
-    } catch (err: unknown) {
+    } catch {
       showError(
-        getErrorMessage(err, "No se pudo enviar el correo de recuperación"),
+        t('passwordResetError'), t('errorToastTitle'), t('toastDismiss'),
       );
     } finally {
       setSendingReset(false);
@@ -70,37 +70,37 @@ export default function SettingsPage() {
     <DashboardLayout skeleton="settings">
       <div className="mx-auto space-y-8">
         <PageTitle
-          title="Ajustes"
-          subtitle="Haz que TravelPal encaje contigo."
+          title={t('settingsTitle')}
+          subtitle={t('settingsSubtitle')}
         />
         <AccountTabs active="settings" />
 
         <section className="border-b border-line pb-8">
           <h2 className="text-2xl font-bold tracking-tight text-ink">
-            Apariencia
+            {t('appearance')}
           </h2>
-          <p className="mt-2 text-muted">Elige cómo quieres ver la app.</p>
+          <p className="mt-2 text-muted">{t('appearanceDescription')}</p>
           <fieldset className="mt-6">
-            <legend className="sr-only">Tema de la aplicación</legend>
+            <legend className="sr-only">{t('appTheme')}</legend>
             <div className="grid gap-4 sm:grid-cols-3 sm:max-w-3xl">
               {[
                 {
                   id: "light",
-                  label: "Claro",
+                  label: t('themeLight'),
                   icon: SunIcon,
-                  help: "Papel claro y tinta azul marino.",
+                  help: t('themeLightHelp'),
                 },
                 {
                   id: "dark",
-                  label: "Oscuro",
+                  label: t('themeDark'),
                   icon: MoonIcon,
-                  help: "Superficies oscuras para menos luz.",
+                  help: t('themeDarkHelp'),
                 },
                 {
                   id: "system",
-                  label: "Automático",
+                  label: t('themeSystem'),
                   icon: ComputerDesktopIcon,
-                  help: "Sigue el tema de tu dispositivo.",
+                  help: t('themeSystemHelp'),
                 },
               ].map((option) => (
                 <label
@@ -137,20 +137,20 @@ export default function SettingsPage() {
           <CardHeader className="border-0 px-0 pt-0">
             <CardTitle headingLevel={2} className="flex items-center gap-2">
               <BellIcon className="h-6 w-6" />
-              Notificaciones
+              {t('notificationsTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 px-0">
             <div className="flex items-center justify-between py-2">
               <div className="pr-4">
-                <p className="font-medium text-ink">Avisos de alertas</p>
+                <p className="font-medium text-ink">{t('pushAlerts')}</p>
                 <p className="text-sm text-muted">{pushDescription}</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={push.subscribed}
-                aria-label="Suscripción de notificaciones push"
+                aria-label={t('pushSubscription')}
                 disabled={!push.supported || push.busy || (!push.subscribed && (!push.configured || push.permission === "denied"))}
                 onClick={handleTogglePush}
                 className={`relative inline-flex min-h-11 w-14 items-center flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -166,7 +166,7 @@ export default function SettingsPage() {
             </div>
             {push.error && (
               <p role="alert" className="text-sm text-danger">
-                {push.error}
+                {t("pushRequestError")}
               </p>
             )}
           </CardContent>
@@ -177,14 +177,13 @@ export default function SettingsPage() {
           <CardHeader className="border-0 px-0 pt-0">
             <CardTitle headingLevel={2} className="flex items-center gap-2">
               <ShieldCheckIcon className="h-6 w-6" />
-              Seguridad
+              {t('security')}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-0">
             <div className="space-y-4 px-0">
               <p className="text-sm text-muted">
-                Gestiona la seguridad de tu cuenta, contraseña y sesiones
-                activas.
+                {t('securityDescription')}
               </p>
               <Button
                 variant="ghost"
@@ -192,7 +191,7 @@ export default function SettingsPage() {
                 loading={sendingReset}
                 className="min-h-11 border border-line px-4 text-sm font-medium text-accent hover:bg-transparent hover:text-accent-hover"
               >
-                Cambiar Contraseña
+                {t('changePassword')}
               </Button>
             </div>
           </CardContent>
@@ -201,4 +200,9 @@ export default function SettingsPage() {
       </div>
     </DashboardLayout>
   );
+}
+
+export default function SettingsPage() {
+  const i18n = useI18n()
+  return <SettingsPageContent {...i18n} />
 }

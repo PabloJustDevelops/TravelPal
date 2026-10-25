@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Expense } from '@/lib/insforge'
 import { formatCurrency } from '@/lib/utils'
 import { buildExpenseTrend } from './expenseTrend'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 import { 
   PieChart, 
   Pie, 
@@ -44,17 +45,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: '#6B7280',       // Gray-500
 }
 
-const CATEGORY_NAMES: Record<string, string> = {
-  transport: 'Transporte',
-  accommodation: 'Alojamiento',
-  food: 'Comida',
-  entertainment: 'Entretenimiento',
-  shopping: 'Compras',
-  health: 'Salud',
-  other: 'Otros',
-}
-
-const CustomTooltip = ({ active, payload, currency }: any) => {
+const CustomTooltip = ({ active, payload, currency, locale }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -63,8 +54,8 @@ const CustomTooltip = ({ active, payload, currency }: any) => {
           {data.name}
         </p>
         <p className="text-sm text-muted">
-          {formatCurrency(data.value, currency)}
-          {data.percentage && <span className="text-xs text-muted ml-2">({data.percentage.toFixed(1)}%)</span>}
+          {formatCurrency(data.value, currency, locale)}
+          {data.percentage && <span className="text-xs text-muted ml-2">({new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(data.percentage)}%)</span>}
         </p>
       </div>
     );
@@ -75,10 +66,12 @@ const CustomTooltip = ({ active, payload, currency }: any) => {
 export default function ExpenseChart({ 
   expenses, 
   type = 'category', 
-  title = 'Gastos por categoría',
+  title,
   height = 320,
   currency = 'USD'
 }: ExpenseChartProps) {
+  const { t, locale } = useI18n()
+  const localizedTitle = title ?? t('expenseChartTitle')
   const data = useMemo<ChartData[]>(() => {
     const currencyExpenses = (expenses ?? []).filter((expense) => expense.currency === currency)
     if (currencyExpenses.length === 0) return []
@@ -93,31 +86,34 @@ export default function ExpenseChart({
       }, {} as Record<string, number>)
 
       const processedData = Object.entries(categoryTotals)
-        .map(([key, value]) => ({
-          name: CATEGORY_NAMES[key] || key,
-          value: value,
-          color: CATEGORY_COLORS[key] || CATEGORY_COLORS.other,
-          percentage: (value / totalAmount) * 100
-        }))
+        .map(([key, value]) => {
+          const categoryKey = `expenseCategory${key.charAt(0).toUpperCase()}${key.slice(1)}` as Parameters<typeof t>[0]
+          return {
+            name: t(categoryKey) || key,
+            value: value,
+            color: CATEGORY_COLORS[key] || CATEGORY_COLORS.other,
+            percentage: (value / totalAmount) * 100
+          }
+        })
         .sort((a, b) => b.value - a.value)
 
       return processedData
     }
 
-    if (type === 'timeline') return buildExpenseTrend(currencyExpenses)
+    if (type === 'timeline') return buildExpenseTrend(currencyExpenses, locale)
     return []
-  }, [expenses, type, currency])
+  }, [expenses, type, currency, locale, t])
 
   if (data.length === 0) {
     return (
       <div className="h-[320px] flex items-center justify-center bg-surface-strong rounded-lg border border-dashed border-line">
-        <p className="text-muted text-sm">No hay datos suficientes</p>
+        <p className="text-muted text-sm">{t('expenseChartEmpty')}</p>
       </div>
     )
   }
 
   return (
-    <div role="img" aria-label={title} className="w-full h-full min-h-[320px]">
+    <div role="img" aria-label={localizedTitle} className="w-full h-full min-h-[320px]">
       <ResponsiveContainer width="100%" height={height}>
         {type === 'category' ? (
           <PieChart>
@@ -134,7 +130,7 @@ export default function ExpenseChart({
                 <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip currency={currency} />} />
+            <Tooltip content={<CustomTooltip currency={currency} locale={locale} />} />
             <Legend 
               verticalAlign="middle" 
               align="right"
@@ -161,11 +157,11 @@ export default function ExpenseChart({
               axisLine={false} 
               tickLine={false} 
               tick={{ fill: '#6B7280', fontSize: 12 }}
-              tickFormatter={(value) => formatCurrency(value, currency)}
+              tickFormatter={(value) => formatCurrency(value, currency, locale)}
             />
             <Tooltip 
               cursor={{ fill: 'transparent' }}
-              content={<CustomTooltip currency={currency} />}
+              content={<CustomTooltip currency={currency} locale={locale} />}
             />
             <Bar 
               dataKey="value" 

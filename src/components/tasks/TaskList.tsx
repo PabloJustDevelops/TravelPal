@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { selectClassName } from "@/components/ui/fieldStyles";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 
 interface Props {
   tasks: Task[];
@@ -12,26 +13,26 @@ interface Props {
   onDeleteTask: (task: Task) => void;
   onStatusChange: (id: string, status: Task["status"]) => void;
 }
-const groups = [
-  { id: "pending", label: "Por hacer" },
-  { id: "in_progress", label: "En curso" },
-  { id: "completed", label: "Completadas" },
-] as const;
-const priorities = { low: "Baja", medium: "Media", high: "Alta" };
-
 export function TaskList({
   tasks,
   onEditTask,
   onDeleteTask,
   onStatusChange,
 }: Props) {
+  const { t, locale } = useI18n();
+  const groups = [
+    { id: "pending", label: t("taskFilterPending") },
+    { id: "in_progress", label: t("inProgress") },
+    { id: "completed", label: t("taskFilterCompleted") },
+  ] as const;
+  const priorities = { low: t("taskPriorityLow"), medium: t("taskPriorityMedium"), high: t("taskPriorityHigh") };
   return (
     <div className="border-t border-line">
       <div className="hidden grid-cols-[minmax(0,1fr)_120px_150px_96px] gap-4 border-b border-line py-4 text-sm text-muted lg:grid">
-        <span>Tarea</span>
-        <span>Prioridad</span>
-        <span>Fecha límite</span>
-        <span className="sr-only">Acciones</span>
+        <span>{t("taskColumnTitle")}</span>
+        <span>{t("taskColumnPriority")}</span>
+        <span>{t("taskColumnDue")}</span>
+        <span className="sr-only">{t("taskColumnActions")}</span>
       </div>
       {groups.map((group) => {
         const rows = tasks.filter((task) => task.status === group.id);
@@ -63,7 +64,7 @@ export function TaskList({
                         </p>
                       )}
                       <select
-                        aria-label={`Mover la tarea ${task.title}`}
+                      aria-label={t("taskMoveAria").replace("{title}", task.title)}
                         value={task.status}
                         onChange={(event) =>
                           onStatusChange(
@@ -86,7 +87,7 @@ export function TaskList({
                     <p
                       className={`text-sm ${task.priority === "high" ? "text-danger" : task.priority === "medium" ? "text-warning" : "text-muted"}`}
                     >
-                      {priorities[task.priority] || "Media"}
+                      {priorities[task.priority] || t("taskPriorityMedium")}
                     </p>
                     <p className="text-sm text-muted">
                       {task.due_date ? (
@@ -95,21 +96,21 @@ export function TaskList({
                             task.due_date.length === 10
                               ? `${task.due_date}T12:00:00`
                               : task.due_date,
-                          ).toLocaleDateString("es-ES", {
+                          ).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
                           })}
                         </time>
                       ) : (
-                        "Sin fecha límite"
+                        t("taskNoDueDate")
                       )}
                     </p>
                     <div className="flex">
                       <Button
                         variant="ghost"
                         className="min-h-11 min-w-11 px-2"
-                        aria-label={`Editar ${task.title}`}
+                        aria-label={`${t("taskEditAria")} ${task.title}`}
                         onClick={() => onEditTask(task)}
                       >
                         <PencilSquareIcon
@@ -120,7 +121,7 @@ export function TaskList({
                       <Button
                         variant="ghost"
                         className="min-h-11 min-w-11 px-2 text-danger"
-                        aria-label={`Eliminar ${task.title}`}
+                        aria-label={`${t("taskDeleteAria")} ${task.title}`}
                         onClick={() => onDeleteTask(task)}
                       >
                         <TrashIcon className="h-5 w-5" aria-hidden="true" />
@@ -131,7 +132,7 @@ export function TaskList({
               </ul>
             ) : (
               <p className="py-5 text-sm text-muted">
-                No hay tareas en este estado.
+                {t("taskNoStatusItems")}
               </p>
             )}
           </details>

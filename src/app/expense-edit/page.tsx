@@ -12,7 +12,7 @@ import {
   withQueryTimeout,
   type QueryErrorKind,
 } from '@/lib/insforge-query'
-import { CONNECTION_TIMEOUT_MESSAGE, getLoadErrorMessage } from '@/lib/utils'
+import { getLoadErrorMessage } from '@/lib/utils'
 import PageTitle from '@/components/ui/PageTitle'
 import ExpenseSummary from '@/components/expenses/ExpenseSummary'
 import DashboardLayout from '@/components/layout/DashboardLayout'
@@ -23,8 +23,10 @@ import CategoryIcon from '@/components/ui/CategoryIcon'
 import ErrorState from '@/components/ui/ErrorState'
 import { Card, CardContent } from '@/components/ui/Card'
 import { logger } from '@/lib/logger'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
+import { localePath } from '@/lib/i18n'
 
-function EditExpenseContent() {
+export function EditExpenseContent({t, locale}: Pick<ReturnType<typeof useI18n>, 't' | 'locale'>) {
   const { user } = useAuth()
   const router = useRouter()
   const id = useSearchParams().get("id")?.trim() ?? ""
@@ -140,7 +142,7 @@ function EditExpenseContent() {
     e.preventDefault()
 
     if (!user) {
-      setError('Debes iniciar sesión para actualizar el gasto')
+      setError(t('expenseSignInUpdate'))
       return
     }
 
@@ -150,12 +152,12 @@ function EditExpenseContent() {
     try {
       // Validate required fields
       if (!formData.description || !formData.amount || !formData.date) {
-        throw new Error('Por favor completa todos los campos requeridos')
+        throw new Error(t('expenseRequiredError'))
       }
 
       const amount = parseFloat(formData.amount)
       if (isNaN(amount) || amount <= 0) {
-        throw new Error('El monto debe ser un número válido mayor a 0')
+        throw new Error(t('expenseInvalidAmount'))
       }
 
       // Mismo objeto de actualizacion que el PUT borrado: `title` (NOT NULL) sale
@@ -182,29 +184,22 @@ function EditExpenseContent() {
       )
 
       if (error) throw error
-      assertRowsAffected(updatedRows, 'No se pudo actualizar el gasto')
+      assertRowsAffected(updatedRows, t('expenseUpdateError'))
 
-      router.push('/expenses')
+      router.push(localePath(locale, '/expenses'))
       router.refresh()
     } catch (error: unknown) {
       logger.error('EditExpensePage: Error al actualizar el gasto', error)
 
       if (queryErrorKind(error) === 'timeout') {
-        setError(CONNECTION_TIMEOUT_MESSAGE)
+        setError(t("connectionTimeout"))
         return
       }
 
-      let errorMessage = 'Error al actualizar el gasto'
-      if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (
-        typeof error === 'object' &&
-        error !== null &&
-        'message' in error
-      ) {
-        errorMessage = (error as { message: string }).message
-      }
-
+      const validationErrors = [t('expenseRequiredError'), t('expenseInvalidAmount')]
+      const errorMessage = error instanceof Error && validationErrors.includes(error.message)
+        ? error.message
+        : t('expenseUpdateError')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -212,7 +207,7 @@ function EditExpenseContent() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este gasto?')) return
+    if (!confirm(t('expenseDeleteConfirm'))) return
     if (!user) return
     
     setLoading(true)
@@ -229,31 +224,31 @@ function EditExpenseContent() {
       )
 
       if (error) throw error
-      assertRowsAffected(deletedRows, 'No se pudo eliminar el gasto')
+      assertRowsAffected(deletedRows, t('expenseDeleteError'))
 
-      router.push('/expenses')
+      router.push(localePath(locale, '/expenses'))
       router.refresh()
     } catch (error) {
       logger.error('EditExpensePage: Error al eliminar el gasto', error)
       setError(
         queryErrorKind(error) === 'timeout'
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : 'Error al eliminar el gasto',
+          ? t("connectionTimeout")
+          : t('expenseDeleteError'),
       )
       setLoading(false)
     }
   }
 
   const categories = [
-    { value: 'accommodation', label: 'Alojamiento' },
-    { value: 'transport', label: 'Transporte' },
-    { value: 'food', label: 'Comida' },
-    { value: 'entertainment', label: 'Entretenimiento' },
-    { value: 'shopping', label: 'Compras' },
-    { value: 'health', label: 'Salud' },
-    { value: 'insurance', label: 'Seguro' },
-    { value: 'other', label: 'Otros' },
-  ]
+    { value: 'accommodation', message: 'expenseCategoryAccommodation' },
+    { value: 'transport', message: 'expenseCategoryTransport' },
+    { value: 'food', message: 'expenseCategoryFood' },
+    { value: 'entertainment', message: 'expenseCategoryEntertainment' },
+    { value: 'shopping', message: 'expenseCategoryShopping' },
+    { value: 'health', message: 'expenseCategoryHealth' },
+    { value: 'insurance', message: 'expenseCategoryInsurance' },
+    { value: 'other', message: 'expenseCategoryOther' },
+  ] as const
 
   const currencies = [
     { value: 'EUR', label: 'EUR (€)' },
@@ -263,14 +258,14 @@ function EditExpenseContent() {
   ]
 
   const loadErrorMessage = getLoadErrorMessage(loadError, {
-    timeout: CONNECTION_TIMEOUT_MESSAGE,
-    request: 'Error al cargar los datos del gasto',
+    timeout: t('connectionTimeout'),
+    request: t('expenseLoadError'),
   })
 
   if (!id) {
     return (
       <DashboardLayout skeleton="expense-edit">
-        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Selecciona un gasto para editar.</p>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">{t('expenseSelectToEdit')}</p>
       </DashboardLayout>
     )
   }
@@ -283,7 +278,7 @@ function EditExpenseContent() {
     return (
       <DashboardLayout skeleton="expense-edit">
         <ErrorState
-          title="No se pudo cargar el gasto"
+          title={t('expenseLoadError')}
           message={loadErrorMessage}
           onRetry={() => loadData()}
         />
@@ -294,7 +289,7 @@ function EditExpenseContent() {
   if (notFound) {
     return (
       <DashboardLayout skeleton="expense-edit">
-        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">Gasto no encontrado.</p>
+        <p role="alert" className="mx-auto max-w-xl rounded-xl bg-surface px-6 py-10 text-center text-muted">{t('expenseNotFound')}.</p>
       </DashboardLayout>
     )
   }
@@ -302,7 +297,7 @@ function EditExpenseContent() {
   return (
     <DashboardLayout skeleton="expense-edit">
       <div className="mx-auto space-y-7">
-        <div className="space-y-2"><Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />Volver a gastos</Link><PageTitle title="Editar gasto" subtitle="Modifica los detalles del gasto." action={<Button variant="outline" className="min-h-11 text-danger border-danger/30" onClick={handleDelete}>Eliminar</Button>}/></div>
+        <div className="space-y-2"><Link href={localePath(locale, '/expenses')} className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />{t('backToExpenses')}</Link><PageTitle title={t('expenseFormEditTitle')} subtitle={t('expenseEditSubtitle')} action={<Button variant="outline" className="min-h-11 text-danger border-danger/30" onClick={handleDelete}>{t('deleteExpense')}</Button>}/></div>
         {/* Form */}
         <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(260px,0.8fr)]"><Card className="min-w-0 rounded-none border-0 bg-transparent">
           <CardContent className="p-0">
@@ -317,19 +312,19 @@ function EditExpenseContent() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                    label="Monto *"
+                    label={t('expenseAmountLabel')}
                     name="amount"
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.amount}
                     onChange={handleInputChange}
-                    placeholder="0.00"
+                    placeholder={t('decimalPlaceholder')}
                     required
                   />
                   <div className="space-y-2">
                     <label htmlFor="expense-currency" className="block text-sm font-medium text-ink">
-                      Moneda *
+                      {t('expenseCurrencyLabel')} *
                     </label>
                     <select
                       id="expense-currency"
@@ -349,17 +344,17 @@ function EditExpenseContent() {
                 </div>
 
                 <Input
-                  label="Descripción *"
+                  label={t('expenseDescriptionLabel')}
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="ej. Cena en restaurante"
+                  placeholder={t('expenseDescriptionPlaceholder')}
                   required
                 />
 
 
                 <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium text-ink">Categoría *</legend>
+                  <legend className="text-sm font-medium text-ink">{t('expenseCategoryLabel')} *</legend>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {categories.map((category) => (
                       <label
@@ -383,7 +378,7 @@ function EditExpenseContent() {
                           className="h-6 w-6 mb-1 text-muted"
                         />
                         <span className="text-xs text-center font-medium">
-                          {category.label}
+                          {t(category.message)}
                         </span>
                       </label>
                     ))}
@@ -391,7 +386,7 @@ function EditExpenseContent() {
                 </fieldset>
 
                 <Input
-                  label="Fecha y Hora *"
+                  label={t('expenseDateLabel')}
                   name="date"
                   type="datetime-local"
                   value={formData.date}
@@ -401,7 +396,7 @@ function EditExpenseContent() {
 
                 <div className="space-y-2">
                   <label htmlFor="expense-trip_id" className="block text-sm font-medium text-ink">
-                    Viaje Asociado
+                    {t('expenseTripLabel')}
                   </label>
                   <select
                     id="expense-trip_id"
@@ -410,7 +405,7 @@ function EditExpenseContent() {
                     onChange={handleInputChange}
                     className={selectClassName}
                   >
-                    <option value="">Sin viaje asociado</option>
+                    <option value="">{t('noTripOption')}</option>
                     {trips.map((trip) => (
                       <option key={trip.id} value={trip.id}>
                         {trip.title}
@@ -421,7 +416,7 @@ function EditExpenseContent() {
 
                 <div className="space-y-2">
                   <label htmlFor="expense-notes" className="block text-sm font-medium text-ink">
-                    Notas Adicionales
+                    {t('expenseNotesLabel')}
                   </label>
                   <textarea
                     id="expense-notes"
@@ -430,7 +425,7 @@ function EditExpenseContent() {
                     onChange={handleInputChange}
                     rows={3}
                     className={textareaClassName}
-                    placeholder="Añade detalles adicionales sobre este gasto..."
+                    placeholder={t('expenseNotesPlaceholder')}
                   />
                 </div>
               </div>
@@ -442,23 +437,24 @@ function EditExpenseContent() {
                   loading={loading}
                   className="min-h-11 flex-1 sm:flex-none"
                 >
-                  Guardar Cambios
+                  {t('saveExpense')}
                 </Button>
-                <Link href="/expenses" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-line px-4 font-medium text-ink hover:bg-surface sm:flex-none">
-                  Cancelar
+                <Link href={localePath(locale, '/expenses')} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-line px-4 font-medium text-ink hover:bg-surface sm:flex-none">
+                  {t('cancel')}
                 </Link>
               </div>
             </form>
           </CardContent>
-        </Card><ExpenseSummary data={formData} trips={trips} categoryLabel={categories.find(category=>category.value===formData.category)?.label}/></div>
+        </Card><ExpenseSummary data={formData} trips={trips} categoryLabel={t(categories.find(category=>category.value===formData.category)?.message ?? 'expenseCategoryOther')}/></div>
       </div>
     </DashboardLayout>
   )
 }
 export default function EditExpensePage() {
+  const i18n = useI18n()
   return (
     <Suspense fallback={<DashboardLayout skeleton="expense-edit" pending />}>
-      <EditExpenseContent />
+      <EditExpenseContent {...i18n} />
     </Suspense>
   )
 }

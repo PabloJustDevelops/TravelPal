@@ -3,6 +3,7 @@ export type ToastType = 'success' | 'error' | 'warning' | 'info'
 export interface ToastPayload {
   type: ToastType
   title?: string
+  dismissLabel?: string
   message: string
   durationMs?: number
 }

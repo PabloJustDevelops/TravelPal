@@ -4,6 +4,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Calendar } from '../Calendar';
 import { format } from 'date-fns';
+import { LocaleProvider } from '@/lib/i18n/LocaleProvider';
 
 // Mock Heroicons to avoid rendering issues in tests
 jest.mock('@heroicons/react/24/outline', () => ({
@@ -154,3 +155,36 @@ describe('Calendar Component', () => {
     ).toBeInTheDocument();
   });
 });
+
+
+it('traduce el calendario y su leyenda al inglés', () => {
+  render(
+    <LocaleProvider locale="en">
+      <Calendar events={[]} />
+    </LocaleProvider>,
+  )
+
+  expect(screen.getByRole('button', { name: 'Go to today' })).toHaveTextContent('Today')
+  expect(screen.getAllByText('Mon').length).toBeGreaterThan(0)
+  expect(screen.getByText('Confirmed bookings')).toBeInTheDocument()
+  expect(screen.getByText('Activities')).toBeInTheDocument()
+  expect(screen.queryByText('Reservas confirmadas')).not.toBeInTheDocument()
+})
+
+it('traduce la acción contextual de borrar un evento', () => {
+  const event = {
+    id: 'english-event',
+    title: 'Test Event',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    type: 'booking' as const,
+    color: 'bg-blue-500',
+  }
+  render(
+    <LocaleProvider locale="en">
+      <Calendar events={[event]} onDeleteEvent={jest.fn()} />
+    </LocaleProvider>,
+  )
+
+  fireEvent.contextMenu(screen.getByText(/Test Event/i).closest('div')!)
+  expect(screen.getByRole('menuitem', { name: 'Delete event' })).toBeInTheDocument()
+})

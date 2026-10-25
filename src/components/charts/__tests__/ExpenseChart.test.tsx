@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import type { Expense } from "@/lib/insforge";
 import ExpenseChart from "../ExpenseChart";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 
 jest.mock("recharts", () => {
   const ReactRuntime = jest.requireActual("react") as typeof React;
@@ -34,13 +35,13 @@ jest.mock("recharts", () => {
   };
 });
 
-const expense = (id: string, amount: number, currency: string): Expense => ({
+const expense = (id: string, amount: number, currency: string, category = "food"): Expense => ({
   id,
   user_id: "user-1",
   title: id,
   amount,
   currency,
-  category: "food",
+  category,
   date: "2026-05-02",
   created_at: "2026-05-02T00:00:00.000Z",
   updated_at: "2026-05-02T00:00:00.000Z",
@@ -59,4 +60,31 @@ describe("ExpenseChart", () => {
     expect(await screen.findByText("Comida: 120")).toBeInTheDocument();
     expect(screen.queryByText("Comida: 620")).not.toBeInTheDocument();
   });
+});
+
+
+it('localiza categorías y el estado vacío en inglés', async () => {
+  const { rerender } = render(
+    <LocaleProvider locale="en">
+      <ExpenseChart expenses={[expense('usd', 120, 'USD')]} currency="USD" type="category" />
+    </LocaleProvider>,
+  );
+  expect(await screen.findByText('Food: 120')).toBeInTheDocument();
+
+  rerender(
+    <LocaleProvider locale="en">
+      <ExpenseChart expenses={[]} currency="USD" type="category" />
+    </LocaleProvider>,
+  );
+  expect(screen.getByText('There is not enough data yet')).toBeInTheDocument();
+});
+
+it('conserva el nombre de categorías libres sin traducción', async () => {
+  render(
+    <LocaleProvider locale="en">
+      <ExpenseChart expenses={[expense('hotel-expense', 80, 'USD', 'hotel')]} currency="USD" type="category" />
+    </LocaleProvider>,
+  );
+
+  expect(await screen.findByText('hotel: 80')).toBeInTheDocument();
 });

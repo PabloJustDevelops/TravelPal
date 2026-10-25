@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ChevronLeftIcon, 
@@ -19,7 +21,8 @@ import {
   addWeeks,
   subWeeks,
 } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
+import { useI18n } from '@/lib/i18n/LocaleProvider';
 import Button from '../ui/Button';
 import { 
   DndContext, 
@@ -236,6 +239,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   className = ''
 }) => {
+  const { t, locale } = useI18n();
+  const dateFnsLocale = locale === 'en' ? enUS : es;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, event: CalendarEvent } | null>(null);
@@ -354,7 +359,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   );
 
   const days = getDays();
-  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const weekDays = [t('calendarWeekdayMonday'), t('calendarWeekdayTuesday'), t('calendarWeekdayWednesday'), t('calendarWeekdayThursday'), t('calendarWeekdayFriday'), t('calendarWeekdaySaturday'), t('calendarWeekdaySunday')];
 
   // Filtrar eventos
   const getEventsForDay = (day: Date) => {
@@ -390,11 +395,11 @@ export const Calendar: React.FC<CalendarProps> = ({
           >
             <div className="flex items-start gap-1 sm:mb-2 sm:justify-between">
               <span className="sm:hidden text-xs font-medium capitalize">
-                {format(day, 'EEE', { locale: es })}
+                {format(day, 'EEE', { locale: dateFnsLocale })}
               </span>
               <button
                 type="button"
-                aria-label={`Seleccionar el ${format(day, "EEEE d 'de' MMMM yyyy", { locale: es })}`}
+                aria-label={t('calendarSelectDate').replace('{date}', format(day, 'PPPP', { locale: dateFnsLocale }))}
                 aria-pressed={Boolean(isSelected)}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -454,11 +459,11 @@ export const Calendar: React.FC<CalendarProps> = ({
           >
              <div className="flex items-center gap-1 border-b border-line pb-1 sm:sticky sm:top-0 sm:mb-4 sm:justify-center sm:bg-inherit sm:pb-2">
                <span className="text-xs text-muted uppercase sm:mb-1 sm:block">
-                 {format(day, 'EEE', { locale: es })}
+                 {format(day, 'EEE', { locale: dateFnsLocale })}
                </span>
                <button
                  type="button"
-                 aria-label={`Seleccionar el ${format(day, "EEEE d 'de' MMMM yyyy", { locale: es })}`}
+                 aria-label={t('calendarSelectDate').replace('{date}', format(day, 'PPPP', { locale: dateFnsLocale }))}
                  aria-pressed={Boolean(selectedDate && isSameDay(day, selectedDate))}
                  onClick={(event) => {
                    event.stopPropagation();
@@ -501,17 +506,17 @@ export const Calendar: React.FC<CalendarProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <section aria-label="Calendario de viajes" className={`overflow-hidden rounded-xl border border-line bg-paper font-sans shadow-sm ${className}`}>
+      <section aria-label={t('taskCalendarView')} className={`overflow-hidden rounded-xl border border-line bg-paper font-sans shadow-sm ${className}`}>
         {/* Header */}
         <div className="flex flex-col gap-3 p-4 border-b border-line sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <h2 className="min-w-0 flex-1 font-sans text-lg font-bold capitalize text-ink sm:text-xl">
-              {format(currentDate, 'MMMM yyyy', { locale: es })}
+              {format(currentDate, 'MMMM yyyy', { locale: dateFnsLocale })}
             </h2>
             <div className="flex shrink-0 items-center rounded-md border border-line bg-paper">
               <button
                 type="button"
-                aria-label="Mes anterior"
+                aria-label={t('calendarPreviousMonth')}
                 onClick={prev}
                 className="inline-flex min-h-11 min-w-11 items-center justify-center border-r border-line text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
@@ -519,15 +524,15 @@ export const Calendar: React.FC<CalendarProps> = ({
               </button>
               <button
                 type="button"
-                aria-label="Ir al día de hoy"
+                aria-label={t('calendarToday')}
                 onClick={goToToday}
                 className="min-h-11 px-3 text-sm font-medium text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                Hoy
+                {t('calendarTodayLabel')}
               </button>
               <button
                 type="button"
-                aria-label="Mes siguiente"
+                aria-label={t('calendarNextMonth')}
                 onClick={next}
                 className="inline-flex min-h-11 min-w-11 items-center justify-center border-l border-line text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
@@ -548,7 +553,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   : 'text-muted hover:text-ink'}
               `}
             >
-              Mes
+              {t('calendarMonthView')}
             </button>
             <button
               type="button"
@@ -561,7 +566,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   : 'text-muted hover:text-ink'}
               `}
             >
-              Semana
+              {t('calendarWeekView')}
             </button>
           </div>
         </div>
@@ -569,7 +574,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         {onAddEvent && (
           <div className="flex flex-col gap-2 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted">
-              Día seleccionado: <span className="font-medium text-ink">{format(selectedDate ?? new Date(), "d 'de' MMMM yyyy", { locale: es })}</span>
+              {t('calendarSelectedDate').replace('{date}', format(selectedDate ?? new Date(), 'PPPP', { locale: dateFnsLocale }))}
             </p>
             <Button
               type="button"
@@ -578,7 +583,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               onClick={() => onAddEvent(selectedDate ?? new Date())}
             >
               <span aria-hidden="true" className="mr-2 text-lg leading-none">+</span>
-              Añadir evento al día seleccionado
+              {t('calendarAddEvent')}
             </Button>
           </div>
         )}
@@ -598,7 +603,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
             {!hasEventsInPeriod && (
               <p role="status" className="border-b border-line bg-paper px-4 py-3 text-sm text-muted">
-                No hay eventos en este periodo. Selecciona un día para añadir uno.
+                {t('calendarNoEvents')}
               </p>
             )}
 
@@ -609,10 +614,10 @@ export const Calendar: React.FC<CalendarProps> = ({
         {/* Footer Leyenda */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line bg-surface px-4 py-4 text-xs sm:gap-6 sm:px-6">
           {[
-            { label: 'Viajes', color: 'bg-accent' },
-            { label: 'Reservas confirmadas', color: 'bg-success' },
-            { label: 'Reservas pendientes', color: 'bg-warning' },
-            { label: 'Actividades', color: 'bg-accent-soft' },
+            { label: t('calendarLegendTrips'), color: 'bg-accent' },
+            { label: t('calendarLegendConfirmedBookings'), color: 'bg-success' },
+            { label: t('calendarLegendPendingBookings'), color: 'bg-warning' },
+            { label: t('calendarLegendActivities'), color: 'bg-accent-soft' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               <span className={`h-3 w-3 rounded-full ${item.color} ring-2 ring-paper`} />
@@ -625,7 +630,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         {contextMenu && (
           <div
             role="menu"
-            aria-label={`Acciones de ${contextMenu.event.title}`}
+            aria-label={t('calendarActionsAria').replace('{title}', contextMenu.event.title)}
             className="fixed z-50 w-40 rounded-md border border-line bg-paper py-1 text-ink shadow-lg"
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onKeyDown={(e) => {
@@ -647,7 +652,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               }}
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />
-              Eliminar
+              {t('calendarDeleteEvent')}
             </button>
           </div>
         )}

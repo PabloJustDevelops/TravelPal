@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '@/lib/utils'
 import Button from '@/components/ui/Button'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 interface Budget {
   id: string
@@ -41,7 +42,10 @@ export default function BudgetCard({
   onDelete, 
   showActions = true 
 }: BudgetCardProps) {
+  const { t, locale } = useI18n()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const formatPercent = (value: number) => new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)
 
   const spentPercentage = budget.total_amount > 0 
     ? (budget.spent_amount / budget.total_amount) * 100 
@@ -84,19 +88,19 @@ export default function BudgetCard({
 
   const getCategoryName = (category: string) => {
     const names: Record<string, string> = {
-      travel: 'Viaje',
-      accommodation: 'Alojamiento',
-      food: 'Comida',
-      transport: 'Transporte',
-      entertainment: 'Entretenimiento',
-      shopping: 'Compras',
-      other: 'Otros',
+      travel: t('expenseCategoryTravel'),
+      accommodation: t('expenseCategoryAccommodation'),
+      food: t('expenseCategoryFood'),
+      transport: t('expenseCategoryTransport'),
+      entertainment: t('expenseCategoryEntertainment'),
+      shopping: t('expenseCategoryShopping'),
+      other: t('expenseCategoryOther'),
     }
     return names[category] || category
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -152,7 +156,7 @@ export default function BudgetCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={`Editar presupuesto ${budget.name}`}
+                    aria-label={`${t('editBudget')} ${budget.name}`}
                     className="h-11 w-11 p-0"
                     onClick={() => onEdit(budget)}
                   >
@@ -163,7 +167,7 @@ export default function BudgetCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={`Eliminar presupuesto ${budget.name}`}
+                    aria-label={`${t('deleteBudget')} ${budget.name}`}
                     onClick={() => onDelete(budget.id)}
                     className="h-11 w-11 p-0 text-danger hover:text-danger hover:bg-danger/10"
                   >
@@ -179,14 +183,14 @@ export default function BudgetCard({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-lg font-semibold tabular-nums text-ink">
-              Gastado: {formatCurrency(budget.spent_amount, budget.currency)}
+              {t('expenseBudgetSpent')}: {formatCurrency(budget.spent_amount, budget.currency, locale)}
             </span>
             <span className="text-sm text-muted">
-              {spentPercentage.toFixed(1)}%
+              {formatPercent(spentPercentage)}%
             </span>
           </div>
           
-          <div role="progressbar" aria-label={`Uso del presupuesto ${budget.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100,Math.max(0,Math.round(spentPercentage)))} aria-valuetext={`${spentPercentage.toFixed(1)}% del presupuesto usado`} className="w-full bg-surface-strong rounded-full h-2">
+          <div role="progressbar" aria-label={t('budgetUsageLabel').replace('{name}', budget.name)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100,Math.max(0,Math.round(spentPercentage)))} aria-valuetext={t('budgetUsagePercent').replace('{percent}', formatPercent(spentPercentage))} className="w-full bg-surface-strong rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-colors duration-150 ${getProgressBarColor()}`}
               style={{ width: `${Math.min(spentPercentage, 100)}%` }}
@@ -195,11 +199,11 @@ export default function BudgetCard({
           
           <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
             <span className="text-sm text-muted">
-              Presupuesto: {formatCurrency(budget.total_amount, budget.currency)}
+              {t('expenseBudgetTotal')}: {formatCurrency(budget.total_amount, budget.currency, locale)}
             </span>
             <span className={`text-sm font-medium ${getStatusColor()}`}>
-              {isOverBudget ? 'Excedido por' : 'Restante'}: {' '}
-              {formatCurrency(Math.abs(remainingAmount), budget.currency)}
+              {isOverBudget ? t('budgetExceededStatus') : t('budgetRemainingStatus')}: {' '}
+              {formatCurrency(Math.abs(remainingAmount), budget.currency, locale)}
             </span>
           </div>
         </div>
@@ -211,10 +215,10 @@ export default function BudgetCard({
           </span>
           <span className={daysRemaining > 0 ? 'text-muted' : 'text-danger'}>
             {daysRemaining > 0 
-              ? `${daysRemaining} días restantes`
+              ? t('budgetDaysLeft').replace('{count}', new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES').format(daysRemaining))
               : daysRemaining === 0 
-                ? 'Termina hoy'
-                : `Terminó hace ${Math.abs(daysRemaining)} días`
+                ? t('budgetEndsToday')
+                : t('budgetDaysAgo').replace('{count}', new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES').format(Math.abs(daysRemaining)))
             }
           </span>
         </div>
@@ -226,7 +230,7 @@ export default function BudgetCard({
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-sm text-accent hover:text-accent-hover transition-colors"
             >
-              {isExpanded ? 'Ocultar descripción' : 'Ver descripción'}
+              {isExpanded ? t('budgetHideDescription') : t('budgetShowDescription')}
             </button>
             {isExpanded && (
               <p className="mt-2 text-sm text-muted leading-relaxed">
@@ -253,8 +257,8 @@ export default function BudgetCard({
                 isOverBudget ? 'text-danger' : 'text-warning'
               }`}>
                 {isOverBudget 
-                  ? '¡Presupuesto excedido!'
-                  : '¡Cerca del límite del presupuesto!'
+                  ? t('budgetExceededNotice')
+                  : t('budgetNearLimitNotice')
                 }
               </span>
             </div>
@@ -262,8 +266,8 @@ export default function BudgetCard({
               isOverBudget ? 'text-danger' : 'text-warning'
             }`}>
               {isOverBudget 
-                ? `Has gastado ${formatCurrency(budget.spent_amount - budget.total_amount, budget.currency)} más de lo presupuestado.`
-                : `Has gastado el ${spentPercentage.toFixed(1)}% de tu presupuesto.`
+                ? t('budgetExceededMessage').replace('{amount}', formatCurrency(budget.spent_amount - budget.total_amount, budget.currency, locale))
+                : t('budgetSpentPercent').replace('{percent}', formatPercent(spentPercentage))
               }
             </p>
           </div>

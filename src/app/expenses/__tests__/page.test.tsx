@@ -424,7 +424,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     const progress = screen.getByRole("progressbar", { name: /Uso del presupuesto/ });
     expect(progress).toHaveAttribute("aria-valuemax", "100");
     expect(progress).toHaveAttribute("aria-valuenow", "100");
-    expect(progress).toHaveAttribute("aria-valuetext", "180.0% del presupuesto usado");
+    expect(progress).toHaveAttribute("aria-valuetext", "180,0% del presupuesto usado");
   });
 
   it("usa el mismo bloque de filtros para gastos y presupuestos", async () => {
@@ -594,7 +594,7 @@ describe("ExpensesPage con el presupuesto fusionado", () => {
     );
 
     expect(
-      await screen.findByText(/No se pudo guardar el presupuesto/),
+      await screen.findByText(/Error al guardar el presupuesto/),
     ).toBeInTheDocument();
     expect(budgetsChain.select).toHaveBeenCalledWith();
     // El modal sigue abierto: no se ha tratado como exito.

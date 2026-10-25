@@ -15,7 +15,8 @@ const TREND_COLOR = '#3B82F6'
 // del mes: asi dos "enero" de anos distintos no se confunden, y los meses
 // salen en orden cronologico aunque los gastos lleguen desordenados.
 export function buildExpenseTrend(
-  expenses: TrendExpense[]
+  expenses: TrendExpense[],
+  locale: 'es' | 'en' = 'es'
 ): ExpenseTrendPoint[] {
   const months = new Map<string, { name: string; value: number; currency: string }>()
 
@@ -28,7 +29,7 @@ export function buildExpenseTrend(
       month.value += expense.amount
     } else {
         months.set(key, {
-          name: date.toLocaleDateString('es-ES', {
+          name: date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
             month: 'short',
             year: 'numeric',
           }),

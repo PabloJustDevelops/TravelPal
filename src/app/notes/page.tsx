@@ -22,11 +22,12 @@ import {
 } from "@/lib/insforge-query";
 import { logger } from "@/lib/logger";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
 import { showToast } from "@/lib/toast";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localePath } from "@/lib/i18n";
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -34,7 +35,7 @@ import {
   StarIcon,
 } from "@heroicons/react/24/outline";
 
-export default function NotesPage() {
+export function NotesPageContent({t, locale}: Pick<ReturnType<typeof useI18n>, 't' | 'locale'>) {
   const { user, loading: authLoading } = useAuth();
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -110,7 +111,7 @@ export default function NotesPage() {
       } catch (err) {
         if (!active) return;
         logger.error("NotesPage: Error loading notes", {
-          error: getErrorMessage(err, "Error al cargar las notas"),
+          error: getErrorMessage(err, t("notesLoadError")),
         });
         setLoadError({ kind: queryErrorKind(err) });
       } finally {
@@ -121,7 +122,7 @@ export default function NotesPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, user?.id, reloadToken]);
+  }, [authLoading, user?.id, reloadToken, t]);
 
   const { notes, trips, filteredNotes } = useMemo(() => {
     const notesData = data?.notes ?? [];
@@ -155,8 +156,8 @@ export default function NotesPage() {
   }, [data, searchTerm, categoryFilter, tripFilter, favoritesOnly]);
 
   const error = getLoadErrorMessage(loadError, {
-    timeout: "La carga de notas ha tardado demasiado.",
-    request: "Error al cargar las notas. Por favor, inténtalo de nuevo.",
+    timeout: t("notesLoadTimeout"),
+    request: t("notesLoadError"),
   });
 
   const showSkeleton =
@@ -188,7 +189,7 @@ export default function NotesPage() {
         );
 
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo actualizar la nota");
+        assertRowsAffected(updatedRows, t("noteUpdateError"));
       } else {
         // Create new note using the InsForge SDK
         const insforge = createInsforgeClient();
@@ -220,12 +221,13 @@ export default function NotesPage() {
     } catch (err: unknown) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "Error al guardar la nota");
+          ? t("connectionTimeout")
+          : t("noteSaveError");
       logger.error("NotesPage: Error saving note", { error: message });
       showToast({
         type: "error",
-        title: "Error al guardar la nota",
+        dismissLabel: t("toastDismiss"),
+        title: t("noteSaveError"),
         message,
       });
       throw new Error(message);
@@ -236,7 +238,7 @@ export default function NotesPage() {
 
   const confirmDiscard = () =>
     !dirty ||
-    window.confirm("Tienes cambios sin guardar. ¿Quieres descartarlos?");
+    window.confirm(t("noteDiscardConfirm"));
   const handleEditNote = (note: Note | null) => {
     if (editorLoading) return;
     if (
@@ -264,7 +266,7 @@ export default function NotesPage() {
       if (
         link &&
         !window.confirm(
-          "Tienes cambios sin guardar. ¿Quieres salir y descartarlos?",
+          t("noteDiscardLeaveConfirm"),
         )
       ) {
         event.preventDefault();
@@ -273,7 +275,7 @@ export default function NotesPage() {
     };
     document.addEventListener("click", guard, true);
     return () => document.removeEventListener("click", guard, true);
-  }, [dirty]);
+  }, [dirty, t]);
   const toggleFavorite = async (note: Note) => {
     try {
       const result = await withQueryTimeout(
@@ -286,7 +288,7 @@ export default function NotesPage() {
         { label: "notes:favorite" },
       );
       if (result.error) throw result.error;
-      assertRowsAffected(result.data, "No se pudo actualizar la favorita");
+      assertRowsAffected(result.data, t("noteFavoriteError"));
       setData((previous) =>
         previous
           ? {
@@ -299,11 +301,12 @@ export default function NotesPage() {
             }
           : previous,
       );
-    } catch (error) {
+    } catch {
       showToast({
         type: "error",
-        title: "No se pudo actualizar la favorita",
-        message: getErrorMessage(error, "Inténtalo de nuevo"),
+        dismissLabel: t("toastDismiss"),
+        title: t("noteFavoriteError"),
+        message: t("noteFavoriteError"),
       });
     }
   };
@@ -315,7 +318,7 @@ export default function NotesPage() {
   if (error) {
     return (
       <DashboardLayout skeleton="notes">
-        <ErrorState message={error} onRetry={() => refetch()} />
+        <ErrorState title={t("errorLoadingData")} message={error} onRetry={() => refetch()} />
       </DashboardLayout>
     );
   }
@@ -325,16 +328,16 @@ export default function NotesPage() {
       <DashboardLayout skeleton="notes">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-ink">
-            Inicia sesión para gestionar tus notas
+            {t("notesRequireSignIn")}
           </h3>
           <p className="mt-1 text-sm text-muted">
-            La sección de notas requiere autenticación.
+            {t("notesAuthDescription")}
           </p>
           <Button
             className="mt-4"
-            onClick={() => (window.location.href = "/signin")}
+            onClick={() => (window.location.href = localePath(locale, "/signin"))}
           >
-            Ir a Login
+            {t("goToSignIn")}
           </Button>
         </div>
       </DashboardLayout>
@@ -347,12 +350,12 @@ export default function NotesPage() {
         {/* Header */}
         <PageTitle
           className={slots.notesTitle}
-          title="Tu cuaderno de viaje"
-          subtitle="Direcciones, ideas y detalles que merece la pena guardar."
+          title={t("notesHeading")}
+          subtitle={t("notesSubtitle")}
           action={
             <Button onClick={() => handleEditNote(null)}>
               <PlusIcon className="h-4 w-4 mr-2" />
-              Nueva Nota
+              {t("newNote")}
             </Button>
           }
         />
@@ -366,8 +369,8 @@ export default function NotesPage() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
                 <Input
                   type="text"
-                  placeholder="Buscar notas..."
-                  aria-label="Buscar notas"
+                  placeholder={t("notesSearchPlaceholder")}
+                  aria-label={t("searchNotes")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -378,33 +381,33 @@ export default function NotesPage() {
             {/* Category Filter */}
             <div className="lg:w-48">
               <select
-                aria-label="Filtrar por categoría"
+                aria-label={t("notesFilterCategory")}
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className={selectClassName}
               >
-                <option value="all">Todas las categorías</option>
-                <option value="general">General</option>
-                <option value="itinerary">Itinerario</option>
-                <option value="accommodation">Alojamiento</option>
-                <option value="transport">Transporte</option>
-                <option value="restaurant">Restaurante</option>
-                <option value="activity">Actividad</option>
-                <option value="shopping">Compras</option>
-                <option value="emergency">Emergencia</option>
-                <option value="contact">Contacto</option>
+                <option value="all">{t("notesAllCategories")}</option>
+                <option value="general">{t("expenseCategoryGeneral")}</option>
+                <option value="itinerary">{t("expenseCategoryItinerary")}</option>
+                <option value="accommodation">{t("expenseCategoryAccommodation")}</option>
+                <option value="transport">{t("expenseCategoryTransport")}</option>
+                <option value="restaurant">{t("expenseCategoryRestaurant")}</option>
+                <option value="activity">{t("expenseCategoryActivity")}</option>
+                <option value="shopping">{t("expenseCategoryShopping")}</option>
+                <option value="emergency">{t("expenseCategoryEmergency")}</option>
+                <option value="contact">{t("expenseCategoryContact")}</option>
               </select>
             </div>
 
             {/* Trip Filter */}
             <div className="lg:w-48">
               <select
-                aria-label="Filtrar por viaje"
+                aria-label={t("notesFilterTrip")}
                 value={tripFilter}
                 onChange={(e) => setTripFilter(e.target.value)}
                 className={selectClassName}
               >
-                <option value="all">Todos los viajes</option>
+                <option value="all">{t("notesAllTrips")}</option>
                 {trips.map((trip) => (
                   <option key={trip.id} value={trip.id}>
                     {trip.title}
@@ -417,7 +420,7 @@ export default function NotesPage() {
 
         <div data-loading-slot="notesWorkspace" className={`${slots.notesWorkspace} grid min-w-0 rounded-lg border border-line lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]`}>
           <section
-            aria-label="Lista de notas"
+            aria-label={t("notesList")}
             className={`${showEditor ? "hidden lg:block" : ""} min-w-0 p-4 lg:border-r lg:border-line`}
           >
             <div className="mb-3 flex flex-wrap gap-1 border-b border-line pb-3">
@@ -427,7 +430,7 @@ export default function NotesPage() {
                 onClick={() => setFavoritesOnly(false)}
                 className={`min-h-11 ${!favoritesOnly ? "text-accent" : ""}`}
               >
-                Todas las notas
+                {t("notesAll")}
               </Button>
               <Button
                 variant="ghost"
@@ -435,7 +438,7 @@ export default function NotesPage() {
                 onClick={() => setFavoritesOnly(true)}
                 className={`min-h-11 ${favoritesOnly ? "text-accent" : ""}`}
               >
-                Favoritas
+                {t("notesFavorites")}
               </Button>
             </div>
             {filteredNotes.length ? (
@@ -447,7 +450,7 @@ export default function NotesPage() {
                   >
                     <Button
                       variant="ghost"
-                      aria-label={`Editar nota ${note.title}`}
+                      aria-label={t("notesEditAria").replace("{title}", note.title)}
                       className="h-auto min-h-11 min-w-0 flex-1 flex-col items-start px-3 py-3 text-left"
                       onClick={() => handleEditNote(note)}
                     >
@@ -458,8 +461,8 @@ export default function NotesPage() {
                         {note.content}
                       </span>
                       <span className="mt-3 text-xs font-normal text-muted">
-                        {({general:'General',itinerary:'Itinerario',accommodation:'Alojamiento',transport:'Transporte',restaurant:'Restaurante',activity:'Actividad',shopping:'Compras',emergency:'Emergencia',contact:'Contacto'} as Record<string,string>)[note.category || 'general'] || note.category} ·{" "}
-                        {new Date(note.updated_at).toLocaleDateString("es-ES", {
+                        {({general:t("expenseCategoryGeneral"),itinerary:t("expenseCategoryItinerary"),accommodation:t("expenseCategoryAccommodation"),transport:t("expenseCategoryTransport"),restaurant:t("expenseCategoryRestaurant"),activity:t("expenseCategoryActivity"),shopping:t("expenseCategoryShopping"),emergency:t("expenseCategoryEmergency"),contact:t("expenseCategoryContact")} as Record<string,string>)[note.category || 'general'] || note.category} ·{" "}
+                        {new Date(note.updated_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
                           day: "numeric",
                           month: "short",
                         })}
@@ -468,7 +471,7 @@ export default function NotesPage() {
                     </Button>
                     <Button
                       variant="ghost"
-                      aria-label={`${note.is_favorite ? "Quitar de" : "Añadir a"} favoritas: ${note.title}`}
+                      aria-label={t(note.is_favorite ? "notesFavoriteRemoveAria" : "notesFavoriteAddAria").replace("{title}", note.title)}
                       aria-pressed={note.is_favorite}
                       onClick={() => void toggleFavorite(note)}
                       className="min-h-11 min-w-11 px-2"
@@ -486,14 +489,14 @@ export default function NotesPage() {
                 icon={<DocumentTextIcon className="h-8 w-8" />}
                 title={
                   notes.length
-                    ? "No se encontraron notas"
-                    : "No tienes notas registradas"
+                    ? t("notesNoneFound")
+                    : t("notesEmpty")
                 }
-                description="Guarda aquí tus ideas y los detalles del viaje."
+                description={t("notesEmptyDescription")}
                 action={
                   !notes.length ? (
                     <Button onClick={() => handleEditNote(null)}>
-                      Crear Primera Nota
+                      {t("notesCreateFirst")}
                     </Button>
                   ) : undefined
                 }
@@ -516,10 +519,10 @@ export default function NotesPage() {
             ) : (
               <div className="p-8 text-muted">
                 <h2 className="text-xl font-semibold text-ink">
-                  Un lugar para lo que quieres recordar
+                  {t("notesWorkspaceTitle")}
                 </h2>
                 <p className="mt-3">
-                  Selecciona una nota o crea una nueva para empezar a escribir.
+                  {t("notesWorkspaceDescription")}
                 </p>
               </div>
             )}
@@ -528,4 +531,9 @@ export default function NotesPage() {
       </div>
     </DashboardLayout>
   );
+}
+
+export default function NotesPage() {
+  const i18n = useI18n()
+  return <NotesPageContent {...i18n} />
 }

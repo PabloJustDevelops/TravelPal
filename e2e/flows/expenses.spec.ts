@@ -50,7 +50,7 @@ test.describe('flujo de gastos', () => {
     await page.getByLabel('Descripción *').fill(expenseTitle)
     await page.getByLabel('Monto *').fill('42.50')
     await page.locator('select[name="trip_id"]').selectOption({ label: tripTitle })
-    await page.getByPlaceholder('Añade detalles adicionales sobre este gasto...').fill(expenseNotes)
+    await page.getByPlaceholder('Añade detalles adicionales sobre este gasto').fill(expenseNotes)
     await page.getByRole('button', { name: 'Registrar Gasto' }).click()
 
     // Listado: aparece la tarjeta del gasto, no solo la redireccion.
@@ -64,13 +64,15 @@ test.describe('flujo de gastos', () => {
 
     const editLink = page.getByRole('link', { name: `Editar gasto ${expenseTitle}` })
     const editHref = await editLink.getAttribute('href')
-    expect(editHref).toMatch(/^\/expense-edit\?id=[0-9a-f-]+$/i)
+    // La ruta del locale puede venir con prefijo (/es/expense-edit) o sin él, según desde
+    // dónde se enlace: se acepta cualquiera de las dos formas canónicas.
+    expect(editHref).toMatch(/^(?:\/es)?\/expense-edit\?id=[0-9a-f-]+$/i)
     await page.goto(editHref!)
-    await expect(page.getByRole('heading', { name: 'Editar Gasto' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editar gasto' })).toBeVisible()
     await expect(page.getByLabel('Descripción *')).toHaveValue(expenseTitle)
 
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Editar Gasto' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editar gasto' })).toBeVisible()
     await expect(page.getByLabel('Descripción *')).toHaveValue(expenseTitle)
 
     // Y en el resumen del viaje, que agrega los gastos de ese `trip_id`.
