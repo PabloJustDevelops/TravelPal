@@ -14,7 +14,8 @@ import {
 import NotificationSystem from "@/components/notifications/NotificationSystem";
 import { avatarUrlSchema } from "@/lib/avatar-url";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
-import { localePath } from "@/lib/i18n";
+import { localePath, stripLocale } from "@/lib/i18n";
+import LanguageSelector from "@/lib/i18n/LanguageSelector";
 interface NavigationItem {
   name: string;
   href: string;
@@ -34,6 +35,7 @@ export default function Navbar({ navigation }: NavbarProps) {
   const avatar = avatarUrlSchema.safeParse(user?.avatar_url ?? "");
   const avatarUrl = avatar.success ? avatar.data : undefined;
   const pathname = usePathname();
+  const currentPath = stripLocale(pathname);
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -79,8 +81,8 @@ export default function Navbar({ navigation }: NavbarProps) {
             <div className="flex w-full flex-col gap-2">
               {navigation.map((item) => {
                 const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + "/");
+                  currentPath === item.href ||
+                  currentPath?.startsWith(item.href + "/");
                 return (
                   <Link
                     key={item.name}
@@ -101,6 +103,7 @@ export default function Navbar({ navigation }: NavbarProps) {
           </div>
 
           <div className="hidden lg:flex flex-col items-stretch gap-2 shrink-0 border-t border-line pt-4">
+            <LanguageSelector />
             <NotificationSystem className="shrink-0" panelPlacement="top-start" />
             <div className="relative min-w-0">
               <button
@@ -209,12 +212,13 @@ export default function Navbar({ navigation }: NavbarProps) {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div id="mobile-menu" className="lg:hidden bg-paper border-t border-line">
+          <div className="px-4 pt-3"><LanguageSelector /></div>
           <div className="pt-2 pb-3 space-y-1">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                aria-current={pathname === item.href || pathname?.startsWith(item.href + "/") ? "page" : undefined}
+                aria-current={currentPath === item.href || currentPath?.startsWith(item.href + "/") ? "page" : undefined}
                 className="flex min-h-12 items-center px-4 py-3 text-base font-medium text-muted hover:text-ink hover:bg-surface aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent"
                 onClick={() => setMobileMenuOpen(false)}
               >

@@ -13,10 +13,10 @@ function localizedPath(pathname: string, locale: string) {
 export default function LanguageSelector() {
   const { locale, t } = useI18n()
   const router = useRouter()
-  return <div role="region" aria-label={t('selectLanguage')}>
-    <label className="fixed right-3 top-16 z-50 rounded bg-paper/95 px-2 py-1 text-xs shadow-sm">
+  return <div role="region" aria-label={t('selectLanguage')} className="inline-flex items-center">
+    <label className="inline-flex items-center rounded-sm text-xs text-muted">
       <span className="sr-only">{t('selectLanguage')}</span>
-      <select aria-label={t('selectLanguage')} value={locale} className="min-h-8 bg-transparent" onChange={event => {
+      <select aria-label={t('selectLanguage')} value={locale} className="min-h-11 rounded-sm border border-line bg-paper px-2 py-1 text-xs text-ink" onChange={event => {
         const next = event.target.value
         if (!locales.includes(next as typeof locale)) return
         try { localStorage.setItem('travelpal.locale', next) } catch { /* Continue navigation if storage is disabled. */ }

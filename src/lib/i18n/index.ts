@@ -7,6 +7,15 @@ export function localePath(locale: Locale, path: string) {
   return target === '/' ? `/${locale}` : `/${locale}${target.replace(/\/$/, '')}`
 }
 
+// Quita el prefijo de idioma de una ruta para comparar con los href del menu, que se
+// declaran sin prefijo. Sin esto, con `/es/dashboard` el item activo nunca coincide y
+// desaparece el aria-current="page".
+export function stripLocale(pathname: string | null | undefined) {
+  if (!pathname) return pathname ?? null
+  const stripped = pathname.replace(/^\/(es|en)(?=\/|$)/, '')
+  return stripped === '' ? '/' : stripped
+}
+
 export function resolveLocale(value?: string | null): Locale {
   const normalized = value?.toLowerCase().split(/[-_]/)[0]
   return normalized === 'en' ? 'en' : 'es'
