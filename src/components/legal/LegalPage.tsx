@@ -17,7 +17,7 @@ export default function LegalPage({ title, children, locale = 'es', translated =
         <Brand />
         <div className="flex items-center gap-4">
           <LanguageSelect />
-          <Link href={localePath(locale, '/')} className="inline-flex min-h-11 items-center text-accent underline">{t('legalBack')}</Link>
+          <Link href={localePath(locale, '/')} className="hidden min-h-11 items-center text-accent underline sm:inline-flex">{t('legalBack')}</Link>
         </div>
       </header>
       <main className="mx-auto max-w-3xl space-y-8 px-5 py-12 sm:px-12">
