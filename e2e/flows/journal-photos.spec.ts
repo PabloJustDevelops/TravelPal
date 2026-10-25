@@ -49,7 +49,7 @@ test.describe('flujo de fotos del diario', () => {
 
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
-      page.getByRole('button', { name: 'Anadir foto' }).click(),
+      page.getByRole('button', { name: 'Añadir foto' }).click(),
     ])
     await chooser.setFiles(PHOTO_FIXTURE)
 

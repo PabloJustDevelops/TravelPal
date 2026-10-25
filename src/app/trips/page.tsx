@@ -274,7 +274,9 @@ export default function TripsPage() {
                   <div className="flex min-w-0 flex-col justify-center p-5 sm:p-8 lg:p-10">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t("nextTripLabel")}</p>
                     <h2 className="mt-2 break-words text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">
-                      {nextTrip.title}
+                      <Link href={`${(locale === "en" ? localePath(locale, "/trip") : "/trip")}?id=${encodeURIComponent(nextTrip.id)}`} className="rounded-sm hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                        {nextTrip.title}
+                      </Link>
                     </h2>
                     <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted sm:text-base">
                       <MapPinIcon className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
