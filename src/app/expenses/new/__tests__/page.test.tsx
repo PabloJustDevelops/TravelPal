@@ -143,10 +143,10 @@ describe("NewExpensePage con el SDK en el navegador", () => {
     await screen.findByRole("option", { name: "Escapada a Roma" });
 
     fillRequiredFields();
-    fireEvent.click(screen.getByText("Registrar Gasto"));
+    fireEvent.click(screen.getByText(/Registrar gasto/i));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/expenses");
+      expect(mockPush).toHaveBeenCalledWith("/es/expenses");
     });
 
     expect(expensesChain.insert).toHaveBeenCalledWith([
@@ -181,7 +181,7 @@ describe("NewExpensePage con el SDK en el navegador", () => {
       { target: { value: "Mesa junto a la ventana" } },
     );
 
-    fireEvent.click(screen.getByText("Registrar Gasto"));
+    fireEvent.click(screen.getByText(/Registrar gasto/i));
 
     await waitFor(() => {
       expect(expensesChain.insert).toHaveBeenCalled();
@@ -206,7 +206,7 @@ describe("NewExpensePage con el SDK en el navegador", () => {
 
     // El formulario manda `notes: ''` y `trip_id: ''`; el handler los pasaba a
     // null antes de insertar.
-    fireEvent.click(screen.getByText("Registrar Gasto"));
+    fireEvent.click(screen.getByText(/Registrar gasto/i));
 
     await waitFor(() => {
       expect(expensesChain.insert).toHaveBeenCalledWith([
@@ -223,10 +223,10 @@ describe("NewExpensePage con el SDK en el navegador", () => {
     await screen.findByRole("option", { name: "Escapada a Roma" });
 
     fillRequiredFields();
-    fireEvent.click(screen.getByText("Registrar Gasto"));
+    fireEvent.click(screen.getByText(/Registrar gasto/i));
 
     await waitFor(() => {
-      expect(screen.getByText("Database error")).toBeInTheDocument();
+      expect(screen.getByText("Error al registrar el gasto")).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
   });
@@ -240,7 +240,7 @@ describe("NewExpensePage con el SDK en el navegador", () => {
 
     // Se lanza el submit a mano: el `required` nativo de los inputs bloquearia
     // el click y no llegariamos al prechequeo del componente.
-    const form = screen.getByText("Registrar Gasto").closest("form");
+    const form = screen.getByText(/Registrar gasto/i).closest("form");
     fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(() => {

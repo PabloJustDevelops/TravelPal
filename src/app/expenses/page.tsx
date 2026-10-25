@@ -34,13 +34,13 @@ import {
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
   formatCurrency,
-  getErrorMessage,
   getLoadErrorMessage,
 } from "@/lib/utils";
 import Link from "next/link";
 import { logger } from "@/lib/logger";
+import { useI18n } from '@/lib/i18n/LocaleProvider';
+import { localePath } from '@/lib/i18n';
 
 interface Budget {
   id: string;
@@ -70,39 +70,36 @@ interface BudgetFormData {
 }
 
 const budgetCategories = [
-  { value: "travel", label: "Viaje General" },
-  { value: "accommodation", label: "Alojamiento" },
-  { value: "food", label: "Comida" },
-  { value: "transport", label: "Transporte" },
-  { value: "entertainment", label: "Entretenimiento" },
-  { value: "shopping", label: "Compras" },
-  { value: "other", label: "Otros" },
+  { value: "travel" },
+  { value: "accommodation" },
+  { value: "food" },
+  { value: "transport" },
+  { value: "entertainment" },
+  { value: "shopping" },
+  { value: "other" },
 ];
 
 const budgetCurrencies = [
-  { value: "USD", label: "USD - Dólar Estadounidense" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - Libra Esterlina" },
-  { value: "JPY", label: "JPY - Yen Japonés" },
-  { value: "CAD", label: "CAD - Dólar Canadiense" },
-  { value: "AUD", label: "AUD - Dólar Australiano" },
-  { value: "CHF", label: "CHF - Franco Suizo" },
-  { value: "CNY", label: "CNY - Yuan Chino" },
+  { value: "USD" },
+  { value: "EUR" },
+  { value: "GBP" },
+  { value: "JPY" },
+  { value: "CAD" },
+  { value: "AUD" },
+  { value: "CHF" },
+  { value: "CNY" },
 ];
 
-// Un unico juego de filtros sirve a gastos y a presupuestos. Incluye "travel"
-// (solo presupuestos) y "health"/"insurance" (solo gastos): el filtro que no
-// aplique a una lista simplemente la deja vacia, sin bloques duplicados.
 const categoryFilters = [
-  { value: "travel", label: "Viaje General" },
-  { value: "accommodation", label: "Alojamiento" },
-  { value: "transport", label: "Transporte" },
-  { value: "food", label: "Comida" },
-  { value: "entertainment", label: "Entretenimiento" },
-  { value: "shopping", label: "Compras" },
-  { value: "health", label: "Salud" },
-  { value: "insurance", label: "Seguro" },
-  { value: "other", label: "Otros" },
+  { value: "travel" },
+  { value: "accommodation" },
+  { value: "transport" },
+  { value: "food" },
+  { value: "entertainment" },
+  { value: "shopping" },
+  { value: "health" },
+  { value: "insurance" },
+  { value: "other" },
 ];
 
 const emptyBudgetForm: BudgetFormData = {
@@ -116,7 +113,8 @@ const emptyBudgetForm: BudgetFormData = {
   description: "",
 };
 
-export default function ExpensesPage() {
+export function ExpensesPageContent({t, locale}: Pick<ReturnType<typeof useI18n>, 't' | 'locale'>) {
+  const formatPercent = (value: number) => new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -206,7 +204,7 @@ export default function ExpensesPage() {
       } catch (err) {
         if (!active) return;
         logger.error("ExpensesPage: Error loading expenses", {
-          error: getErrorMessage(err, "Error al cargar los gastos"),
+          error: t("expenseLoadError"),
         });
         setExpensesLoadError({ kind: queryErrorKind(err) });
       } finally {
@@ -217,7 +215,7 @@ export default function ExpensesPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, user?.id, expensesReloadToken]);
+  }, [authLoading, user?.id, expensesReloadToken, t]);
 
   const { expenses, trips, filteredExpenses, budgets, filteredBudgets } =
     useMemo(() => {
@@ -225,7 +223,7 @@ export default function ExpensesPage() {
       const tripsData = expensesData?.trips ?? [];
       const budgetsData = expensesData?.budgets ?? [];
 
-      // "Previsto frente a real": el gastado de cada presupuesto se recalcula
+      // "{t("budgetCompareTitle")}": el gastado de cada presupuesto se recalcula
       // cruzandolo con los gastos (fecha dentro del periodo, categoria y viaje)
       // en vez de fiarse del spent_amount guardado.
       const tripsMap = tripsData.reduce<Record<string, string>>((acc, trip) => {
@@ -322,8 +320,8 @@ export default function ExpensesPage() {
   // a tiempo, el mensaje es el de timeout y no el generico del error del SDK.
   const error = getLoadErrorMessage(expensesLoadError, {
     timeout:
-      "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
-    request: "Error al cargar los gastos. Por favor, inténtalo de nuevo.",
+      t("dashboardLoadTimeout"),
+    request: t("expenseLoadError"),
   });
 
   const showSkeleton =
@@ -373,16 +371,26 @@ export default function ExpensesPage() {
 
   const getCategoryName = (category: string) => {
     const names: Record<string, string> = {
-      accommodation: "Alojamiento",
-      transport: "Transporte",
-      food: "Comida",
-      entertainment: "Entretenimiento",
-      shopping: "Compras",
-      health: "Salud",
-      insurance: "Seguro",
-      other: "Otros",
+      travel: t("expenseCategoryTravel"),
+      accommodation: t("expenseCategoryAccommodation"),
+      transport: t("expenseCategoryTransport"),
+      food: t("expenseCategoryFood"),
+      entertainment: t("expenseCategoryEntertainment"),
+      shopping: t("expenseCategoryShopping"),
+      health: t("expenseCategoryHealth"),
+      insurance: t("expenseCategoryInsurance"),
+      other: t("expenseCategoryOther"),
     };
     return names[category] || category;
+  };
+
+  const getCurrencyName = (currency: string) => {
+    const names: Record<string, string> = {
+      USD: t("expenseCurrencyUsd"), EUR: t("expenseCurrencyEuro"), GBP: t("expenseCurrencyGbp"),
+      JPY: t("expenseCurrencyJpy"), CAD: t("expenseCurrencyCad"), AUD: t("expenseCurrencyAud"),
+      CHF: t("expenseCurrencyChf"), CNY: t("expenseCurrencyCny"),
+    };
+    return `${currency} - ${names[currency] ?? currency}`;
   };
 
   const stats = getExpenseStats();
@@ -433,7 +441,7 @@ export default function ExpensesPage() {
     value?: string;
   }[] = [
     {
-      label: "Presupuesto total",
+      label: t("expenseBudgetTotal"),
       tone: "text-ink",
       values: budgetCurrencyTotals.map(({ currency, planned }) => ({
         currency,
@@ -441,7 +449,7 @@ export default function ExpensesPage() {
       })),
     },
     {
-      label: "Gastado",
+      label: t("expenseBudgetSpent"),
       tone: "text-ink",
       values: budgetCurrencyTotals.map(({ currency, spent }) => ({
         currency,
@@ -449,12 +457,12 @@ export default function ExpensesPage() {
       })),
     },
     {
-      label: "Superados",
+      label: t("budgetExceededCount"),
       value: String(overBudgetCount),
       tone: "text-danger",
     },
     {
-      label: "Cerca del límite",
+      label: t("budgetNearLimitCount"),
       value: String(nearLimitCount),
       tone: "text-warning",
     },
@@ -489,23 +497,23 @@ export default function ExpensesPage() {
     const errors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      errors.name = "El nombre es requerido";
+      errors.name = t("budgetNameRequired");
     }
 
     if (!formData.total_amount || parseFloat(formData.total_amount) <= 0) {
-      errors.total_amount = "El monto debe ser mayor a 0";
+      errors.total_amount = t("budgetAmountInvalid");
     }
 
     if (!formData.category) {
-      errors.category = "La categoría es requerida";
+      errors.category = t("budgetCategoryRequired");
     }
 
     if (!formData.start_date) {
-      errors.start_date = "La fecha de inicio es requerida";
+      errors.start_date = t("budgetStartRequired");
     }
 
     if (!formData.end_date) {
-      errors.end_date = "La fecha de fin es requerida";
+      errors.end_date = t("budgetEndRequired");
     }
 
     if (
@@ -514,7 +522,7 @@ export default function ExpensesPage() {
       new Date(formData.start_date) >= new Date(formData.end_date)
     ) {
       errors.end_date =
-        "La fecha de fin debe ser posterior a la fecha de inicio";
+        t("budgetEndAfterStart");
     }
 
     setFormErrors(errors);
@@ -562,7 +570,7 @@ export default function ExpensesPage() {
         );
 
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo guardar el presupuesto");
+        assertRowsAffected(updatedRows, t("budgetSaveError"));
       } else {
         const { error } = await withQueryTimeout(
           insforge.database
@@ -581,8 +589,8 @@ export default function ExpensesPage() {
     } catch (err) {
       const msg =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "Error al guardar el presupuesto");
+          ? t("connectionTimeout")
+          : t("budgetSaveError");
       logger.error("Error saving budget:", { error: msg, raw: err });
       setSubmitError(msg);
     } finally {
@@ -592,7 +600,7 @@ export default function ExpensesPage() {
 
   const handleDeleteBudget = async (budgetId: string) => {
     if (!user) return;
-    if (!confirm("¿Estás seguro de que quieres eliminar este presupuesto?"))
+    if (!confirm(t("budgetDeleteConfirm")))
       return;
 
     try {
@@ -608,14 +616,14 @@ export default function ExpensesPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(deletedRows, "No se pudo eliminar el presupuesto");
+      assertRowsAffected(deletedRows, t("budgetDeleteError"));
 
       refetchExpenses();
     } catch (err) {
       const msg =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "Error al eliminar el presupuesto");
+          ? t("connectionTimeout")
+          : t("budgetDeleteError");
       logger.error("Error deleting budget:", { error: msg, raw: err });
       alert(msg);
     }
@@ -628,7 +636,7 @@ export default function ExpensesPage() {
   if (error) {
     return (
       <DashboardLayout skeleton="expenses">
-        <ErrorState message={error} onRetry={refetchExpenses} />
+        <ErrorState title={t("errorLoadingData")} message={error} onRetry={refetchExpenses} />
       </DashboardLayout>
     );
   }
@@ -638,13 +646,13 @@ export default function ExpensesPage() {
       <DashboardLayout skeleton="expenses">
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-ink">
-            Inicia sesión para ver tus gastos
+            {t("notesSignInTitle")}
           </h3>
           <p className="mt-1 text-sm text-muted">
-            La sección de gastos requiere autenticación.
+            {t("expensesAuthDescription")}
           </p>
-          <Link href="/signin">
-            <Button className="mt-4">Ir a Login</Button>
+          <Link href={localePath(locale, '/signin')}>
+            <Button className="mt-4">{t("goToSignIn")}</Button>
           </Link>
         </div>
       </DashboardLayout>
@@ -657,19 +665,19 @@ export default function ExpensesPage() {
         {/* Header */}
         <PageTitle
           className={slots.expensesTitle}
-          title="Gastos y presupuestos"
-          subtitle="Lo que llevas gastado. Lo que queda por disfrutar."
+          title={t("expensesHeading")}
+          subtitle={t("expensesSubtitle")}
           action={
             hasFinancialData ? (
               <div className="flex flex-wrap items-center gap-3">
                 <Button variant="outline" onClick={handleCreateBudget}>
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Nuevo Presupuesto
+                  {t("addBudget")}
                 </Button>
-                <Link href="/expenses/new">
+                <Link href={localePath(locale, '/expenses/new')}>
                   <Button>
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Nuevo Gasto
+                    {t("addExpense")}
                   </Button>
                 </Link>
               </div>
@@ -678,12 +686,12 @@ export default function ExpensesPage() {
         />
 
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
-          <section aria-label="Movimientos" tabIndex={0} data-loading-slot="expensesMovements" className={slots.expensesMovements}>
+          <section aria-label={t("expenseMovements")} tabIndex={0} data-loading-slot="expensesMovements" className={slots.expensesMovements}>
             <h2 className="mb-2 text-2xl font-bold tracking-tight text-ink">
-              Movimientos
+              {t("expenseMovements")}
             </h2>
             <p className="mb-5 text-sm text-muted">
-              Todos los gastos de tu viaje en un solo lugar.
+              {t("expenseAllInOnePlace")}
             </p>{" "}
             {/* Filters: un unico bloque para gastos y presupuestos */}
             {hasFinancialData && (
@@ -695,8 +703,8 @@ export default function ExpensesPage() {
                       <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
                       <Input
                         type="text"
-                        placeholder="Buscar gastos y presupuestos..."
-                        aria-label="Buscar gastos y presupuestos"
+                        placeholder={t("expenseSearchPlaceholder")}
+                        aria-label={t("searchExpenses")}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
@@ -709,13 +717,13 @@ export default function ExpensesPage() {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      aria-label="Filtrar por categoría"
+                      aria-label={t("filterCategory")}
                       className={selectClassName}
                     >
-                      <option value="all">Todas las categorías</option>
+                      <option value="all">{t("allCategories")}</option>
                       {categoryFilters.map((category) => (
                         <option key={category.value} value={category.value}>
-                          {category.label}
+                          {getCategoryName(category.value)}
                         </option>
                       ))}
                     </select>
@@ -726,10 +734,10 @@ export default function ExpensesPage() {
                     <select
                       value={tripFilter}
                       onChange={(e) => setTripFilter(e.target.value)}
-                      aria-label="Filtrar por viaje"
+                      aria-label={t("filterTrip")}
                       className={selectClassName}
                     >
-                      <option value="all">Todos los viajes</option>
+                      <option value="all">{t("allTrips")}</option>
                       {trips.map((trip) => (
                         <option key={trip.id} value={trip.id}>
                           {trip.title}
@@ -740,26 +748,25 @@ export default function ExpensesPage() {
                 </div>
 
                 <p className="mt-3 text-xs text-muted">
-                  {filteredExpenses.length} de {expenses.length} gastos ·{" "}
-                  {filteredBudgets.length} de {budgets.length} presupuestos
+                  {filteredExpenses.length} / {expenses.length} {t("navExpenses").toLowerCase()} · {filteredBudgets.length} / {budgets.length} {t("expenseBudgetTitle").toLowerCase()}
                 </p>
               </div>
             )}
             {!hasFinancialData && (
               <EmptyState
                 icon={<CurrencyDollarIcon className="h-7 w-7" />}
-                title="Empieza a organizar tu dinero"
-                description="Registra un gasto o crea un presupuesto para seguir el coste del viaje desde el primer día."
+                title={t("expenseStartTitle")}
+                description={t("expenseStartDescription")}
                 action={
                   <div className="flex flex-col justify-center gap-3 sm:flex-row">
-                    <Link href="/expenses/new">
+                    <Link href={localePath(locale, '/expenses/new')}>
                       <Button className="w-full sm:w-auto">
                         <PlusIcon className="mr-2 h-4 w-4" />
-                        Registrar primer gasto
+                        {t("registerFirstExpense")}
                       </Button>
                     </Link>
                     <Button variant="outline" onClick={handleCreateBudget}>
-                      Crear presupuesto
+                      {t("createBudget")}
                     </Button>
                   </div>
                 }
@@ -784,24 +791,24 @@ export default function ExpensesPage() {
                     searchTerm ||
                     categoryFilter !== "all" ||
                     tripFilter !== "all"
-                      ? "No se encontraron gastos"
-                      : "No tienes gastos registrados"
+                      ? t("expenseNoResults")
+                      : t("expenseEmptyTitle")
                   }
                   description={
                     searchTerm ||
                     categoryFilter !== "all" ||
                     tripFilter !== "all"
-                      ? "Intenta ajustar los filtros de búsqueda"
-                      : "Comienza registrando tu primer gasto"
+                      ? t("expenseFilterHint")
+                      : t("expenseEmptyDescription")
                   }
                   action={
                     !searchTerm &&
                     categoryFilter === "all" &&
                     tripFilter === "all" ? (
-                      <Link href="/expenses/new">
+                      <Link href={localePath(locale, '/expenses/new')}>
                         <Button>
                           <PlusIcon className="h-4 w-4 mr-2" />
-                          Registrar Primer Gasto
+                          {t("registerFirstExpense")}
                         </Button>
                       </Link>
                     ) : undefined
@@ -810,9 +817,9 @@ export default function ExpensesPage() {
               )
             )}
           </section>
-          <aside aria-label="Presupuestos" tabIndex={0} data-loading-slot="expensesBudgets" className={`${slots.expensesBudgets} xl:border-l xl:border-line xl:pl-7`}>
-            <h2 className="mb-5 text-xl font-bold text-ink">Presupuestos</h2>{" "}
-            {/* Previsto frente a real */}
+          <aside aria-label={t("expenseBudgetTitle")} tabIndex={0} data-loading-slot="expensesBudgets" className={`${slots.expensesBudgets} xl:border-l xl:border-line xl:pl-7`}>
+            <h2 className="mb-5 text-xl font-bold text-ink">{t("expenseBudgetTitle")}</h2>{" "}
+            {/* {t("budgetCompareTitle")} */}
             {budgets.length > 0 && (
               <section className="space-y-4">
                 {filteredBudgets.length > 1 && (
@@ -822,11 +829,10 @@ export default function ExpensesPage() {
                         <ChartBarIcon className="h-6 w-6 text-accent flex-shrink-0" />
                         <div>
                           <h2 className="text-lg font-semibold text-ink">
-                            Previsto frente a real
+                            {t("budgetCompareTitle")}
                           </h2>
                           <p className="mt-1 text-sm text-muted">
-                            Compara lo que presupuestaste con lo que llevas
-                            gastado.
+                            {t("budgetCompareDescription")}
                           </p>
                         </div>
                       </div>
@@ -850,12 +856,12 @@ export default function ExpensesPage() {
                                       <span className="mr-1 text-xs font-medium text-muted">
                                         {currency}
                                       </span>
-                                      {formatCurrency(amount, currency)}
+                                      {formatCurrency(amount, currency, locale)}
                                     </p>
                                   ))
                                 ) : (
                                   <p className="text-sm font-medium text-muted">
-                                    Sin presupuestos
+                                    {t("noBudgetsSummary")}
                                   </p>
                                 )}
                               </div>
@@ -880,20 +886,20 @@ export default function ExpensesPage() {
                                 <div key={currency}>
                                   <div className="flex items-center justify-between text-xs text-muted">
                                     <span>
-                                      Real sobre previsto · {currency}
+                                      {t("budgetActualVsPlanned").replace("{currency}", currency)}
                                     </span>
-                                    <span>{percentage.toFixed(1)}%</span>
+                                    <span>{formatPercent(percentage)}%</span>
                                   </div>
                                   <div
                                     role="progressbar"
-                                    aria-label={`Real sobre previsto en ${currency}`}
+                                    aria-label={t("budgetActualVsPlanned").replace("{currency}", currency)}
                                     aria-valuemin={0}
                                     aria-valuemax={100}
                                     aria-valuenow={Math.min(
                                       100,
                                       Math.max(0, Math.round(percentage)),
                                     )}
-                                    aria-valuetext={`${percentage.toFixed(1)}% del presupuesto usado`}
+                                    aria-valuetext={t("budgetUsagePercent").replace("{percent}", formatPercent(percentage))}
                                     className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-strong"
                                   >
                                     <div
@@ -933,8 +939,8 @@ export default function ExpensesPage() {
                 ) : (
                   <EmptyState
                     icon={<ChartBarIcon className="h-12 w-12" />}
-                    title="No se encontraron presupuestos"
-                    description="Intenta ajustar los filtros para encontrar lo que buscas"
+                    title={t("expenseBudgetEmpty")}
+                    description={t("expenseFilterHint")}
                   />
                 )}
               </section>
@@ -943,7 +949,7 @@ export default function ExpensesPage() {
         </div>
         <details data-loading-slot="expensesReport" className={`${slots.expensesReport} border-t border-line pt-5`}>
           <summary className="min-h-11 cursor-pointer text-lg font-semibold text-ink">
-            Informe de gastos
+            {t("expenseReport")}
           </summary>
           <div className="mt-5 space-y-6">
             {" "}
@@ -958,19 +964,19 @@ export default function ExpensesPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-muted">
-                          Total Gastado
+                          {t("totalSpent")}
                         </div>
                         <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
                           {stats.totalsByCurrency.length > 0 ? (
                             stats.totalsByCurrency.map(
                               ({ currency, total }) => (
                                 <p key={currency}>
-                                  {formatCurrency(total, currency)}
+                                  {formatCurrency(total, currency, locale)}
                                 </p>
                               ),
                             )
                           ) : (
-                            <p>Sin gastos</p>
+                            <p>{t("noExpensesOrBookings")}</p>
                           )}
                         </div>
                       </div>
@@ -986,7 +992,7 @@ export default function ExpensesPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-muted">
-                          Total Gastos
+                          {t("totalExpenses")}
                         </div>
                         <div className="text-2xl font-bold text-ink">
                           {stats.count}
@@ -1004,19 +1010,19 @@ export default function ExpensesPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-muted">
-                          Promedio por Gasto
+                          {t("averagePerExpense")}
                         </div>
                         <div className="mt-1 space-y-0.5 text-sm font-semibold text-ink">
                           {stats.averagesByCurrency.length > 0 ? (
                             stats.averagesByCurrency.map(
                               ({ currency, average }) => (
                                 <p key={currency}>
-                                  {formatCurrency(average, currency)}
+                                  {formatCurrency(average, currency, locale)}
                                 </p>
                               ),
                             )
                           ) : (
-                            <p>Sin gastos</p>
+                            <p>{t("noExpensesOrBookings")}</p>
                           )}
                         </div>
                       </div>
@@ -1032,12 +1038,12 @@ export default function ExpensesPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-muted">
-                          Categoría más frecuente
+                          {t("mostFrequentCategory")}
                         </div>
                         <div className="text-lg font-bold text-ink">
                           {stats.topCategory
-                            ? `${getCategoryName(stats.topCategory)} · ${stats.topCategoryCount} ${stats.topCategoryCount === 1 ? "gasto" : "gastos"}`
-                            : "N/A"}
+                            ? `${getCategoryName(stats.topCategory)} · ${stats.topCategoryCount} ${stats.topCategoryCount === 1 ? t("expenseOne") : t("expenseMany")}`
+                            : t("notAvailable")}
                         </div>
                       </div>
                     </div>
@@ -1050,15 +1056,15 @@ export default function ExpensesPage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-muted">
-                    Filtra ambas gráficas por una moneda
+                    {t("expensesChartFilter")}
                   </p>
                   <div className="w-full sm:w-auto sm:min-w-48">
                     <label htmlFor="expense-chart-currency" className="sr-only">
-                      Moneda para las gráficas
+                      {t("currencyForCharts")}
                     </label>
                     <select
                       id="expense-chart-currency"
-                      aria-label="Moneda para las gráficas"
+                      aria-label={t("currencyForCharts")}
                       value={selectedChartCurrency}
                       onChange={(event) => setChartCurrency(event.target.value)}
                       disabled={expenseCurrencies.length === 0}
@@ -1077,18 +1083,18 @@ export default function ExpensesPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <section
-                    aria-label={`Gastos por categoría en ${selectedChartCurrency}`}
+                    aria-label={t("expenseChartCategoryAria").replace("{currency}", selectedChartCurrency)}
                     className="min-w-0"
                   >
                     <Card className="overflow-hidden">
                       <CardContent className="p-6">
                         <h2 className="text-lg font-semibold text-ink mb-6">
-                          Gastos por Categoría · {selectedChartCurrency}
+                          {t("expenseChartCategory")} · {selectedChartCurrency}
                         </h2>
                         <ExpenseChart
                           expenses={chartExpenses}
                           type="category"
-                          title={`Gastos por categoría en ${selectedChartCurrency}`}
+                          title={t("expenseChartCategoryAria").replace("{currency}", selectedChartCurrency)}
                           currency={selectedChartCurrency}
                           height={320}
                         />
@@ -1096,18 +1102,18 @@ export default function ExpensesPage() {
                     </Card>
                   </section>
                   <section
-                    aria-label={`Tendencia de gastos en ${selectedChartCurrency}`}
+                    aria-label={t("expenseChartTrendAria").replace("{currency}", selectedChartCurrency)}
                     className="min-w-0"
                   >
                     <Card className="overflow-hidden">
                       <CardContent className="p-6">
                         <h2 className="text-lg font-semibold text-ink mb-6">
-                          Tendencia de Gastos · {selectedChartCurrency}
+                          {t("expenseTrend")} · {selectedChartCurrency}
                         </h2>
                         <ExpenseChart
                           expenses={chartExpenses}
                           type="timeline"
-                          title={`Tendencia de gastos en ${selectedChartCurrency}`}
+                          title={t("expenseChartTrendAria").replace("{currency}", selectedChartCurrency)}
                           currency={selectedChartCurrency}
                           height={320}
                         />
@@ -1123,7 +1129,7 @@ export default function ExpensesPage() {
         <Modal
           isOpen={showBudgetModal}
           onClose={() => setShowBudgetModal(false)}
-          title={editingBudget ? "Editar Presupuesto" : "Nuevo Presupuesto"}
+          title={editingBudget ? t("editBudget") : t("budgetModalNew")}
         >
           <form onSubmit={handleSubmitBudget} className="space-y-6">
             {submitError && (
@@ -1133,7 +1139,7 @@ export default function ExpensesPage() {
             )}
             <div>
               <label className="block text-sm font-medium text-muted mb-2">
-                Nombre del Presupuesto *
+                {t("budgetNameLabel")}
               </label>
               <Input
                 type="text"
@@ -1141,8 +1147,8 @@ export default function ExpensesPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Ej: Vacaciones en Europa"
-                aria-label="Nombre del Presupuesto"
+                placeholder={t("budgetNamePlaceholder")}
+                aria-label={t("budgetNameLabel")}
                 error={formErrors.name}
               />
             </div>
@@ -1150,7 +1156,7 @@ export default function ExpensesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Monto Total *
+                  {t("budgetAmountLabel")}
                 </label>
                 <Input
                   type="number"
@@ -1160,27 +1166,27 @@ export default function ExpensesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, total_amount: e.target.value })
                   }
-                  placeholder="0.00"
-                  aria-label="Monto Total"
+                  placeholder={t("decimalPlaceholder")}
+                  aria-label={t("budgetAmountLabel")}
                   error={formErrors.total_amount}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Moneda *
+                  {t("expenseCurrencyLabel")} *
                 </label>
                 <select
                   value={formData.currency}
                   onChange={(e) =>
                     setFormData({ ...formData, currency: e.target.value })
                   }
-                  aria-label="Moneda"
+                  aria-label={t("expenseCurrencyLabel")}
                   className={selectClassName}
                 >
                   {budgetCurrencies.map((currency) => (
                     <option key={currency.value} value={currency.value}>
-                      {currency.label}
+                      {getCurrencyName(currency.value)}
                     </option>
                   ))}
                 </select>
@@ -1190,20 +1196,20 @@ export default function ExpensesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Categoría *
+                  {t("expenseCategoryLabel")} *
                 </label>
                 <select
                   value={formData.category}
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  aria-label="Categoría"
+                  aria-label={t("expenseCategoryLabel")}
                   className={selectClassName}
                 >
-                  <option value="">Seleccionar categoría</option>
+                  <option value="">{t("selectCategory")}</option>
                   {budgetCategories.map((category) => (
                     <option key={category.value} value={category.value}>
-                      {category.label}
+                      {getCategoryName(category.value)}
                     </option>
                   ))}
                 </select>
@@ -1216,17 +1222,17 @@ export default function ExpensesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Viaje Asociado
+                  {t("budgetTripLabel")}
                 </label>
                 <select
                   value={formData.trip_id}
                   onChange={(e) =>
                     setFormData({ ...formData, trip_id: e.target.value })
                   }
-                  aria-label="Viaje Asociado"
+                  aria-label={t("budgetTripLabel")}
                   className={selectClassName}
                 >
-                  <option value="">Sin viaje específico</option>
+                  <option value="">{t("noSpecificTrip")}</option>
                   {trips.map((trip) => (
                     <option key={trip.id} value={trip.id}>
                       {trip.title}
@@ -1239,7 +1245,7 @@ export default function ExpensesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Fecha de Inicio *
+                  {t("startDateLabel")}
                 </label>
                 <Input
                   type="date"
@@ -1247,14 +1253,14 @@ export default function ExpensesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, start_date: e.target.value })
                   }
-                  aria-label="Fecha de Inicio"
+                  aria-label={t("startDateLabel")}
                   error={formErrors.start_date}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-muted mb-2">
-                  Fecha de Fin *
+                  {t("endDateLabel")}
                 </label>
                 <Input
                   type="date"
@@ -1263,7 +1269,7 @@ export default function ExpensesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, end_date: e.target.value })
                   }
-                  aria-label="Fecha de Fin"
+                  aria-label={t("endDateLabel")}
                   error={formErrors.end_date}
                 />
               </div>
@@ -1271,7 +1277,7 @@ export default function ExpensesPage() {
 
             <div>
               <label className="block text-sm font-medium text-muted mb-2">
-                Descripción
+                {t("expenseDescription")}
               </label>
               <textarea
                 name="description"
@@ -1280,9 +1286,9 @@ export default function ExpensesPage() {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 rows={3}
-                aria-label="Descripción"
+                aria-label={t("expenseDescription")}
                 className={textareaClassName}
-                placeholder="Descripción opcional del presupuesto..."
+                placeholder={t("optionalBudgetDescription")}
               />
             </div>
 
@@ -1292,10 +1298,10 @@ export default function ExpensesPage() {
                 variant="outline"
                 onClick={() => setShowBudgetModal(false)}
               >
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button type="submit" loading={submitting}>
-                {editingBudget ? "Actualizar" : "Crear"} Presupuesto
+                {editingBudget ? t("budgetSubmitUpdate") : t("budgetSubmitCreate")} {t("budgetWord")}
               </Button>
             </div>
           </form>
@@ -1303,4 +1309,8 @@ export default function ExpensesPage() {
       </div>
     </DashboardLayout>
   );
+}
+export default function ExpensesPage() {
+  const i18n = useI18n()
+  return <ExpensesPageContent {...i18n} />
 }

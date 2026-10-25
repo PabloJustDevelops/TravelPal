@@ -215,7 +215,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     expect(writeChain.select).toHaveBeenCalledWith();
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/expenses");
+      expect(mockPush).toHaveBeenCalledWith("/es/expenses");
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -274,7 +274,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     expect(writeChain.eq).toHaveBeenCalledWith("user_id", "user-123");
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/expenses");
+      expect(mockPush).toHaveBeenCalledWith("/es/expenses");
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -285,7 +285,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     render(<EditExpensePage />);
 
     expect(
-      await screen.findByText("Error al cargar los datos del gasto"),
+      await screen.findByRole("heading", { name: "Error al cargar los gastos. Por favor, inténtalo de nuevo." }),
     ).toBeInTheDocument();
   });
 
@@ -321,7 +321,7 @@ describe("EditExpensePage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Guardar Cambios"));
 
     await waitFor(() => {
-      expect(screen.getByText("Database error")).toBeInTheDocument();
+      expect(screen.getByText("No se pudo actualizar el gasto")).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
   });

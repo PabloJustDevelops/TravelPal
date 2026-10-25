@@ -7,7 +7,6 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import { createInsforgeClient, Trip } from '@/lib/insforge'
 import { queryErrorKind, withQueryTimeout } from '@/lib/insforge-query'
-import { CONNECTION_TIMEOUT_MESSAGE } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import PageTitle from '@/components/ui/PageTitle'
 import ExpenseSummary from '@/components/expenses/ExpenseSummary'
@@ -17,8 +16,10 @@ import Input from '@/components/ui/Input'
 import { selectClassName, textareaClassName } from '@/components/ui/fieldStyles'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import { Card, CardContent } from '@/components/ui/Card'
+import { useI18n } from '@/lib/i18n/LocaleProvider'
+import { localePath } from '@/lib/i18n'
 
-export default function NewExpensePage() {
+export function NewExpensePageContent({t, locale}: Pick<ReturnType<typeof useI18n>, 't' | 'locale'>) {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -78,7 +79,7 @@ export default function NewExpensePage() {
     e.preventDefault()
 
     if (!user) {
-      setError('Debes iniciar sesión para registrar un gasto')
+      setError(t('expenseSignInCreate'))
       return
     }
 
@@ -88,12 +89,12 @@ export default function NewExpensePage() {
     try {
       // Validate required fields
       if (!formData.description || !formData.amount || !formData.date) {
-        throw new Error('Por favor completa todos los campos requeridos')
+        throw new Error(t('expenseRequiredError'))
       }
 
       const amount = parseFloat(formData.amount)
       if (isNaN(amount) || amount <= 0) {
-        throw new Error('El monto debe ser un número válido mayor a 0')
+        throw new Error(t('expenseInvalidAmount'))
       }
 
       // Mismo objeto de insercion que el POST borrado: el formulario manda
@@ -124,26 +125,19 @@ export default function NewExpensePage() {
 
       if (error) throw error
 
-      router.push('/expenses')
+      router.push(localePath(locale, '/expenses'))
     } catch (error: unknown) {
       logger.error('NewExpensePage: Error al registrar el gasto', error)
 
       if (queryErrorKind(error) === 'timeout') {
-        setError(CONNECTION_TIMEOUT_MESSAGE)
+        setError(t("connectionTimeout"))
         return
       }
 
-      let errorMessage = 'Error al registrar el gasto'
-      if (error instanceof Error) {
-        errorMessage = error.message
-      } else if (
-        typeof error === 'object' &&
-        error !== null &&
-        'message' in error
-      ) {
-        errorMessage = (error as { message: string }).message
-      }
-
+      const validationErrors = [t('expenseRequiredError'), t('expenseInvalidAmount')]
+      const errorMessage = error instanceof Error && validationErrors.includes(error.message)
+        ? error.message
+        : t('expenseCreateError')
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -151,15 +145,15 @@ export default function NewExpensePage() {
   }
 
   const categories = [
-    { value: 'accommodation', label: 'Alojamiento' },
-    { value: 'transport', label: 'Transporte' },
-    { value: 'food', label: 'Comida' },
-    { value: 'entertainment', label: 'Entretenimiento' },
-    { value: 'shopping', label: 'Compras' },
-    { value: 'health', label: 'Salud' },
-    { value: 'insurance', label: 'Seguro' },
-    { value: 'other', label: 'Otros' },
-  ]
+    { value: 'accommodation', message: 'expenseCategoryAccommodation' },
+    { value: 'transport', message: 'expenseCategoryTransport' },
+    { value: 'food', message: 'expenseCategoryFood' },
+    { value: 'entertainment', message: 'expenseCategoryEntertainment' },
+    { value: 'shopping', message: 'expenseCategoryShopping' },
+    { value: 'health', message: 'expenseCategoryHealth' },
+    { value: 'insurance', message: 'expenseCategoryInsurance' },
+    { value: 'other', message: 'expenseCategoryOther' },
+  ] as const
 
   const currencies = [
     { value: 'EUR', label: 'EUR (€)' },
@@ -171,7 +165,7 @@ export default function NewExpensePage() {
   return (
     <DashboardLayout skeleton="expenses/new" pending={authLoading || (!!user && tripsLoading)}>
       <div className="mx-auto space-y-7">
-        <div className="space-y-2"><Link href="/expenses" className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />Volver a gastos</Link><PageTitle title="Un gasto más, todo en orden." subtitle="Guárdalo ahora y sigue con tu viaje."/></div>
+        <div className="space-y-2"><Link href={localePath(locale, '/expenses')} className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted hover:text-accent"><ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />{t('backToExpenses')}</Link><PageTitle title={t('expenseFormNewTitle')} subtitle={t('expenseFormNewSubtitle')}/></div>
         {/* Form */}
         <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(260px,0.8fr)]"><Card className="min-w-0 rounded-none border-0 bg-transparent">
           <CardContent className="p-0">
@@ -186,19 +180,19 @@ export default function NewExpensePage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                    label="Monto *"
+                    label={t('expenseAmountLabel')}
                     name="amount"
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.amount}
                     onChange={handleInputChange}
-                    placeholder="0.00"
+                    placeholder={t('decimalPlaceholder')}
                     required
                   />
                   <div className="space-y-2">
                     <label htmlFor="expense-currency" className="block text-sm font-medium text-ink">
-                      Moneda *
+                      {t('expenseCurrencyLabel')} *
                     </label>
                     <select
                       id="expense-currency"
@@ -218,17 +212,17 @@ export default function NewExpensePage() {
                 </div>
 
                 <Input
-                  label="Descripción *"
+                  label={t('expenseDescriptionLabel')}
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="ej. Cena en restaurante"
+                  placeholder={t('expenseDescriptionPlaceholder')}
                   required
                 />
 
 
                 <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium text-ink">Categoría *</legend>
+                  <legend className="text-sm font-medium text-ink">{t('expenseCategoryLabel')} *</legend>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {categories.map((category) => (
                       <label
@@ -252,7 +246,7 @@ export default function NewExpensePage() {
                           className="h-6 w-6 mb-1 text-muted"
                         />
                         <span className="text-xs text-center font-medium">
-                          {category.label}
+                          {t(category.message)}
                         </span>
                       </label>
                     ))}
@@ -260,7 +254,7 @@ export default function NewExpensePage() {
                 </fieldset>
 
                 <Input
-                  label="Fecha y Hora *"
+                  label={t('expenseDateLabel')}
                   name="date"
                   type="datetime-local"
                   value={formData.date}
@@ -270,7 +264,7 @@ export default function NewExpensePage() {
 
                 <div className="space-y-2">
                   <label htmlFor="expense-trip_id" className="block text-sm font-medium text-ink">
-                    Viaje Asociado
+                    {t('expenseTripLabel')}
                   </label>
                   <select
                     id="expense-trip_id"
@@ -279,7 +273,7 @@ export default function NewExpensePage() {
                     onChange={handleInputChange}
                     className={selectClassName}
                   >
-                    <option value="">Sin viaje asociado</option>
+                    <option value="">{t('noTripOption')}</option>
                     {trips.map((trip) => (
                       <option key={trip.id} value={trip.id}>
                         {trip.title}
@@ -287,13 +281,13 @@ export default function NewExpensePage() {
                     ))}
                   </select>
                   <p className="text-xs text-muted">
-                    Opcional: Asocia este gasto a un viaje específico
+                    {t('expenseTripOptionalHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="expense-notes" className="block text-sm font-medium text-ink">
-                    Notas Adicionales
+                    {t('expenseNotesLabel')}
                   </label>
                   <textarea
                     id="expense-notes"
@@ -302,7 +296,7 @@ export default function NewExpensePage() {
                     onChange={handleInputChange}
                     rows={3}
                     className={textareaClassName}
-                    placeholder="Añade detalles adicionales sobre este gasto..."
+                    placeholder={t('expenseNotesPlaceholder')}
                   />
                 </div>
               </div>
@@ -314,16 +308,20 @@ export default function NewExpensePage() {
                   loading={loading}
                   className="min-h-11 flex-1 sm:flex-none"
                 >
-                  Registrar Gasto
+                  {t('createExpense')}
                 </Button>
-                <Link href="/expenses" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-line px-4 font-medium text-ink hover:bg-surface sm:flex-none">
-                  Cancelar
+                <Link href={localePath(locale, '/expenses')} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-line px-4 font-medium text-ink hover:bg-surface sm:flex-none">
+                  {t('cancel')}
                 </Link>
               </div>
             </form>
           </CardContent>
-        </Card><ExpenseSummary data={formData} trips={trips} categoryLabel={categories.find(category=>category.value===formData.category)?.label}/></div>
+        </Card><ExpenseSummary data={formData} trips={trips} categoryLabel={t(categories.find(category=>category.value===formData.category)?.message ?? 'expenseCategoryOther')}/></div>
       </div>
     </DashboardLayout>
   )
+}
+export default function NewExpensePage() {
+  const i18n = useI18n()
+  return <NewExpensePageContent {...i18n} />
 }
