@@ -31,7 +31,10 @@ for (const width of [1440, 390]) {
       await expect(notificationPanel).toBeHidden();
       if (width < 1024) {
         await page.getByRole('button', { name: 'Abrir menú', exact: true }).click();
-        const current = page.locator('#mobile-menu').getByRole('link', { name: 'Dashboard', exact: true });
+        // El nombre del enlace cambia con el idioma ("Panel" en es, "Dashboard" en en), asi que
+        // se localiza por destino y no por copy.
+        const current = page.locator('#mobile-menu a[href$="/dashboard"]');
+        await expect(current).toHaveCount(1);
         await expect(current).toHaveAttribute('aria-current', 'page');
         await current.focus();
         await page.keyboard.press('Escape');
