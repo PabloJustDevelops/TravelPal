@@ -28,20 +28,23 @@ export default function TopBar({ mobileMenuOpen, onMobileMenuToggle, mobileToggl
   const { locale, t } = useI18n()
   const profileRootRef = useRef<HTMLDivElement>(null)
   const profileToggleRef = useRef<HTMLButtonElement>(null)
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState<'notifications' | 'profile' | null>(null)
+  const profileMenuOpen = openMenu === 'profile'
   const [avatarError, setAvatarError] = useState(false)
   const avatar = avatarUrlSchema.safeParse(user?.avatar_url ?? '')
   const avatarUrl = avatar.success ? avatar.data : undefined
   const displayName = user?.full_name || t('user')
 
+  // El menu de usuario se cierra al pulsar fuera; la campana gestiona su propio cierre y avisa
+  // por onOpenChange, asi que aqui solo se coordina el estado (uno abierto como maximo).
   useEffect(() => {
-    if (!profileMenuOpen) return
+    if (openMenu !== 'profile') return
     const handlePointerDown = (event: PointerEvent) => {
-      if (!profileRootRef.current?.contains(event.target as Node)) setProfileMenuOpen(false)
+      if (!profileRootRef.current?.contains(event.target as Node)) setOpenMenu(openMenu === 'profile' ? null : openMenu)
     }
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
-  }, [profileMenuOpen])
+  }, [openMenu])
 
   const handleSignOut = async () => {
     try {
@@ -65,13 +68,18 @@ export default function TopBar({ mobileMenuOpen, onMobileMenuToggle, mobileToggl
         {mobileMenuOpen ? <XMarkIcon className="h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="h-6 w-6" aria-hidden="true" />}
       </button>
       <LanguageSelect compact />
-      <NotificationSystem className="shrink-0" panelPlacement="bottom-end" />
+      <NotificationSystem
+        className="shrink-0"
+        panelPlacement="bottom-end"
+        open={openMenu === 'notifications'}
+        onOpenChange={(next) => setOpenMenu(next ? 'notifications' : null)}
+      />
       <div
         ref={profileRootRef}
         className="relative"
         onKeyDown={(event) => {
           if (event.key !== 'Escape' || !profileMenuOpen) return
-          setProfileMenuOpen(false)
+          setOpenMenu(null)
           profileToggleRef.current?.focus()
         }}
       >
@@ -79,7 +87,7 @@ export default function TopBar({ mobileMenuOpen, onMobileMenuToggle, mobileToggl
           ref={profileToggleRef}
           id="user-menu-button"
           type="button"
-          onClick={() => setProfileMenuOpen((open) => !open)}
+          onClick={() => setOpenMenu((current) => (current === 'profile' ? null : 'profile'))}
           className="inline-flex min-h-11 items-center gap-2 rounded-full px-2 text-ink transition-colors hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label={t('profileMenu')}
           aria-haspopup="menu"
@@ -106,10 +114,10 @@ export default function TopBar({ mobileMenuOpen, onMobileMenuToggle, mobileToggl
               <p className="truncate text-xs text-muted">{user?.email}</p>
             </div>
             <div className="py-1">
-              <Link href="/profile" className="flex min-h-11 items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface" onClick={() => setProfileMenuOpen(false)} role="menuitem">
+              <Link href="/profile" className="flex min-h-11 items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface" onClick={() => setOpenMenu(null)} role="menuitem">
                 <UserCircleIcon className="mr-3 h-5 w-5 text-muted" aria-hidden="true" />{t('myProfile')}
               </Link>
-              <Link href="/settings" className="flex min-h-11 items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface" onClick={() => setProfileMenuOpen(false)} role="menuitem">
+              <Link href="/settings" className="flex min-h-11 items-center px-4 py-2.5 text-sm text-ink transition-colors hover:bg-surface" onClick={() => setOpenMenu(null)} role="menuitem">
                 <Cog6ToothIcon className="mr-3 h-5 w-5 text-muted" aria-hidden="true" />{t('settings')}
               </Link>
             </div>
