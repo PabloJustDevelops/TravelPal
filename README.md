@@ -59,7 +59,6 @@ InsForge (Postgres + Auth + Storage, eu-central)
 | Dashboard, accesibilidad y temas claro/oscuro | Funcionando |
 | Inspiración de vuelos (Travelpayouts) | Operativa: función desplegada en InsForge, token del proveedor como secreto y verificada con respuestas reales de la API ([detalles](docs/TRAVEL_INSPIRATION.md)) |
 | Push de navegador | Cliente y función `send-push` desplegados; falta verificar la entrega en un dispositivo real ([ADR-013](docs/DECISIONS/ADR-013-push-de-navegador-solo-cliente.md)) |
-| App móvil nativa | No empezada |
 
 ## Características
 
@@ -161,10 +160,11 @@ TravelPal/
 
 ## Roadmap
 
-- Internacionalización (i18n) y detección de idioma en el export estático.
-- Colaboración en un mismo viaje (invitaciones y permisos).
-- Más fuentes de precios y transporte (tren, bus) sobre el patrón de funciones de InsForge.
-- App móvil nativa.
+- Internacionalización (i18n) y detección de idioma en el export estático: cerrado en tres fases
+  (páginas públicas, panel y ajustes, y las pantallas restantes).
+- Colaboración en un mismo viaje (invitaciones y permisos): en curso.
+- Más fuentes de precios y transporte (tren, bus) sobre el patrón de funciones de InsForge: pendiente de elegir
+  proveedor.
 
 ## Contribuir
 
