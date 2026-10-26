@@ -16,8 +16,8 @@ import {
 import Button from "../ui/Button";
 import CategoryIcon from "../ui/CategoryIcon";
 import { Card } from "../ui/Card";
-import { formatDate } from "../../lib/utils";
 import { Booking } from "@/lib/insforge";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 interface BookingCardProps {
   booking: Booking;
@@ -28,35 +28,30 @@ interface BookingCardProps {
 }
 
 const BOOKING_TYPES = {
-  flight: { label: "Vuelo", category: "flight", color: "bg-accent-soft text-accent" },
-  hotel: { label: "Hotel", category: "hotel", color: "bg-surface-strong text-ink" },
-  car: { label: "Auto", category: "car", color: "bg-success/10 text-success" },
+  flight: { category: "flight", color: "bg-accent-soft text-accent" },
+  hotel: { category: "hotel", color: "bg-surface-strong text-ink" },
+  car: { category: "car", color: "bg-success/10 text-success" },
   activity: {
-    label: "Actividad",
     category: "activity",
     color: "bg-warning/10 text-warning",
   },
   restaurant: {
-    label: "Restaurante",
     category: "restaurant",
     color: "bg-danger/10 text-danger",
   },
-  other: { label: "Otro", category: "other", color: "bg-surface-strong text-muted" },
+  other: { category: "other", color: "bg-surface-strong text-muted" },
 };
 
 const STATUS_CONFIG = {
   confirmed: {
-    label: "Confirmado",
     color: "bg-success/10 text-success",
     icon: CheckCircleIcon,
   },
   pending: {
-    label: "Pendiente",
     color: "bg-warning/10 text-warning",
     icon: ClockIcon,
   },
   cancelled: {
-    label: "Cancelado",
     color: "bg-danger/10 text-danger",
     icon: ExclamationTriangleIcon,
   },
@@ -69,17 +64,21 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onStatusChange,
   className = "",
 }) => {
+  const { t, locale } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
   const detailsId = useId();
 
   const bookingType = BOOKING_TYPES[booking.type] || BOOKING_TYPES.other;
   const statusConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.pending;
   const StatusIcon = statusConfig.icon;
+  const bookingTypeLabel = t(({ flight: "bookingFlight", hotel: "bookingHotel", car: "bookingCar", activity: "bookingActivity", restaurant: "bookingRestaurant", other: "bookingOther" } as const)[booking.type] ?? "bookingOther");
+  const bookingStatusLabel = t(({ confirmed: "planningConfirmed", pending: "planningPending", cancelled: "planningCancelled" } as const)[booking.status] ?? "planningPending");
 
   const formatDateRange = () => {
-    const start = formatDate(new Date(booking.start_date));
+    const formatLocaleDate = (value: Date) => new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium" }).format(value);
+    const start = formatLocaleDate(new Date(booking.start_date));
     if (booking.end_date && booking.end_date !== booking.start_date) {
-      const end = formatDate(new Date(booking.end_date));
+      const end = formatLocaleDate(new Date(booking.end_date));
       return `${start} - ${end}`;
     }
     return start;
@@ -115,13 +114,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 <span
                   className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${bookingType.color}`}
                 >
-                  {bookingType.label}
+                  {bookingTypeLabel}
                 </span>
               </div>
               <p className="mb-2 text-sm text-muted">
-                Confirmación:{" "}
+                {t("confirmation")}: {" "}
                 <span className="font-mono font-medium">
-                  {booking.confirmation_number || "N/A"}
+                  {booking.confirmation_number || t("notAvailable")}
                 </span>
               </p>
               {booking.description && (
@@ -137,13 +136,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               className={`flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusConfig.color}`}
             >
               <StatusIcon aria-hidden="true" className="h-3 w-3" />
-              <span>{statusConfig.label}</span>
+              <span>{bookingStatusLabel}</span>
             </div>
             {onEdit && (
               <Button
                 type="button"
                 variant="ghost"
-                aria-label={`Editar reserva ${booking.title}`}
+                aria-label={`${t("bookingEdit")} ${booking.title}`}
                 onClick={() => onEdit(booking)}
                 className="min-h-11 min-w-11 p-0"
               >
@@ -154,7 +153,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               <Button
                 variant="ghost"
                 type="button"
-                aria-label={`Eliminar reserva ${booking.title}`}
+                aria-label={`${t("bookingDeleteAria")} ${booking.title}`}
                 onClick={() => onDelete(booking.id)}
                 className="min-h-11 min-w-11 p-0 text-danger hover:bg-danger/10 hover:text-danger"
               >
@@ -187,7 +186,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
           {booking.cost && (
             <div className="text-sm font-medium text-ink">
-              {booking.cost} {booking.currency || "USD"}
+              {new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: booking.currency || "USD" }).format(booking.cost)}
             </div>
           )}
         </div>
@@ -202,7 +201,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             aria-controls={detailsId}
             className="min-h-11 px-3 text-accent hover:bg-accent-soft hover:text-accent"
           >
-            {isExpanded ? "Ocultar detalles" : "Ver detalles"}
+            {isExpanded ? t("bookingHideDetails") : t("bookingShowDetails")}
           </Button>
 
           {onStatusChange && booking.status !== "confirmed" && (
@@ -214,7 +213,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                   onClick={() => onStatusChange(booking.id, "confirmed")}
                   className="min-h-11 border-success text-success hover:bg-success/10"
                 >
-                  Confirmar
+                  {t("bookingConfirm")}
                 </Button>
               )}
               <Button
@@ -223,7 +222,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 onClick={() => onStatusChange(booking.id, "cancelled")}
                 className="min-h-11 border-danger text-danger hover:bg-danger/10"
               >
-                Cancelar
+                {t("bookingDelete")}
               </Button>
             </div>
           )}
@@ -231,12 +230,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
         {/* Detalles expandidos */}
         {isExpanded && (
-          <div id={detailsId} role="region" aria-label={`Detalles de ${booking.title}`} className="mt-4 space-y-4 border-t border-line pt-4">
+          <div id={detailsId} role="region" aria-label={t("bookingDetails").replace("{title}", booking.title)} className="mt-4 space-y-4 border-t border-line pt-4">
             {/* Dirección */}
             {booking.address && (
               <div>
                 <h4 className="mb-1 font-sans text-sm font-semibold text-ink">
-                  Dirección
+                  {t("bookingAddress")}
                 </h4>
                 <p className="text-sm text-muted">{booking.address}</p>
               </div>
@@ -248,7 +247,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               booking.contact_email) && (
               <div>
                 <h4 className="mb-2 font-sans text-sm font-semibold text-ink">
-                  Contacto
+                  {t("bookingContact")}
                 </h4>
                 <div className="space-y-1">
                   {booking.contact_name && (
@@ -287,7 +286,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             {booking.notes && (
               <div>
                 <h4 className="mb-1 font-sans text-sm font-semibold text-ink">
-                  Notas
+                  {t("bookingNotes")}
                 </h4>
                 <p className="whitespace-pre-wrap text-sm text-muted">
                   {booking.notes}
@@ -299,7 +298,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             {booking.documents && booking.documents.length > 0 && (
               <div>
                 <h4 className="mb-2 font-sans text-sm font-semibold text-ink">
-                  Documentos
+                  {t("bookingDocuments")}
                 </h4>
                 <div className="space-y-1">
                   {booking.documents.map((doc, index) => (
@@ -308,7 +307,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                       className="text-sm text-accent hover:underline"
                     >
                       <a href={doc} target="_blank" rel="noopener noreferrer">
-                        Documento {index + 1}
+                        {t("bookingDocument").replace("{count}", new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES").format(index + 1))}
                       </a>
                     </div>
                   ))}

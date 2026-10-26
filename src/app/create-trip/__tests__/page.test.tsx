@@ -205,7 +205,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/es/trip?id=new-trip-id");
     });
 
     // El alta reproduce el objeto de insercion del handler borrado: el user_id
@@ -221,7 +221,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
         airline: null,
         flight_number: null,
         confirmation_number: "CONF123",
-        notes: "Viajeros: 2",
+        notes: "Número de personas: 2",
         status: "planned",
       },
     ]);
@@ -234,7 +234,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     expect(budgetsChain.insert).toHaveBeenCalledWith([
       {
         user_id: "test-user-id",
-        name: "Presupuesto General",
+        name: "Presupuesto general",
         total_amount: 1000,
         currency: "EUR",
         category: "General",
@@ -264,7 +264,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/es/trip?id=new-trip-id");
     });
 
     expect(tripsChain.insert).toHaveBeenCalled();
@@ -302,7 +302,7 @@ describe("NewTripPage con el SDK en el navegador", () => {
     fireEvent.click(screen.getByText("Crear Viaje"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/trip?id=new-trip-id");
+      expect(mockPush).toHaveBeenCalledWith("/es/trip?id=new-trip-id");
     });
 
     // El fallo del presupuesto no impide el alta del viaje ni la navegacion:

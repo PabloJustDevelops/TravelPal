@@ -10,7 +10,6 @@ import PageTitle from "@/components/ui/PageTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import { createInsforgeClient } from "@/lib/insforge";
 import { queryErrorKind, withQueryTimeout } from "@/lib/insforge-query";
-import { CONNECTION_TIMEOUT_MESSAGE } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import {
   ArrowLeftIcon,
@@ -21,12 +20,14 @@ import {
   CurrencyEuroIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localePath } from "@/lib/i18n";
 
-function formatPreviewDate(value: string) {
-  if (!value) return "Por definir";
+function formatPreviewDate(value: string, locale: "es" | "en", t: (key: import("@/lib/i18n").MessageKey) => string) {
+  if (!value) return t("toBeDefined");
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Por definir";
-  return new Intl.DateTimeFormat("es-ES", {
+  if (Number.isNaN(date.getTime())) return t("toBeDefined");
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -35,14 +36,15 @@ function formatPreviewDate(value: string) {
   }).format(date);
 }
 
-function formatPreviewBudget(amount: number) {
-  return new Intl.NumberFormat("es-ES", {
+function formatPreviewBudget(amount: number, locale: "es" | "en") {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);
 }
 
-function NewTripForm() {
+export function CreateTripPageContent() {
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -91,13 +93,13 @@ function NewTripForm() {
 
     setFormData((previous) => ({
       ...previous,
-      title: `Viaje a ${destination}`,
+      title: t("tripToDestination").replace("{destination}", destination),
       origin,
       destination,
       departure_date: `${departure}T09:00`,
       return_date: returnDate ? `${returnDate}T09:00` : "",
     }));
-  }, []);
+  }, [t]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -117,7 +119,7 @@ function NewTripForm() {
 
     if (!user) {
       logger.error("Intento de crear viaje sin usuario autenticado");
-      setError("Debes iniciar sesión para crear un viaje");
+      setError(t("createTripSignIn"));
       return;
     }
 
@@ -132,7 +134,7 @@ function NewTripForm() {
         !formData.destination ||
         !formData.departure_date
       ) {
-        throw new Error("Por favor completa todos los campos requeridos");
+        throw new Error(t("createTripRequiredError"));
       }
 
       // Validate dates
@@ -143,14 +145,14 @@ function NewTripForm() {
 
       if (returnDate && returnDate <= departureDate) {
         throw new Error(
-          "La fecha de regreso debe ser posterior a la fecha de salida",
+          t("createTripReturnDateError"),
         );
       }
 
       // Append travelers info to notes
       const notesWithTravelers = formData.notes
-        ? `${formData.notes}\n\nViajeros: ${formData.travelers}`
-        : `Viajeros: ${formData.travelers}`;
+        ? `${formData.notes}\n\n${t("travelers")}: ${formData.travelers}`
+        : `${t("travelers")}: ${formData.travelers}`;
 
       const newTrip = {
         user_id: user.id,
@@ -194,7 +196,7 @@ function NewTripForm() {
               .insert([
                 {
                   user_id: user.id,
-                  name: "Presupuesto General",
+                  name: t("generalBudget"),
                   total_amount: formData.budget,
                   currency: "EUR",
                   category: "General",
@@ -218,16 +220,16 @@ function NewTripForm() {
       }
 
       // Navegación exitosa
-      router.push(`/trip?id=${encodeURIComponent(data.id)}`);
+      router.push(`${localePath(locale, "/trip")}?id=${encodeURIComponent(data.id)}`);
     } catch (error: unknown) {
       logger.error("Excepción al crear viaje:", error);
 
       if (queryErrorKind(error) === "timeout") {
-        setError(CONNECTION_TIMEOUT_MESSAGE);
+        setError(t("connectionTimeout"));
         return;
       }
 
-      let errorMessage = "Error al crear el viaje. Por favor intenta de nuevo.";
+      let errorMessage = t("createTripError");
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -257,15 +259,15 @@ function NewTripForm() {
       <div className="mx-auto max-w-7xl space-y-7 font-sans">
         <div className="space-y-2">
           <Link
-            href="/trips"
+            href={localePath(locale, "/trips")}
             className="inline-flex min-h-11 w-fit items-center gap-2 rounded-md px-3 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             <ArrowLeftIcon aria-hidden="true" className="h-4 w-4" />
-            Volver a viajes
+            {t("backToTrips")}
           </Link>
           <PageTitle
-            title="Dale forma a tu próximo viaje."
-            subtitle="Empieza por lo que ya sabes. El resto puede esperar."
+            title={t("createTripTitle")}
+            subtitle={t("createTripSubtitle")}
           />
         </div>
 
@@ -282,37 +284,37 @@ function NewTripForm() {
 
               <section className="space-y-4 border-b border-line pb-5" aria-labelledby="trip-destination-heading">
                 <h2 id="trip-destination-heading" className="font-sans text-xl font-semibold text-ink">
-                  Destino y fechas
+                  {t("destinationAndDates")}
                 </h2>
 
                 <Input
-                  label="Título del Viaje *"
+                  label={t("createTripTitleField")}
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="ej. Un fin de semana en Lisboa"
+                  placeholder={t("createTripTitlePlaceholder")}
                   className="min-h-11"
                   required
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Origen *" name="origin" value={formData.origin} onChange={handleInputChange} placeholder="ej. Madrid" className="min-h-11" required />
-                  <Input label="Destino *" name="destination" value={formData.destination} onChange={handleInputChange} placeholder="ej. Lisboa" className="min-h-11" required />
+                  <Input label={t("originLabel")} name="origin" value={formData.origin} onChange={handleInputChange} placeholder={t("originPlaceholder")} className="min-h-11" required />
+                  <Input label={t("destinationLabel")} name="destination" value={formData.destination} onChange={handleInputChange} placeholder={t("destinationPlaceholder")} className="min-h-11" required />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Fecha de Salida *" name="departure_date" type="datetime-local" value={formData.departure_date} onChange={handleInputChange} className="min-h-11" required />
-                  <Input label="Fecha de Regreso" name="return_date" type="datetime-local" value={formData.return_date} onChange={handleInputChange} className="min-h-11" />
+                  <Input label={t("createTripDepartureDate")} name="departure_date" type="datetime-local" value={formData.departure_date} onChange={handleInputChange} className="min-h-11" required />
+                  <Input label={t("returnDateLabel")} name="return_date" type="datetime-local" value={formData.return_date} onChange={handleInputChange} className="min-h-11" />
                 </div>
               </section>
 
               <section className="space-y-5" aria-labelledby="trip-details-heading">
                 <h2 id="trip-details-heading" className="font-sans text-xl font-semibold text-ink">
-                  Un par de detalles
+                  {t("tripDetails")}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                    label="Número de Personas"
+                    label={t("travelers")}
                     name="travelers"
                     type="number"
                     min="1"
@@ -322,7 +324,7 @@ function NewTripForm() {
                     className="min-h-11"
                   />
                   <Input
-                    label="Presupuesto Estimado (EUR)"
+                    label={t("estimatedBudget")}
                     name="budget"
                     type="number"
                     min="0"
@@ -336,7 +338,7 @@ function NewTripForm() {
 
                 <div className="space-y-1">
                   <label htmlFor="trip-status" className="block text-sm font-medium text-ink">
-                    Estado del viaje
+                    {t("tripStatus")}
                   </label>
                   <select
                     id="trip-status"
@@ -345,14 +347,14 @@ function NewTripForm() {
                     onChange={handleInputChange}
                     className={`${selectClassName} min-h-11`}
                   >
-                    <option value="planned">Planeado</option>
-                    <option value="confirmed">Confirmado</option>
+                    <option value="planned">{t("tripStatusPlanned")}</option>
+                    <option value="confirmed">{t("tripStatusConfirmed")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
                   <label htmlFor="trip-notes" className="block text-sm font-medium text-ink">
-                    Notas adicionales
+                    {t("extraNotes")}
                   </label>
                   <textarea
                     id="trip-notes"
@@ -361,46 +363,46 @@ function NewTripForm() {
                     onChange={handleInputChange}
                     rows={4}
                     className={textareaClassName}
-                    placeholder="Añade cualquier información adicional sobre el viaje..."
+                    placeholder={t("extraNotesPlaceholder")}
                   />
                 </div>
               </section>
 
               <details className="rounded-lg border border-line bg-paper p-4 sm:p-5">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-ink marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
-                  <span>Añadir datos de vuelo (opcional)</span>
+                  <span>{t("addFlightDetails")}</span>
                   <PlusIcon aria-hidden="true" className="h-5 w-5 text-accent" />
                 </summary>
                 <div className="mt-4 space-y-4 border-t border-line pt-4">
                   <h2 className="font-sans text-base font-semibold text-ink">
-                    Información de vuelo
+                    {t("flightInformation")}
                   </h2>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
-                      label="Aerolínea"
+                      label={t("airline")}
                       name="airline"
                       value={formData.airline}
                       onChange={handleInputChange}
-                      placeholder="ej. Iberia"
+                      placeholder={t("airlinePlaceholder")}
                       className="min-h-11"
                     />
                     <Input
-                      label="Número de Vuelo"
+                      label={t("createTripFlightNumber")}
                       name="flight_number"
                       value={formData.flight_number}
                       onChange={handleInputChange}
-                      placeholder="ej. IB3201"
+                      placeholder={t("flightNumberPlaceholder")}
                       className="min-h-11"
                     />
                   </div>
 
                   <Input
-                    label="Código de Confirmación"
+                    label={t("createTripConfirmation")}
                     name="confirmation_number"
                     value={formData.confirmation_number}
                     onChange={handleInputChange}
-                    placeholder="ej. ABC123"
+                    placeholder={t("confirmationPlaceholder")}
                     className="min-h-11"
                   />
                 </div>
@@ -408,46 +410,46 @@ function NewTripForm() {
 
           </div>
 
-          <aside className="min-w-0 border-t border-line pt-6 lg:sticky lg:top-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-label="Resumen del viaje">
+          <aside className="min-w-0 border-t border-line pt-6 lg:sticky lg:top-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-label={t("createTripSummaryAria")}>
             <div className="space-y-5">
-              <h2 className="text-xl font-semibold text-ink">Así empieza tu viaje</h2>
+              <h2 className="text-xl font-semibold text-ink">{t("tripSummaryTitle")}</h2>
               <p className="flex items-start gap-3 text-lg font-semibold text-ink">
                 <MapPinIcon className="mt-0.5 h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
-                <span>{formData.title.trim() || "Tu próximo viaje"}</span>
+                <span>{formData.title.trim() || t("tripSummaryFallback")}</span>
               </p>
               <dl className="space-y-4 text-sm text-muted">
                 <div className="flex items-start gap-3">
                   <MapPinIcon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-                  <dd>{formData.origin || "Origen"} <span aria-hidden="true">→</span> {formData.destination || "Destino"}</dd>
+                  <dd>{formData.origin || t("origin")} <span aria-hidden="true">→</span> {formData.destination || t("destination")}</dd>
                 </div>
                 <div className="flex items-start gap-3">
                   <CalendarDaysIcon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
                   <dd>
-                    {formatPreviewDate(formData.departure_date)}
-                    {formData.return_date && <> – {formatPreviewDate(formData.return_date)}</>}
+                    {formatPreviewDate(formData.departure_date, locale, t)}
+                    {formData.return_date && <> – {formatPreviewDate(formData.return_date, locale, t)}</>}
                   </dd>
                 </div>
                 <div className="flex items-center gap-3">
                   <UsersIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                  <dd>{formData.travelers} {formData.travelers === 1 ? "persona" : "personas"}</dd>
+                  <dd>{new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES").format(formData.travelers)} {formData.travelers === 1 ? t("personOne") : t("personMany")}</dd>
                 </div>
                 <div className="flex items-center gap-3">
                   <CurrencyEuroIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                  <dd>{formatPreviewBudget(formData.budget)}</dd>
+                  <dd>{formatPreviewBudget(formData.budget, locale)}</dd>
                 </div>
               </dl>
               <p className="border-t border-line pt-4 text-sm leading-reading text-muted">
-                Al crearlo podrás añadir el itinerario y tus reservas. Las notas quedan guardadas con el viaje.
+                {t("createTripSummaryHint")}
               </p>
             </div>
           </aside>
 
           <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end lg:col-start-1">
-            <Link href="/trips" className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
-              Cancelar
+            <Link href={localePath(locale, "/trips")} className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-4 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+              {t("cancel")}
             </Link>
             <Button type="submit" loading={loading} className="min-h-11 sm:min-w-40">
-              Crear Viaje
+              {loading ? t("createTripLoading") : t("createTripButton")}
             </Button>
           </div>
         </form>
@@ -456,4 +458,4 @@ function NewTripForm() {
   );
 }
 
-export default NewTripForm;
+export default function NewTripForm() { return <CreateTripPageContent />; }

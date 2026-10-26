@@ -8,6 +8,8 @@ import Button from "@/components/ui/Button";
 import Link from "next/link";
 import Input from "@/components/ui/Input";
 import { Card, CardContent } from "@/components/ui/Card";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localePath } from "@/lib/i18n";
 
 type FunctionResponse = {
   status?: "unavailable" | "available" | "ready";
@@ -43,6 +45,7 @@ function ideaExpiresAt(idea: FlightIdea): number {
 }
 
 export default function FlightInspiration() {
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const [month, setMonth] = useState(currentMonth);
   const [origin, setOrigin] = useState("");
@@ -74,17 +77,17 @@ export default function FlightInspiration() {
       if (!active) return;
       if (invokeError || !data) {
         setStatus("error");
-        setError("No se pudo comprobar el servicio de inspiración.");
+        setError(t("inspirationCheckError"));
         return;
       }
       setStatus((data as FunctionResponse).status ?? "unavailable");
     }).catch(() => {
       if (!active) return;
       setStatus("error");
-      setError("No se pudo comprobar el servicio de inspiración.");
+      setError(t("inspirationCheckError"));
     });
     return () => { active = false; };
-  }, [invoke, user]);
+  }, [invoke, user, t]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setClock(Date.now()), 1000);
@@ -97,7 +100,7 @@ export default function FlightInspiration() {
     setError("");
     try {
       const { data, error: invokeError } = await invoke(query);
-      if (invokeError || !data) throw new Error("invoke failed");
+      if (invokeError || !data) throw new Error(t("inspirationRequestError"));
       const response = data as FunctionResponse;
       const nextIdeas = response.status === "ready" && Array.isArray(response.ideas) ? response.ideas : [];
       setHasSearched(true);
@@ -131,12 +134,12 @@ export default function FlightInspiration() {
           }, Math.max(0, nearestExpiry - now));
         }
       }
-      setError("No se pudieron cargar las ideas. Inténtalo más tarde.");
+      setError(t("inspirationLoadError"));
       setStatus("error");
     } finally {
       setLoading(false);
     }
-  }, [cooldownUntil, invoke]);
+  }, [cooldownUntil, invoke, t]);
 
   useEffect(() => () => {
     if (expiryTimer.current) clearTimeout(expiryTimer.current);
@@ -154,7 +157,7 @@ export default function FlightInspiration() {
       latestQuery.current = query;
       void loadIdeas(query);
     } catch {
-      setError("Revisa el origen, el mes y el precio máximo.");
+      setError(t("inspirationValidationError"));
       setStatus("error");
     }
   };
@@ -162,60 +165,60 @@ export default function FlightInspiration() {
   const cooldownActive = Date.now() < cooldownUntil;
 
   if (!user) {
-    return <p role="status" className="rounded-lg border border-line bg-paper p-5 text-muted">Inicia sesión para consultar inspiración de vuelos.</p>;
+    return <p role="status" className="rounded-lg border border-line bg-paper p-5 text-muted">{t("inspirationSignIn")}</p>;
   }
 
   return (
     <section className="mx-auto max-w-5xl space-y-6">
       <header className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Inspiración de vuelos</p>
-        <h1 className="text-title font-bold tracking-tight text-ink">Encuentra una idea para tu próximo viaje</h1>
-        <p className="max-w-3xl text-sm text-muted">Precios orientativos basados en datos recientes. Confirma el precio y la disponibilidad antes de viajar.</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-accent">{t("inspirationHeading")}</p>
+        <h1 className="text-title font-bold tracking-tight text-ink">{t("inspirationTitle")}</h1>
+        <p className="max-w-3xl text-sm text-muted">{t("inspirationIntro")}</p>
       </header>
 
       {error && <p role="alert" className="rounded-lg border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
-      {status === "checking" && <p role="status" className="text-sm text-muted">Comprobando el servicio…</p>}
-      {status === "unavailable" && <p role="status" className="rounded-lg border border-line bg-paper p-4 text-sm text-muted">La inspiración de vuelos no está disponible ahora. Puedes crear un viaje manualmente.</p>}
+      {status === "checking" && <p role="status" className="text-sm text-muted">{t("inspirationChecking")}</p>}
+      {status === "unavailable" && <p role="status" className="rounded-lg border border-line bg-paper p-4 text-sm text-muted">{t("inspirationUnavailable")}</p>}
 
       <Card className="rounded-xl border border-line bg-paper shadow-sm">
         <CardContent className="p-5 sm:p-7">
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
-            <Input label="Origen (IATA)" name="origin" value={origin} onChange={(event) => setOrigin(event.target.value.toUpperCase())} placeholder="MAD" required maxLength={3} />
-            <label className="space-y-1 text-sm font-medium text-ink">Mes de salida
-              <select aria-label="Mes de salida" className="min-h-11 w-full rounded-md border border-line bg-paper px-3" value={month} onChange={(event) => setMonth(event.target.value)}>
-                {Array.from({ length: 13 }, (_, offset) => addMonths(currentMonth(), offset)).map((value) => <option key={value} value={value}>{value}</option>)}
+            <Input label={t("inspirationOriginLabel")} name="origin" value={origin} onChange={(event) => setOrigin(event.target.value.toUpperCase())} placeholder="MAD" required maxLength={3} />
+            <label className="space-y-1 text-sm font-medium text-ink">{t("inspirationMonthLabel")}
+              <select aria-label={t("inspirationMonthLabel")} className="min-h-11 w-full rounded-md border border-line bg-paper px-3" value={month} onChange={(event) => setMonth(event.target.value)}>
+                {Array.from({ length: 13 }, (_, offset) => addMonths(currentMonth(), offset)).map((value) => <option key={value} value={value}>{new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${value}-01T00:00:00Z`))}</option>)}
               </select>
             </label>
-            <label className="space-y-1 text-sm font-medium text-ink">Trayecto
-              <select aria-label="Trayecto" className="min-h-11 w-full rounded-md border border-line bg-paper px-3" value={journey} onChange={(event) => setJourney(event.target.value as "round-trip" | "one-way")}>
-                <option value="round-trip">Ida y vuelta</option><option value="one-way">Solo ida</option>
+            <label className="space-y-1 text-sm font-medium text-ink">{t("inspirationJourneyLabel")}
+              <select aria-label={t("inspirationJourneyLabel")} className="min-h-11 w-full rounded-md border border-line bg-paper px-3" value={journey} onChange={(event) => setJourney(event.target.value as "round-trip" | "one-way")}>
+                <option value="round-trip">{t("roundTrip")}</option><option value="one-way">{t("oneWay")}</option>
               </select>
             </label>
-            <Input label="Máximo (EUR), opcional" name="maxPrice" type="number" min="0.01" max="100000" step="0.01" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} />
+            <Input label={t("inspirationMaxPriceLabel")} name="maxPrice" type="number" min="0.01" max="100000" step="0.01" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} />
             <Button type="submit" loading={loading} disabled={cooldownActive || status === "checking"}>
-              {hasSearched ? "Actualizar ideas" : "Buscar ideas"}
+              {loading ? t("inspirationLoading") : hasSearched ? t("inspirationRefresh") : t("inspirationSearch")}
             </Button>
           </form>
-          {cooldownActive && <p className="mt-3 text-xs text-muted">Espera un momento antes de volver a consultar.</p>}
+          {cooldownActive && <p className="mt-3 text-xs text-muted">{t("inspirationCooldown")}</p>}
         </CardContent>
       </Card>
 
-      {status === "available" && <p role="status" className="text-sm text-muted">El servicio está listo. Elige un origen para buscar ideas.</p>}
-      {hasSearched && status === "ready" && ideas.length === 0 && <p role="status" className="rounded-lg border border-line bg-paper p-5 text-sm text-muted">No encontramos ideas para esos criterios. Prueba otro mes u origen.</p>}
+      {status === "available" && <p role="status" className="text-sm text-muted">{t("inspirationReady")}</p>}
+      {hasSearched && status === "ready" && ideas.length === 0 && <p role="status" className="rounded-lg border border-line bg-paper p-5 text-sm text-muted">{t("inspirationNoResults")}</p>}
       {ideas.length > 0 && <div className="grid gap-4 md:grid-cols-2">
         {ideas.map((idea) => <Card key={`${idea.origin}-${idea.destination}-${idea.departureDate}-${idea.returnDate ?? ""}`} className="border border-line bg-paper">
           <CardContent className="space-y-3 p-5">
-            <div className="flex items-start justify-between gap-3"><h2 className="text-lg font-semibold text-ink">{idea.origin} → {idea.destination}</h2><p className="font-semibold text-ink">{new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(idea.price)}</p></div>
-            <p className="text-sm text-muted">Salida {idea.departureDate}{idea.returnDate ? ` · Regreso ${idea.returnDate}` : ""} · {idea.changes === 0 ? "Directo" : `${idea.changes} escalas`}</p>
-            <p className="text-xs text-muted">Observado {new Date(idea.foundAt).toLocaleString("es-ES")} · Válido hasta {new Date(idea.validUntil).toLocaleString("es-ES")}</p>
+            <div className="flex items-start justify-between gap-3"><h2 className="text-lg font-semibold text-ink">{idea.origin} → {idea.destination}</h2><p className="font-semibold text-ink">{new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES", { style: "currency", currency: "EUR" }).format(idea.price)}</p></div>
+            <p className="text-sm text-muted">{t("inspirationDeparture")} {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${idea.departureDate}T00:00:00Z`))}{idea.returnDate ? ` · ${t("inspirationReturn")} ${new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${idea.returnDate}T00:00:00Z`))}` : ""} · {idea.changes === 0 ? t("inspirationDirect") : t("inspirationStops").replace("{count}", new Intl.NumberFormat(locale === "en" ? "en-US" : "es-ES").format(idea.changes))}</p>
+            <p className="text-xs text-muted">{t("inspirationObserved")} {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(idea.foundAt))} · {t("inspirationValidUntil")} {new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(idea.validUntil))}</p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <a className="text-sm font-medium text-accent underline" href={aviasalesHref(idea)} target="_blank" rel="noreferrer">Abrir Aviasales</a>
-              <a className="text-sm font-medium text-accent underline" href={ideaToTripHref(idea)}>Planear este viaje</a>
+              <a className="text-sm font-medium text-accent underline" href={aviasalesHref(idea)} target="_blank" rel="noreferrer">{t("inspirationOpenProvider")}</a>
+              <a className="text-sm font-medium text-accent underline" href={localePath(locale, ideaToTripHref(idea))}>{t("inspirationPlanTrip")}</a>
             </div>
           </CardContent>
         </Card>)}
       </div>}
-      <p className="text-xs text-muted">También puedes <Link className="font-medium text-accent underline" href="/create-trip">crear un viaje manualmente</Link>. No se guarda nada hasta que envíes el formulario.</p>
+      <p className="text-xs text-muted">{t("inspirationManualPrefix")} <Link className="font-medium text-accent underline" href={localePath(locale, "/create-trip")}>{t("inspirationManualLink")}</Link>. {t("inspirationManualSuffix")}</p>
     </section>
   );
 }
