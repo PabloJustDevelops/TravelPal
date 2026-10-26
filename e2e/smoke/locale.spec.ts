@@ -7,7 +7,7 @@ test('English browser preference opens English and an explicit choice persists',
   })
   await page.goto('/')
   await expect(page).toHaveURL(/\/en\/?$/)
-  await expect(page.getByRole('heading', { name: 'Your trip, from start to finish.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Your trip, from start to finish\./ })).toBeVisible()
   const selector = page.getByRole('button', { name: /^Select language/ })
   await selector.click()
   await page.getByRole('option', { name: 'Español' }).click()

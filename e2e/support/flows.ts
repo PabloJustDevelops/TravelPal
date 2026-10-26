@@ -71,7 +71,7 @@ export async function createTrip(page: Page, trip: TripFixture): Promise<void> {
   await page.getByLabel('Fecha de Salida *').fill(trip.departure)
   if (trip.returnDate) await page.getByLabel('Fecha de Regreso').fill(trip.returnDate)
   await page.getByRole('button', { name: 'Crear Viaje' }).click()
-  await expect(page).toHaveURL(/\/trip\?id=[0-9a-f-]+$/)
+  await expect(page).toHaveURL(/\/(?:es\/)?trip\?id=[0-9a-f-]+$/)
   await expect(page.getByRole('heading', { name: trip.title })).toBeVisible()
 }
 

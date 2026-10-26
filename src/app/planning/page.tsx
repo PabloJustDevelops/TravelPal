@@ -55,8 +55,6 @@ import {
   type QueryErrorKind,
 } from "../../lib/insforge-query";
 import {
-  CONNECTION_TIMEOUT_MESSAGE,
-  formatDate,
   cn,
   getErrorMessage,
   getLoadErrorMessage,
@@ -65,8 +63,12 @@ import { logger } from "@/lib/logger";
 import { accentLinkClassName } from "@/components/ui/actionStyles";
 
 import { format } from "date-fns";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localePath } from "@/lib/i18n";
 
-export default function PlanningPage() {
+export function PlanningPageContent() {
+  const { t, locale } = useI18n();
+  const formatPlanningDate = (date: Date) => new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-ES", { dateStyle: "medium" }).format(date);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -180,7 +182,7 @@ export default function PlanningPage() {
       } catch (err) {
         if (!active) return;
         logger.error("PlanningPage: Error loading planning data", {
-          error: getErrorMessage(err, "Error al cargar la planificación"),
+          error: getErrorMessage(err, t("planningLoadError")),
         });
         setLoadError({ kind: queryErrorKind(err) });
       } finally {
@@ -194,12 +196,12 @@ export default function PlanningPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, user?.id, reloadToken]);
+  }, [authLoading, user?.id, reloadToken, t]);
 
   const error = getLoadErrorMessage(loadError, {
     timeout:
-      "La carga de datos ha tardado demasiado. Por favor, inténtalo de nuevo.",
-    request: "Error al cargar la planificación. Por favor, inténtalo de nuevo.",
+      t("planningLoadTimeout"),
+    request: t("planningLoadError"),
   });
 
   const showSkeleton = authLoading || (loading && !silentReload);
@@ -215,7 +217,7 @@ export default function PlanningPage() {
         date: trip.departure_date,
         type: "trip",
         color: "bg-accent text-on-accent",
-        description: `Inicio del viaje a ${trip.destination}`,
+        description: t("tripStartDescription").replace("{destination}", trip.destination),
         tripId: trip.id,
         icon: <PaperAirplaneIcon className="h-3 w-3" />,
       });
@@ -223,11 +225,11 @@ export default function PlanningPage() {
       if (trip.return_date && trip.return_date !== trip.departure_date) {
         calendarEvents.push({
           id: `trip_end_${trip.id}`,
-          title: `Fin - ${trip.title}`,
+          title: t("tripEndTitle").replace("{title}", trip.title),
           date: trip.return_date,
           type: "trip",
           color: "bg-accent-soft text-accent",
-          description: `Fin del viaje a ${trip.destination}`,
+          description: t("tripEndDescription").replace("{destination}", trip.destination),
           tripId: trip.id,
           icon: <PaperAirplaneIcon className="h-3 w-3" />,
         });
@@ -272,7 +274,7 @@ export default function PlanningPage() {
     });
 
     setEvents(calendarEvents);
-  }, [trips, bookings, activities]);
+  }, [trips, bookings, activities, t]);
 
   // Transformar actividades para el planificador de itinerarios
   const getTripItinerary = useCallback(
@@ -343,7 +345,7 @@ export default function PlanningPage() {
   const handleEventClick = (event: CalendarEvent) => {
     if (event.type === "trip" && event.tripId) {
       // Redirigir a la página de detalle del viaje
-      router.push(`/trip?id=${encodeURIComponent(event.tripId)}`);
+      router.push(`${localePath(locale, "/trip")}?id=${encodeURIComponent(event.tripId)}`);
     } else if (event.type === "booking" && event.bookingId) {
       // Abrir el modal de edición de reserva
       const booking = bookings.find((b) => b.id === event.bookingId);
@@ -353,7 +355,7 @@ export default function PlanningPage() {
       }
     } else if (event.type === "activity" && event.tripId) {
       // Ir a la vista de itinerario del viaje
-      router.push(`/trip?id=${encodeURIComponent(event.tripId)}`);
+      router.push(`${localePath(locale, "/trip")}?id=${encodeURIComponent(event.tripId)}`);
     }
   };
 
@@ -364,7 +366,7 @@ export default function PlanningPage() {
   };
 
   const handleDeleteEvent = (event: CalendarEvent) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar "${event.title}"?`)) {
+    if (!confirm(t("planningDeleteEventConfirm").replace("{title}", event.title))) {
       return;
     }
 
@@ -381,7 +383,7 @@ export default function PlanningPage() {
           );
 
           if (error) throw error;
-          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
+          assertRowsAffected(deletedRows, t("planningDeleteEventError"));
         } else if (event.type === "activity" && event.activityId) {
           const { data: deletedRows, error } = await withQueryTimeout(
             insforge.database
@@ -393,7 +395,7 @@ export default function PlanningPage() {
           );
 
           if (error) throw error;
-          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
+          assertRowsAffected(deletedRows, t("planningDeleteEventError"));
         } else if (event.type === "trip" && event.tripId) {
           const { data: deletedRows, error } = await withQueryTimeout(
             insforge.database
@@ -405,7 +407,7 @@ export default function PlanningPage() {
           );
 
           if (error) throw error;
-          assertRowsAffected(deletedRows, "No se pudo eliminar el evento");
+          assertRowsAffected(deletedRows, t("planningDeleteEventError"));
         }
 
         refetch();
@@ -413,8 +415,8 @@ export default function PlanningPage() {
         logger.error("Error deleting event:", error);
         alert(
           queryErrorKind(error) === "timeout"
-            ? CONNECTION_TIMEOUT_MESSAGE
-            : "Error al eliminar el evento",
+            ? t("connectionTimeout")
+            : t("planningDeleteEventError"),
         );
       }
     })();
@@ -469,7 +471,7 @@ export default function PlanningPage() {
           { label: "bookings:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo mover el evento");
+        assertRowsAffected(updatedRows, t("planningMoveEventError"));
       } else if (event.type === "activity" && event.activityId) {
         const { data: updatedRows, error } = await withQueryTimeout(
           insforge.database
@@ -480,7 +482,7 @@ export default function PlanningPage() {
           { label: "activities:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo mover el evento");
+        assertRowsAffected(updatedRows, t("planningMoveEventError"));
       } else if (event.type === "trip" && event.tripId) {
         // For trips, we might need to handle end date logic, but for simple move:
         const { data: updatedRows, error } = await withQueryTimeout(
@@ -492,7 +494,7 @@ export default function PlanningPage() {
           { label: "trips:move" },
         );
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo mover el evento");
+        assertRowsAffected(updatedRows, t("planningMoveEventError"));
       }
 
       // Reload data to ensure consistency, but silently (without loading spinner)
@@ -502,8 +504,8 @@ export default function PlanningPage() {
       console.error("Error updating event date:", error);
       alert(
         queryErrorKind(error) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : "Error al mover el evento",
+          ? t("connectionTimeout")
+          : t("planningMoveEventError"),
       );
       setSilentReload(true); // Revert on error
       refetch();
@@ -519,7 +521,7 @@ export default function PlanningPage() {
       const tripId = selectedTrip?.id;
 
       if (!userId || !tripId) {
-        throw new Error("No se pudo identificar el viaje o la sesión");
+        throw new Error(t("sessionUnavailable"));
       }
 
       const orderIndex = activities.filter(
@@ -553,10 +555,10 @@ export default function PlanningPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(insertedRows, "No se pudo guardar la actividad");
+      assertRowsAffected(insertedRows, t("planningSaveActivityError"));
       refetch();
     },
-    [user?.id, selectedTrip?.id, activities, refetch],
+    [user?.id, selectedTrip?.id, activities, refetch, t],
   );
 
   const handleUpdateActivity = useCallback(
@@ -584,16 +586,16 @@ export default function PlanningPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(updatedRows, "No se pudo actualizar la actividad");
+      assertRowsAffected(updatedRows, t("planningUpdateActivityError"));
       refetch();
     },
-    [refetch],
+    [refetch, t],
   );
 
   const handleMoveActivity = async (activityId: string, direction: -1 | 1) => {
     const current = activities.find((activity) => activity.id === activityId);
     if (!current || !user)
-      throw new Error("No se pudo identificar la actividad");
+      throw new Error(t("planningActivityUnavailable"));
     const day = activities
       .filter(
         (activity) =>
@@ -624,7 +626,7 @@ export default function PlanningPage() {
           {label:"activities:reorder"},
         );
         if (result.error) throw result.error;
-        assertRowsAffected(result.data,"La actividad ha cambiado. Se ha recargado el itinerario.");
+        assertRowsAffected(result.data, t("planningOrderChanged"));
         written.push({id:activity.id,before:activity.order_index,after:order});
       }
     } catch (error) {
@@ -637,7 +639,7 @@ export default function PlanningPage() {
           );
           if (rollback.error) throw rollback.error;
         } catch (rollbackError) {
-          logger.error("PlanningPage: no se pudo restaurar el orden", {error:getErrorMessage(rollbackError,"Revisa el orden del itinerario")});
+          logger.error("PlanningPage: no se pudo restaurar el orden", {error:getErrorMessage(rollbackError,t("planningRestoreOrderError"))});
         }
       }
       throw error;
@@ -660,10 +662,10 @@ export default function PlanningPage() {
       );
 
       if (error) throw error;
-      assertRowsAffected(deletedRows, "No se pudo eliminar la actividad");
+      assertRowsAffected(deletedRows, t("activityDeleteError"));
       refetch();
     },
-    [refetch],
+    [refetch, t],
   );
 
   if (showSkeleton) {
@@ -686,13 +688,13 @@ export default function PlanningPage() {
         {/* Header */}
         <div data-loading-slot="title" className={`${slots.planningTitle} flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between`}>
           <PageTitle
-            title="Planificación"
-            subtitle="Un día cada vez, a tu manera."
+            title={t("planning")}
+            subtitle={t("planningSubtitle")}
           />
 
           <div
             role="group"
-            aria-label="Vistas de planificación"
+            aria-label={t("planningViews")}
             className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-paper p-1"
           >
             <button
@@ -706,7 +708,7 @@ export default function PlanningPage() {
               }`}
             >
               <CalendarIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-              Calendario
+              {t("planningCalendar")}
             </button>
             <button
               type="button"
@@ -719,7 +721,7 @@ export default function PlanningPage() {
               }`}
             >
               <MapIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-              Itinerario
+              {t("planningItinerary")}
             </button>
             <button
               type="button"
@@ -732,7 +734,7 @@ export default function PlanningPage() {
               }`}
             >
               <ClockIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-              Reservas
+              {t("planningBookings")}
             </button>
           </div>
         </div>
@@ -740,7 +742,7 @@ export default function PlanningPage() {
         {viewMode === "itinerary" && trips.length > 0 && (
           <div className="max-w-xl">
             <label htmlFor="planning-trip" className="sr-only">
-              Viaje para planificar
+              {t("planningTripLabel")}
             </label>
             <select
               id="planning-trip"
@@ -775,10 +777,10 @@ export default function PlanningPage() {
               />
             </div>
 
-            <div data-loading-slot="planningSidebar" tabIndex={0} role="region" aria-label="Resumen de planificación" className={`${slots.planningSidebar} space-y-4`}>
+            <div data-loading-slot="planningSidebar" tabIndex={0} role="region" aria-label={t("planningSummary")} className={`${slots.planningSidebar} space-y-4`}>
               <Card className="rounded-xl border border-line bg-paper p-4">
                 <h3 className="font-semibold text-ink mb-3">
-                  Próximas Reservas
+                  {t("planningActiveBookings")}
                 </h3>
                 <div className="space-y-3">
                   {upcomingBookings.map((booking) => (
@@ -790,28 +792,28 @@ export default function PlanningPage() {
                         {booking.title}
                       </p>
                       <p className="text-xs text-muted">
-                        {formatDate(new Date(booking.start_date))}
+                        {formatPlanningDate(new Date(booking.start_date))}
                         {booking.start_time && ` - ${booking.start_time}`}
                       </p>
                     </div>
                   ))}
                   {upcomingBookings.length === 0 && (
                     <p className="text-sm text-muted">
-                      No hay reservas próximas
+                      {t("planningNoUpcomingBookings")}
                     </p>
                   )}
                 </div>
               </Card>
 
               <Card className="rounded-xl border border-line bg-paper p-4">
-                <h3 className="font-semibold text-ink mb-3">Viajes Activos</h3>
+                <h3 className="font-semibold text-ink mb-3">{t("planningActiveTrips")}</h3>
                 <div className="space-y-3">
                   {trips
                     .filter((t) => t.status === "confirmed")
                     .map((trip) => (
                       <Link
                         key={trip.id}
-                        href={`/trip?id=${encodeURIComponent(trip.id)}`}
+                        href={`${localePath(locale, "/trip")}?id=${encodeURIComponent(trip.id)}`}
                         className="block rounded-md border-l-4 border-accent p-3 pl-3 hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         <p className="font-medium text-sm text-ink">
@@ -819,16 +821,16 @@ export default function PlanningPage() {
                         </p>
                         <p className="text-xs text-muted">{trip.destination}</p>
                         <p className="text-xs text-muted">
-                          {formatDate(new Date(trip.departure_date))} -{" "}
+                          {formatPlanningDate(new Date(trip.departure_date))} -{" "}
                           {trip.return_date
-                            ? formatDate(new Date(trip.return_date))
-                            : "Sin fecha de regreso"}
+                            ? formatPlanningDate(new Date(trip.return_date))
+                            : t("noReturnDate")}
                         </p>
                       </Link>
                     ))}
                   {trips.filter((t) => t.status === "confirmed").length ===
                     0 && (
-                    <p className="text-sm text-muted">No hay viajes activos</p>
+                    <p className="text-sm text-muted">{t("planningNoActiveTrips")}</p>
                   )}
                 </div>
               </Card>
@@ -843,7 +845,7 @@ export default function PlanningPage() {
                 <div className="min-w-0">
                   <div className="sr-only">
                     <h2 className="font-sans text-xl font-semibold text-ink">
-                      Itinerario: {selectedTrip.title}
+                      {t("planningItinerary")}: {selectedTrip.title}
                     </h2>
                     <p className="text-muted">{selectedTrip.destination}</p>
                   </div>
@@ -868,13 +870,13 @@ export default function PlanningPage() {
                 <aside className="space-y-7 xl:mt-28 xl:border-l xl:border-line xl:pl-7">
                   <MonthCalendar
                     className={styles.month}
-                    locale="es-ES"
+                    locale={locale === "en" ? "en-US" : "es-ES"}
                     calendarType="iso8601"
                     showNeighboringMonth={false}
                     prev2Label={null}
                     next2Label={null}
-                    prevAriaLabel="Mes anterior"
-                    nextAriaLabel="Mes siguiente"
+                    prevAriaLabel={t("calendarPreviousMonth")}
+                    nextAriaLabel={t("calendarNextMonth")}
                     tileClassName={({ date }) => {
                       const day = format(date, "yyyy-MM-dd");
                       return day >= selectedTrip.departure_date.slice(0, 10) &&
@@ -893,7 +895,7 @@ export default function PlanningPage() {
                   />
                   <section>
                     <h2 className="mb-4 text-xl font-bold text-ink">
-                      Reservas de este viaje
+                      {t("planningBookingsForTrip")}
                     </h2>
                     <div className="space-y-3">
                       {bookings
@@ -926,7 +928,7 @@ export default function PlanningPage() {
                         (booking) => booking.trip_id === selectedTrip.id,
                       ) && (
                         <p className="text-sm text-muted">
-                          Aún no hay reservas para este viaje.
+                          {t("planningNoTripBookings")}
                         </p>
                       )}
                     </div>
@@ -938,7 +940,7 @@ export default function PlanningPage() {
                         setShowBookingModal(true);
                       }}
                     >
-                      Añadir reserva
+                      {t("planningAddBooking")}
                     </Button>
                   </section>
                 </aside>
@@ -952,27 +954,26 @@ export default function PlanningPage() {
                       className="mx-auto mb-4 h-12 w-12 text-accent"
                     />
                     <h3 className="font-sans text-lg font-semibold text-ink">
-                      Aún no tienes viajes para planificar
+                      {t("planningNoTripsTitle")}
                     </h3>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-                      Crea un viaje para organizar su itinerario y tener sus
-                      reservas junto a las fechas.
+                      {t("planningNoTripsHint")}
                     </p>
                     <Link
-                      href="/create-trip"
+                      href={localePath(locale, "/create-trip")}
                       className={`${accentLinkClassName} mt-5 min-h-11`}
                     >
-                      Crear un viaje
+                      {t("planningCreateTrip")}
                     </Link>
                   </div>
                 ) : (
                   <>
                     <MapIcon className="h-12 w-12 text-muted mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-ink mb-2">
-                      Selecciona un viaje
+                      {t("planningSelectTrip")}
                     </h3>
                     <p className="text-muted mb-4">
-                      Elige un viaje para planificar su itinerario detallado
+                      {t("planningSelectTripHint")}
                     </p>
                     <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {trips.map((trip) => (
@@ -992,10 +993,10 @@ export default function PlanningPage() {
                               {trip.destination}
                             </span>
                             <span className="mt-2 block text-xs text-muted">
-                              {formatDate(new Date(trip.departure_date))} -{" "}
+                              {formatPlanningDate(new Date(trip.departure_date))} -{" "}
                               {trip.return_date
-                                ? formatDate(new Date(trip.return_date))
-                                : "Sin fecha de regreso"}
+                                ? formatPlanningDate(new Date(trip.return_date))
+                                : t("noReturnDate")}
                             </span>
                           </button>
                         </Card>
@@ -1012,15 +1013,15 @@ export default function PlanningPage() {
           <div className="space-y-6">
             {/* Filtros y búsqueda */}
             <section
-              aria-label="Filtros de reservas"
+              aria-label={t("planningBookingFilters")}
               className="rounded-xl border border-line bg-paper p-4 sm:p-5"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
                   <Input
-                    label="Buscar reservas"
+                    label={t("planningSearchBookings")}
                     type="search"
-                    placeholder="Título o código de confirmación"
+                    placeholder={t("planningBookingSearchPlaceholder")}
                     value={searchTerm}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setSearchTerm(e.target.value)
@@ -1039,13 +1040,13 @@ export default function PlanningPage() {
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                       setFilterStatus(e.target.value)
                     }
-                    aria-label="Filtrar por estado"
+                    aria-label={t("planningFilterStatus")}
                     className={cn(fieldClassName, "min-h-11 min-w-0 flex-1")}
                   >
-                    <option value="all">Todos los estados</option>
-                    <option value="confirmed">Confirmado</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="cancelled">Cancelado</option>
+                    <option value="all">{t("planningAllStatuses")}</option>
+                    <option value="confirmed">{t("planningConfirmed")}</option>
+                    <option value="pending">{t("planningPending")}</option>
+                    <option value="cancelled">{t("planningCancelled")}</option>
                   </select>
                 </div>
               </div>
@@ -1085,17 +1086,17 @@ export default function PlanningPage() {
                 />
                 <h3 className="font-sans text-lg font-semibold text-ink mb-2">
                   {searchTerm || filterStatus !== "all"
-                    ? "No hay reservas que coincidan con los filtros"
+                    ? t("planningNoMatchingBookings")
                     : trips.length === 0
-                      ? "Crea un viaje antes de añadir una reserva"
-                      : "No tienes reservas todavía"}
+                      ? t("planningCreateTripForBooking")
+                      : t("planningNoBookings")}
                 </h3>
                 <p className="text-muted mb-4">
                   {searchTerm || filterStatus !== "all"
-                    ? "Prueba otro término o cambia el estado seleccionado."
+                    ? t("planningTryFilters")
                     : trips.length === 0
-                      ? "Cada reserva necesita estar asociada a uno de tus viajes."
-                      : "Añade tus reservas para tenerlas junto a las fechas del viaje."}
+                      ? t("planningBookingNeedsTrip")
+                      : t("planningAddBookingsHint")}
                 </p>
                 <div className="flex flex-col justify-center gap-3 sm:flex-row">
                   {(searchTerm || filterStatus !== "all") && (
@@ -1108,17 +1109,17 @@ export default function PlanningPage() {
                         setFilterStatus("all");
                       }}
                     >
-                      Limpiar filtros
+                      {t("planningClearFilters")}
                     </Button>
                   )}
                   {trips.length === 0 &&
                   !searchTerm &&
                   filterStatus === "all" ? (
                     <Link
-                      href="/create-trip"
+                      href={localePath(locale, "/create-trip")}
                       className={`${accentLinkClassName} min-h-11`}
                     >
-                      Crear un viaje
+                      {t("planningCreateTrip")}
                     </Link>
                   ) : (
                     <Button
@@ -1130,7 +1131,7 @@ export default function PlanningPage() {
                       }}
                     >
                       <PlusIcon aria-hidden="true" className="mr-2 h-4 w-4" />
-                      Nueva reserva
+                      {t("planningNewBooking")}
                     </Button>
                   )}
                 </div>
@@ -1147,7 +1148,7 @@ export default function PlanningPage() {
               setShowBookingModal(false);
               setSelectedBooking(null);
             }}
-            title={selectedBooking ? "Editar Reserva" : "Nueva Reserva"}
+            title={selectedBooking ? t("planningEditBooking") : t("planningNewBooking")}
           >
             <div className="p-6">
               <NewBookingForm
@@ -1169,3 +1170,5 @@ export default function PlanningPage() {
     </DashboardLayout>
   );
 }
+
+export default function PlanningPage() { return <PlanningPageContent />; }

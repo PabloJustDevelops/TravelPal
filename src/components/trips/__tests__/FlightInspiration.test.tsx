@@ -73,7 +73,7 @@ describe("FlightInspiration", () => {
     expect(await screen.findByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /planear este viaje/i })).toHaveAttribute(
       "href",
-      "/create-trip?source=inspiration&origin=MAD&destination=LON&departure=2026-11-12&return=2026-11-19",
+      "/es/create-trip?source=inspiration&origin=MAD&destination=LON&departure=2026-11-12&return=2026-11-19",
     );
     expect(screen.getByRole("link", { name: /abrir aviasales/i })).toHaveAttribute(
       "href",

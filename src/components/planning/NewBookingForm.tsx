@@ -1,6 +1,7 @@
 import React, { useId, useState, useEffect } from "react";
 import Input from "../ui/Input";
 import { selectClassName } from "../ui/fieldStyles";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 import Button from "../ui/Button";
 import { Booking, createInsforgeClient } from "@/lib/insforge";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/lib/insforge-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/lib/logger";
-import { CONNECTION_TIMEOUT_MESSAGE, getErrorMessage } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
 
 interface NewBookingFormProps {
   onSuccess: () => void;
@@ -28,6 +29,7 @@ export default function NewBookingForm({
   defaultTripId,
 }: NewBookingFormProps) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const tripSelectId = useId();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -199,7 +201,7 @@ export default function NewBookingForm({
         );
 
         if (error) throw error;
-        assertRowsAffected(updatedRows, "No se pudo guardar la reserva");
+        assertRowsAffected(updatedRows, t("bookingSaveError"));
       } else {
         const { error } = await withQueryTimeout(
           insforge
@@ -240,8 +242,8 @@ export default function NewBookingForm({
     } catch (err: unknown) {
       const message =
         queryErrorKind(err) === "timeout"
-          ? CONNECTION_TIMEOUT_MESSAGE
-          : getErrorMessage(err, "Error al guardar la reserva");
+          ? t("connectionTimeout")
+        : getErrorMessage(err, t("bookingSaveError"));
       logger.error("Error saving booking:", { error: message, raw: err });
       setError(message);
     } finally {
@@ -253,11 +255,11 @@ export default function NewBookingForm({
     <form onSubmit={handleSubmit} className="space-y-5 font-sans [&_input]:min-h-11 [&_select]:min-h-11">
       <div>
         <Input
-          label="Título *"
+          label={t("bookingTitleLabel")}
           name="title"
           value={formData.title}
           onChange={handleChange}
-          placeholder="Ej: Cena en Restaurante X"
+          placeholder={t("bookingTitlePlaceholder")}
           required
         />
       </div>
@@ -265,7 +267,7 @@ export default function NewBookingForm({
       {!initialData && (
           <div>
               <label htmlFor={tripSelectId} className="mb-1 block text-sm font-medium text-ink">
-                  Viaje asociado *
+                  {t("bookingTrip")} *
               </label>
               <select
                   id={tripSelectId}
@@ -275,7 +277,7 @@ export default function NewBookingForm({
                   className={selectClassName}
                   required
               >
-                  <option value="">Selecciona un viaje</option>
+                  <option value="">{t("bookingSelectTrip")}</option>
                   {trips.map(trip => (
                       <option key={trip.id} value={trip.id}>{trip.title}</option>
                   ))}
@@ -289,7 +291,7 @@ export default function NewBookingForm({
             htmlFor="type-select"
             className="mb-1 block text-sm font-medium text-ink"
           >
-            Tipo
+            {t("bookingType")}
           </label>
           <select
             id="type-select"
@@ -298,18 +300,18 @@ export default function NewBookingForm({
             onChange={handleChange}
             className={selectClassName}
           >
-            <option value="flight">Vuelo</option>
-            <option value="hotel">Hotel</option>
-            <option value="car">Coche</option>
-            <option value="restaurant">Restaurante</option>
-            <option value="activity">Actividad</option>
-            <option value="other">Otro</option>
+            <option value="flight">{t("bookingFlight")}</option>
+            <option value="hotel">{t("bookingHotel")}</option>
+            <option value="car">{t("bookingCar")}</option>
+            <option value="restaurant">{t("bookingRestaurant")}</option>
+            <option value="activity">{t("bookingActivity")}</option>
+            <option value="other">{t("bookingOther")}</option>
           </select>
         </div>
 
         <div>
           <Input
-            label="Nº Personas"
+            label={t("bookingPeople")}
             type="number"
             name="number_of_people"
             value={formData.number_of_people}
@@ -323,7 +325,7 @@ export default function NewBookingForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Input
-            label="Fecha *"
+            label={t("bookingDate")}
             type="date"
             name="start_date"
             value={formData.start_date}
@@ -334,7 +336,7 @@ export default function NewBookingForm({
 
         <div>
           <Input
-            label="Hora"
+            label={t("bookingTime")}
             type="time"
             name="start_time"
             value={formData.start_time}
@@ -346,27 +348,27 @@ export default function NewBookingForm({
       {formData.type === "flight" && (
         <div className="space-y-4 rounded-md border border-line p-4">
           <h4 className="text-sm font-semibold text-ink">
-            Datos del vuelo
+            {t("bookingFlightInfo")}
           </h4>
 
           <Input
-            label="Aerolínea"
+            label={t("bookingAirline")}
             name="airline"
             value={formData.airline}
             onChange={handleChange}
-            placeholder="ej. Iberia"
+            placeholder={t("airlinePlaceholder")}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Nº de vuelo"
+              label={t("bookingFlightNumber")}
               name="flight_number"
               value={formData.flight_number}
               onChange={handleChange}
-              placeholder="ej. IB3201"
+              placeholder={t("flightNumberPlaceholder")}
             />
             <Input
-              label="Precio"
+              label={t("bookingPrice")}
               type="number"
               min={0}
               step="0.01"
@@ -379,18 +381,18 @@ export default function NewBookingForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Origen"
+              label={t("bookingOrigin")}
               name="origin"
               value={formData.origin}
               onChange={handleChange}
-              placeholder="ej. MAD"
+              placeholder="MAD"
             />
             <Input
-              label="Destino"
+              label={t("bookingDestination")}
               name="destination"
               value={formData.destination}
               onChange={handleChange}
-              placeholder="ej. JFK"
+              placeholder="JFK"
             />
           </div>
 
@@ -399,7 +401,7 @@ export default function NewBookingForm({
               htmlFor="currency-select"
               className="mb-1 block text-sm font-medium text-ink"
             >
-              Moneda
+              {t("bookingCurrency")}
             </label>
             <select
               id="currency-select"
@@ -424,10 +426,10 @@ export default function NewBookingForm({
 
       <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:justify-end">
         <Button variant="outline" type="button" onClick={onCancel} className="min-h-11">
-          Cancelar
+          {t("bookingCancel")}
         </Button>
         <Button type="submit" disabled={loading} className="min-h-11 sm:min-w-40">
-          {loading ? "Guardando..." : "Guardar Reserva"}
+          {loading ? t("bookingSaving") : t("bookingSave")}
         </Button>
       </div>
     </form>
