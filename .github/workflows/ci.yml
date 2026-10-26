@@ -54,6 +54,7 @@ jobs:
       - run: pnpm run type-check
       - run: pnpm run test:ci
       - run: pnpm run test:trip-owner-rls
+      - run: pnpm run test:trip-collaboration-rls
       - run: pnpm run test:push-rls
       - run: pnpm run test:timezone
       - name: Congelar los caminos de datos (issue 38, etapa 0)

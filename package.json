@@ -18,6 +18,7 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:push-rls": "node scripts/test-push-rls.mjs",
     "test:trip-owner-rls": "node scripts/test-trip-owner-rls.mjs",
+    "test:trip-collaboration-rls": "node scripts/test-trip-collaboration-rls.mjs",
     "test:e2e": "playwright test",
     "analyze": "cross-env ANALYZE=true next build",
     "type-check": "tsc --noEmit",
