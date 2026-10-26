@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
 import DeleteTripButton from "@/components/trips/DeleteTripButton";
+import TripInvitationInbox from "@/components/trips/TripInvitationInbox";
 import { logger } from "@/lib/logger";
 import { getErrorMessage, getLoadErrorMessage } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
@@ -79,7 +80,6 @@ export default function TripsPage() {
       return;
     }
 
-    const userId = user.id;
     let active = true;
 
     setLoading(true);
@@ -92,7 +92,6 @@ export default function TripsPage() {
           insforge
             .database.from("trips")
             .select("*")
-            .eq("user_id", userId)
             .order("departure_date", { ascending: false }),
           { label: "trips" },
         );
@@ -213,6 +212,8 @@ export default function TripsPage() {
           }
         />
 
+        <TripInvitationInbox onAccepted={refetch} />
+
         <div data-loading-slot="tripsBody" tabIndex={0} role="region" aria-label={t("navTrips")} className={`${slots.tripsBody} space-y-7`}>
         {/* Filters */}
         {trips.length > 0 && (
@@ -292,6 +293,7 @@ export default function TripsPage() {
                       }`}>
                         {t(tripStatusKeys[nextTrip.status] ?? "tripStatusPlanned")}
                       </span>
+                      {nextTrip.user_id !== user.id && <span className="text-xs font-medium text-muted">{t("sharedBy")}</span>}
                       {new Date(nextTrip.departure_date).getTime() > Date.now() && (
                         <span className="text-sm font-medium text-ink">
                           {new Intl.RelativeTimeFormat(locale === "en" ? "en" : "es", { numeric: "auto" }).format(
@@ -308,10 +310,10 @@ export default function TripsPage() {
                       >
                         {t("openTrip")} <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
                       </Link>
-                      <DeleteTripButton
+                      {nextTrip.user_id === user.id && <DeleteTripButton
                         trip={nextTrip}
                         onDeleted={() => setTrips((prev) => prev.filter((item) => item.id !== nextTrip.id))}
-                      />
+                      />}
                     </div>
                   </div>
 
@@ -357,13 +359,14 @@ export default function TripsPage() {
                         }`}>
                           {t(tripStatusKeys[trip.status] ?? "tripStatusPlanned")}
                         </span>
+                        {trip.user_id !== user.id && <span className="text-xs font-medium text-muted">{t("sharedBy")}</span>}
                         <Link href={`${(locale === "en" ? localePath(locale, "/trip") : "/trip")}?id=${encodeURIComponent(trip.id)}`} className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                           {t("viewTrip")} <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
                         </Link>
-                        <DeleteTripButton
+                        {trip.user_id === user.id && <DeleteTripButton
                           trip={trip}
                           onDeleted={() => setTrips((prev) => prev.filter((item) => item.id !== trip.id))}
-                        />
+                        />}
                       </div>
                     </article>
                   ))}

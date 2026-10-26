@@ -36,7 +36,7 @@ function objectKey(userId: string, tripId: string, fileName: string): string {
   return `${userId}/${tripId}/${random}.${ext}`;
 }
 
-export default function JournalPhotos({ tripId }: { tripId: string }) {
+export default function JournalPhotos({ tripId, readOnly = false }: { tripId: string; readOnly?: boolean }) {
   const { user } = useAuth();
   const { t } = useI18n();
   const [photos, setPhotos] = useState<JournalPhotoRow[]>([]);
@@ -225,7 +225,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
           <PhotoIcon className="h-5 w-5 text-muted" aria-hidden="true" />
           {t("photos")}
         </h3>
-        <div>
+        {!readOnly && <div>
           <input
             ref={inputRef}
             type="file"
@@ -243,7 +243,7 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
           >
             {t("addPhoto")}
           </Button>
-        </div>
+        </div>}
       </div>
 
       {loading ? (
@@ -284,18 +284,18 @@ export default function JournalPhotos({ tripId }: { tripId: string }) {
                   {t("photoLoadError")}
                 </div>
               )}
-              <div className="absolute right-2 top-2">
+              {!readOnly && <div className="absolute right-2 top-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   aria-label={t("deletePhoto")}
-                  className="bg-paper text-danger"
+                  className="min-h-11 min-w-11 bg-paper text-danger"
                   loading={busyId === photo.id}
                   onClick={() => handleDelete(photo)}
                 >
                   <TrashIcon className="h-4 w-4" aria-hidden="true" />
                 </Button>
-              </div>
+              </div>}
             </li>
           ))}
         </ul>

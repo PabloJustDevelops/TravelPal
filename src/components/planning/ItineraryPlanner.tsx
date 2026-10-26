@@ -77,6 +77,7 @@ interface ItineraryPlannerProps {
   onUpdateActivity: (activityId: string, activity: PlannerActivityDraft) => Promise<void>;
   onDeleteActivity: (activityId: string) => Promise<void>;
   onMoveActivity?: (activityId: string, direction: -1 | 1) => Promise<void>;
+  readOnly?: boolean;
   className?: string;
   headingLevel?: 2 | 3;
   showHeading?: boolean;
@@ -97,6 +98,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
   onUpdateActivity,
   onDeleteActivity,
   onMoveActivity,
+  readOnly = false,
   className = '',
   headingLevel = 2,
   showHeading = true,
@@ -315,7 +317,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                         </ul>
                       )}
                     </div>
-                    <Button
+                    {!readOnly && <Button
                       variant="outline"
                       size="sm"
                       disabled={isSaving}
@@ -327,7 +329,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                     >
                       <PlusIcon className="h-4 w-4 mr-1" />
                       {t("add")}
-                    </Button>
+                    </Button>}
                   </div>
               </div>
 
@@ -387,11 +389,11 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                   <span className={`max-w-full break-words rounded-full px-2 py-1 text-xs font-medium ${category.color}`}>
                                     {t(category.key)}
                                   </span>
-                                  {onMoveActivity && <div className="flex items-center">
+                                  {!readOnly && onMoveActivity && <div className="flex items-center">
                                     <Button variant="ghost" aria-label={t("moveUp").replace("{title}", activity.title)} disabled={isSaving || activityIndex === 0} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,-1))}><ChevronUpIcon className="h-4 w-4" aria-hidden="true" /></Button>
                                     <Button variant="ghost" aria-label={t("moveDown").replace("{title}", activity.title)} disabled={isSaving || activityIndex === dayItinerary.activities.length-1} className="min-h-11 min-w-11 px-2" onClick={() => void runOperation({kind:'move',activityId:activity.id}, () => onMoveActivity(activity.id,1))}><ChevronDownIcon className="h-4 w-4" aria-hidden="true" /></Button>
                                   </div>}
-                                  <Button
+                                  {!readOnly && <Button
                                     variant="ghost"
                                     size="md"
                                     aria-label={t("editActivityAction") + " " + activity.title}
@@ -400,8 +402,8 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                     className="min-h-11 min-w-11 shrink-0 p-0"
                                   >
                                     <PencilIcon className="h-4 w-4" />
-                                  </Button>
-                                  <Button
+                                  </Button>}
+                                  {!readOnly && <Button
                                     variant="ghost"
                                     size="md"
                                     aria-label={t("removeActivity").replace("{title}", activity.title)}
@@ -411,7 +413,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                                     className="min-h-11 min-w-11 shrink-0 p-0 text-red-600 hover:text-red-700"
                                   >
                                     <TrashIcon className="h-4 w-4" />
-                                  </Button>
+                                  </Button>}
                                 </div>
                               </div>
                             </div>
@@ -422,7 +424,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                   ) : (
                     <div className="py-8 text-center text-muted">
                       <p>{t("noPlannedActivities")}</p>
-                      <Button
+                      {!readOnly && <Button
                         variant="outline"
                         className="mt-2"
                         disabled={isSaving}
@@ -433,7 +435,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({
                       >
                         <PlusIcon className="h-4 w-4 mr-1" />
                         {t("addFirstActivity")}
-                      </Button>
+                      </Button>}
                     </div>
                   )}
                 </div>

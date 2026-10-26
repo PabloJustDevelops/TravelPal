@@ -46,6 +46,27 @@ export interface Trip {
   updated_at: string;
 }
 
+export type TripMemberRole = "editor" | "reader";
+
+export interface TripMember {
+  trip_id: string;
+  user_id: string;
+  email: string;
+  role: TripMemberRole;
+  created_at: string;
+}
+
+export interface TripInvitation {
+  id: string;
+  trip_id?: string;
+  trip_title?: string;
+  email?: string;
+  invited_by_email?: string;
+  role: TripMemberRole;
+  state?: "pending" | "accepted" | "rejected" | "revoked";
+  created_at: string;
+}
+
 export interface Expense {
   id: string;
   user_id: string;
@@ -191,6 +212,7 @@ export interface ExpenseWithTrip extends Expense {
 export interface Task {
   id: string;
   user_id: string;
+  trip_id?: string;
   title: string;
   description?: string;
   status: "pending" | "in_progress" | "completed";

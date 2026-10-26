@@ -30,6 +30,7 @@ interface TripItineraryProps {
   startDate: string;
   endDate: string;
   userId: string;
+  readOnly?: boolean;
 }
 
 function toDayItinerary(activities: ItineraryActivity[]): DayItinerary[] {
@@ -65,6 +66,7 @@ export default function TripItinerary({
   startDate,
   endDate,
   userId,
+  readOnly = false,
 }: TripItineraryProps) {
   const { t } = useI18n();
   const [activities, setActivities] = useState<ItineraryActivity[]>([]);
@@ -211,12 +213,12 @@ export default function TripItinerary({
             {t("itinerary")}
           </h2>
         </div>
-        <Link
+        {!readOnly && <Link
           href="/planning"
           className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-accent hover:text-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {t("planning")} <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
-        </Link>
+        </Link>}
       </CardHeader>
       <CardContent className="px-0 py-5">
         {loading ? (
@@ -247,6 +249,7 @@ export default function TripItinerary({
               onCreateActivity={saveActivity}
               onUpdateActivity={updateActivity}
               onDeleteActivity={deleteActivity}
+              readOnly={readOnly}
               className="space-y-4"
               headingLevel={3}
             />

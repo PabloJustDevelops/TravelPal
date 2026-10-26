@@ -38,6 +38,7 @@ import {
 
 interface TripJournalProps {
   tripId: string;
+  readOnly?: boolean;
 }
 
 
@@ -61,7 +62,7 @@ function Rating({ rating, label }: { rating?: number; label: (rating: number) =>
   );
 }
 
-export default function TripJournal({ tripId }: TripJournalProps) {
+export default function TripJournal({ tripId, readOnly = false }: TripJournalProps) {
   const { user } = useAuth();
   const { locale, t } = useI18n();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -216,9 +217,9 @@ export default function TripJournal({ tripId }: TripJournalProps) {
             <BookOpenIcon className="h-5 w-5 text-muted" aria-hidden="true" />
             {t("journal")}
           </CardTitle>
-          <Button onClick={openNewEntry} size="sm" className="min-h-11">
+          {!readOnly && <Button onClick={openNewEntry} size="sm" className="min-h-11">
             {t("addEntry")}
-          </Button>
+          </Button>}
         </div>
       </CardHeader>
       <CardContent className="px-0 py-5">
@@ -237,7 +238,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
             icon={<BookOpenIcon className="h-12 w-12" />}
             title={t("journalEmptyTitle")}
             description={t("journalEmptyDescription")}
-            action={<Button onClick={openNewEntry}>{t("firstJournalEntry")}</Button>}
+            action={!readOnly ? <Button onClick={openNewEntry}>{t("firstJournalEntry")}</Button> : undefined}
           />
         ) : (
           <ol className="space-y-6">
@@ -255,7 +256,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                       {entry.content}
                     </p>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-1">
+                  {!readOnly && <div className="flex flex-shrink-0 items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -274,17 +275,17 @@ export default function TripJournal({ tripId }: TripJournalProps) {
                     >
                       <TrashIcon className="h-4 w-4" aria-hidden="true" />
                     </Button>
-                  </div>
+                  </div>}
                 </div>
               </li>
             ))}
           </ol>
         )}
 
-        <JournalPhotos tripId={tripId} />
+        <JournalPhotos tripId={tripId} readOnly={readOnly} />
       </CardContent>
 
-      <Modal
+      {!readOnly && <Modal
         isOpen={editorOpen}
         onClose={closeEditor}
         title={editingEntry ? t("editEntry") : t("newEntry")}
@@ -297,6 +298,7 @@ export default function TripJournal({ tripId }: TripJournalProps) {
           loading={saving}
         />
       </Modal>
+      }
     </Card>
   );
 }

@@ -136,7 +136,7 @@ describe("TripsPage con el SDK en el navegador", () => {
     expect(screen.getByText("Ver viaje")).toBeInTheDocument();
   });
 
-  it("pide el select, el filtro por usuario y el order del handler borrado", async () => {
+  it("deja que RLS incluya viajes compartidos al consultar y ordena el resultado", async () => {
     mount();
 
     render(<TripsPage />);
@@ -144,7 +144,7 @@ describe("TripsPage con el SDK en el navegador", () => {
     await screen.findByText("Escapada a Roma");
 
     expect(tripsChain.select).toHaveBeenCalledWith("*");
-    expect(tripsChain.eq).toHaveBeenCalledWith("user_id", "user-123");
+    expect(tripsChain.eq).not.toHaveBeenCalledWith("user_id", "user-123");
     expect(tripsChain.order).toHaveBeenCalledWith("departure_date", {
       ascending: false,
     });

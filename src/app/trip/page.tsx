@@ -23,6 +23,7 @@ import DeleteTripButton from "@/components/trips/DeleteTripButton";
 import TripJournal from "@/components/trips/TripJournal";
 import TripSummary from "@/components/trips/TripSummary";
 import TripItinerary from "@/components/trips/TripItinerary";
+import TripSharingDialog from "@/components/trips/TripSharingDialog";
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -31,6 +32,7 @@ import {
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localePath } from "@/lib/i18n";
+import type { TripMemberRole } from "@/lib/insforge";
 
 const TRIP_STATUS_KEYS = { planned: "tripStatusPlanned", confirmed: "tripStatusConfirmed", completed: "tripStatusCompleted", cancelled: "tripStatusCancelled" } as const;
 
@@ -64,11 +66,27 @@ function TripDetailsContent() {
   } | null>(null);
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSharingOpen, setIsSharingOpen] = useState(false);
+  const [memberRole, setMemberRole] = useState<TripMemberRole | null>(null);
   const [markingComplete, setMarkingComplete] = useState(false);
   const loadRequestId = useRef(0);
   const trip = tripResult?.id === id ? tripResult.trip : null;
   const loadError = loadErrorResult?.id === id ? loadErrorResult.error : null;
   const notFound = notFoundId === id;
+  const isOwner = Boolean(trip && user?.id === trip.user_id);
+  const canEditTrip = isOwner || memberRole === "editor";
+
+  useEffect(() => {
+    if (!trip || !user?.id) { setMemberRole(null); return; }
+    if (user.id === trip.user_id) { setMemberRole("editor"); return; }
+    let active = true;
+    void createInsforgeClient().database.from("trip_members").select("role")
+      .eq("trip_id", trip.id).eq("user_id", user.id).maybeSingle()
+      .then(({ data, error }) => {
+        if (active) setMemberRole(error ? null : (data?.role as TripMemberRole | undefined) ?? "reader");
+      });
+    return () => { active = false; };
+  }, [trip, user?.id]);
 
   const loadTrip = useCallback(async () => {
     const requestId = ++loadRequestId.current;
@@ -223,10 +241,11 @@ function TripDetailsContent() {
             <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />{t("myTrips")}
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+            {isOwner && <Button variant="outline" className="min-h-11" onClick={() => setIsSharingOpen(true)}>{t("shareTrip")}</Button>}
+            {canEditTrip && <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
               {t("editTrip")}
-            </Button>
-            <DeleteTripButton trip={trip} size="md" onDeleted={() => router.push((locale === "en" ? localePath(locale, "/trips") : "/trips"))} />
+            </Button>}
+            {isOwner && <DeleteTripButton trip={trip} size="md" onDeleted={() => router.push((locale === "en" ? localePath(locale, "/trips") : "/trips"))} />}
           </div>
         </div>
 
@@ -272,6 +291,7 @@ function TripDetailsContent() {
               startDate={trip.departure_date}
               endDate={trip.return_date || trip.departure_date}
               userId={user?.id ?? trip.user_id}
+              readOnly={!canEditTrip}
             />
 
             {trip.notes && (
@@ -282,16 +302,16 @@ function TripDetailsContent() {
             )}
 
             {isPast ? (
-              <TripJournal tripId={trip.id} />
+              <TripJournal tripId={trip.id} readOnly={!canEditTrip} />
             ) : (
               <section className="border-b border-line pb-6" aria-labelledby="trip-journal-heading">
                 <h2 id="trip-journal-heading" className="text-lg font-semibold text-ink">{t("tripJournal")}</h2>
                 <p className="mb-4 mt-2 text-sm leading-reading text-muted">
                   {t("journalAvailableAfter")}
                 </p>
-                <Button onClick={markCompleted} disabled={markingComplete}>
+                {canEditTrip && <Button onClick={markCompleted} disabled={markingComplete}>
                   {markingComplete ? t("marking") : t("markCompleted")}
-                </Button>
+                </Button>}
               </section>
             )}
           </div>
@@ -329,6 +349,7 @@ function TripDetailsContent() {
           trip={trip}
         />
       )}
+      {trip && isOwner && <TripSharingDialog tripId={trip.id} isOpen={isSharingOpen} onClose={() => setIsSharingOpen(false)} />}
     </DashboardLayout>
   );
 }
