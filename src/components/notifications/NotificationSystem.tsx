@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useId } from "react";
+import React, { useState, useEffect, useCallback, useId, useRef } from "react";
 import {
   BellIcon,
   XMarkIcon,
@@ -58,6 +58,10 @@ interface Alert {
 interface NotificationSystemProps {
   className?: string;
   panelPlacement?: "bottom-end" | "top-start";
+  // Modo controlado opcional: la barra superior necesita poder cerrar este panel cuando abre
+  // el menu de usuario, para que los dos desplegables no se solapen.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 type InsforgeClient = ReturnType<typeof createInsforgeClient>;
@@ -161,16 +165,48 @@ async function ensureDerivedAlerts(
 export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   className = "",
   panelPlacement = "bottom-end",
+  open,
+  onOpenChange,
 }) => {
   const { user } = useAuth();
   const { t, locale } = useI18n();
   // La campana se monta a la vez en la barra de escritorio y en la de movil (una de las dos
   // oculta por CSS), asi que los identificadores del panel tienen que ser unicos por instancia.
   const panelId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isOpen = open ?? internalOpen;
+  const setIsOpen = useCallback(
+    (next: boolean) => {
+      onOpenChange?.(next);
+      if (open === undefined) setInternalOpen(next);
+    },
+    [onOpenChange, open]
+  );
+
+  // Cierra al pulsar fuera y con Escape devolviendo el foco a la campana.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, setIsOpen]);
 
   // Cargar alertas pendientes (type: 'reminder' | 'warning' | 'info')
   const loadPendingAlerts = useCallback(
@@ -437,9 +473,10 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={rootRef} className={`relative ${className}`}>
       {/* Botón de notificaciones */}
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-muted hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded-lg"
         aria-label={
