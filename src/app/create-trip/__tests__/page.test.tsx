@@ -107,6 +107,22 @@ describe("NewTripPage con el SDK en el navegador", () => {
     expect(tripsChain.insert).not.toHaveBeenCalled();
   });
 
+  it("prefill origen, destino y resumen del traspaso terrestre", async () => {
+    mount();
+    window.history.replaceState(
+      {},
+      "",
+      "/create-trip?source=inspiration&mode=ground&origin=Madrid&destination=Barcelona&departure=2026-11-12&summary=C3%2C+AVE+0309+%C2%B7+244+min",
+    );
+
+    render(<NewTripPage />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Título del Viaje/i)).toHaveValue("Viaje a Barcelona"));
+    expect(screen.getByLabelText(/Origen/i)).toHaveValue("Madrid");
+    expect(screen.getByRole("textbox", { name: "Destino *" })).toHaveValue("Barcelona");
+    expect(screen.getByLabelText("Notas adicionales")).toHaveValue("C3, AVE 0309 · 244 min");
+  });
+
   it("ignora parámetros de inspiración malformados", async () => {
     mount();
     window.history.replaceState(

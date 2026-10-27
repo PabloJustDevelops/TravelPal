@@ -124,6 +124,7 @@ describe("sistema de diseno: un solo boton primario", () => {
     "src/components/layout/TopBar.tsx",
     "src/components/layout/__tests__/Navbar.test.tsx",
     "src/components/notifications/NotificationSystem.tsx",
+    "src/components/trips/FlightInspiration.tsx",
     "src/components/ui/Button.tsx",
     "src/components/ui/Toast.tsx",
   ];

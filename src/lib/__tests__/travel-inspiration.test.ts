@@ -3,7 +3,9 @@ import {
   ideaToTripHref,
   isFlightIdeaCurrent,
   parseFlightIdeas,
+  parseTransitousItineraries,
   parseInspirationQuery,
+  travelIdeaToTripHref,
 } from "@/lib/travel-inspiration";
 
 const now = new Date("2026-10-17T12:00:00.000Z");
@@ -133,5 +135,29 @@ describe("idea expiry and trip handoff", () => {
   it("builds an encoded create-trip URL from validated dates", () => {
     const idea = parseFlightIdeas({ data: [row({ destination: "ZRH" })] }, parseInspirationQuery(queryParams, now), now)[0];
     expect(ideaToTripHref(idea)).toBe("/create-trip?source=inspiration&origin=MAD&destination=ZRH&departure=2026-11-10&return=2026-11-17");
+  });
+});
+
+describe("Transitous ground normalization", () => {
+  it("normalizes legs, duration, transfers, modes and preserves unknown price", () => {
+    const ideas = parseTransitousItineraries({ itineraries: [{
+      duration: 14_640, startTime: "2026-11-15T08:13:00Z", endTime: "2026-11-15T12:17:00Z", transfers: 2,
+      legs: [
+        { mode: "WALK", from: { name: "START" }, to: { name: "Sol" } },
+        { mode: "REGIONAL_RAIL", routeShortName: "C3", from: { name: "Sol" }, to: { name: "Atocha" } },
+        { mode: "HIGHSPEED_RAIL", routeShortName: "AVE 0309", from: { name: "Atocha" }, to: { name: "Sants" } },
+      ],
+    }] }, "Madrid", "Barcelona");
+    expect(ideas[0]).toMatchObject({
+      mode: "ground", provider: "transitous", origin: "Madrid", destination: "Sants",
+      durationMinutes: 244, transfers: 2, lines: ["C3", "AVE 0309"],
+      modes: ["REGIONAL_RAIL", "HIGHSPEED_RAIL"], price: null,
+    });
+    expect(travelIdeaToTripHref(ideas[0])).toContain("mode=ground");
+    expect(travelIdeaToTripHref(ideas[0])).toContain("summary=C3%2C+AVE+0309");
+  });
+
+  it("rejects an invalid provider envelope", () => {
+    expect(() => parseTransitousItineraries({ itineraries: "bad" }, "A", "B")).toThrow();
   });
 });

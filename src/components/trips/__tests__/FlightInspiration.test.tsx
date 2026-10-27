@@ -68,12 +68,12 @@ describe("FlightInspiration", () => {
     fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       "travel-inspiration",
-      { body: { origin: "MAD", month: expect.any(String), journey: "round-trip" } },
+      { body: { mode: "flight", origin: "MAD", month: expect.any(String), journey: "round-trip" } },
     ));
     expect(await screen.findByRole("heading", { name: "MAD → LON" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /planear este viaje/i })).toHaveAttribute(
       "href",
-      "/es/create-trip?source=inspiration&origin=MAD&destination=LON&departure=2026-11-12&return=2026-11-19",
+      "/es/create-trip?source=inspiration&mode=flight&origin=MAD&destination=LON&departure=2026-11-12&summary=MAD+%E2%86%92+LON&return=2026-11-19",
     );
     expect(screen.getByRole("link", { name: /abrir aviasales/i })).toHaveAttribute(
       "href",
@@ -282,5 +282,111 @@ describe("FlightInspiration", () => {
     const source = readFileSync(join(__dirname, "../FlightInspiration.tsx"), "utf8");
     expect(source).not.toMatch(/\bfetch\s*\(/);
     expect(source).not.toContain("api.travelpayouts.com");
+  });
+
+  it("muestra el estado seguro sin precio y conserva disponible el selector de vuelos si Transitous falla", async () => {
+    render(<FlightInspiration />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /tren y bus/i }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("travel-inspiration", { body: { checkOnly: true, mode: "ground" } }));
+    invoke.mockResolvedValueOnce({ data: { status: "provider_error", ideas: [] }, error: null });
+    fireEvent.change(screen.getByLabelText(/^origen$/i), { target: { value: "Madrid" } });
+    fireEvent.change(screen.getByLabelText(/destino/i), { target: { value: "Barcelona" } });
+    fireEvent.change(screen.getByLabelText(/fecha de salida/i), { target: { value: "2026-11-15" } });
+    fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/transitous no está disponible/i);
+    fireEvent.click(screen.getByRole("button", { name: /vuelos/i }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("travel-inspiration", { body: { checkOnly: true } }));
+    fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
+    invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [] }, error: null });
+    const searchButton = screen.getByRole("button", { name: /buscar ideas/i });
+    expect(searchButton).toBeEnabled();
+    fireEvent.click(searchButton);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("travel-inspiration", {
+      body: { mode: "flight", origin: "MAD", month: expect.any(String), journey: "round-trip" },
+    }));
+  });
+
+  it("no muestra un importe para una oferta terrestre sin precio", async () => {
+    render(<FlightInspiration />);
+    fireEvent.click(screen.getByRole("button", { name: /tren y bus/i }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [{
+      mode: "ground", provider: "transitous", origin: "Madrid", destination: "Barcelona",
+      departureAt: "2026-11-15T08:13:00Z", arrivalAt: "2026-11-15T12:17:00Z", durationMinutes: 244,
+      transfers: 2, lines: ["C3", "AVE 0309"], modes: ["REGIONAL_RAIL", "HIGHSPEED_RAIL"],
+      price: null, deepLink: "https://www.transitous.org/", attribution: "Transitous (MOTIS)",
+    }] }, error: null });
+    fireEvent.change(screen.getByLabelText(/^origen$/i), { target: { value: "Madrid" } });
+    fireEvent.change(screen.getByLabelText(/destino/i), { target: { value: "Barcelona" } });
+    fireEvent.change(screen.getByLabelText(/fecha de salida/i), { target: { value: "2026-11-15" } });
+    fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
+    expect(await screen.findByText(/precio no disponible/i)).toBeInTheDocument();
+    expect(screen.queryByText(/€|EUR/)).not.toBeInTheDocument();
+  });
+
+  it("ignora una respuesta de vuelos que llega después de cambiar a terrestre", async () => {
+    render(<FlightInspiration />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
+    let finishFlight: ((value: unknown) => void) | undefined;
+    invoke.mockReturnValueOnce(new Promise((resolve) => { finishFlight = resolve; }));
+    fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
+    fireEvent.click(screen.getByRole("button", { name: /tren y bus/i }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("travel-inspiration", { body: { checkOnly: true, mode: "ground" } }));
+    await act(async () => finishFlight?.({ data: { status: "ready", ideas: [{
+      mode: "flight", provider: "travelpayouts", origin: "MAD", destination: "LON",
+      departureAt: "2026-11-12", arrivalAt: null, durationMinutes: null, transfers: 0,
+      lines: [], modes: ["FLIGHT"], price: 125, priceCurrency: "EUR", deepLink: "https://www.aviasales.com/",
+      attribution: "Travelpayouts", departureDate: "2026-11-12", returnDate: "2026-11-19",
+      currency: "EUR", foundAt: "2026-10-17T12:00:00.000Z", validUntil: "2026-10-19T12:00:00.000Z", changes: 0,
+    }] }, error: null }));
+    expect(screen.queryByRole("heading", { name: "MAD → LON" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /buscar ideas/i })).toBeEnabled();
+  });
+
+  it("pulsar el modo activo no deja la búsqueda en estado de comprobación", async () => {
+    render(<FlightInspiration />);
+    await screen.findByText(/no está disponible ahora/i);
+    const searchButton = screen.getByRole("button", { name: /buscar ideas/i });
+
+    fireEvent.click(screen.getByRole("button", { name: /vuelos/i }));
+    expect(searchButton).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /tren y bus/i }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("travel-inspiration", { body: { checkOnly: true, mode: "ground" } }));
+    await screen.findByText(/no está disponible ahora/i);
+    fireEvent.click(screen.getByRole("button", { name: /tren y bus/i }));
+    expect(searchButton).toBeEnabled();
+  });
+
+  it("reemplaza ofertas con la misma salida y distinto regreso sin conservar tarjetas antiguas", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-10-17T12:00:00.000Z"));
+    try {
+      const flight = (returnDate: string) => ({
+        mode: "flight", provider: "travelpayouts", origin: "MAD", destination: "LON",
+        departureAt: "2026-11-12T08:00:00Z", arrivalAt: null, durationMinutes: null,
+        transfers: 0, lines: [], modes: ["FLIGHT"], price: 125, priceCurrency: "EUR",
+        deepLink: "https://www.aviasales.com/", attribution: "Travelpayouts",
+        departureDate: "2026-11-12", returnDate, currency: "EUR",
+        foundAt: "2026-10-17T12:00:00.000Z", validUntil: "2026-10-19T12:00:00.000Z", changes: 0,
+      });
+      invoke.mockResolvedValueOnce({ data: { status: "unavailable" }, error: null });
+      render(<FlightInspiration />);
+      await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+      fireEvent.change(screen.getByLabelText(/origen/i), { target: { value: "MAD" } });
+      invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [flight("2026-11-17"), flight("2026-11-18")] }, error: null });
+      fireEvent.click(screen.getByRole("button", { name: /buscar ideas/i }));
+      await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+      expect(screen.getAllByRole("heading", { name: "MAD → LON" })).toHaveLength(2);
+
+      act(() => { jest.advanceTimersByTime(30_000); });
+      invoke.mockResolvedValueOnce({ data: { status: "ready", ideas: [flight("2026-11-18")] }, error: null });
+      fireEvent.click(screen.getByRole("button", { name: /actualizar ideas/i }));
+      await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+      expect(screen.getAllByRole("heading", { name: "MAD → LON" })).toHaveLength(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

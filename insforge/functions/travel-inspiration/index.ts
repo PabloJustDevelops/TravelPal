@@ -1,6 +1,6 @@
 /// <reference lib="deno.ns" />
 import { createClient } from "npm:@insforge/sdk";
-import { parseFlightIdeas, parseInspirationQuery } from "../../../src/lib/travel-inspiration.ts";
+import { parseFlightIdeas, parseInspirationQuery, parseTransitousItineraries } from "../../../src/lib/travel-inspiration.ts";
 
 const PROVIDER_URL = "https://api.travelpayouts.com/aviasales/v3/get_latest_prices";
 const ALLOWED_ORIGINS = new Set([
@@ -11,6 +11,14 @@ const ALLOWED_ORIGINS = new Set([
 const MAX_REQUEST_BYTES = 4096;
 const MAX_RESPONSE_BYTES = 256 * 1024;
 const UPSTREAM_TIMEOUT_MS = 8000;
+const GLOBAL_TIMEOUT_MS = 18000;
+const MOTIS_URL = "https://api.transitous.org/api/v1";
+const MAX_GROUND_IDEAS = 5;
+const groundCache = new Map<string, { expires: number; ideas: unknown[] }>();
+
+export function clearGroundCacheForTests(): void {
+  groundCache.clear();
+}
 
 interface Config {
   enabled?: string;
@@ -137,8 +145,9 @@ export function createHandler(deps: Dependencies = defaultDependencies): (reques
       input = JSON.parse(source);
       if (hasRepeatedTopLevelKeys(source)) throw new Error();
       if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error();
-      if (Object.keys(input).some((key) => !["checkOnly", "origin", "month", "journey", "maxPrice"].includes(key))) throw new Error();
+      if (Object.keys(input).some((key) => !["checkOnly", "mode", "origin", "destination", "date", "month", "journey", "maxPrice"].includes(key))) throw new Error();
       if (input.checkOnly !== undefined && typeof input.checkOnly !== "boolean") throw new Error();
+      if (input.mode !== undefined && input.mode !== "flight" && input.mode !== "ground") throw new Error();
     } catch {
       return json({ error: "Invalid request" }, 400, headers);
     }
@@ -147,17 +156,87 @@ export function createHandler(deps: Dependencies = defaultDependencies): (reques
     let query;
     try {
       const { checkOnly, ...parameters } = input;
+      delete parameters.mode;
+      if (checkOnly === true && Object.keys(parameters).length === 0) {
+        // Availability checks do not need search fields for either provider.
+      } else if (input.mode === "ground") {
+        if (typeof input.origin !== "string" || input.origin.trim().length < 2 || input.origin.trim().length > 100 ||
+          typeof input.destination !== "string" || input.destination.trim().length < 2 || input.destination.trim().length > 100 ||
+          typeof input.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error();
+        const date = new Date(`${input.date}T00:00:00.000Z`);
+        if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== input.date || date <= now) throw new Error();
+      } else {
       if (checkOnly !== true || Object.keys(parameters).length > 0) {
         query = parseInspirationQuery(parameters, now);
       }
       if (checkOnly !== true && !query) throw new Error();
+      }
     } catch {
       return json({ error: "Invalid request" }, 400, headers);
     }
 
-    if (config.enabled !== "true") return json({ status: "unavailable" }, 200, headers);
-    if (!config.token || !config.insforgeUrl) return json({ error: "Service unavailable" }, 503, headers);
+    if (input.mode !== "ground" && config.enabled !== "true") return json({ status: "unavailable" }, 200, headers);
+    if (!config.insforgeUrl || (input.mode !== "ground" && !config.token)) return json({ error: "Service unavailable" }, 503, headers);
     if (input.checkOnly === true) return json({ status: "available" }, 200, headers);
+
+    if (input.mode === "ground") {
+      const from = (input.origin as string).trim();
+      const to = (input.destination as string).trim();
+      const date = input.date as string;
+      const normalizePlace = (value: string) => value.normalize("NFKC").toLocaleLowerCase().replace(/\s+/g, " ").trim();
+      const cacheKey = `${normalizePlace(from)}|${normalizePlace(to)}|${date}|ground`;
+      const cached = groundCache.get(cacheKey);
+      if (cached && cached.expires > Date.now()) return json({ status: "ready", ideas: cached.ideas }, 200, headers);
+      if (cached) groundCache.delete(cacheKey);
+      const global = new AbortController();
+      const globalTimer = setTimeout(() => global.abort(), GLOBAL_TIMEOUT_MS);
+      const motisFetch = async (url: URL) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+        const abort = () => controller.abort();
+        global.signal.addEventListener("abort", abort, { once: true });
+        try {
+          const response = await deps.fetcher(url, { headers: { Accept: "application/json", "User-Agent": "travelpal" }, redirect: "error", signal: controller.signal });
+          if (!response.ok) throw new Error("Transitous failure");
+          const text = await limitedText(response.body, MAX_RESPONSE_BYTES);
+          return JSON.parse(text) as unknown;
+        } finally {
+          clearTimeout(timer);
+          global.signal.removeEventListener("abort", abort);
+        }
+      };
+      try {
+        const geocode = async (place: string): Promise<{ coordinates: string; name: string }> => {
+          const url = new URL(`${MOTIS_URL}/geocode`);
+          url.searchParams.set("text", place);
+          const payload = await motisFetch(url);
+          if (!Array.isArray(payload) || payload.length === 0) throw new Error("Transitous empty geocode");
+          const found = payload.find((entry) => entry && typeof entry === "object" && typeof (entry as Record<string, unknown>).lat === "number" && typeof (entry as Record<string, unknown>).lon === "number");
+          if (!found) throw new Error("Transitous invalid geocode");
+          const item = found as { lat: number; lon: number; name?: unknown };
+          if (!Number.isFinite(item.lat) || !Number.isFinite(item.lon)) throw new Error("Transitous invalid coordinates");
+          return { coordinates: `${item.lat},${item.lon}`, name: typeof item.name === "string" ? item.name : "Transit stop" };
+        };
+        const fromPlace = await geocode(from);
+        const toPlace = await geocode(to);
+        const planUrl = new URL(`${MOTIS_URL}/plan`);
+        planUrl.searchParams.set("fromPlace", fromPlace.coordinates);
+        planUrl.searchParams.set("toPlace", toPlace.coordinates);
+        planUrl.searchParams.set("time", `${date}T08:00:00Z`);
+        planUrl.searchParams.set("numItineraries", String(MAX_GROUND_IDEAS));
+        const payload = await motisFetch(planUrl);
+        const ideas = parseTransitousItineraries(payload, fromPlace.name, toPlace.name).slice(0, MAX_GROUND_IDEAS);
+        const timestamp = Date.now();
+        for (const [key, entry] of groundCache) if (entry.expires <= timestamp) groundCache.delete(key);
+        while (groundCache.size >= 100) groundCache.delete(groundCache.keys().next().value!);
+        groundCache.set(cacheKey, { expires: timestamp + 10 * 60 * 1000, ideas });
+        return json({ status: "ready", ideas }, 200, headers);
+      } catch {
+        return json({ status: "provider_error", ideas: [] }, 200, headers);
+      } finally {
+        clearTimeout(globalTimer);
+      }
+    }
 
     const params = new URLSearchParams({
       currency: "eur",
@@ -174,7 +253,7 @@ export function createHandler(deps: Dependencies = defaultDependencies): (reques
     try {
       const response = await deps.fetcher(`${PROVIDER_URL}?${params}`, {
         method: "GET",
-        headers: { "X-Access-Token": config.token, Accept: "application/json" },
+        headers: { "X-Access-Token": config.token!, Accept: "application/json" },
         redirect: "error",
         signal: controller.signal,
       });

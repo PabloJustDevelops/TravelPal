@@ -19,8 +19,20 @@ export interface InspirationQuery {
 }
 
 export interface FlightIdea {
+  mode: "flight";
+  provider: "travelpayouts";
+  deepLink: string;
+  attribution: string;
   origin: string;
   destination: string;
+  departureAt: string;
+  arrivalAt: string | null;
+  durationMinutes: number | null;
+  transfers: number;
+  lines: string[];
+  modes: string[];
+  priceCurrency?: string;
+  /** Legacy fields retained for existing flight UI and callers. */
   departureDate: string;
   returnDate?: string;
   price: number;
@@ -29,6 +41,24 @@ export interface FlightIdea {
   validUntil: string;
   changes: number;
 }
+
+export interface GroundIdea {
+  mode: "ground";
+  provider: "transitous";
+  origin: string;
+  destination: string;
+  departureAt: string;
+  arrivalAt: string;
+  durationMinutes: number;
+  transfers: number;
+  lines: string[];
+  modes: string[];
+  price: null;
+  deepLink: string;
+  attribution: string;
+}
+
+export type TravelIdea = FlightIdea | GroundIdea;
 
 const querySchema = z.object({
   origin: z.string().regex(IATA),
@@ -121,8 +151,19 @@ function toIdea(value: unknown, query: InspirationQuery, now: Date): FlightIdea 
   if (query.journey === "one-way" && returnValue !== "") return undefined;
   if (returnDate && returnDate <= departureDate) return undefined;
   return {
+    mode: "flight",
+    provider: "travelpayouts",
+    deepLink: travelpayoutsDeepLink(row.origin, row.destination, departureDate, returnDate),
+    attribution: "Travelpayouts",
     origin: row.origin,
     destination: row.destination,
+    departureAt: row.depart_date,
+    arrivalAt: null,
+    durationMinutes: null,
+    transfers: row.number_of_changes,
+    lines: [],
+    modes: ["FLIGHT"],
+    priceCurrency: "EUR",
     departureDate,
     ...(returnDate ? { returnDate } : {}),
     price: row.value,
@@ -139,6 +180,12 @@ export function parseFlightIdeas(payload: unknown, query: InspirationQuery, now:
     const idea = toIdea(row, query, now);
     return idea ? [idea] : [];
   }), query, now);
+}
+
+function travelpayoutsDeepLink(origin: string, destination: string, departure: string, returnDate?: string): string {
+  const format = (date: string) => date.slice(8, 10) + date.slice(5, 7);
+  const route = `${origin}${format(departure)}${destination}${returnDate ? format(returnDate) : ""}1`;
+  return `https://www.aviasales.com/search/${encodeURIComponent(route)}`;
 }
 
 export function isFlightIdeaCurrent(idea: FlightIdea, now: Date = new Date()): boolean {
@@ -172,5 +219,71 @@ export function ideaToTripHref(idea: FlightIdea): string {
     departure: idea.departureDate,
   });
   if (idea.returnDate) params.set("return", idea.returnDate);
+  return `/create-trip?${params.toString()}`;
+}
+
+const transitousAttribution = "Transitous (MOTIS)";
+
+export function parseTransitousItineraries(
+  payload: unknown,
+  origin: string,
+  destination: string,
+): GroundIdea[] {
+  if (!payload || typeof payload !== "object" || !Array.isArray((payload as { itineraries?: unknown }).itineraries)) {
+    throw new Error("Invalid Transitous response");
+  }
+  const source = (payload as { itineraries: unknown[] }).itineraries;
+  const ideas: GroundIdea[] = source.slice(0, 5).flatMap((raw): GroundIdea[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const legs = Array.isArray(item.legs) ? item.legs : [];
+    const start = typeof item.startTime === "string" ? item.startTime : "";
+    const end = typeof item.endTime === "string" ? item.endTime : "";
+    const transfers = item.transfers;
+    const duration = item.duration;
+    if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) ||
+      typeof duration !== "number" || !Number.isFinite(duration) || duration <= 0 ||
+      typeof transfers !== "number" || !Number.isInteger(transfers) || transfers < 0 || legs.length === 0) return [];
+    const modes: string[] = [];
+    const lines: string[] = [];
+    for (const leg of legs) {
+      if (!leg || typeof leg !== "object") continue;
+      const part = leg as Record<string, unknown>;
+      if (typeof part.mode === "string" && part.mode.length <= 32 && !["WALK", "TRANSFER"].includes(part.mode) && !modes.includes(part.mode) && modes.length < 8) modes.push(part.mode);
+      if (typeof part.routeShortName === "string" && part.routeShortName.trim() && !lines.includes(part.routeShortName.trim().slice(0, 32)) && lines.length < 6) lines.push(part.routeShortName.trim().slice(0, 32));
+    }
+    const safeOrigin = endpointName(legs[0], "from", origin);
+    const safeDestination = endpointName(legs[legs.length - 1], "to", destination);
+    const deepLink = "https://www.transitous.org/";
+    return [{
+      mode: "ground", provider: "transitous", origin: safeOrigin, destination: safeDestination,
+      departureAt: start, arrivalAt: end, durationMinutes: Math.round(duration / 60), transfers,
+      lines, modes, price: null, deepLink, attribution: transitousAttribution,
+    }];
+  });
+  if (source.length > 0 && ideas.length === 0) throw new Error("Invalid Transitous itinerary");
+  return ideas;
+}
+
+function endpointName(leg: unknown, side: "from" | "to", fallback: string): string {
+  if (!leg || typeof leg !== "object") return fallback;
+  const endpoint = (leg as Record<string, unknown>)[side];
+  if (endpoint && typeof endpoint === "object" && typeof (endpoint as Record<string, unknown>).name === "string") {
+    const name = (endpoint as { name: string }).name.trim();
+    if (name && !["START", "END"].includes(name.toUpperCase())) return name.slice(0, 100);
+  }
+  return fallback;
+}
+
+export function travelIdeaToTripHref(idea: TravelIdea): string {
+  const departureAt = idea.departureAt ?? (idea as FlightIdea).departureDate;
+  const summary = idea.mode === "ground"
+    ? `${idea.lines.join(", ")} · ${idea.durationMinutes} min`
+    : `${idea.origin} → ${idea.destination}`;
+  const params = new URLSearchParams({
+    source: "inspiration", mode: idea.mode, origin: idea.origin, destination: idea.destination,
+    departure: departureAt.slice(0, 10), summary,
+  });
+  if (idea.mode === "flight" && idea.returnDate) params.set("return", idea.returnDate);
   return `/create-trip?${params.toString()}`;
 }

@@ -67,7 +67,7 @@ export function CreateTripPageContent() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const keys = ["source", "origin", "destination", "departure", "return"];
+    const keys = ["source", "mode", "origin", "destination", "departure", "return", "summary"];
     if ([...params.keys()].some((key) => !keys.includes(key))) return;
     if (keys.some((key) => params.getAll(key).length > 1)) return;
     if (params.get("source") !== "inspiration") return;
@@ -76,6 +76,8 @@ export function CreateTripPageContent() {
     const destination = params.get("destination") ?? "";
     const departure = params.get("departure") ?? "";
     const returnDate = params.get("return") ?? "";
+    const mode = params.get("mode") ?? "flight";
+    const summary = params.get("summary") ?? "";
     const validDay = (value: string) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
       const date = new Date(`${value}T00:00:00.000Z`);
@@ -83,8 +85,9 @@ export function CreateTripPageContent() {
     };
     const today = new Date().toISOString().slice(0, 10);
     if (
-      !/^[A-Z]{3}$/.test(origin) ||
-      !/^[A-Z]{3}$/.test(destination) ||
+      !["flight", "ground"].includes(mode) ||
+      (mode === "flight" && (!/^[A-Z]{3}$/.test(origin) || !/^[A-Z]{3}$/.test(destination))) ||
+      (mode === "ground" && (!origin.trim() || origin.length > 100 || !destination.trim() || destination.length > 100 || summary.length > 300)) ||
       origin === destination ||
       !validDay(departure) ||
       departure <= today ||
@@ -98,6 +101,7 @@ export function CreateTripPageContent() {
       destination,
       departure_date: `${departure}T09:00`,
       return_date: returnDate ? `${returnDate}T09:00` : "",
+      notes: summary || previous.notes,
     }));
   }, [t]);
 
