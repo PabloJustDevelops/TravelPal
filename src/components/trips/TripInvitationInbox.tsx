@@ -35,11 +35,13 @@ export default function TripInvitationInbox({ onAccepted }: { onAccepted?: () =>
     finally { setBusyId(null); }
   }
 
-  if (loading) return <p role="status" className="text-sm text-muted">{t("loadingContent")}</p>;
+  // Sin invitaciones pendientes no se pinta nada: la bandeja no debe ocupar espacio ni dejar una tarjeta
+  // vacía en /trips (rompía el layout del story de fidelidad y no aporta nada al usuario).
+  if (loading || !invitations.length) return null;
   return <section aria-labelledby="trip-invitations-heading" className="rounded-xl border border-line bg-paper p-5">
     <h2 id="trip-invitations-heading" className="text-lg font-semibold text-ink">{t("tripInvitationInbox")}</h2>
     {error && <p role="alert" className="mt-3 text-sm text-danger">{t("invitationResponseError")}</p>}
-    {invitations.length ? <ul className="mt-3 divide-y divide-line">{invitations.map((invitation) => <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+    <ul className="mt-3 divide-y divide-line">{invitations.map((invitation) => <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
       <div>
         <Link href={`${localePath(locale, "/trip")}?id=${encodeURIComponent(invitation.trip_id ?? "")}`} className="inline-flex min-h-11 items-center font-medium text-ink hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{invitation.trip_title}</Link>
         <p className="mt-1 text-sm text-muted">{t("invitationFrom").replace("{email}", invitation.invited_by_email ?? "")} · {t(invitation.role === "editor" ? "tripRoleEditor" : "tripRoleReader")}</p>
@@ -48,6 +50,6 @@ export default function TripInvitationInbox({ onAccepted }: { onAccepted?: () =>
         <Button type="button" disabled={busyId === invitation.id} className="min-h-11" onClick={() => void respond(invitation, "accept")}>{t("acceptInvitation")}</Button>
         <Button type="button" variant="outline" disabled={busyId === invitation.id} className="min-h-11" onClick={() => void respond(invitation, "reject")}>{t("rejectInvitation")}</Button>
       </div>
-    </li>)}</ul> : <p className="mt-3 text-sm text-muted">{t("noTripInvitations")}</p>}
+    </li>)}</ul>
   </section>;
 }

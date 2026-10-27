@@ -25,6 +25,7 @@ describe("TripInvitationInbox", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
     await waitFor(() => expect(callMock).toHaveBeenCalledWith({ action: "respond", invitationId: "invite-1", response: "accept" }));
     expect(onAccepted).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText("No tienes invitaciones pendientes.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Viaje compartido")).not.toBeInTheDocument());
+    expect(screen.queryByRole("region", { name: "Invitaciones pendientes" })).not.toBeInTheDocument();
   });
 });
