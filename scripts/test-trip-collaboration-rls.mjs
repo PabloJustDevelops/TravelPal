@@ -3,10 +3,15 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 
-const migrationPath = fileURLToPath(
-  new URL('../migrations/20261026120000_trip-collaboration-rls.sql', import.meta.url),
-)
-const migration = await readFile(migrationPath, 'utf8')
+const migrationFiles = [
+  '20261026120000_trip-collaboration-rls.sql',
+  '20261027130000_fix-journal-photo-storage-policies.sql',
+]
+const migration = (
+  await Promise.all(
+    migrationFiles.map((name) => readFile(fileURLToPath(new URL(`../migrations/${name}`, import.meta.url)), 'utf8')),
+  )
+).join('\n')
 const owner = '10000000-0000-4000-8000-000000000001'
 const editor = '20000000-0000-4000-8000-000000000002'
 const reader = '30000000-0000-4000-8000-000000000003'
@@ -132,6 +137,13 @@ try {
       await db.query('insert into storage.objects (id, bucket, key, uploaded_by) values ($1, $2, $3, $4)', [
         '82000000-0000-4000-8000-000000000001', 'journal-photos', `photo-${id}`, editor,
       ])
+      // La app sube el objeto ANTES de insertar la metadata (JournalPhotos.tsx). Si la politica de
+      // insert exige la fila de journal_photos, la subida se deniega y el diario deja de funcionar:
+      // asi se rompio produccion el 27-10 y solo lo cazo el e2e.
+      await db.query('insert into storage.objects (id, bucket, key, uploaded_by) values ($1, $2, $3, $4)', [
+        '82000000-0000-4000-8000-000000000002', 'journal-photos', `photo-sin-metadata-${id}`, editor,
+      ])
+      assert.equal((await db.query('select id from storage.objects where key = $1', [`photo-sin-metadata-${id}`])).rows.length, 1, 'subida antes de la metadata')
     } else {
       await db.query(`insert into public.${table} (id, user_id, trip_id) values ($1, $2, $3)`, [id, editor, trip])
     }
