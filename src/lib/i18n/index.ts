@@ -137,9 +137,16 @@ const routeMessages = {
   },
 } as const
 
+const collaborationEs = {
+  shareTrip: 'Compartir viaje', inviteByEmail: 'Invitar por correo electrónico', memberRole: 'Rol', tripRoleEditor: 'Editor', tripRoleReader: 'Lector', sendInvitation: 'Enviar invitación', tripMembers: 'Personas con acceso', noTripMembers: 'Todavía no hay personas invitadas.', pendingInvitations: 'Invitaciones pendientes', noPendingInvitations: 'No hay invitaciones pendientes.', invitationSent: 'Si existe una cuenta para ese correo, recibirá la invitación.', sharingLoadError: 'No se pudo cargar el acceso al viaje.', sharingActionError: 'No se pudo actualizar el acceso. Inténtalo de nuevo.', changeMemberRole: 'Cambiar rol de {email}', removeAccess: 'Quitar acceso', cancelInvitation: 'Revocar invitación', tripInvitationInbox: 'Invitaciones a viajes', acceptInvitation: 'Aceptar', rejectInvitation: 'Rechazar', invitationFrom: 'Invitación de {email}', invitationAccepted: 'Te has unido al viaje.', invitationRejected: 'Invitación rechazada.', invitationResponseError: 'No se pudo responder a la invitación.', noTripInvitations: 'No tienes invitaciones pendientes.', sharedBy: 'Compartido contigo',
+} as const
+const collaborationEn = {
+  shareTrip: 'Share trip', inviteByEmail: 'Invite by email', memberRole: 'Role', tripRoleEditor: 'Editor', tripRoleReader: 'Reader', sendInvitation: 'Send invitation', tripMembers: 'People with access', noTripMembers: 'No one has been invited yet.', pendingInvitations: 'Pending invitations', noPendingInvitations: 'There are no pending invitations.', invitationSent: 'If an account exists for that email, it will receive an invitation.', sharingLoadError: 'Could not load trip access.', sharingActionError: 'Could not update access. Please try again.', changeMemberRole: 'Change role for {email}', removeAccess: 'Remove access', cancelInvitation: 'Revoke invitation', tripInvitationInbox: 'Trip invitations', acceptInvitation: 'Accept', rejectInvitation: 'Reject', invitationFrom: 'Invitation from {email}', invitationAccepted: 'You joined the trip.', invitationRejected: 'Invitation declined.', invitationResponseError: 'Could not respond to the invitation.', noTripInvitations: 'You have no pending invitations.', sharedBy: 'Shared with you',
+} as const
+
 export const dictionaries = {
-  es: { ...es, ...routeMessages.es },
-  en: { ...en, ...routeMessages.en },
+  es: { ...es, ...routeMessages.es, ...collaborationEs },
+  en: { ...en, ...routeMessages.en, ...collaborationEn },
 } as const
 export type MessageKey = keyof typeof dictionaries.es
 export const translate = (locale: Locale, key: MessageKey) => dictionaries[locale][key]

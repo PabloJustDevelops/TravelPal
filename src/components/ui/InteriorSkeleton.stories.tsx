@@ -56,7 +56,8 @@ const meta = {
       return chain
     })
     mocked(useAuth).mockReturnValue(auth)
-    mocked(createInsforgeClient).mockReturnValue({ database: { from } } as unknown as ReturnType<typeof createInsforgeClient>)
+    const invoke = fn().mockResolvedValue({ data: { invitations: [], members: [] }, error: null })
+    mocked(createInsforgeClient).mockReturnValue({ database: { from }, functions: { invoke } } as unknown as ReturnType<typeof createInsforgeClient>)
     resolveData = () => { finish(); mocked(useAuth).mockReturnValue({ ...auth, loading: false }) }
   },
 } satisfies Meta<typeof PendingPage>

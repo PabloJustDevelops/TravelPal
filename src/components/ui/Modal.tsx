@@ -73,9 +73,9 @@ export default function Modal({
                     {showCloseButton && (
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="md"
                         onClick={onClose}
-                        className="p-2"
+                        className="min-h-11 min-w-11 p-2"
                         aria-label={t('close')}
                       >
                         <XMarkIcon className="h-5 w-5" aria-hidden="true" />

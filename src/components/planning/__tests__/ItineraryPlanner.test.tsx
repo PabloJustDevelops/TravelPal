@@ -49,3 +49,14 @@ it('permite reordenar sin arrastrar y desactiva los límites del día', async ()
   await userEvent.setup().click(screen.getByRole('button', {name:'Bajar Paseo por Lisboa'}))
   expect(onMoveActivity).toHaveBeenCalledWith('activity-1', 1)
 })
+
+it('mantiene legible el itinerario de lectores y oculta sus acciones de escritura', async () => {
+  render(<ItineraryPlanner startDate="2026-10-18" endDate="2026-10-18"
+    itinerary={[{ date: '2026-10-18', activities: [activity] }]}
+    onCreateActivity={jest.fn()} onUpdateActivity={jest.fn()} onDeleteActivity={jest.fn()} readOnly />)
+  await userEvent.setup().click(screen.getByRole('button', { name: /Día 1/ }))
+  expect(screen.getByRole('heading', { name: 'Paseo por Lisboa' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Añadir' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Editar Paseo por Lisboa' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Eliminar Paseo por Lisboa' })).not.toBeInTheDocument()
+})
