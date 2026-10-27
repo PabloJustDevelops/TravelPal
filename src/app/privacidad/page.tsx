@@ -24,7 +24,7 @@ export default function PrivacyPage() {
       <section>
         <h2>Proveedores y destinatarios</h2>
         <p>InsForge presta el backend de base de datos, autenticación y almacenamiento. Cloudflare sirve la web estática como hosting y CDN. Estos servicios pueden tratar los datos necesarios para prestar sus funciones; las peticiones web incluyen datos técnicos como la dirección IP. Google interviene como proveedor de identidad si eliges su OAuth y aplica también su propia política.</p>
-        <p>Pendiente de validación por el responsable: entidades contractuales concretas, contratos de encargo, subencargados, ubicación efectiva del tratamiento, transferencias internacionales y garantías aplicables de cada proveedor. No se afirma que todo el tratamiento permanezca en la UE por la región indicada en la URL del backend.</p>
+        <p>El backend está configurado en la región eu-central de InsForge. Cloudflare sirve la web como red de distribución global, por lo que una petición puede enrutarse a través de centros suyos situados fuera de la Unión Europea; ambas empresas tratan los datos por cuenta del responsable y conforme a sus condiciones publicadas. Si necesitas detalle concreto sobre este tratamiento o sobre transferencias internacionales antes de usar la aplicación, escríbelo al contacto indicado arriba y se te facilita.</p>
         <p>No se prevé comunicar el contenido de tus viajes a otros usuarios. Podrán atenderse requerimientos de autoridades cuando exista una obligación legal.</p>
       </section>
       <section>

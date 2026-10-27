@@ -170,8 +170,7 @@ export function NotesPageContent({t, locale}: Pick<ReturnType<typeof useI18n>, '
 
     try {
       if (editingNote) {
-        // Update existing note
-        // TODO: Implement PUT API
+        // Actualiza la nota existente.
         const insforge = createInsforgeClient();
         const { data: updatedRows, error } = await withQueryTimeout(
           insforge.database
