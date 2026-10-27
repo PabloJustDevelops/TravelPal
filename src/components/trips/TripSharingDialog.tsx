@@ -108,7 +108,7 @@ export default function TripSharingDialog({ tripId, isOpen, onClose }: { tripId:
             <select id={`role-${member.user_id}`} disabled={busy} value={member.role} onChange={(event) => void changeRole(member, event.target.value as TripMemberRole)} className={`${selectClassName} min-h-11`}>
               <option value="editor">{t("tripRoleEditor")}</option><option value="reader">{t("tripRoleReader")}</option>
             </select>
-            <Button type="button" variant="outline" disabled={busy} className="min-h-11" onClick={() => void removeMember(member)}>{t("removeAccess")}</Button>
+            <Button type="button" variant="outline" disabled={busy} className="min-h-11 whitespace-nowrap" onClick={() => void removeMember(member)}>{t("removeAccess")}</Button>
           </div>
         </li>)}</ul> : <p className="mt-2 text-sm text-muted">{t("noTripMembers")}</p>}
       </section>
