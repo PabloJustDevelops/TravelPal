@@ -405,79 +405,77 @@ end $$;
 grant select, insert, update, delete on public.tasks to authenticated;
 
 -- Storage requiere cruzar la key del objeto con journal_photos.key para seguir
--- la membresia efectiva del viaje. InsForge publica JWT/RLS comunes en Storage,
--- pero su documentacion no confirma esta consulta cruzada ni la disponibilidad
--- de name desde las policies. Verificar remotamente antes de aplicar.
+-- la membresia efectiva del viaje. Verificado contra el backend real: la tabla
+-- `storage.objects` de InsForge es (bucket, key, size, mime_type, uploaded_at,
+-- uploaded_by, uploaded_via, s3_access_key_id, etag), no el esquema de Supabase.
 -- El flujo actual sube el objeto antes de insertar journal_photos; esta policy
 -- exige metadata previa. La subida de colaboradores necesita preparar esa fila
--- antes del objeto, tambien pendiente de validar remotamente en Fase 2/3.
+-- antes del objeto, tambien pendiente de validar en la fase de UI.
+-- `storage.objects` en InsForge usa `bucket` y `key` (no `bucket_id`/`name`).
+-- La comparacion con la fila del objeto (`key in (...)`) queda FUERA del
+-- subselect a proposito: dentro, un `key` sin cualificar resolveria a
+-- `photo.key` y la condicion seria siempre cierta.
 drop policy if exists storage_objects_owner_select on storage.objects;
 drop policy if exists storage_objects_owner_insert on storage.objects;
 drop policy if exists storage_objects_owner_update on storage.objects;
 drop policy if exists storage_objects_owner_delete on storage.objects;
+
 create policy storage_objects_owner_select on storage.objects
   for select to authenticated using (
-    (bucket_id <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
-    or (bucket_id = 'journal-photos' and exists (
-      select 1 from public.journal_photos as photo
+    (bucket <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
+    or (bucket = 'journal-photos' and key in (
+      select photo.key from public.journal_photos as photo
       join public.trips as parent_trip on parent_trip.id = photo.trip_id
-      where photo.key = name and (
-        parent_trip.user_id = (select auth.uid())
-        or exists (select 1 from public.trip_members as member
-          where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()))
-      )
+      where parent_trip.user_id = (select auth.uid())
+         or exists (select 1 from public.trip_members as member
+           where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()))
     ))
   );
+
 create policy storage_objects_owner_insert on storage.objects
   for insert to authenticated with check (
-    (bucket_id <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
-    or (bucket_id = 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub') and exists (
-      select 1 from public.journal_photos as photo
+    (bucket <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
+    or (bucket = 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub') and key in (
+      select photo.key from public.journal_photos as photo
       join public.trips as parent_trip on parent_trip.id = photo.trip_id
-      where photo.key = name and (
-        parent_trip.user_id = (select auth.uid())
-        or exists (select 1 from public.trip_members as member
-          where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
-      )
+      where parent_trip.user_id = (select auth.uid())
+         or exists (select 1 from public.trip_members as member
+           where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
     ))
   );
+
 create policy storage_objects_owner_update on storage.objects
   for update to authenticated
   using (
-    (bucket_id <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
-    or (bucket_id = 'journal-photos' and exists (
-      select 1 from public.journal_photos as photo
+    (bucket <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
+    or (bucket = 'journal-photos' and key in (
+      select photo.key from public.journal_photos as photo
       join public.trips as parent_trip on parent_trip.id = photo.trip_id
-      where photo.key = name and (
-        parent_trip.user_id = (select auth.uid())
-        or exists (select 1 from public.trip_members as member
-          where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
-      )
+      where parent_trip.user_id = (select auth.uid())
+         or exists (select 1 from public.trip_members as member
+           where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
     ))
   )
   with check (
-    (bucket_id <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
-    or (bucket_id = 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub') and exists (
-      select 1 from public.journal_photos as photo
+    (bucket <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
+    or (bucket = 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub') and key in (
+      select photo.key from public.journal_photos as photo
       join public.trips as parent_trip on parent_trip.id = photo.trip_id
-      where photo.key = name and (
-        parent_trip.user_id = (select auth.uid())
-        or exists (select 1 from public.trip_members as member
-          where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
-      )
+      where parent_trip.user_id = (select auth.uid())
+         or exists (select 1 from public.trip_members as member
+           where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
     ))
   );
+
 create policy storage_objects_owner_delete on storage.objects
   for delete to authenticated using (
-    (bucket_id <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
-    or (bucket_id = 'journal-photos' and exists (
-      select 1 from public.journal_photos as photo
+    (bucket <> 'journal-photos' and uploaded_by = (select auth.jwt() ->> 'sub'))
+    or (bucket = 'journal-photos' and key in (
+      select photo.key from public.journal_photos as photo
       join public.trips as parent_trip on parent_trip.id = photo.trip_id
-      where photo.key = name and (
-        parent_trip.user_id = (select auth.uid())
-        or exists (select 1 from public.trip_members as member
-          where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
-      )
+      where parent_trip.user_id = (select auth.uid())
+         or exists (select 1 from public.trip_members as member
+           where member.trip_id = parent_trip.id and member.user_id = (select auth.uid()) and member.role = 'editor')
     ))
   );
 
