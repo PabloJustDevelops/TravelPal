@@ -332,5 +332,7 @@ export function createHandler(
 }
 const handler = createHandler();
 // InsForge sirve la función con su propio router: el entrypoint solo exporta el
-// handler. Un `Deno.serve()` aquí hace que el despliegue se rechace.
+// handler. Arrancar el servidor a mano aquí hace que el despliegue se rechace, y
+// el validador del CLI busca esa cadena en todo el texto: tampoco se nombra en
+// comentarios.
 export default handler;
