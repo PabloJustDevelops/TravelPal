@@ -3,7 +3,7 @@
 | Issue | Plan | Size | Status |
 |---|---|---:|---|
 | [#131](https://github.com/PabloJustDevelops/TravelPal/issues/131) | [Internationalization](01-i18n.md) | L | Closed: phases 1, 2a, 2b and 2c merged; 63 exported pages in Spanish and English |
-| [#132](https://github.com/PabloJustDevelops/TravelPal/issues/132) | [Trip collaboration](02-colaboracion-por-viaje.md) | L | Phase 1 (schema and RLS) merged; phase 2 (invitations, RPCs and UI) in review. The migrations are not applied to the backend yet |
+| [#132](https://github.com/PabloJustDevelops/TravelPal/issues/132) | [Trip collaboration](02-colaboracion-por-viaje.md) | L | Closed: phases 1 and 2 merged, both migrations applied to the backend and the `trip-invitations` function deployed |
 | [#133](https://github.com/PabloJustDevelops/TravelPal/issues/133) | [Price sources](03-fuentes-de-precio.md) | M | Blocked: provider and credentials not chosen |
 
 ## Discarded
