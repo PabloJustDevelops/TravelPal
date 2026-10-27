@@ -83,7 +83,10 @@ try {
   }
 
   await db.exec(`
-    create table storage.objects (id uuid primary key, bucket_id text not null, name text not null, uploaded_by text);
+    -- Esquema real de InsForge: storage.objects(bucket, key, uploaded_by).
+    -- No es el de Supabase (bucket_id/name): si se copia ese, el test pasa y la
+    -- migracion falla contra el backend con 'column "bucket_id" does not exist'.
+    create table storage.objects (id uuid primary key, bucket text not null, key text not null, uploaded_by text);
     alter table storage.objects enable row level security;
     create policy storage_objects_owner_select on storage.objects for select to authenticated using (uploaded_by = (select auth.jwt() ->> 'sub'));
     create policy storage_objects_owner_insert on storage.objects for insert to authenticated with check (uploaded_by = (select auth.jwt() ->> 'sub'));
@@ -126,7 +129,7 @@ try {
     } else if (table === 'journal_photos') {
       await db.query('insert into public.journal_photos (id, user_id, trip_id, key) values ($1, $2, $3, $4)', [id, editor, trip, `photo-${id}`])
       photoId = id
-      await db.query('insert into storage.objects (id, bucket_id, name, uploaded_by) values ($1, $2, $3, $4)', [
+      await db.query('insert into storage.objects (id, bucket, key, uploaded_by) values ($1, $2, $3, $4)', [
         '82000000-0000-4000-8000-000000000001', 'journal-photos', `photo-${id}`, editor,
       ])
     } else {
@@ -152,7 +155,7 @@ try {
   assert.equal((await db.query('select id from public.trips')).rows.length, 1)
   assert.equal((await db.query('update public.trips set title = $1 where id = $2 returning id', ['Reader edit', trip])).rows.length, 0)
   assert.equal((await db.query('select id from public.expenses')).rows.length, 2)
-  assert.equal((await db.query('select id from storage.objects where name = $1', [`photo-${photoId}`])).rows.length, 1)
+  assert.equal((await db.query('select id from storage.objects where key = $1', [`photo-${photoId}`])).rows.length, 1)
   for (const table of childTables) {
     const visibleRows = await db.query(`select id from public.${table}`)
     const expectedRows = table === 'alerts' ? 0 : table === 'expenses' ? 2 : 1
@@ -164,7 +167,7 @@ try {
   )
   assert.equal((await db.query('update public.expenses set user_id = $1 returning id', [reader])).rows.length, 0)
   assert.equal((await db.query('delete from public.expenses returning id')).rows.length, 0)
-  assert.equal((await db.query('delete from storage.objects where name = $1 returning id', [`photo-${photoId}`])).rows.length, 0)
+  assert.equal((await db.query('delete from storage.objects where key = $1 returning id', [`photo-${photoId}`])).rows.length, 0)
   console.log('Lector: solo lectura en viaje, filas hijas y foto de Storage: OK')
 
   await setUser(intruder)
