@@ -80,3 +80,6 @@ testsprite_tests/testsprite_frontend_test_plan.json
 # Storybook y pruebas de componentes
 /storybook-static/
 /.storybook/.cache/
+
+# Artefacto del empaquetado de funciones (scripts/build-function.mjs)
+insforge/functions/**/.deploy/
