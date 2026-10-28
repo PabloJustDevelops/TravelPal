@@ -63,6 +63,8 @@
 .recoveryForm { width: 100%; max-width: 496px; margin: auto; padding: 64px 0; }
 .recoveryForm h1 { font-size: clamp(2rem, 3.3vw, 3.1rem); line-height: 1.08; letter-spacing: -0.035em; }
 .recoveryFooter { color: var(--muted); font-size: 12px; }
+.recoveryForm form button[type="submit"] { min-height: 50px; }
+.recoveryForm a { min-height: 44px; display: inline-flex; align-items: center; }
 .recoveryArtwork { position: relative; min-height: 100vh; overflow: hidden; }
 .recoveryImage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 @media (max-width: 1023px) {
