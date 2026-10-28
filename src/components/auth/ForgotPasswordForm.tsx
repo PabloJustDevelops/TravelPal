@@ -4,14 +4,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
 import { fieldClassName } from '@/components/ui/fieldStyles'
-import { accentLinkClassName } from '@/components/ui/actionStyles'
 import { cn } from '@/lib/utils'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
-import { localePath } from '@/lib/i18n'
 import { useI18n } from '@/lib/i18n/LocaleProvider'
 
 type ForgotPasswordFormData = { email: string }
@@ -61,28 +58,23 @@ export default function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div role="status" className="rounded-xl border border-success/25 bg-success/10 p-6 text-center">
+      <div role="status" className="mt-8 rounded-xl border border-success/25 bg-success/10 p-6 text-center">
         <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-success/15 mb-4">
           <EnvelopeIcon className="h-6 w-6 text-success" aria-hidden="true" />
         </div>
         <h3 className="text-lg font-medium text-ink mb-2">
           {english ? 'Email sent' : 'Email enviado'}
         </h3>
-        <p className="text-sm text-muted mb-6">
+        <p className="text-sm text-muted mb-4">
           {english ? 'We sent a reset link to your email address. Check your inbox (and spam folder) and follow the instructions.' : 'Hemos enviado un enlace de recuperación a tu correo electrónico. Por favor, revisa tu bandeja de entrada (y spam) y sigue las instrucciones.'}
         </p>
-        <div className="space-y-3">
-          <Link href={localePath(locale, '/signin')} className={`${accentLinkClassName} w-full`}>
-            {english ? 'Back to sign in' : 'Volver al inicio de sesión'}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setIsSuccess(false)}
-            className="text-sm text-accent hover:text-accent-hover font-medium underline"
-          >
-            {english ? 'Try another email' : 'Probar con otro correo'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsSuccess(false)}
+          className="text-sm text-accent hover:text-accent-hover font-medium underline"
+        >
+          {english ? 'Try another email' : 'Probar con otro correo'}
+        </button>
       </div>
     )
   }
