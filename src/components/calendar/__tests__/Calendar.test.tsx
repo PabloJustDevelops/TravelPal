@@ -4,6 +4,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Calendar } from '../Calendar';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { LocaleProvider } from '@/lib/i18n/LocaleProvider';
 
 // Mock Heroicons to avoid rendering issues in tests
@@ -101,11 +102,14 @@ describe('Calendar Component', () => {
   it('calls onAddEvent on double click in month view', () => {
     const handleAddEvent = jest.fn();
     render(<Calendar onAddEvent={handleAddEvent} />);
-    
-    // Get the cell for today
-    const todayCell = screen.getByText(today.getDate().toString()).closest('div')?.parentElement;
-    fireEvent.doubleClick(todayCell!);
-    
+
+    // La celda se localiza por su aria-label, que lleva la fecha completa. Buscarla por el numero
+    // del dia fallaba los dias 28, 29 o 30: ese numero se repite en la rejilla (cola del mes
+    // anterior y cabeza del siguiente) y se pulsaba la celda equivocada.
+    const dayLabel = format(today, 'PPPP', { locale: es });
+    const dayButton = screen.getByRole('button', { name: new RegExp(dayLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) });
+    fireEvent.doubleClick(dayButton);
+
     expect(handleAddEvent).toHaveBeenCalledTimes(1);
   });
 
