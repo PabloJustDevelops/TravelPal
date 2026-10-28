@@ -11,8 +11,16 @@ loadEnvConfig(process.cwd(), false)
 const headers = await readFile('public/_headers', 'utf8')
 if (/content-security-policy\s*:/i.test(headers)) throw new Error('CSP must be generated, not declared in public/_headers')
 if (!/^\/\*\r?\n/.test(headers)) throw new Error('Missing global /* rule in public/_headers')
-const backendOrigin = new URL(process.env.NEXT_PUBLIC_INSFORGE_URL ?? 'https://sjdq7zsn.eu-central.insforge.app').origin
+const backendUrl = new URL(process.env.NEXT_PUBLIC_INSFORGE_URL ?? 'https://sjdq7zsn.eu-central.insforge.app')
+const backendOrigin = backendUrl.origin
 if (!backendOrigin.startsWith('https://')) throw new Error('CSP backend origin must use HTTPS')
+// Las funciones Edge se sirven desde otro host que el API: <ref>.function2.insforge.app. Sin esto el
+// navegador bloquea toda llamada a funciones (inspiracion de vuelos y de tren/bus) aunque el backend
+// este permitido.
+const projectRef = backendUrl.hostname.split('.')[0]
+const functionsOrigin = backendUrl.hostname.endsWith('.insforge.app')
+  ? `https://${projectRef}.function2.insforge.app`
+  : backendOrigin
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -34,7 +42,7 @@ function cspFor(hashes) {
     `script-src 'self' ${hashes.join(' ')}`.trimEnd(),
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' ${backendOrigin} https://insforge-storage.s3.us-east-2.amazonaws.com`,
-    `connect-src 'self' https://o4511064837062656.ingest.de.sentry.io ${backendOrigin} https://insforge-storage.s3.us-east-2.amazonaws.com`,
+    `connect-src 'self' https://o4511064837062656.ingest.de.sentry.io ${backendOrigin} ${functionsOrigin} https://insforge-storage.s3.us-east-2.amazonaws.com`,
     "font-src 'self'",
     "frame-src 'none'",
     "object-src 'none'",
