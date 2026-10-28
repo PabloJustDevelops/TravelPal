@@ -1,6 +1,6 @@
 /// <reference lib="deno.ns" />
 import { createClient } from "npm:@insforge/sdk";
-import { parseFlightIdeas, parseInspirationQuery, parseTransitousItineraries } from "../../../src/lib/travel-inspiration.ts";
+import { parseFlightIdeas, parseInspirationQuery, parseTransitousItineraries } from "./contract.ts";
 
 const PROVIDER_URL = "https://api.travelpayouts.com/aviasales/v3/get_latest_prices";
 const ALLOWED_ORIGINS = new Set([
@@ -10,6 +10,10 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const MAX_REQUEST_BYTES = 4096;
 const MAX_RESPONSE_BYTES = 256 * 1024;
+// MOTIS devuelve un plan con debugOutput incluido: 5 itinerarios Madrid-Barcelona son ~281 KB, por
+// encima del limite del proveedor de vuelos. Con el tope de 256 KB el camino terrestre respondia
+// provider_error siempre.
+const MAX_GROUND_RESPONSE_BYTES = 1024 * 1024;
 const UPSTREAM_TIMEOUT_MS = 8000;
 const GLOBAL_TIMEOUT_MS = 18000;
 const MOTIS_URL = "https://api.transitous.org/api/v1";
@@ -198,7 +202,7 @@ export function createHandler(deps: Dependencies = defaultDependencies): (reques
         try {
           const response = await deps.fetcher(url, { headers: { Accept: "application/json", "User-Agent": "travelpal" }, redirect: "error", signal: controller.signal });
           if (!response.ok) throw new Error("Transitous failure");
-          const text = await limitedText(response.body, MAX_RESPONSE_BYTES);
+          const text = await limitedText(response.body, MAX_GROUND_RESPONSE_BYTES);
           return JSON.parse(text) as unknown;
         } finally {
           clearTimeout(timer);

@@ -16,7 +16,7 @@ jest.mock("../TopBar", () => ({ __esModule: true, default: () => <div data-testi
 it("incluye inspiración de vuelos en la navegación", () => {
   render(<DashboardLayout>Contenido</DashboardLayout>);
   expect(screen.getByTestId("top-bar")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Inspiración de vuelos" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Inspiración de viajes" })).toHaveAttribute(
     "href",
     "/travel-inspiration",
   );
