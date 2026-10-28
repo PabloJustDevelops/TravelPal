@@ -61,14 +61,14 @@ export default function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center shadow-sm">
-        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-          <EnvelopeIcon className="h-6 w-6 text-green-600" />
+      <div role="status" className="rounded-xl border border-success/25 bg-success/10 p-6 text-center">
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-success/15 mb-4">
+          <EnvelopeIcon className="h-6 w-6 text-success" aria-hidden="true" />
         </div>
-        <h3 className="text-lg font-medium text-green-900 mb-2">
-          {english ? 'Email sent!' : '¡Email enviado!'}
+        <h3 className="text-lg font-medium text-ink mb-2">
+          {english ? 'Email sent' : 'Email enviado'}
         </h3>
-        <p className="text-sm text-green-700 mb-6">
+        <p className="text-sm text-muted mb-6">
           {english ? 'We sent a reset link to your email address. Check your inbox (and spam folder) and follow the instructions.' : 'Hemos enviado un enlace de recuperación a tu correo electrónico. Por favor, revisa tu bandeja de entrada (y spam) y sigue las instrucciones.'}
         </p>
         <div className="space-y-3">
@@ -78,9 +78,9 @@ export default function ForgotPasswordForm() {
           <button
             type="button"
             onClick={() => setIsSuccess(false)}
-            className="text-sm text-green-700 hover:text-green-800 font-medium underline"
+            className="text-sm text-accent hover:text-accent-hover font-medium underline"
           >
-            {english ? 'Try another email' : 'Probar con otro email'}
+            {english ? 'Try another email' : 'Probar con otro correo'}
           </button>
         </div>
       </div>
@@ -109,24 +109,24 @@ export default function ForgotPasswordForm() {
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+            <p className="mt-1 text-sm text-danger">{errors.email.message}</p>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 animate-fadeIn">
+        <div role="alert" className="bg-danger/10 border border-danger/25 rounded-md p-4 animate-fadeIn">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-danger" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
+              <h3 className="text-sm font-medium text-danger">
                 {english ? 'Could not send' : 'Error al enviar'}
               </h3>
-              <div className="mt-1 text-sm text-red-700">
+              <div className="mt-1 text-sm text-ink">
                 <p>{error}</p>
               </div>
             </div>

@@ -35,7 +35,9 @@ describe('ForgotPasswordForm', () => {
     })
     submit()
 
-    expect(await screen.findByText(/email enviado/i)).toBeInTheDocument()
+    const aviso = await screen.findByRole('status')
+    expect(aviso).toHaveTextContent('Email enviado')
+    expect(aviso.textContent).not.toMatch(/[¡!]/)
     expect(mockResetPassword).toHaveBeenCalledWith('ana@example.com', 'es')
   })
 
@@ -55,6 +57,7 @@ describe('ForgotPasswordForm', () => {
     expect(
       await screen.findByText(/no hemos podido enviar el email/i),
     ).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/error al enviar/i)
     await waitFor(() => {
       expect(screen.queryByText(/user not found/i)).not.toBeInTheDocument()
     })
