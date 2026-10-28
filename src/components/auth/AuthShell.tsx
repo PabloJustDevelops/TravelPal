@@ -52,37 +52,18 @@ export default function AuthShell({ children, mode }: { children: ReactNode; mod
   }
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-2">
-        <section className="flex flex-col px-5 py-6 sm:px-10 lg:px-16 lg:py-10">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <LanguageSelect />
-          </div>
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10 lg:py-12">
-            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.16em] text-accent">{t('travelSpace')}</p>
-            {children}
-          </div>
-          <p className="text-xs text-muted">© {new Date().getFullYear()} TravelPal · {t('tagline')}</p>
-        </section>
-        <aside className="m-5 mt-0 overflow-hidden rounded-3xl bg-surface lg:m-5 lg:ml-0 lg:flex lg:flex-col lg:justify-center">
-          <div className="px-6 pt-8 sm:px-10 lg:pt-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{t('fewerTabs')}</p>
-            <h2 className="mt-4 max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{t('nextTrip')}</h2>
-            <p className="mt-4 max-w-md leading-relaxed text-muted">{t('tripDescription')}</p>
-          </div>
-          <Image
-            src="/images/atlas/coastal-journey.webp"
-            alt={locale === 'en' ? 'Illustration of a traveler walking through a town on the Mediterranean coast' : 'Ilustración de un viajero recorriendo un pueblo junto a la costa mediterránea'}
-            width={1536}
-            height={1024}
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            loading="eager"
-            className="mt-8 h-auto w-full"
-          />
-          <p className="px-6 py-4 text-xs text-muted sm:px-10">{t('authIllustration')}</p>
-        </aside>
-      </div>
+    <main className={styles.recoveryShell}>
+      <section className={styles.recoveryContent}>
+        <header className={styles.recoveryHeader}>
+          <Brand />
+          <LanguageSelect />
+        </header>
+        <div className={styles.recoveryForm}>{children}</div>
+        <p className={styles.recoveryFooter}>© {new Date().getFullYear()} TravelPal · {t('tagline')}</p>
+      </section>
+      <aside className={styles.recoveryArtwork} aria-hidden="true">
+        <Image src="/images/atlas/recovery-postcard.webp" alt="" width={1000} height={1400} loading="eager" sizes="(min-width: 1024px) 55vw, 100vw" className={styles.recoveryImage} />
+      </aside>
     </main>
   )
 }

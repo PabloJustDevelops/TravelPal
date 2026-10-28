@@ -29,6 +29,5 @@ it.each([SignInPage, SignUpPage])('usa la mesa de viaje en acceso y registro', P
 
 it.each([ForgotPasswordPage, ResetPasswordPage])('mantiene la composición de recuperación', Page => {
   render(<Page />)
-  expect(screen.getByText(/Tu próximo viaje empieza aquí/)).toBeInTheDocument()
-  expect(screen.getByRole('img', { name: /Ilustración.*costa/ }).getAttribute('src')).not.toContain('https://')
+  expect(document.querySelector('img[src*="recovery-postcard"]')).toBeInTheDocument()
 })
