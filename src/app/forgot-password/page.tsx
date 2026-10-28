@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
       <h1 className="text-3xl font-semibold tracking-tight">Recuperar contraseña</h1>
       <p className="mt-3 leading-relaxed text-muted">Te enviaremos un enlace para que vuelvas a tus planes.</p>
       <Suspense fallback={<p role="status">Cargando formulario...</p>}><ForgotPasswordForm /></Suspense>
-      <Link href="/signin" className="mt-6 text-sm font-medium text-accent hover:text-accent-hover">Volver al inicio de sesión</Link>
+      <Link href="/signin" className="mt-6 inline-flex text-sm font-medium text-accent hover:text-accent-hover">Volver al inicio de sesión</Link>
     </AuthShell>
   )
 }
