@@ -50,6 +50,11 @@ const missingRoutes = criticalRoutes.filter((route) => {
   return !relativeFiles.has(`${routePath}/index.html`) && !relativeFiles.has(`${routePath}.html`)
 })
 
+if (!relativeFiles.has('404.html')) {
+  console.error('Static export is missing 404.html')
+  process.exitCode = 1
+}
+
 if (!relativeFiles.has('_redirects')) {
   console.error('Static export is missing public/_redirects')
   process.exitCode = 1

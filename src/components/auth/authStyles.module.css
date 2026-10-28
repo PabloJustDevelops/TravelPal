@@ -56,3 +56,17 @@
   .form form { margin-top: 24px; }
   .switchAccount { font-size: 14px; margin-top: 16px; }
 }
+
+.recoveryShell { min-height: 100vh; display: grid; grid-template-columns: 45.5% 54.5%; background: var(--paper); color: var(--ink); }
+.recoveryContent { min-height: 100vh; display: flex; flex-direction: column; padding: 40px clamp(28px, 4.2vw, 64px); }
+.recoveryHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.recoveryForm { width: 100%; max-width: 496px; margin: auto; padding: 64px 0; }
+.recoveryForm h1 { font-size: clamp(2rem, 3.3vw, 3.1rem); line-height: 1.08; letter-spacing: -0.035em; }
+.recoveryFooter { color: var(--muted); font-size: 12px; }
+.recoveryArtwork { position: relative; min-height: 100vh; overflow: hidden; }
+.recoveryImage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+@media (max-width: 1023px) {
+  .recoveryShell { display: block; }
+  .recoveryContent { padding: 24px; }
+  .recoveryArtwork { display: none; }
+}
