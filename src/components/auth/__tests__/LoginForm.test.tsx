@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 const mockPush = jest.fn()
 const mockReplace = jest.fn()
 const mockSignIn = jest.fn()
+const mockVerifyEmail = jest.fn()
 const mockResendVerificationEmail = jest.fn()
 const mockSignInWithGoogle = jest.fn()
 const mockPathname = '/es/signin'
@@ -49,6 +50,7 @@ describe('LoginForm', () => {
     mockSearch = new URLSearchParams()
     ;(useAuth as jest.Mock).mockReturnValue({
       signIn: mockSignIn,
+      verifyEmail: mockVerifyEmail,
       resendVerificationEmail: mockResendVerificationEmail,
       signInWithGoogle: mockSignInWithGoogle,
     })
@@ -99,59 +101,85 @@ describe('LoginForm', () => {
     ).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('avisa de que hay que verificar el email y ofrece reenviar el codigo', async () => {
+  it('pide el codigo en el login cuando el email no esta verificado (#156)', async () => {
     mockSignIn.mockResolvedValue({
       ok: false,
       code: 'email_not_verified',
       statusCode: 403,
     })
+    mockVerifyEmail.mockResolvedValue({ id: 'user-123' })
 
     render(<LoginForm />)
     fillAndSubmit()
 
+    // El paso del codigo sustituye al formulario: antes solo habia un aviso y
+    // un boton de reenvio, sin campo donde escribir el codigo.
     expect(
-      await screen.findByText(/no está verificado/i),
+      await screen.findByRole('heading', { name: 'Verifica tu email' }),
     ).toBeInTheDocument()
-    // Nada de mensaje crudo del backend ni de redireccion.
+    expect(screen.getByText('ana@example.com')).toBeInTheDocument()
     expect(screen.queryByText(/Invalid credentials|verification required/i)).not.toBeInTheDocument()
     expect(mockPush).not.toHaveBeenCalled()
 
-    mockResendVerificationEmail.mockResolvedValue(undefined)
-    fireEvent.click(
-      screen.getByRole('button', { name: /reenviar código de verificación/i }),
+    const inputs = screen.getAllByLabelText(/Dígito \d del código/i)
+    '123456'.split('').forEach((digit, index) => {
+      fireEvent.change(inputs[index], { target: { value: digit } })
+    })
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Verificar cuenta' }).closest('form') as HTMLFormElement,
     )
 
     await waitFor(() => {
-      expect(mockResendVerificationEmail).toHaveBeenCalledWith('ana@example.com')
+      expect(mockVerifyEmail).toHaveBeenCalledWith('ana@example.com', '123456')
     })
-    expect(
-      await screen.findByText(/te hemos enviado un código nuevo/i),
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/dashboard')
+    })
   })
 
-  it('muestra el error del reenvio sin sacar al usuario del formulario', async () => {
+  it('respeta el redirectTo al verificar desde el login', async () => {
+    mockSearch = new URLSearchParams('redirectTo=%2Fsettings')
     mockSignIn.mockResolvedValue({
       ok: false,
       code: 'email_not_verified',
       statusCode: 403,
     })
-    mockResendVerificationEmail.mockRejectedValue(
-      new Error('Too many send email verification requests from this IP'),
+    mockVerifyEmail.mockResolvedValue({ id: 'user-123' })
+
+    render(<LoginForm />)
+    fillAndSubmit()
+
+    const inputs = await screen.findAllByLabelText(/Dígito \d del código/i)
+    '123456'.split('').forEach((digit, index) => {
+      fireEvent.change(inputs[index], { target: { value: digit } })
+    })
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Verificar cuenta' }).closest('form') as HTMLFormElement,
     )
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/settings')
+    })
+  })
+
+  it('vuelve al formulario de acceso desde el paso del codigo', async () => {
+    mockSignIn.mockResolvedValue({
+      ok: false,
+      code: 'email_not_verified',
+      statusCode: 403,
+    })
 
     render(<LoginForm />)
     fillAndSubmit()
 
     fireEvent.click(
-      await screen.findByRole('button', { name: /reenviar código de verificación/i }),
+      await screen.findByRole('button', { name: 'Volver a iniciar sesión' }),
     )
 
     expect(
-      await screen.findByText(
-        /too many send email verification requests from this ip/i,
-      ),
+      screen.getByRole('heading', { name: 'Inicia sesión en tu cuenta' }),
     ).toBeInTheDocument()
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(screen.getByPlaceholderText('tu@email.com')).toBeInTheDocument()
   })
 
   it('da un mensaje generico con credenciales invalidas y no filtra el del backend', async () => {

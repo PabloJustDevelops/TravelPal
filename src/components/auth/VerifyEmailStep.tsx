@@ -22,7 +22,17 @@ const CODE_LENGTH = 6
 // así que el botón de reenvío espera lo mismo en vez de comerse un error.
 const RESEND_COOLDOWN_SECONDS = 60
 
-export default function VerifyEmailStep({ email }: { email: string }) {
+export default function VerifyEmailStep({
+  email,
+  redirectTo = '/dashboard',
+  onBack,
+}: {
+  email: string
+  redirectTo?: string
+  // En el login el paso del código sustituye al formulario: sin esta salida el
+  // usuario no podría corregir el email con el que intentaba entrar.
+  onBack?: () => void
+}) {
   const { locale } = useI18n()
   const english = locale === 'en'
   const [digits, setDigits] = useState<string[]>(() =>
@@ -113,7 +123,7 @@ export default function VerifyEmailStep({ email }: { email: string }) {
     try {
       // Verificar deja la sesión hecha (cookies httpOnly) y refresca el usuario.
       await verifyEmail(email, code)
-      router.replace('/dashboard')
+      router.replace(redirectTo)
     } catch (err) {
       setError(english ? 'Could not verify the code. Please try again.' : (err instanceof Error ? err.message : 'No se pudo verificar el código'))
     } finally {
@@ -221,13 +231,26 @@ export default function VerifyEmailStep({ email }: { email: string }) {
         </div>
 
         <p className="text-center text-sm text-muted">
-          {english ? 'Already have an account?' : '¿Ya tienes cuenta?'}{' '}
-          <Link
-            href={localePath(locale, '/signin')}
-            className="inline-flex min-h-11 items-center font-medium text-accent hover:text-accent-hover"
-          >
-            {english ? 'Sign in' : 'Inicia sesión'}
-          </Link>
+          {onBack ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onBack}
+              className="min-h-11 font-medium text-accent hover:text-accent-hover"
+            >
+              {english ? 'Back to sign in' : 'Volver a iniciar sesión'}
+            </Button>
+          ) : (
+            <>
+              {english ? 'Already have an account?' : '¿Ya tienes cuenta?'}{' '}
+              <Link
+                href={localePath(locale, '/signin')}
+                className="inline-flex min-h-11 items-center font-medium text-accent hover:text-accent-hover"
+              >
+                {english ? 'Sign in' : 'Inicia sesión'}
+              </Link>
+            </>
+          )}
         </p>
       </form>
     </div>
