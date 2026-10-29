@@ -11,6 +11,7 @@ import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import Button from "@/components/ui/Button";
 import GoogleButton from "@/components/auth/GoogleButton";
+import VerifyEmailStep from "@/components/auth/VerifyEmailStep";
 import { fieldClassName } from "@/components/ui/fieldStyles";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
@@ -39,12 +40,13 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  // Email sin verificar con el que se intentó entrar: mientras esté puesto se
-  // muestra el aviso y el botón de reenviar el código.
+  // Email sin verificar con el que se intentó entrar: mientras esté puesto el
+  // paso del código sustituye al formulario. Es la única salida que tiene quien
+  // cerró ese paso al registrarse (issue #156): el alta responde «email ya
+  // registrado» y antes aquí solo se podía reenviar el código, sin campo donde
+  // escribirlo.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [resendNotice, setResendNotice] = useState("");
-  const [isResending, setIsResending] = useState(false);
-  const { signIn, resendVerificationEmail } = useAuth();
+  const { signIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -94,7 +96,6 @@ export default function LoginForm() {
     setError("");
     setNotice("");
     setPendingEmail(null);
-    setResendNotice("");
 
     try {
       logger.debug("LoginForm: Llamando a signIn");
@@ -147,26 +148,17 @@ export default function LoginForm() {
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!pendingEmail) return;
-
-    setError("");
-    setResendNotice("");
-    setIsResending(true);
-
-    try {
-      await resendVerificationEmail(pendingEmail);
-      setResendNotice(english ? 'We sent you a new code.' : 'Te hemos enviado un código nuevo.');
-    } catch (err: unknown) {
-      // El reenvío sí puede contar lo que diga el backend: no revela si existe
-      // otro email, solo si puedes pedir otro código ahora.
-      setError(
-        err instanceof Error ? err.message : (english ? 'Could not resend the code' : 'No se pudo reenviar el código'),
-      );
-    } finally {
-      setIsResending(false);
-    }
-  };
+  // Sin verificar no hay nada que reintentar en este formulario: el paso del
+  // código (con su propio reenvío y su propio contador) ocupa su lugar.
+  if (pendingEmail) {
+    return (
+      <VerifyEmailStep
+        email={pendingEmail}
+        redirectTo={searchParams.get("redirectTo") || "/dashboard"}
+        onBack={() => setPendingEmail(null)}
+      />
+    );
+  }
 
   return (
     <div className={styles.form}>
@@ -187,26 +179,6 @@ export default function LoginForm() {
         {error && (
           <div role="alert" className="rounded-md bg-danger/10 p-4">
             <div className="text-sm text-danger">{error}</div>
-          </div>
-        )}
-
-        {pendingEmail && (
-          <div role="status" className="rounded-md border border-warning/30 bg-warning/10 p-4">
-            <p className="text-sm text-warning">
-              {english ? 'Your email has not been verified yet. Check your inbox and confirm your account before signing in.' : 'Tu email aún no está verificado. Revisa tu bandeja de entrada y confirma tu cuenta antes de iniciar sesión.'}
-            </p>
-            {resendNotice && (
-              <p role="status" className="mt-2 text-sm text-success">{resendNotice}</p>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              loading={isResending}
-              onClick={handleResendVerification}
-              className="mt-3 w-full"
-            >
-              {english ? 'Resend verification code' : 'Reenviar código de verificación'}
-            </Button>
           </div>
         )}
 
