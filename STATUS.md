@@ -1,6 +1,18 @@
 # TravelPal status
 
-Snapshot of the repository as of 2026-10-24, on `main` at `18d7d9c`. This document records a review; it
+## v1.0.0 — cerrado el 2026-10-29
+
+La aplicación web queda **terminada y publicada como 1.0.0**. El producto hace lo que promete el
+README en producción (`https://travelpal.prg-dev.workers.dev`), con CI verde en `main`, 0 PRs
+abiertos y un único fallo conocido: la issue #156 (un usuario que no verifica el correo en el mismo
+paso no puede volver a introducir el código). Ese fallo se corrige en 1.0.1.
+
+Lo que queda **fuera** de la 1.0 y no bloquea el cierre — colaboración, push verificado en
+dispositivo real, rework de la auditoría de utilidad, app móvil — está en el README, sección
+«Después de la 1.0». Este documento ya no se actualiza con el día a día del proyecto: describe la
+foto del repositorio en el momento del cierre y el histórico previo.
+
+Histórico: snapshot of the repository as of 2026-10-24, on `main` at `18d7d9c`. This document records a review; it
 does not pin the future SHA of `main` and it does not replace the CI runs as evidence.
 
 ## Product state

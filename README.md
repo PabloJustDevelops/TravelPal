@@ -14,6 +14,7 @@
 [![InsForge](https://img.shields.io/badge/InsForge-Backend-4B5563)](https://insforge.dev/)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
+[![Versión](https://img.shields.io/github/v/release/PabloJustDevelops/TravelPal?label=versi%C3%B3n&color=0e7490)](https://github.com/PabloJustDevelops/TravelPal/releases)
 
 [**Demo**](https://travelpal.prg-dev.workers.dev) · [Documentación](#documentación) · [Reportar un problema](https://github.com/PabloJustDevelops/TravelPal/issues)
 
@@ -50,6 +51,10 @@ InsForge (Postgres + Auth + Storage, eu-central)
   sesión antes de consultar al proveedor (ADR-015).
 
 ## Estado
+
+**Versión 1.0.0** (29 de octubre de 2026). La aplicación web está terminada y en producción. Lo que
+queda fuera de la 1.0 está en [Después de la 1.0](#después-de-la-10) y en
+[`CHANGELOG.md`](CHANGELOG.md).
 
 | Área | Estado |
 | --- | --- |
@@ -158,13 +163,19 @@ TravelPal/
 - [docs/design/logo/proposals/](docs/design/logo/proposals/): las seis propuestas de marca; la ligadura TP es la elegida.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) · [docs/COMMITS.md](docs/COMMITS.md) · [docs/PR_PROCESS.md](docs/PR_PROCESS.md): cómo contribuir.
 
-## Roadmap
+## Después de la 1.0
 
-- Internacionalización (i18n) y detección de idioma en el export estático: cerrado en tres fases
-  (páginas públicas, panel y ajustes, y las pantallas restantes).
-- Colaboración en un mismo viaje (invitaciones y permisos): en curso.
-- Más fuentes de precios y transporte (tren, bus) sobre el patrón de funciones de InsForge: pendiente de elegir
-  proveedor.
+Fuera del alcance de la 1.0; nada de esto está en curso ahora mismo.
+
+- **Colaboración en un mismo viaje** (invitaciones y permisos sobre RLS): diseñada, no implementada.
+- **Más fuentes de precios y transporte**: el transporte terrestre ya es real (horarios de
+  Transitous); el precio de tren y bus se deja como `null` porque no hay tarifa en fuentes abiertas
+  (ver issue #133).
+- **Entrega de push en un dispositivo real**: cliente y función desplegados; falta la verificación
+  de extremo a extremo ([ADR-013](docs/DECISIONS/ADR-013-push-de-navegador-solo-cliente.md)).
+- **Rework funcional de la auditoría de utilidad**: pendiente de decidir qué hallazgos entran
+  (`docs/audits/auditoria-utilidad-y-rework.md`).
+- **App móvil nativa**: no empezada.
 
 ## Contribuir
 
