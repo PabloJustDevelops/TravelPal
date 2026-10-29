@@ -1,5 +1,15 @@
 # TravelPal status
 
+## v1.0.1 — cerrado el 2026-10-29
+
+La **1.0.1** es la última entrega de la línea 1.0. Corrige el único fallo conocido de la 1.0.0: la
+issue #156, donde un usuario que cerraba el paso del código de verificación se quedaba sin forma de
+volver a escribirlo desde la interfaz. Ahora el login muestra ese paso cuando el email aún no está
+verificado, así que la verificación se puede terminar sin una cuenta nueva.
+
+No hay fallos conocidos abiertos. Lo que queda **fuera** de la 1.0 sigue en el README, sección
+«Después de la 1.0».
+
 ## v1.0.0 — cerrado el 2026-10-29
 
 La aplicación web queda **terminada y publicada como 1.0.0**. El producto hace lo que promete el
