@@ -4,6 +4,17 @@ Todos los cambios relevantes de TravelPal. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
+## [1.0.1] — 2026-10-29
+
+Corrige el único fallo conocido de la 1.0.0. Es la última entrega de la línea 1.0.
+
+### Corregido
+
+- **Verificación desde el login** (#156): si la cuenta todavía no está verificada, el formulario de
+  acceso muestra el paso del código de 6 dígitos —con su reenvío y su contador— en lugar de un aviso
+  sin campo donde escribirlo. Quien cerró ese paso al registrarse ya puede terminarlo sin una cuenta
+  nueva, y al verificar conserva el `redirectTo` con el que venía.
+
 ## [1.0.0] — 2026-10-29
 
 Primera versión estable. La aplicación web queda terminada y publicada; lo que no entra en la 1.0
@@ -56,4 +67,5 @@ está listado en el README, sección «Después de la 1.0».
 - Los usuarios creados por las pruebas e2e de alta siguen sin un mecanismo administrativo de
   limpieza.
 
+[1.0.1]: https://github.com/PabloJustDevelops/TravelPal/releases/tag/v1.0.1
 [1.0.0]: https://github.com/PabloJustDevelops/TravelPal/releases/tag/v1.0.0

@@ -52,7 +52,7 @@ InsForge (Postgres + Auth + Storage, eu-central)
 
 ## Estado
 
-**Versión 1.0.0** (29 de octubre de 2026). La aplicación web está terminada y en producción. Lo que
+**Versión 1.0.1** (29 de octubre de 2026). La aplicación web está terminada y en producción. Lo que
 queda fuera de la 1.0 está en [Después de la 1.0](#después-de-la-10) y en
 [`CHANGELOG.md`](CHANGELOG.md).
 
